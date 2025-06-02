@@ -83,6 +83,7 @@
     <ClInclude Include="ApriltagSink.h" />
     <ClInclude Include="CameraFrameSource.h" />
     <ClInclude Include="FramePool.h" />
+    <ClInclude Include="FrameSpec.h" />
     <ClInclude Include="FRCVLib.h" />
     <ClInclude Include="IFrameSource.h" />
     <ClInclude Include="ImageFileFrameSource.h" />
@@ -101,6 +102,7 @@
     <ClCompile Include="ApriltagSink.cpp" />
     <ClCompile Include="CameraFrameSource.cpp" />
     <ClCompile Include="FramePool.cpp" />
+    <ClCompile Include="FrameSpec.cpp" />
     <ClCompile Include="IFrameSource.cpp" />
     <ClCompile Include="ImageFileFrameSource.cpp" />
     <ClCompile Include="IObjectDetectionSink.cpp" />
@@ -114,7 +116,14 @@
     <ClCompile Include="TRTSink.cpp" />
     <ClCompile Include="VideoFileFrameSource.cpp" />
   </ItemGroup>
-  <ItemDefinitionGroup />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>/usr/include/opencv4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>/home/john/libraries/opencv/4.11/build/lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

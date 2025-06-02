@@ -50,6 +50,7 @@
     </ClCompile>
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="FramePool.cpp" />
+    <ClCompile Include="FrameSpec.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraFrameSource.h">
@@ -90,5 +91,6 @@
     </ClInclude>
     <ClInclude Include="Logger.h" />
     <ClInclude Include="FramePool.h" />
+    <ClInclude Include="FrameSpec.h" />
   </ItemGroup>
 </Project>
