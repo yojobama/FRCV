@@ -48,6 +48,8 @@
     <ClCompile Include="IPipeline.cpp">
       <Filter>Pipeline</Filter>
     </ClCompile>
+    <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="FramePool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraFrameSource.h">
@@ -86,5 +88,7 @@
     <ClInclude Include="IPipeline.h">
       <Filter>Pipeline</Filter>
     </ClInclude>
+    <ClInclude Include="Logger.h" />
+    <ClInclude Include="FramePool.h" />
   </ItemGroup>
 </Project>

@@ -82,12 +82,14 @@
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h" />
     <ClInclude Include="CameraFrameSource.h" />
+    <ClInclude Include="FramePool.h" />
     <ClInclude Include="FRCVLib.h" />
     <ClInclude Include="IFrameSource.h" />
     <ClInclude Include="ImageFileFrameSource.h" />
     <ClInclude Include="IObjectDetectionSink.h" />
     <ClInclude Include="IPipeline.h" />
     <ClInclude Include="ISink.h" />
+    <ClInclude Include="Logger.h" />
     <ClInclude Include="RknnSink.h" />
     <ClInclude Include="SingleSourcePipeline.h" />
     <ClInclude Include="SterioPipeline.h" />
@@ -98,11 +100,13 @@
   <ItemGroup>
     <ClCompile Include="ApriltagSink.cpp" />
     <ClCompile Include="CameraFrameSource.cpp" />
+    <ClCompile Include="FramePool.cpp" />
     <ClCompile Include="IFrameSource.cpp" />
     <ClCompile Include="ImageFileFrameSource.cpp" />
     <ClCompile Include="IObjectDetectionSink.cpp" />
     <ClCompile Include="IPipeline.cpp" />
     <ClCompile Include="ISink.cpp" />
+    <ClCompile Include="Logger.cpp" />
     <ClCompile Include="RknnSink.cpp" />
     <ClCompile Include="SingleSourcePipeline.cpp" />
     <ClCompile Include="SterioPipeline.cpp" />
