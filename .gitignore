@@ -1,0 +1,9 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/FRCV/.vs/FRCV
+/FRCV/FRCVLib/bin/x64/Debug
+/FRCV/FRCVLib/obj/x64/Debug
+/FRCV/UnitTests/bin/x64/Debug
+/FRCV/UnitTests/obj/x64/Debug
