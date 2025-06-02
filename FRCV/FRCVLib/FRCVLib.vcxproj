@@ -82,6 +82,7 @@
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h" />
     <ClInclude Include="CameraFrameSource.h" />
+    <ClInclude Include="Frame.h" />
     <ClInclude Include="FramePool.h" />
     <ClInclude Include="FrameSpec.h" />
     <ClInclude Include="FRCVLib.h" />
@@ -101,6 +102,7 @@
   <ItemGroup>
     <ClCompile Include="ApriltagSink.cpp" />
     <ClCompile Include="CameraFrameSource.cpp" />
+    <ClCompile Include="Frame.cpp" />
     <ClCompile Include="FramePool.cpp" />
     <ClCompile Include="FrameSpec.cpp" />
     <ClCompile Include="IFrameSource.cpp" />
