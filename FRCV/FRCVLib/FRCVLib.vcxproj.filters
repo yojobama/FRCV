@@ -52,6 +52,8 @@
     <ClCompile Include="FramePool.cpp" />
     <ClCompile Include="FrameSpec.cpp" />
     <ClCompile Include="Frame.cpp" />
+    <ClCompile Include="TestClass.cpp" />
+    <ClCompile Include="ApriltagDetection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraFrameSource.h">
@@ -94,5 +96,8 @@
     <ClInclude Include="FramePool.h" />
     <ClInclude Include="FrameSpec.h" />
     <ClInclude Include="Frame.h" />
+    <ClInclude Include="FRCVLib.h" />
+    <ClInclude Include="TestClass.h" />
+    <ClInclude Include="ApriltagDetection.h" />
   </ItemGroup>
 </Project>

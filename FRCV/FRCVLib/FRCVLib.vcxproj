@@ -80,6 +80,7 @@
     <WSLPath>Ubuntu-24.04</WSLPath>
   </PropertyGroup>
   <ItemGroup>
+    <ClInclude Include="ApriltagDetection.h" />
     <ClInclude Include="ApriltagSink.h" />
     <ClInclude Include="CameraFrameSource.h" />
     <ClInclude Include="Frame.h" />
@@ -100,6 +101,7 @@
     <ClInclude Include="VideoFileFrameSource.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ApriltagDetection.cpp" />
     <ClCompile Include="ApriltagSink.cpp" />
     <ClCompile Include="CameraFrameSource.cpp" />
     <ClCompile Include="Frame.cpp" />
@@ -123,7 +125,7 @@
       <AdditionalIncludeDirectories>/usr/include/opencv4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>/home/john/libraries/opencv/4.11/build/lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>/usr/lib/x86_64-linux-gnu/;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

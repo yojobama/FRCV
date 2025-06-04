@@ -92,7 +92,7 @@
       <LibraryDependencies>FRCVLib</LibraryDependencies>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>/home/john/projects/FRCVLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>/home/yojobama/projects/FRCVLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
