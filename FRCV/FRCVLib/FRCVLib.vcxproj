@@ -96,7 +96,6 @@
     <ClInclude Include="RknnSink.h" />
     <ClInclude Include="SingleSourcePipeline.h" />
     <ClInclude Include="SterioPipeline.h" />
-    <ClInclude Include="TestClass.h" />
     <ClInclude Include="TRTSink.h" />
     <ClInclude Include="VideoFileFrameSource.h" />
   </ItemGroup>
@@ -116,7 +115,6 @@
     <ClCompile Include="RknnSink.cpp" />
     <ClCompile Include="SingleSourcePipeline.cpp" />
     <ClCompile Include="SterioPipeline.cpp" />
-    <ClCompile Include="TestClass.cpp" />
     <ClCompile Include="TRTSink.cpp" />
     <ClCompile Include="VideoFileFrameSource.cpp" />
   </ItemGroup>
