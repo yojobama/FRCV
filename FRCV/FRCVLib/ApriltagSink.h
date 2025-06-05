@@ -13,7 +13,7 @@ class ApriltagSink : public ISink<ApriltagDetection>
 public:
 	ApriltagSink(Logger* logger);
     ~ApriltagSink();
-	std::vector<ApriltagDetection> getDetections() override;
+	std::vector<ApriltagDetection> getDetections();
 private:
 	apriltag_family_t* family;
 	apriltag_detector_t* detector;
