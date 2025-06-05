@@ -5,8 +5,10 @@
 class Frame : public cv::Mat
 {
 public:
-	Frame();
+	Frame(FrameSpec spec);
 	~Frame();
 	bool isIdentical(FrameSpec frameSpec);
+private:
+	FrameSpec spec;
 };
 

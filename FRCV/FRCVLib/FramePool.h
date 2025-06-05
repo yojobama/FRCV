@@ -9,8 +9,9 @@ public:
 	FramePool(std::vector<FrameSpec> initialSpecs);
 	~FramePool();
 	Frame* getFrame(FrameSpec frameSpec);
+	void returnFrame(Frame* frame);
 private:
-	void allocateFrame(FrameSpec frameSpec);
+	Frame* allocateFrame(FrameSpec frameSpec);
 	std::vector<Frame*> frameVector;
 };
 

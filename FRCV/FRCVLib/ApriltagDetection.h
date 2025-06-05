@@ -5,7 +5,7 @@
 class ApriltagDetection
 {
 public:
-	ApriltagDetection();
+	ApriltagDetection(apriltag_detection_t detection, apriltag_pose_t pose);
 	~ApriltagDetection() = default;
 private:
 	apriltag_family_t* family;
