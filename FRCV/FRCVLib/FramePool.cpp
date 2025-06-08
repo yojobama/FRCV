@@ -4,7 +4,7 @@
 FramePool::FramePool(std::vector<FrameSpec> initialSpecs) {
 	// pushing new frames to the vector in preperation for the start of the thingy
 	for (FrameSpec spec : initialSpecs) {
-		frameVector.push_back(&Frame(spec));
+		frameVector.push_back(new Frame(spec));
 	}
 }
 
@@ -23,7 +23,7 @@ Frame* FramePool::getFrame(FrameSpec frameSpec) {
 
 // allocation new frames upon request
 Frame* FramePool::allocateFrame(FrameSpec frameSpec) {
-	Frame* frame = &Frame(frameSpec);
+	Frame* frame = new Frame(frameSpec);
 	frameVector.push_back(frame);
 	return frame;
 }

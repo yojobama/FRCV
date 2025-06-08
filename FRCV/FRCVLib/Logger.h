@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <bits/stdc++.h>
+#include <iostream>
 
 // TODO: add some stuff to make the logger functional
 enum LogLevel
@@ -35,6 +36,7 @@ public:
 	void enterLog(Log log);
 	std::vector<Log> GetAllLogs();
 	std::vector<Log> GetCertainLogs(LogLevel logLevel);
+	void clearAllLogs();
 private:
 	std::vector<Log> logs;
 };

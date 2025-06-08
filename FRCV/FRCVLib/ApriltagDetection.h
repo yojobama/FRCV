@@ -1,7 +1,7 @@
 #pragma once
 #include <apriltag/apriltag.h>
 #include <apriltag/apriltag_pose.h>
-
+	
 class ApriltagDetection
 {
 public:

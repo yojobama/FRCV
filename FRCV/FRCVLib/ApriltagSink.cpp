@@ -1,8 +1,8 @@
 #include "ApriltagSink.h"
-
+#include <vector>
 #include <apriltag/tag36h11.h>
 
-ApriltagSink::ApriltagSink(Logger* logger) {
+ApriltagSink::ApriltagSink(Logger* logger) : ISink<ApriltagDetection>(logger) {
 	this->logger = logger;
 	this->family = tag36h11_create();
 	this->detector = apriltag_detector_create();
@@ -10,20 +10,20 @@ ApriltagSink::ApriltagSink(Logger* logger) {
 }
 
 std::vector<ApriltagDetection> ApriltagSink::getDetections(Frame* frame) {
-	
 	std::vector<ApriltagDetection> returnVector;
-	
-	logger->enterLog(DEBUG, "making an image_u8_t from the opencv frame");
+
+	logger->enterLog("making an image_u8_t from the opencv frame");
+
 	image_u8_t img = {
-		.width = frame->cols,
-		.height = frame->rows,
-		.stride = frame->cols,
-		.buf = frame->data
+		frame->cols,
+		frame->rows,
+		frame->cols,
+		frame->data
 	};
 
-	logger->enterLog(DEBUG, "detecting apriltags using the detector");
+	logger->enterLog("detecting apriltags using the detector");
 	zarray_t* detections = apriltag_detector_detect(detector, &img);
-	
+
 	for (int i = 0; i < zarray_size(detections); i++) {
 		apriltag_detection_t* detection;
 		zarray_get(detections, i, &detection);
