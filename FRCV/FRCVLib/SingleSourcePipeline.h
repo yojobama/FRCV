@@ -20,3 +20,19 @@ private:
 	Frame* currentFrame;
 };
 
+template<class Result>
+inline SingleSourcePipeline<Result>::~SingleSourcePipeline()
+{
+	logger->enterLog(INFO, "deleting a single source pipeline");
+}
+
+template<class Result>
+inline std::vector<Result>* SingleSourcePipeline<Result>::getResults()
+{
+	logger->enterLog(INFO, "single source pipeline retriving frame");
+	Frame* frame = frameSource->getFrame();
+	logger->enterLog(INFO, "single source pipeline processing frame for results");
+	auto results = sink->getResults();
+	logger->enterLog(INFO, "single source pipeline returning post processing results");
+	return results;
+}

@@ -9,7 +9,7 @@ class ISink {
 public:
     ISink(Logger* logger) : logger(logger) {}
     virtual ~ISink() = default;
-
+    virtual std::vector<T> getResults();
 protected:
     Logger* logger;
 };
