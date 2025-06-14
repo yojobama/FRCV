@@ -120,6 +120,9 @@
     <ClCompile Include="TRTSink.cpp" />
     <ClCompile Include="VideoFileFrameSource.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="swig.i" />
+  </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>/usr/local/include/apriltag;/usr/include/opencv4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>

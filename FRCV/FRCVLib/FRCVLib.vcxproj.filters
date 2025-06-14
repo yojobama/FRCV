@@ -100,4 +100,7 @@
     <ClInclude Include="ApriltagDetection.h" />
     <ClInclude Include="PreProcessor.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="swig.i" />
+  </ItemGroup>
 </Project>

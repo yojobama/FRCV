@@ -11,3 +11,8 @@ bool Frame::isIdentical(FrameSpec spec) {
         spec.getWidth() == cmp->getWidth() &&
         spec.getType() == cmp->getType();
 }
+
+FrameSpec Frame::getSpec()
+{
+    return spec;
+}

@@ -8,6 +8,7 @@ public:
 	Frame(FrameSpec spec);
 	~Frame();
 	bool isIdentical(FrameSpec frameSpec);
+	FrameSpec getSpec();
 private:
 	FrameSpec spec;
 };
