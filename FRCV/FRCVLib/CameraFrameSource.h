@@ -18,7 +18,7 @@ public:
 	std::string getDeviceName();
 	void setDeviceName(std::string deviceName);
 
-	cv::Mat* getFrame();
+	Frame* getFrame();
 private:
 	cv::VideoCapture* capture;
 	std::string devicePath;

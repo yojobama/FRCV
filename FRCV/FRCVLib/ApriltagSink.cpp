@@ -19,7 +19,7 @@ ApriltagSink::~ApriltagSink() {
     }
 }
 
-std::vector<ApriltagDetection> ApriltagSink::getDetections(Frame* frame) {
+std::vector<ApriltagDetection> ApriltagSink::getResults(Frame* frame) {
 	std::vector<ApriltagDetection> returnVector;
 
 	logger->enterLog("making an image_u8_t from the opencv frame");

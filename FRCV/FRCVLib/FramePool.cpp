@@ -13,6 +13,11 @@ FramePool::~FramePool() {
 	delete &frameVector;
 }
 
+int FramePool::getCachedFrameCount()
+{
+	return frameVector.size();
+}
+
 Frame* FramePool::getFrame(FrameSpec frameSpec) {
 	for (Frame* frame : frameVector) {
 		if (frame->isIdentical(frameSpec)) {
