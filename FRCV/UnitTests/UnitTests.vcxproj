@@ -79,7 +79,6 @@
     <WSLPath>Ubuntu-24.04</WSLPath>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="FramePoolTest.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="UnitTestBase.cpp" />
   </ItemGroup>
@@ -89,7 +88,6 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="FramePoolTest.h" />
     <ClInclude Include="UnitTestBase.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
