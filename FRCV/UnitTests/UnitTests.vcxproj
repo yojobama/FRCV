@@ -79,12 +79,18 @@
     <WSLPath>Ubuntu-24.04</WSLPath>
   </PropertyGroup>
   <ItemGroup>
+    <ClCompile Include="FramePoolTest.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="UnitTestBase.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FRCVLib\FRCVLib.vcxproj">
       <Project>{2e3f446d-3dab-4584-9ba8-c4eeddfe0279}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="FramePoolTest.h" />
+    <ClInclude Include="UnitTestBase.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>

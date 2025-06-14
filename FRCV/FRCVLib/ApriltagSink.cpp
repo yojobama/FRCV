@@ -9,7 +9,17 @@ ApriltagSink::ApriltagSink(Logger* logger) : ISink<ApriltagDetection>(logger) {
 	apriltag_detector_add_family(this->detector, this->family);
 }
 
-std::vector<ApriltagDetection> ApriltagSink::getDetections(Frame* frame) {
+ApriltagSink::~ApriltagSink() {
+    // Clean up resources
+    if (this->detector) {
+        apriltag_detector_destroy(this->detector);
+    }
+    if (this->family) {
+        tag36h11_destroy(this->family);
+    }
+}
+
+std::vector<ApriltagDetection> ApriltagSink::getResults(Frame* frame) {
 	std::vector<ApriltagDetection> returnVector;
 
 	logger->enterLog("making an image_u8_t from the opencv frame");
