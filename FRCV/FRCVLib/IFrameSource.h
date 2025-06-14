@@ -8,7 +8,7 @@ class IFrameSource
 public:
 	IFrameSource() = default;
 	~IFrameSource() = default;
-	virtual Frame* getFrame();
+	virtual Frame* getFrame() = 0;
 private:
 	Logger logger;
 	// TODO: add basic functions and members (like a logger and such)
