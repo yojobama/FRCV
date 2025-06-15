@@ -1,7 +1,6 @@
 #include "ApriltagSink.h"
 #include <vector>
 #include <apriltag/tag36h11.h>
-#include "CameraCalibrationSink.h"
 
 ApriltagSink::ApriltagSink(Logger* logger) : ISink<ApriltagDetection>(logger) {
 	this->logger = logger;

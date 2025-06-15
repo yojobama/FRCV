@@ -1,10 +1,16 @@
 #include "FramePoolTest.h"
+#include <cassert>
 
-FramePoolTest::FramePoolTest() : UnitTestBase()
-{
+FramePoolTest::FramePoolTest() : UnitTestBase() {
 	framePool = new FramePool();
 }
 
-bool UnitTestBase::innerTest() {
+FramePoolTest::~FramePoolTest() {
+	delete framePool;
+}
 
+bool FramePoolTest::innerTest() {
+	assert(framePool != nullptr);
+	// Add more tests as needed
+	return true;
 }

@@ -4,12 +4,13 @@
 #include "../FRCVLib/Frame.h"
 #include "../FRCVLib/FrameSpec.h"
 
-class FramePoolTest : UnitTestBase
+class FramePoolTest : public UnitTestBase
 {
 public:
 	FramePoolTest();
 	~FramePoolTest();
 private:
+	bool innerTest() override;
 	FramePool* framePool;
 };
 
