@@ -10,8 +10,9 @@ public:
 	UnitTestBase();
 	~UnitTestBase();
 	void doTest();
-private:
-	virtual bool innerTest();
+protected:
 	Logger* logger;
+private:
+	virtual bool innerTest() = 0;
 };
 

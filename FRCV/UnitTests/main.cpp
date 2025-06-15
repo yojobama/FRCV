@@ -10,11 +10,10 @@
 #include "ISinkTest.h"
 #include "IFrameSourceTest.h"
 #include "ApriltagDetectionTest.h"
+#include <iostream>
 
 int main()
 {
-    printf("hello from %s!\n", "UnitTests");
-
     ApriltagSinkTest apriltagTest;
     apriltagTest.doTest();
 

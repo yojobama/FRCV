@@ -4,13 +4,13 @@
 #include "../FRCVLib/Frame.h"
 #include "../FRCVLib/FrameSpec.h"
 
-class FramePoolTest : public UnitTestBase
+class FramePoolTest : public UnitTestBase // <-- public inheritance is required
 {
 public:
-	FramePoolTest();
-	~FramePoolTest();
+    FramePoolTest();
+    ~FramePoolTest();
 private:
-	bool innerTest() override;
-	FramePool* framePool;
+    bool innerTest() override;
+    FramePool* framePool;
 };
 

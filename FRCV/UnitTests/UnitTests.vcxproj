@@ -116,7 +116,7 @@
       <LibraryDependencies>FRCVLib</LibraryDependencies>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>/home/yojobama/projects/FRCVLib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>/home/yojobama/projects/FRCVLib;/usr/local/include/apriltag;/usr/include/opencv4%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

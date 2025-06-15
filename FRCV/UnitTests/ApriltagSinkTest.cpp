@@ -11,9 +11,8 @@ bool ApriltagSinkTest::innerTest() {
     assert(sink != nullptr);
 
     // Test getResults with a dummy frame
-    Frame dummyFrame;
-    dummyFrame.cols = 10;
-    dummyFrame.rows = 10;
+    FrameSpec spec(10, 10, CV_8UC1); // Create a FrameSpec with appropriate dimensions and type
+    Frame dummyFrame(spec);          // Pass the FrameSpec to the Frame constructor
     unsigned char data[100] = {0};
     dummyFrame.data = data;
 

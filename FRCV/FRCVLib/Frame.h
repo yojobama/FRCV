@@ -5,6 +5,7 @@
 class Frame : public cv::Mat
 {
 public:
+    Frame() : spec(0, 0, 0) {} // Default constructor
 	Frame(FrameSpec spec);
 	~Frame();
 	bool isIdentical(FrameSpec frameSpec);
