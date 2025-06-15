@@ -17,4 +17,3 @@
 #include "SingleSourcePipeline.h"
 #include "IPipeline.h"
 #include "SterioPipeline.h"
-#include "CameraCalibrationPipeline.h"
