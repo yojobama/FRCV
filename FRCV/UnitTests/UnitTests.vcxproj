@@ -80,7 +80,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="ApriltagDetectionTest.cpp" />
-    <ClCompile Include="ApriltagSinkTest.cpp" />
     <ClCompile Include="CameraFrameSourceTest.cpp" />
     <ClCompile Include="FrameTest.cpp" />
     <ClCompile Include="IFrameSourceTest.cpp" />
@@ -99,7 +98,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagDetectionTest.h" />
-    <ClInclude Include="ApriltagSinkTest.h" />
     <ClInclude Include="CameraFrameSourceTest.h" />
     <ClInclude Include="FrameTest.h" />
     <ClInclude Include="IFrameSourceTest.h" />
