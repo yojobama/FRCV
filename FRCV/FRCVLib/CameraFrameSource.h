@@ -3,6 +3,12 @@
 #include <vector>
 #include <string>
 #include <opencv2/opencv.hpp>
+#include <dirent.h>
+#include <sys/ioctl.h>
+#include <linux/videodev2.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <cstring>
 
 class CameraFrameSource : IFrameSource 
 {
@@ -14,7 +20,6 @@ public:
 	
 	std::string getDevicePath();
 	std::string getDeviceName();
-	void setDeviceName(std::string deviceName);
 
 	Frame* getFrame();
 private:
