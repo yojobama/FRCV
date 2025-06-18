@@ -20,6 +20,7 @@ public:
 	
 	std::string getDevicePath();
 	std::string getDeviceName();
+	void changeDeviceName(std::string newName);
 
 	Frame* getFrame();
 private:

@@ -14,6 +14,25 @@ CameraFrameSource::CameraFrameSource(std::string devicePath, std::string deviceN
 	this->devicePath = devicePath;
 }
 
+CameraFrameSource::~CameraFrameSource()
+{
+    delete capture;
+}
+
+std::string CameraFrameSource::getDevicePath()
+{
+    return devicePath;
+}
+
+std::string CameraFrameSource::getDeviceName()
+{
+    return deviceName;
+}
+
+void CameraFrameSource::changeDeviceName(std::string newName)
+{
+    this->deviceName = newName;
+}
 
 std::vector<CameraFrameSource> enumerateCameras()
 {
@@ -32,7 +51,24 @@ std::vector<CameraFrameSource> enumerateCameras()
             struct v4l2_capability cap;
             std::string deviceName = devicePath;
             if (ioctl(fd, VIDIOC_QUERYCAP, &cap) == 0) {
-                deviceName = reinterpret_cast<char*>(cap.card);
+                // Use the card name as the device name, replacing spaces and non-alphanumerics with underscores
+                std::string rawName = reinterpret_cast<char*>(cap.card);
+                std::string formattedName;
+                for (char c : rawName) {
+                    if (isalnum(static_cast<unsigned char>(c))) {
+                        formattedName += c;
+                    } else if (c == ' ' || c == '-' || c == '.') {
+                        formattedName += '_';
+                    }
+                    // skip other non-alphanumerics
+                }
+                // Remove leading/trailing underscores
+                size_t start = formattedName.find_first_not_of('_');
+                size_t end = formattedName.find_last_not_of('_');
+                if (start != std::string::npos && end != std::string::npos) {
+                    formattedName = formattedName.substr(start, end - start + 1);
+                }
+                deviceName = formattedName;
             }
             close(fd);
 
@@ -41,4 +77,8 @@ std::vector<CameraFrameSource> enumerateCameras()
     }
     closedir(dir);
     return cameras;
+}
+
+Frame* CameraFrameSource::getFrame() {
+    return nullptr;
 }

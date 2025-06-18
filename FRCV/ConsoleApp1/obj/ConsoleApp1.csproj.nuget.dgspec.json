@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Projects\\FRCV\\FRCV\\ConsoleApp1\\ConsoleApp1.csproj": {}
+    "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\ConsoleApp1\\ConsoleApp1.csproj": {}
   },
   "projects": {
-    "D:\\Projects\\FRCV\\FRCV\\ConsoleApp1\\ConsoleApp1.csproj": {
+    "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\ConsoleApp1\\ConsoleApp1.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Projects\\FRCV\\FRCV\\ConsoleApp1\\ConsoleApp1.csproj",
+        "projectUniqueName": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\ConsoleApp1\\ConsoleApp1.csproj",
         "projectName": "ConsoleApp1",
-        "projectPath": "D:\\Projects\\FRCV\\FRCV\\ConsoleApp1\\ConsoleApp1.csproj",
+        "projectPath": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\ConsoleApp1\\ConsoleApp1.csproj",
         "packagesPath": "C:\\Users\\yojob\\.nuget\\packages\\",
-        "outputPath": "D:\\Projects\\FRCV\\FRCV\\ConsoleApp1\\obj\\",
+        "outputPath": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\ConsoleApp1\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -26,15 +26,14 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj": {
-                "projectPath": "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj"
+              "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj": {
+                "projectPath": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj"
               }
             }
           }
@@ -70,15 +69,15 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.300/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
         }
       }
     },
-    "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj": {
+    "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj": {
       "restore": {
-        "projectUniqueName": "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj",
+        "projectUniqueName": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj",
         "projectName": "FRCVLib",
-        "projectPath": "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj",
+        "projectPath": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj",
         "UsingMicrosoftNETSdk": false,
         "frameworks": {
           "native": {

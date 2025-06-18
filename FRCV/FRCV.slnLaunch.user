@@ -7,5 +7,15 @@
         "Action": "Start"
       }
     ]
+  },
+  {
+    "Name": "New Profile (1)",
+    "Projects": [
+      {
+        "Path": "UnitTests\\UnitTests.vcxproj",
+        "Action": "StartWithoutDebugging",
+        "DebugTarget": "GDB Debugger"
+      }
+    ]
   }
 ]
