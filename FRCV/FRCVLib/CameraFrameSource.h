@@ -11,8 +11,6 @@ public:
 	CameraFrameSource(std::string devicePath, std::string deviceName);
 	
 	~CameraFrameSource();
-
-	std::vector<CameraFrameSource> enumerateCameras();
 	
 	std::string getDevicePath();
 	std::string getDeviceName();
@@ -25,3 +23,4 @@ private:
 	std::string deviceName;
 };
 
+std::vector<CameraFrameSource> enumerateCameras();

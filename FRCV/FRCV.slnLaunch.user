@@ -1,0 +1,11 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "ConsoleApp1\\ConsoleApp1.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

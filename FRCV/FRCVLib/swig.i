@@ -1,4 +1,4 @@
-%module Native
+%module FRCVCore
 %{
 #include "Logger.h"
 #include "IFrameSource.h"
@@ -24,7 +24,9 @@
 %include "std_vector.i"
 
 namespace std {
+    %template(VectorString) vector<string>;
     %template(VectorLogger) vector<Logger>;
+    %template(VectorLog) vector<Log>;
     %template(VectorIFrameSource) vector<IFrameSource>;
     %template(VectorImageFileFrameSource) vector<ImageFileFrameSource>;
     %template(VectorVideoFileFrameSource) vector<VideoFileFrameSource>;
@@ -62,3 +64,5 @@ namespace std {
 %include "SingleSourcePipeline.h"
 %include "IPipeline.h"
 %include "SterioPipeline.h"
+
+%template(ApriltagDetectionPipeline) SingleSourcePipeline<ApriltagDetection>;
