@@ -13,8 +13,8 @@
 class CameraFrameSource : IFrameSource 
 {
 public:
-	CameraFrameSource(std::string devicePath);
-	CameraFrameSource(std::string devicePath, std::string deviceName);
+	CameraFrameSource(std::string devicePath, Logger* logger, FramePool* framePool);
+	CameraFrameSource(std::string devicePath, std::string deviceName, Logger* logger, FramePool* framePool);
 	
 	~CameraFrameSource();
 	

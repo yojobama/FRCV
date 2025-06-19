@@ -6,7 +6,7 @@
 class VideoFileFrameSource : public IFrameSource
 {
 public:
-	VideoFileFrameSource(Logger* logger, std::string filePath);
+	VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool);
 	Frame* getFrame();
 private:
 	Logger* logger;

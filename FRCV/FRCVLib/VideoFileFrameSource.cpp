@@ -1,7 +1,7 @@
 #include "VideoFileFrameSource.h"
 #include "ImageFileFrameSource.h"
 
-VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath)
+VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool) : IFrameSource(framePool, logger)
 {
 	this->logger = logger;
 	logger->enterLog(INFO, "initializing a video file capture device");
@@ -10,5 +10,12 @@ VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath)
 
 Frame* VideoFileFrameSource::getFrame()
 {
-	return nullptr;
+    Frame* frame = framePool->getFrame(frameSpec);
+    if (capture->isOpened()) {
+        logger->enterLog(INFO, "camera is open, grabbing frame and returning it");
+        capture->read(*frame);
+        return frame;
+    }
+    logger->enterLog(ERROR, "camera is closed, returning a null pointer");
+    return nullptr;
 }

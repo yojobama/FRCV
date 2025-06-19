@@ -1,13 +1,13 @@
 #include "CameraFrameSource.h"
 
-CameraFrameSource::CameraFrameSource(std::string devicePath)
+CameraFrameSource::CameraFrameSource(std::string devicePath, Logger* logger, FramePool* framePool) : IFrameSource(framePool, logger)
 {
-	capture = new cv::VideoCapture(devicePath, cv::CAP_V4L2);
-	this->devicePath = devicePath;
-	this->deviceName = getDeviceName();
+    capture = new cv::VideoCapture(devicePath, cv::CAP_V4L2);
+    this->devicePath = devicePath;
+    this->deviceName = getDeviceName();
 }
 
-CameraFrameSource::CameraFrameSource(std::string devicePath, std::string deviceName)
+CameraFrameSource::CameraFrameSource(std::string devicePath, std::string deviceName, Logger* logger, FramePool* framePool) : IFrameSource(framePool, logger)
 {
 	capture = new cv::VideoCapture(devicePath, cv::CAP_V4L2);
 	this->deviceName = deviceName;
@@ -79,6 +79,13 @@ std::vector<CameraFrameSource> enumerateCameras()
     return cameras;
 }
 
-Frame* CameraFrameSource::getFrame() {
-    return nullptr;
+Frame* CameraFrameSource::getFrame() {  
+    Frame* frame = framePool->getFrame(frameSpec);  
+    if (capture->isOpened()) {  
+        logger->enterLog(INFO, "camera is open, grabbing frame and returning it");
+        capture->read(*frame);
+        return frame;
+    }
+    logger->enterLog(ERROR, "camera is closed, returning a null pointer");
+    return nullptr;  
 }

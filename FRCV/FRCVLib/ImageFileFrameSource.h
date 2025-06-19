@@ -9,7 +9,7 @@
 class ImageFileFrameSource : public IFrameSource
 {
 public:
-	ImageFileFrameSource(std::string filePath);
+	ImageFileFrameSource(std::string filePath, Logger* logger);
 	Frame* getFrame();
 private:
 	Frame* frame;
