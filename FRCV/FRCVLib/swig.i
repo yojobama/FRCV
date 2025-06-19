@@ -46,6 +46,9 @@ namespace std {
     %template(VectorSterioPipeline) vector<SterioPipeline>;
 }
 
+%ignore Frame;
+
+
 %include "Logger.h"
 %include "IFrameSource.h"
 %include "ImageFileFrameSource.h"
@@ -55,8 +58,11 @@ namespace std {
 %include "Frame.h"
 %include "FrameSpec.h"
 %include "ApriltagDetection.h"
-%include "ApriltagSink.h"
 %include "ISink.h"
+
+%template(ApriltagDetectionSink) ISink<ApriltagDetection>;
+
+%include "ApriltagSink.h"
 %include "IObjectDetectionSink.h"
 %include "RknnSink.h"
 %include "TRTSink.h"
@@ -65,4 +71,5 @@ namespace std {
 %include "IPipeline.h"
 %include "SterioPipeline.h"
 
+%template(ApriltagDetectionPipelineBase) IPipeline<ApriltagDetection>;
 %template(ApriltagDetectionPipeline) SingleSourcePipeline<ApriltagDetection>;

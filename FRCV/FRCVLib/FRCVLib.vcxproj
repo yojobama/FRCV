@@ -121,6 +121,7 @@
     <ClCompile Include="RknnSink.cpp" />
     <ClCompile Include="SingleSourcePipeline.cpp" />
     <ClCompile Include="SterioPipeline.cpp" />
+    <ClCompile Include="swig_wrap.cxx" />
     <ClCompile Include="TRTSink.cpp" />
     <ClCompile Include="VideoFileFrameSource.cpp" />
   </ItemGroup>

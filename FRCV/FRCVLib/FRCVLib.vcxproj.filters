@@ -54,6 +54,9 @@
     <ClCompile Include="Frame.cpp" />
     <ClCompile Include="ApriltagDetection.cpp" />
     <ClCompile Include="PreProcessor.cpp" />
+    <ClCompile Include="CameraCalibrationPipeline.cpp" />
+    <ClCompile Include="CameraCalibrationResult.cpp" />
+    <ClCompile Include="swig_wrap.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraFrameSource.h">
@@ -99,6 +102,8 @@
     <ClInclude Include="FRCVLib.h" />
     <ClInclude Include="ApriltagDetection.h" />
     <ClInclude Include="PreProcessor.h" />
+    <ClInclude Include="CameraCalibrationPipeline.h" />
+    <ClInclude Include="CameraCalibrationResult.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />
