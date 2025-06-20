@@ -34,9 +34,9 @@ void CameraFrameSource::changeDeviceName(std::string newName)
     this->deviceName = newName;
 }
 
-std::vector<CameraFrameSource> enumerateCameras()
+std::vector<std::string> enumerateCameraPaths()
 {
-    std::vector<CameraFrameSource> cameras;
+    std::vector<std::string> cameras;
     const char* video_dir = "/dev/";
     DIR* dir = opendir(video_dir);
     if (!dir) return cameras;
@@ -72,7 +72,7 @@ std::vector<CameraFrameSource> enumerateCameras()
             }
             close(fd);
 
-            cameras.emplace_back(devicePath, deviceName);
+            cameras.emplace_back(devicePath);
         }
     }
     closedir(dir);
