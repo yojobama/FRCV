@@ -1,4 +1,4 @@
-#include "CameraFrameSource.h"
+#include "CameraSource.h"
 
 CameraFrameSource::CameraFrameSource(std::string devicePath, Logger* logger, FramePool* framePool) : ISource(framePool, logger)
 {

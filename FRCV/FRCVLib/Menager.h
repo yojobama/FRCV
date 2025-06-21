@@ -9,6 +9,13 @@
 #include "ImageFileSource.h"
 #include "VideoFileSource.h"
 #include "ApriltagSink.h"
+#include <sys/ioctl.h>
+#include <linux/videodev2.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <cstring>
+#include <iostream>
+#include <dirent.h>
 
 using namespace std;
 
