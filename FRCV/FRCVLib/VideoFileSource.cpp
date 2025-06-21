@@ -1,7 +1,7 @@
 #include "VideoFileFrameSource.h"
 #include "ImageFileFrameSource.h"
 
-VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool) : IFrameSource(framePool, logger)
+VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool) : ISource(framePool, logger)
 {
 	this->logger = logger;
 	logger->enterLog(INFO, "initializing a video file capture device");

@@ -5,15 +5,16 @@
 #include "ApriltagDetection.h"
 #include <vector>
 #include "Logger.h"
+#include <string>
 
 // Forward declare Logger to avoid header conflicts
 
-class ApriltagSink : public ISink<ApriltagDetection>
+class ApriltagSink : public ISink
 {
 public:
 	ApriltagSink(Logger* logger);
     ~ApriltagSink();
-	std::vector<ApriltagDetection> getResults(Frame* frame);
+	std::vector<std::string> getResults();
 private:
 	apriltag_family_t* family;
 	apriltag_detector_t* detector;

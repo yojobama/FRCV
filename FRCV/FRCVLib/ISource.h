@@ -5,11 +5,11 @@
 #include "FramePool.h"
 #include "FrameSpec.h"
 
-class IFrameSource
+class ISource
 {
 public:
-	IFrameSource(FramePool* framePool, Logger* logger);
-	~IFrameSource() = default;
+	ISource(FramePool* framePool, Logger* logger);
+	~ISource() = default;
 	virtual Frame* getFrame() = 0;
 protected:
 	FramePool* framePool;

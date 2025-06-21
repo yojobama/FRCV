@@ -8,13 +8,13 @@ template<class Result>
 class SingleSourcePipeline : public IPipeline<Result> // Fixed inheritance
 {
 public:
-	SingleSourcePipeline(IFrameSource* frameSource, ISink<Result>* sink, Logger* logger) 
+	SingleSourcePipeline(ISource* frameSource, ISink<Result>* sink, Logger* logger) 
 		: IPipeline<Result>(logger), frameSource(frameSource), sink(sink), logger(logger), currentFrame(nullptr) {}
 	~SingleSourcePipeline();
 	std::vector<Result>* getResults();
 private:
 	std::vector<Result>* results; // Fixed missing member declaration
-	IFrameSource* frameSource;
+	ISource* frameSource;
 	ISink<Result>* sink; // Fixed missing template argument
 	Logger* logger;
 	Frame* currentFrame;
@@ -25,6 +25,7 @@ inline SingleSourcePipeline<Result>::~SingleSourcePipeline()
 {
 	logger->enterLog(INFO, "deleting a single source pipeline");
 }
+
 
 template<class Result>
 inline std::vector<Result>* SingleSourcePipeline<Result>::getResults()

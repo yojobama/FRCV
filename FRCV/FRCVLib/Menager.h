@@ -3,7 +3,9 @@
 #include <string>
 #include <map>
 #include "ISink.h"
-#include "IFrameSource.h"
+#include "ImageFileSource.h"
+#include "VideoFileSource.h"
+#include "ApriltagSink.h"
 
 using namespace std;
 
@@ -29,8 +31,8 @@ public:
 	vector<int> getAllSinks();
 
 	vector<CameraHardwareInfo> enumerateAvailableCameras();
-	bool bindSourceToSink(int source, int sink);
-	bool unbindSourceFromSink(int source, int sink);
+	bool bindSourceToSink(int sourceId, int sinkId);
+	bool unbindSourceFromSink(int sinkId);
 
 	// functions to create frame sources
 	int createCameraSource(CameraHardwareInfo info);
@@ -53,9 +55,15 @@ public:
 private:
 	void setSinkResult(int sinkId, string result);
 
+	int generateUUID();
+
 	// maps for storing results, sources and sinks
 	map<int, string> results;
-	map<int, IFrameSource> sources;
-	map<int, ISink> sinks; // TODO: make the sink return a json result
+	map<int, ISource> sources;
+	map<int, ISink> sinks;
+
+	FramePool framePool;
+
+	Logger* logger; // a logger for the entire application
 };
 

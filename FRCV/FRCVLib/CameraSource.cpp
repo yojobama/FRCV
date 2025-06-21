@@ -1,13 +1,13 @@
 #include "CameraFrameSource.h"
 
-CameraFrameSource::CameraFrameSource(std::string devicePath, Logger* logger, FramePool* framePool) : IFrameSource(framePool, logger)
+CameraFrameSource::CameraFrameSource(std::string devicePath, Logger* logger, FramePool* framePool) : ISource(framePool, logger)
 {
     capture = new cv::VideoCapture(devicePath, cv::CAP_V4L2);
     this->devicePath = devicePath;
     this->deviceName = getDeviceName();
 }
 
-CameraFrameSource::CameraFrameSource(std::string devicePath, std::string deviceName, Logger* logger, FramePool* framePool) : IFrameSource(framePool, logger)
+CameraFrameSource::CameraFrameSource(std::string devicePath, std::string deviceName, Logger* logger, FramePool* framePool) : ISource(framePool, logger)
 {
 	capture = new cv::VideoCapture(devicePath, cv::CAP_V4L2);
 	this->deviceName = deviceName;

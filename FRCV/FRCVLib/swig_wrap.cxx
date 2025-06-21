@@ -682,65 +682,65 @@ SWIGINTERN void std_vector_Sl_Log_Sg__SetRange(std::vector< Log > *self,int inde
           throw std::out_of_range("index");
         std::copy(values.begin(), values.end(), self->begin()+index);
       }
-SWIGINTERN std::vector< IFrameSource > *new_std_vector_Sl_IFrameSource_Sg___SWIG_2(int capacity){
-        std::vector< IFrameSource >* pv = 0;
+SWIGINTERN std::vector< ISource > *new_std_vector_Sl_IFrameSource_Sg___SWIG_2(int capacity){
+        std::vector< ISource >* pv = 0;
         if (capacity >= 0) {
-          pv = new std::vector< IFrameSource >();
+          pv = new std::vector< ISource >();
           pv->reserve(capacity);
        } else {
           throw std::out_of_range("capacity");
        }
        return pv;
       }
-SWIGINTERN IFrameSource std_vector_Sl_IFrameSource_Sg__getitemcopy(std::vector< IFrameSource > *self,int index){
+SWIGINTERN ISource std_vector_Sl_IFrameSource_Sg__getitemcopy(std::vector< ISource > *self,int index){
         if (index>=0 && index<(int)self->size())
           return (*self)[index];
         else
           throw std::out_of_range("index");
       }
-SWIGINTERN std::vector< IFrameSource >::value_type const &std_vector_Sl_IFrameSource_Sg__getitem(std::vector< IFrameSource > *self,int index){
+SWIGINTERN std::vector< ISource >::value_type const &std_vector_Sl_IFrameSource_Sg__getitem(std::vector< ISource > *self,int index){
         if (index>=0 && index<(int)self->size())
           return (*self)[index];
         else
           throw std::out_of_range("index");
       }
-SWIGINTERN void std_vector_Sl_IFrameSource_Sg__setitem(std::vector< IFrameSource > *self,int index,IFrameSource const &val){
+SWIGINTERN void std_vector_Sl_IFrameSource_Sg__setitem(std::vector< ISource > *self,int index,ISource const &val){
         if (index>=0 && index<(int)self->size())
           (*self)[index] = val;
         else
           throw std::out_of_range("index");
       }
-SWIGINTERN void std_vector_Sl_IFrameSource_Sg__AddRange(std::vector< IFrameSource > *self,std::vector< IFrameSource > const &values){
+SWIGINTERN void std_vector_Sl_IFrameSource_Sg__AddRange(std::vector< ISource > *self,std::vector< ISource > const &values){
         self->insert(self->end(), values.begin(), values.end());
       }
-SWIGINTERN std::vector< IFrameSource > *std_vector_Sl_IFrameSource_Sg__GetRange(std::vector< IFrameSource > *self,int index,int count){
+SWIGINTERN std::vector< ISource > *std_vector_Sl_IFrameSource_Sg__GetRange(std::vector< ISource > *self,int index,int count){
         if (index < 0)
           throw std::out_of_range("index");
         if (count < 0)
           throw std::out_of_range("count");
         if (index >= (int)self->size()+1 || index+count > (int)self->size())
           throw std::invalid_argument("invalid range");
-        return new std::vector< IFrameSource >(self->begin()+index, self->begin()+index+count);
+        return new std::vector< ISource >(self->begin()+index, self->begin()+index+count);
       }
-SWIGINTERN void std_vector_Sl_IFrameSource_Sg__Insert(std::vector< IFrameSource > *self,int index,IFrameSource const &x){
+SWIGINTERN void std_vector_Sl_IFrameSource_Sg__Insert(std::vector< ISource > *self,int index,ISource const &x){
         if (index>=0 && index<(int)self->size()+1)
           self->insert(self->begin()+index, x);
         else
           throw std::out_of_range("index");
       }
-SWIGINTERN void std_vector_Sl_IFrameSource_Sg__InsertRange(std::vector< IFrameSource > *self,int index,std::vector< IFrameSource > const &values){
+SWIGINTERN void std_vector_Sl_IFrameSource_Sg__InsertRange(std::vector< ISource > *self,int index,std::vector< ISource > const &values){
         if (index>=0 && index<(int)self->size()+1)
           self->insert(self->begin()+index, values.begin(), values.end());
         else
           throw std::out_of_range("index");
       }
-SWIGINTERN void std_vector_Sl_IFrameSource_Sg__RemoveAt(std::vector< IFrameSource > *self,int index){
+SWIGINTERN void std_vector_Sl_IFrameSource_Sg__RemoveAt(std::vector< ISource > *self,int index){
         if (index>=0 && index<(int)self->size())
           self->erase(self->begin() + index);
         else
           throw std::out_of_range("index");
       }
-SWIGINTERN void std_vector_Sl_IFrameSource_Sg__RemoveRange(std::vector< IFrameSource > *self,int index,int count){
+SWIGINTERN void std_vector_Sl_IFrameSource_Sg__RemoveRange(std::vector< ISource > *self,int index,int count){
         if (index < 0)
           throw std::out_of_range("index");
         if (count < 0)
@@ -749,15 +749,15 @@ SWIGINTERN void std_vector_Sl_IFrameSource_Sg__RemoveRange(std::vector< IFrameSo
           throw std::invalid_argument("invalid range");
         self->erase(self->begin()+index, self->begin()+index+count);
       }
-SWIGINTERN std::vector< IFrameSource > *std_vector_Sl_IFrameSource_Sg__Repeat(IFrameSource const &value,int count){
+SWIGINTERN std::vector< ISource > *std_vector_Sl_IFrameSource_Sg__Repeat(ISource const &value,int count){
         if (count < 0)
           throw std::out_of_range("count");
-        return new std::vector< IFrameSource >(count, value);
+        return new std::vector< ISource >(count, value);
       }
-SWIGINTERN void std_vector_Sl_IFrameSource_Sg__Reverse__SWIG_0(std::vector< IFrameSource > *self){
+SWIGINTERN void std_vector_Sl_IFrameSource_Sg__Reverse__SWIG_0(std::vector< ISource > *self){
         std::reverse(self->begin(), self->end());
       }
-SWIGINTERN void std_vector_Sl_IFrameSource_Sg__Reverse__SWIG_1(std::vector< IFrameSource > *self,int index,int count){
+SWIGINTERN void std_vector_Sl_IFrameSource_Sg__Reverse__SWIG_1(std::vector< ISource > *self,int index,int count){
         if (index < 0)
           throw std::out_of_range("index");
         if (count < 0)
@@ -766,7 +766,7 @@ SWIGINTERN void std_vector_Sl_IFrameSource_Sg__Reverse__SWIG_1(std::vector< IFra
           throw std::invalid_argument("invalid range");
         std::reverse(self->begin()+index, self->begin()+index+count);
       }
-SWIGINTERN void std_vector_Sl_IFrameSource_Sg__SetRange(std::vector< IFrameSource > *self,int index,std::vector< IFrameSource > const &values){
+SWIGINTERN void std_vector_Sl_IFrameSource_Sg__SetRange(std::vector< ISource > *self,int index,std::vector< ISource > const &values){
         if (index < 0)
           throw std::out_of_range("index");
         if (index+values.size() > self->size())
@@ -3411,9 +3411,9 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_VectorLog(void * jarg1) {
 
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_VectorIFrameSource__SWIG_0() {
   void * jresult ;
-  std::vector< IFrameSource > *result = 0 ;
+  std::vector< ISource > *result = 0 ;
   
-  result = (std::vector< IFrameSource > *)new std::vector< IFrameSource >();
+  result = (std::vector< ISource > *)new std::vector< ISource >();
   jresult = (void *)result; 
   return jresult;
 }
@@ -3421,49 +3421,49 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_new_VectorIFrameSource__SWIG_0() {
 
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_VectorIFrameSource__SWIG_1(void * jarg1) {
   void * jresult ;
-  std::vector< IFrameSource > *arg1 = 0 ;
-  std::vector< IFrameSource > *result = 0 ;
+  std::vector< ISource > *arg1 = 0 ;
+  std::vector< ISource > *result = 0 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1;
+  arg1 = (std::vector< ISource > *)jarg1;
   if (!arg1) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "std::vector< IFrameSource > const & is null", 0);
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "std::vector< ISource > const & is null", 0);
     return 0;
   } 
-  result = (std::vector< IFrameSource > *)new std::vector< IFrameSource >((std::vector< IFrameSource > const &)*arg1);
+  result = (std::vector< ISource > *)new std::vector< ISource >((std::vector< ISource > const &)*arg1);
   jresult = (void *)result; 
   return jresult;
 }
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_Clear(void * jarg1) {
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
+  arg1 = (std::vector< ISource > *)jarg1; 
   (arg1)->clear();
 }
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_Add(void * jarg1, void * jarg2) {
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
-  IFrameSource *arg2 = 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
+  ISource *arg2 = 0 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
-  arg2 = (IFrameSource *)jarg2;
+  arg1 = (std::vector< ISource > *)jarg1; 
+  arg2 = (ISource *)jarg2;
   if (!arg2) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "IFrameSource const & is null", 0);
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "ISource const & is null", 0);
     return ;
   } 
-  (arg1)->push_back((IFrameSource const &)*arg2);
+  (arg1)->push_back((ISource const &)*arg2);
 }
 
 
 SWIGEXPORT unsigned int SWIGSTDCALL CSharp_VectorIFrameSource_size(void * jarg1) {
   unsigned int jresult ;
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
-  std::vector< IFrameSource >::size_type result;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
+  std::vector< ISource >::size_type result;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
-  result = ((std::vector< IFrameSource > const *)arg1)->size();
+  arg1 = (std::vector< ISource > *)jarg1; 
+  result = ((std::vector< ISource > const *)arg1)->size();
   jresult = (unsigned int)result; 
   return jresult;
 }
@@ -3471,11 +3471,11 @@ SWIGEXPORT unsigned int SWIGSTDCALL CSharp_VectorIFrameSource_size(void * jarg1)
 
 SWIGEXPORT unsigned int SWIGSTDCALL CSharp_VectorIFrameSource_empty(void * jarg1) {
   unsigned int jresult ;
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   bool result;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
-  result = (bool)((std::vector< IFrameSource > const *)arg1)->empty();
+  arg1 = (std::vector< ISource > *)jarg1; 
+  result = (bool)((std::vector< ISource > const *)arg1)->empty();
   jresult = result; 
   return jresult;
 }
@@ -3483,22 +3483,22 @@ SWIGEXPORT unsigned int SWIGSTDCALL CSharp_VectorIFrameSource_empty(void * jarg1
 
 SWIGEXPORT unsigned int SWIGSTDCALL CSharp_VectorIFrameSource_capacity(void * jarg1) {
   unsigned int jresult ;
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
-  std::vector< IFrameSource >::size_type result;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
+  std::vector< ISource >::size_type result;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
-  result = ((std::vector< IFrameSource > const *)arg1)->capacity();
+  arg1 = (std::vector< ISource > *)jarg1; 
+  result = ((std::vector< ISource > const *)arg1)->capacity();
   jresult = (unsigned int)result; 
   return jresult;
 }
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_reserve(void * jarg1, unsigned int jarg2) {
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
-  std::vector< IFrameSource >::size_type arg2 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
+  std::vector< ISource >::size_type arg2 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
-  arg2 = (std::vector< IFrameSource >::size_type)jarg2; 
+  arg1 = (std::vector< ISource > *)jarg1; 
+  arg2 = (std::vector< ISource >::size_type)jarg2; 
   (arg1)->reserve(SWIG_STD_MOVE(arg2));
 }
 
@@ -3506,11 +3506,11 @@ SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_reserve(void * jarg1, unsi
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_VectorIFrameSource__SWIG_2(int jarg1) {
   void * jresult ;
   int arg1 ;
-  std::vector< IFrameSource > *result = 0 ;
+  std::vector< ISource > *result = 0 ;
   
   arg1 = (int)jarg1; 
   try {
-    result = (std::vector< IFrameSource > *)new_std_vector_Sl_IFrameSource_Sg___SWIG_2(arg1);
+    result = (std::vector< ISource > *)new_std_vector_Sl_IFrameSource_Sg___SWIG_2(arg1);
   } catch(std::out_of_range &_e) {
     SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentOutOfRangeException, 0, (&_e)->what());
     return 0;
@@ -3522,11 +3522,11 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_new_VectorIFrameSource__SWIG_2(int jarg1) {
 
 SWIGEXPORT void * SWIGSTDCALL CSharp_VectorIFrameSource_getitemcopy(void * jarg1, int jarg2) {
   void * jresult ;
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   int arg2 ;
-  SwigValueWrapper< IFrameSource > result;
+  SwigValueWrapper< ISource > result;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
+  arg1 = (std::vector< ISource > *)jarg1; 
   arg2 = (int)jarg2; 
   try {
     result = std_vector_Sl_IFrameSource_Sg__getitemcopy(arg1,arg2);
@@ -3534,21 +3534,21 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_VectorIFrameSource_getitemcopy(void * jarg1
     SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentOutOfRangeException, 0, (&_e)->what());
     return 0;
   }
-  jresult = new IFrameSource(result); 
+  jresult = new ISource(result); 
   return jresult;
 }
 
 
 SWIGEXPORT void * SWIGSTDCALL CSharp_VectorIFrameSource_getitem(void * jarg1, int jarg2) {
   void * jresult ;
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   int arg2 ;
-  std::vector< IFrameSource >::value_type *result = 0 ;
+  std::vector< ISource >::value_type *result = 0 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
+  arg1 = (std::vector< ISource > *)jarg1; 
   arg2 = (int)jarg2; 
   try {
-    result = (std::vector< IFrameSource >::value_type *) &std_vector_Sl_IFrameSource_Sg__getitem(arg1,arg2);
+    result = (std::vector< ISource >::value_type *) &std_vector_Sl_IFrameSource_Sg__getitem(arg1,arg2);
   } catch(std::out_of_range &_e) {
     SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentOutOfRangeException, 0, (&_e)->what());
     return 0;
@@ -3559,19 +3559,19 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_VectorIFrameSource_getitem(void * jarg1, in
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_setitem(void * jarg1, int jarg2, void * jarg3) {
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   int arg2 ;
-  IFrameSource *arg3 = 0 ;
+  ISource *arg3 = 0 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
+  arg1 = (std::vector< ISource > *)jarg1; 
   arg2 = (int)jarg2; 
-  arg3 = (IFrameSource *)jarg3;
+  arg3 = (ISource *)jarg3;
   if (!arg3) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "IFrameSource const & is null", 0);
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "ISource const & is null", 0);
     return ;
   } 
   try {
-    std_vector_Sl_IFrameSource_Sg__setitem(arg1,arg2,(IFrameSource const &)*arg3);
+    std_vector_Sl_IFrameSource_Sg__setitem(arg1,arg2,(ISource const &)*arg3);
   } catch(std::out_of_range &_e) {
     SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentOutOfRangeException, 0, (&_e)->what());
     return ;
@@ -3580,31 +3580,31 @@ SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_setitem(void * jarg1, int 
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_AddRange(void * jarg1, void * jarg2) {
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
-  std::vector< IFrameSource > *arg2 = 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
+  std::vector< ISource > *arg2 = 0 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
-  arg2 = (std::vector< IFrameSource > *)jarg2;
+  arg1 = (std::vector< ISource > *)jarg1; 
+  arg2 = (std::vector< ISource > *)jarg2;
   if (!arg2) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "std::vector< IFrameSource > const & is null", 0);
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "std::vector< ISource > const & is null", 0);
     return ;
   } 
-  std_vector_Sl_IFrameSource_Sg__AddRange(arg1,(std::vector< IFrameSource > const &)*arg2);
+  std_vector_Sl_IFrameSource_Sg__AddRange(arg1,(std::vector< ISource > const &)*arg2);
 }
 
 
 SWIGEXPORT void * SWIGSTDCALL CSharp_VectorIFrameSource_GetRange(void * jarg1, int jarg2, int jarg3) {
   void * jresult ;
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   int arg2 ;
   int arg3 ;
-  std::vector< IFrameSource > *result = 0 ;
+  std::vector< ISource > *result = 0 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
+  arg1 = (std::vector< ISource > *)jarg1; 
   arg2 = (int)jarg2; 
   arg3 = (int)jarg3; 
   try {
-    result = (std::vector< IFrameSource > *)std_vector_Sl_IFrameSource_Sg__GetRange(arg1,arg2,arg3);
+    result = (std::vector< ISource > *)std_vector_Sl_IFrameSource_Sg__GetRange(arg1,arg2,arg3);
   } catch(std::out_of_range &_e) {
     SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentOutOfRangeException, 0, (&_e)->what());
     return 0;
@@ -3618,19 +3618,19 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_VectorIFrameSource_GetRange(void * jarg1, i
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_Insert(void * jarg1, int jarg2, void * jarg3) {
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   int arg2 ;
-  IFrameSource *arg3 = 0 ;
+  ISource *arg3 = 0 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
+  arg1 = (std::vector< ISource > *)jarg1; 
   arg2 = (int)jarg2; 
-  arg3 = (IFrameSource *)jarg3;
+  arg3 = (ISource *)jarg3;
   if (!arg3) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "IFrameSource const & is null", 0);
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "ISource const & is null", 0);
     return ;
   } 
   try {
-    std_vector_Sl_IFrameSource_Sg__Insert(arg1,arg2,(IFrameSource const &)*arg3);
+    std_vector_Sl_IFrameSource_Sg__Insert(arg1,arg2,(ISource const &)*arg3);
   } catch(std::out_of_range &_e) {
     SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentOutOfRangeException, 0, (&_e)->what());
     return ;
@@ -3639,19 +3639,19 @@ SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_Insert(void * jarg1, int j
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_InsertRange(void * jarg1, int jarg2, void * jarg3) {
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   int arg2 ;
-  std::vector< IFrameSource > *arg3 = 0 ;
+  std::vector< ISource > *arg3 = 0 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
+  arg1 = (std::vector< ISource > *)jarg1; 
   arg2 = (int)jarg2; 
-  arg3 = (std::vector< IFrameSource > *)jarg3;
+  arg3 = (std::vector< ISource > *)jarg3;
   if (!arg3) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "std::vector< IFrameSource > const & is null", 0);
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "std::vector< ISource > const & is null", 0);
     return ;
   } 
   try {
-    std_vector_Sl_IFrameSource_Sg__InsertRange(arg1,arg2,(std::vector< IFrameSource > const &)*arg3);
+    std_vector_Sl_IFrameSource_Sg__InsertRange(arg1,arg2,(std::vector< ISource > const &)*arg3);
   } catch(std::out_of_range &_e) {
     SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentOutOfRangeException, 0, (&_e)->what());
     return ;
@@ -3660,10 +3660,10 @@ SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_InsertRange(void * jarg1, 
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_RemoveAt(void * jarg1, int jarg2) {
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   int arg2 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
+  arg1 = (std::vector< ISource > *)jarg1; 
   arg2 = (int)jarg2; 
   try {
     std_vector_Sl_IFrameSource_Sg__RemoveAt(arg1,arg2);
@@ -3675,11 +3675,11 @@ SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_RemoveAt(void * jarg1, int
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_RemoveRange(void * jarg1, int jarg2, int jarg3) {
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   int arg2 ;
   int arg3 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
+  arg1 = (std::vector< ISource > *)jarg1; 
   arg2 = (int)jarg2; 
   arg3 = (int)jarg3; 
   try {
@@ -3696,18 +3696,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_RemoveRange(void * jarg1, 
 
 SWIGEXPORT void * SWIGSTDCALL CSharp_VectorIFrameSource_Repeat(void * jarg1, int jarg2) {
   void * jresult ;
-  IFrameSource *arg1 = 0 ;
+  ISource *arg1 = 0 ;
   int arg2 ;
-  std::vector< IFrameSource > *result = 0 ;
+  std::vector< ISource > *result = 0 ;
   
-  arg1 = (IFrameSource *)jarg1;
+  arg1 = (ISource *)jarg1;
   if (!arg1) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "IFrameSource const & is null", 0);
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "ISource const & is null", 0);
     return 0;
   } 
   arg2 = (int)jarg2; 
   try {
-    result = (std::vector< IFrameSource > *)std_vector_Sl_IFrameSource_Sg__Repeat((IFrameSource const &)*arg1,arg2);
+    result = (std::vector< ISource > *)std_vector_Sl_IFrameSource_Sg__Repeat((ISource const &)*arg1,arg2);
   } catch(std::out_of_range &_e) {
     SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentOutOfRangeException, 0, (&_e)->what());
     return 0;
@@ -3718,19 +3718,19 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_VectorIFrameSource_Repeat(void * jarg1, int
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_Reverse__SWIG_0(void * jarg1) {
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
+  arg1 = (std::vector< ISource > *)jarg1; 
   std_vector_Sl_IFrameSource_Sg__Reverse__SWIG_0(arg1);
 }
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_Reverse__SWIG_1(void * jarg1, int jarg2, int jarg3) {
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   int arg2 ;
   int arg3 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
+  arg1 = (std::vector< ISource > *)jarg1; 
   arg2 = (int)jarg2; 
   arg3 = (int)jarg3; 
   try {
@@ -3746,19 +3746,19 @@ SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_Reverse__SWIG_1(void * jar
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_SetRange(void * jarg1, int jarg2, void * jarg3) {
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   int arg2 ;
-  std::vector< IFrameSource > *arg3 = 0 ;
+  std::vector< ISource > *arg3 = 0 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
+  arg1 = (std::vector< ISource > *)jarg1; 
   arg2 = (int)jarg2; 
-  arg3 = (std::vector< IFrameSource > *)jarg3;
+  arg3 = (std::vector< ISource > *)jarg3;
   if (!arg3) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "std::vector< IFrameSource > const & is null", 0);
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "std::vector< ISource > const & is null", 0);
     return ;
   } 
   try {
-    std_vector_Sl_IFrameSource_Sg__SetRange(arg1,arg2,(std::vector< IFrameSource > const &)*arg3);
+    std_vector_Sl_IFrameSource_Sg__SetRange(arg1,arg2,(std::vector< ISource > const &)*arg3);
   } catch(std::out_of_range &_e) {
     SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentOutOfRangeException, 0, (&_e)->what());
     return ;
@@ -3767,9 +3767,9 @@ SWIGEXPORT void SWIGSTDCALL CSharp_VectorIFrameSource_SetRange(void * jarg1, int
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_delete_VectorIFrameSource(void * jarg1) {
-  std::vector< IFrameSource > *arg1 = (std::vector< IFrameSource > *) 0 ;
+  std::vector< ISource > *arg1 = (std::vector< ISource > *) 0 ;
   
-  arg1 = (std::vector< IFrameSource > *)jarg1; 
+  arg1 = (std::vector< ISource > *)jarg1; 
   delete arg1;
 }
 
@@ -9763,19 +9763,19 @@ SWIGEXPORT void SWIGSTDCALL CSharp_Logger_clearAllLogs(void * jarg1) {
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_delete_IFrameSource(void * jarg1) {
-  IFrameSource *arg1 = (IFrameSource *) 0 ;
+  ISource *arg1 = (ISource *) 0 ;
   
-  arg1 = (IFrameSource *)jarg1; 
+  arg1 = (ISource *)jarg1; 
   delete arg1;
 }
 
 
 SWIGEXPORT void * SWIGSTDCALL CSharp_IFrameSource_getFrame(void * jarg1) {
   void * jresult ;
-  IFrameSource *arg1 = (IFrameSource *) 0 ;
+  ISource *arg1 = (ISource *) 0 ;
   Frame *result = 0 ;
   
-  arg1 = (IFrameSource *)jarg1; 
+  arg1 = (ISource *)jarg1; 
   result = (Frame *)(arg1)->getFrame();
   jresult = (void *)result; 
   return jresult;
@@ -10360,12 +10360,12 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_ApriltagDetectionPipelineBase(void * j
 
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_ApriltagDetectionPipeline(void * jarg1, void * jarg2, void * jarg3) {
   void * jresult ;
-  IFrameSource *arg1 = (IFrameSource *) 0 ;
+  ISource *arg1 = (ISource *) 0 ;
   ISink< ApriltagDetection > *arg2 = (ISink< ApriltagDetection > *) 0 ;
   Logger *arg3 = (Logger *) 0 ;
   SingleSourcePipeline< ApriltagDetection > *result = 0 ;
   
-  arg1 = (IFrameSource *)jarg1; 
+  arg1 = (ISource *)jarg1; 
   arg2 = (ISink< ApriltagDetection > *)jarg2; 
   arg3 = (Logger *)jarg3; 
   result = (SingleSourcePipeline< ApriltagDetection > *)new SingleSourcePipeline< ApriltagDetection >(arg1,arg2,arg3);
@@ -10394,16 +10394,16 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_ApriltagDetectionPipeline_getResults(void *
 }
 
 
-SWIGEXPORT IFrameSource * SWIGSTDCALL CSharp_ImageFileFrameSource_SWIGUpcast(ImageFileFrameSource *jarg1) {
-    return (IFrameSource *)jarg1;
+SWIGEXPORT ISource * SWIGSTDCALL CSharp_ImageFileFrameSource_SWIGUpcast(ImageFileFrameSource *jarg1) {
+    return (ISource *)jarg1;
 }
 
-SWIGEXPORT IFrameSource * SWIGSTDCALL CSharp_VideoFileFrameSource_SWIGUpcast(VideoFileFrameSource *jarg1) {
-    return (IFrameSource *)jarg1;
+SWIGEXPORT ISource * SWIGSTDCALL CSharp_VideoFileFrameSource_SWIGUpcast(VideoFileFrameSource *jarg1) {
+    return (ISource *)jarg1;
 }
 
-SWIGEXPORT IFrameSource * SWIGSTDCALL CSharp_CameraFrameSource_SWIGUpcast(CameraFrameSource *jarg1) {
-    return (IFrameSource *)jarg1;
+SWIGEXPORT ISource * SWIGSTDCALL CSharp_CameraFrameSource_SWIGUpcast(CameraFrameSource *jarg1) {
+    return (ISource *)jarg1;
 }
 
 SWIGEXPORT ISink< ApriltagDetection > * SWIGSTDCALL CSharp_ApriltagSink_SWIGUpcast(ApriltagSink *jarg1) {

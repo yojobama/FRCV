@@ -3,7 +3,7 @@
 #include <string>
 #include "Logger.h"
 
-class VideoFileFrameSource : public IFrameSource
+class VideoFileFrameSource : public ISource
 {
 public:
 	VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool);

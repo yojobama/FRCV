@@ -2,8 +2,7 @@
 #include <vector>
 #include <apriltag/tag36h11.h>
 
-ApriltagSink::ApriltagSink(Logger* logger) : ISink<ApriltagDetection>(logger) {
-	this->logger = logger;
+ApriltagSink::ApriltagSink(Logger* logger, ISource* source) : ISink(logger, source) {
 	this->family = tag36h11_create();
 	this->detector = apriltag_detector_create();
 	apriltag_detector_add_family(this->detector, this->family);
@@ -43,6 +42,13 @@ std::vector<ApriltagDetection> ApriltagSink::getResults(Frame* frame) {
 
 		returnVector.push_back(ApriltagDetection(*detection, pose));
 	}
+
+	std::string returnString = "{";
+
+
+	returnString += "}";
+
+
 
 	return returnVector;
 }

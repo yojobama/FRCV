@@ -84,47 +84,41 @@
     <ClInclude Include="ApriltagSink.h" />
     <ClInclude Include="CameraCalibrationPipeline.h" />
     <ClInclude Include="CameraCalibrationResult.h" />
-    <ClInclude Include="CameraFrameSource.h" />
+    <ClInclude Include="CameraSource.h" />
     <ClInclude Include="Frame.h" />
     <ClInclude Include="FramePool.h" />
     <ClInclude Include="FrameSpec.h" />
     <ClInclude Include="FRCVLib.h" />
-    <ClInclude Include="IFrameSource.h" />
-    <ClInclude Include="ImageFileFrameSource.h" />
+    <ClInclude Include="ISource.h" />
+    <ClInclude Include="ImageFileSource.h" />
     <ClInclude Include="IObjectDetectionSink.h" />
-    <ClInclude Include="IPipeline.h" />
     <ClInclude Include="ISink.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Menager.h" />
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="RknnSink.h" />
-    <ClInclude Include="SingleSourcePipeline.h" />
-    <ClInclude Include="SterioPipeline.h" />
     <ClInclude Include="TRTSink.h" />
-    <ClInclude Include="VideoFileFrameSource.h" />
+    <ClInclude Include="VideoFileSource.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApriltagDetection.cpp" />
     <ClCompile Include="ApriltagSink.cpp" />
     <ClCompile Include="CameraCalibrationPipeline.cpp" />
     <ClCompile Include="CameraCalibrationResult.cpp" />
-    <ClCompile Include="CameraFrameSource.cpp" />
+    <ClCompile Include="CameraSource.cpp" />
     <ClCompile Include="Frame.cpp" />
     <ClCompile Include="FramePool.cpp" />
     <ClCompile Include="FrameSpec.cpp" />
-    <ClCompile Include="IFrameSource.cpp" />
-    <ClCompile Include="ImageFileFrameSource.cpp" />
+    <ClCompile Include="ISource.cpp" />
+    <ClCompile Include="ImageFileSource.cpp" />
     <ClCompile Include="IObjectDetectionSink.cpp" />
-    <ClCompile Include="IPipeline.cpp" />
     <ClCompile Include="ISink.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Menager.cpp" />
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="RknnSink.cpp" />
-    <ClCompile Include="SingleSourcePipeline.cpp" />
-    <ClCompile Include="SterioPipeline.cpp" />
     <ClCompile Include="TRTSink.cpp" />
-    <ClCompile Include="VideoFileFrameSource.cpp" />
+    <ClCompile Include="VideoFileSource.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />

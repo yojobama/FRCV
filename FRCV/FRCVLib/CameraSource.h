@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <cstring>
 
-class CameraFrameSource : public IFrameSource 
+class CameraFrameSource : public ISource 
 {
 public:
 	CameraFrameSource(std::string devicePath, Logger* logger, FramePool* framePool);
