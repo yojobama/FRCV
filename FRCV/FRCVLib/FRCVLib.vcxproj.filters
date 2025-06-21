@@ -56,7 +56,7 @@
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="CameraCalibrationPipeline.cpp" />
     <ClCompile Include="CameraCalibrationResult.cpp" />
-    <ClCompile Include="swig_wrap.cxx" />
+    <ClCompile Include="Menager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CameraFrameSource.h">
@@ -104,6 +104,7 @@
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="CameraCalibrationPipeline.h" />
     <ClInclude Include="CameraCalibrationResult.h" />
+    <ClInclude Include="Menager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />
