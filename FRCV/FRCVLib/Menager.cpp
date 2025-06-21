@@ -5,6 +5,12 @@ Manager::Manager()
 	logger = new Logger();
 }
 
+Manager::~Manager()
+{
+	delete logger;
+	delete& framePool;
+}
+
 vector<int> Manager::getAllSinks()
 {
 	vector<int> returnVector;
@@ -157,6 +163,11 @@ string Manager::getAllSinkResults()
 	returnString += "]}";
 
 	return returnString;
+}
+
+vector<Log> Manager::getAllLogs()
+{
+	return logger->GetAllLogs();
 }
 
 bool Manager::setSinkResult(int sinkId, string result)

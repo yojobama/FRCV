@@ -4,6 +4,7 @@
 #include <map>
 #include <random>
 #include <chrono>
+#include <thread>
 #include "ISink.h"
 #include "ImageFileSource.h"
 #include "VideoFileSource.h"
@@ -13,7 +14,8 @@ using namespace std;
 
 // TODO: temporary, rewrite this part
 typedef struct {
-
+	string name;
+	string path;
 } CameraHardwareInfo;
 
 //enum Platform {
@@ -54,6 +56,10 @@ public:
 
 	string getSinkResult(int sinkId);
 	string getAllSinkResults();
+
+	vector<Log> getAllLogs();
+
+	void clearAllLogs();
 private:
 	bool setSinkResult(int sinkId, string result);
 
