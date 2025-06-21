@@ -103,24 +103,79 @@ bool Manager::stopAllSinks()
 
 string Manager::getAllSinkStatus()
 {
-	return string();
+	string returnString;
+	returnString += "{[";
+
+	auto iterator = sinks.begin();
+
+	while (iterator != sinks.end()) {
+		returnString += "\"";
+		returnString += iterator->second.getStatus();
+		returnString += "\",";
+		iterator++;
+	}
+
+	returnString += "]}";
+
+	return returnString;
 }
 
 string Manager::getSinkStatusById(int sinkId)
 {
-	return string();
+	ISink* sink;
+
+	if (sinks.find(sinkId) != sinks.end()) {
+		return "";
+	}
+	sink = &sinks.find(sinkId)->second;
+
+	return sink->getStatus();
 }
 
 string Manager::getSinkResult(int sinkId)
 {
-	return string();
+	if (results.find(sinkId) == results.end()) {
+		return "";
+	}
+	return results.find(sinkId)->second;
 }
 
 string Manager::getAllSinkResults()
 {
-	return string();
+	string returnString;
+	returnString += "{[";
+
+	auto iterator = results.begin();
+
+	while (iterator != results.end()) {
+		returnString += "{";
+		returnString += iterator->second;
+		returnString += "},";
+		iterator++;
+	}
+
+	returnString += "]}";
+
+	return returnString;
 }
 
-void Manager::setSinkResult(int sinkId, string result)
+bool Manager::setSinkResult(int sinkId, string result)
 {
+	if (results.find(sinkId) == results.end()) {
+		return false;
+	}
+	else {
+		results.find(sinkId)->second = result;
+		return true;
+	}
+}
+
+int Manager::generateUUID()
+{
+	std::mt19937 engine(std::chrono::high_resolution_clock::now().time_since_epoch().count());
+
+	std::uniform_int_distribution<int> dist(-2147483648, 2147483647);
+
+	int randomNumber = dist(engine);
+	return 0;
 }

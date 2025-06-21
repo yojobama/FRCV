@@ -2,6 +2,8 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <random>
+#include <chrono>
 #include "ISink.h"
 #include "ImageFileSource.h"
 #include "VideoFileSource.h"
@@ -53,7 +55,7 @@ public:
 	string getSinkResult(int sinkId);
 	string getAllSinkResults();
 private:
-	void setSinkResult(int sinkId, string result);
+	bool setSinkResult(int sinkId, string result);
 
 	int generateUUID();
 
