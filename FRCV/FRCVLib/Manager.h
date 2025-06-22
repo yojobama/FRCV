@@ -16,6 +16,7 @@
 #include <cstring>
 #include <iostream>
 #include <dirent.h>
+#include <thread>
 
 using namespace std;
 
@@ -72,6 +73,11 @@ private:
 
 	int generateUUID();
 
+	vector<thread*> sinkThreads; // threads for each sink to process frames
+	vector<thread*> sourceThreads; // threads for each source to read frames
+
+	void runSinkThread(int sinkId);
+
 	// maps for storing results, sources and sinks
 	map<int, string> results;
 	map<int, ISource> sources;
@@ -80,5 +86,7 @@ private:
 	FramePool *framePool;
 
 	Logger* logger; // a logger for the entire application
+
+	bool isRunning; // flag to control the running state of the manager
 };
 

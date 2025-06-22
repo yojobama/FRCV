@@ -5,6 +5,7 @@ Manager::Manager()
     logger = new Logger();
     framePool = new FramePool(logger);
     logger->enterLog("Manager constructed");
+    isRunning = false;
 }
 
 Manager::~Manager()
@@ -177,7 +178,20 @@ int Manager::createObjectDetectionSink()
 bool Manager::startAllSinks()
 {
     logger->enterLog("startAllSinks called");
-    return false;
+    isRunning = true;
+
+	auto iterator = sinks.begin();
+
+    while (iterator != sinks.end()) {
+        sinkThreads.push_back(new thread(
+            runSinkThread,
+            &iterator->first
+        ));
+        
+        iterator++;
+	}
+
+    return true;
 }
 
 bool Manager::stopAllSinks()
@@ -284,4 +298,11 @@ int Manager::generateUUID()
     int randomNumber = dist(engine);
     logger->enterLog("Generated UUID: " + std::to_string(randomNumber));
     return 0;
+}
+
+void Manager::runSinkThread(int sinkId)
+{
+    while (isRunning) {
+		setSinkResult(sinkId, sinks.find(sinkId)->second.getResults());
+    }
 }

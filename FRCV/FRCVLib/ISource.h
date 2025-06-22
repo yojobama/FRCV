@@ -16,7 +16,7 @@ protected:
 	FramePool* framePool;
 	Logger* logger;
 	FrameSpec frameSpec;
-	mutex lock;
+	std::mutex lock;
 	// TODO: add basic functions and members (like a logger and such)
 };
 
