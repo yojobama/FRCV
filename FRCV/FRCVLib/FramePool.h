@@ -2,6 +2,7 @@
 #include <vector>
 #include "FrameSpec.h"
 #include "Logger.h"
+#include <mutex>
 
 class Frame;
 
@@ -17,5 +18,6 @@ private:
 	Frame* allocateFrame(FrameSpec frameSpec);
 	std::vector<Frame*> frameVector;
 	Logger* logger;
+	std::mutex lock;
 };
 

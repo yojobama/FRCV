@@ -13,5 +13,11 @@ int main()
         cout << (*i)->GetMessage() << endl;
     }
 
+    int apriltagSink = manager.createApriltagSink();
+
+    int source = manager.createImageFileSource("");
+
+    manager.bindSourceToSink(source, apriltagSink);
+
     return 0;
 }

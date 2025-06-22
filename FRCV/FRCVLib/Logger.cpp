@@ -9,19 +9,25 @@ Logger::~Logger() {}
 
 // Define the enterLog method for a single string message
 void Logger::enterLog(std::string message) {
+    lock.lock();
     logs.push_back(new Log(INFO, message)); // Add the log to the logs vector
+    lock.unlock();
     std::cout << "[INFO]: " << message << std::endl; // Print the log to the console
 }
 
 // Define the enterLog method for a log level and message
 void Logger::enterLog(LogLevel logLevel, std::string message) {
+    lock.lock();
     logs.push_back(new Log(logLevel, message)); // Add the log to the logs vector
+    lock.unlock();
     std::cout << "[" << logLevel << "]: " << message << std::endl; // Print the log to the console
 }
 
 // Define the enterLog method for a Log object
 void Logger::enterLog(Log *log) {
+    lock.lock();
     logs.push_back(log); // Add the log to the logs vector
+    lock.unlock();
     std::cout << "[" << log->GetLogLevel() << "]: " << log->GetMessage() << std::endl; // Print the log to the console
 }
 

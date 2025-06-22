@@ -31,7 +31,9 @@ Frame* FramePool::allocateFrame(FrameSpec frameSpec) {
     if (logger) logger->enterLog("FramePool::allocateFrame called");
     logger->enterLog(INFO, "allocating a new frame");
     Frame* frame = new Frame(frameSpec);
+    lock.lock();
     frameVector.push_back(frame);
+    lock.unlock();
     return frame;
 }
 

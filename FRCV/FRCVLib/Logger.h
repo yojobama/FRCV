@@ -4,6 +4,7 @@
 #include <vector>
 #include <bits/stdc++.h>
 #include <iostream>
+#include <mutex>
 
 // TODO: add some stuff to make the logger functional
 enum LogLevel
@@ -38,6 +39,7 @@ public:
 	std::vector<Log*> GetCertainLogs(LogLevel logLevel);
 	void clearAllLogs();
 private:
+	std::mutex lock;
 	std::vector<Log*> logs;
 };
 
