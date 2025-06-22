@@ -15,6 +15,7 @@ public:
 	ApriltagSink(Logger* logger);
     ~ApriltagSink();
 	std::string getResults();
+	std::string getStatus();
 private:
 	apriltag_family_t* family;
 	apriltag_detector_t* detector;

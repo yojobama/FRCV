@@ -94,7 +94,7 @@
     <ClInclude Include="IObjectDetectionSink.h" />
     <ClInclude Include="ISink.h" />
     <ClInclude Include="Logger.h" />
-    <ClInclude Include="Menager.h" />
+    <ClInclude Include="Manager.h" />
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="RknnSink.h" />
     <ClInclude Include="TRTSink.h" />
@@ -115,7 +115,6 @@
     <ClCompile Include="ISink.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Manager.cpp" />
-    <ClCompile Include="Menager.cpp" />
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="RknnSink.cpp" />
     <ClCompile Include="TRTSink.cpp" />
