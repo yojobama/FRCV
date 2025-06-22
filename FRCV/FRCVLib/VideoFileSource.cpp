@@ -1,5 +1,5 @@
-#include "VideoFileFrameSource.h"
-#include "ImageFileFrameSource.h"
+#include "VideoFileSource.h"
+#include "ImageFileSource.h"
 
 VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool) : ISource(framePool, logger)
 {

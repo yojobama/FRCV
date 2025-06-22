@@ -9,8 +9,8 @@ class ISource
 {
 public:
 	ISource(FramePool* framePool, Logger* logger);
-	~ISource() = default;
-	virtual Frame* getFrame() = 0;
+	virtual ~ISource() = default;
+	virtual Frame* getFrame();
 protected:
 	FramePool* framePool;
 	Logger* logger;

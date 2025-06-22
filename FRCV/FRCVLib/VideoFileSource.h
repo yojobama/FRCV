@@ -1,5 +1,5 @@
 #pragma once
-#include "IFrameSource.h"
+#include "ISource.h"
 #include <string>
 #include "Logger.h"
 

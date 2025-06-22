@@ -1,9 +1,7 @@
 #include "Manager.h"
 
-Manager::Manager()
+Manager::Manager() : logger(), framePool(logger)
 {
-    logger = new Logger();
-    framePool = FramePool(logger);
     logger->enterLog("Manager constructed");
 }
 

@@ -4,6 +4,14 @@ ISink::ISink(Logger* logger) : logger(logger), source(nullptr) {
     if (logger) logger->enterLog("ISink constructed");
 }
 
+std::string ISink::getResults() {
+    return nullptr;
+}
+
+std::string ISink::getStatus() {
+    return nullptr;
+}
+
 bool ISink::bindSource(ISource* source) {
     if (logger) logger->enterLog("ISink::bindSource called");
     if (source == nullptr) {
