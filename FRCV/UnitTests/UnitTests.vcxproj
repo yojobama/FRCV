@@ -79,17 +79,8 @@
     <WSLPath>Ubuntu-24.04</WSLPath>
   </PropertyGroup>
   <ItemGroup>
-    <ClCompile Include="ApriltagDetectionTest.cpp" />
-    <ClCompile Include="CameraFrameSourceTest.cpp" />
-    <ClCompile Include="FrameTest.cpp" />
-    <ClCompile Include="IFrameSourceTest.cpp" />
-    <ClCompile Include="ISinkTest.cpp" />
-    <ClCompile Include="LoggerTest.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="PreProcessorTest.cpp" />
-    <ClCompile Include="SingleSourcePipelineTest.cpp" />
     <ClCompile Include="UnitTestBase.cpp" />
-    <ClCompile Include="VideoFileFrameSourceTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FRCVLib\FRCVLib.vcxproj">
@@ -97,16 +88,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ApriltagDetectionTest.h" />
-    <ClInclude Include="CameraFrameSourceTest.h" />
-    <ClInclude Include="FrameTest.h" />
-    <ClInclude Include="IFrameSourceTest.h" />
-    <ClInclude Include="ISinkTest.h" />
-    <ClInclude Include="LoggerTest.h" />
-    <ClInclude Include="PreProcessorTest.h" />
-    <ClInclude Include="SingleSourcePipelineTest.h" />
     <ClInclude Include="UnitTestBase.h" />
-    <ClInclude Include="VideoFileFrameSourceTest.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
@@ -114,7 +96,7 @@
       <LibraryDependencies>FRCVLib</LibraryDependencies>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>/home/yojobama/projects/FRCVLib;/usr/local/include/apriltag;/usr/include/opencv4%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>~/projects/FRCVLib;/usr/local/include/apriltag;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
