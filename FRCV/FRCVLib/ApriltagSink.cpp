@@ -2,13 +2,15 @@
 #include <vector>
 #include <apriltag/tag36h11.h>
 
-ApriltagSink::ApriltagSink(Logger* logger) : ISink(logger) {
+ApriltagSink::ApriltagSink(Logger* logger) : ISink(logger), logger(logger) {
+    if (logger) logger->enterLog("ApriltagSink constructed");
 	this->family = tag36h11_create();
 	this->detector = apriltag_detector_create();
 	apriltag_detector_add_family(this->detector, this->family);
 }
 
 ApriltagSink::~ApriltagSink() {
+    if (logger) logger->enterLog("ApriltagSink destructed");
     // Clean up resources
     if (this->detector) {
         apriltag_detector_destroy(this->detector);
@@ -19,6 +21,7 @@ ApriltagSink::~ApriltagSink() {
 }
 
 std::string ApriltagSink::getResults() {
+    if (logger) logger->enterLog("ApriltagSink::getResults called");
 	Frame* frame = source->getFrame();
 
 	std::vector<ApriltagDetection> returnVector;

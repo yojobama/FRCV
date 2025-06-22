@@ -114,6 +114,7 @@
     <ClCompile Include="IObjectDetectionSink.cpp" />
     <ClCompile Include="ISink.cpp" />
     <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="Manager.cpp" />
     <ClCompile Include="Menager.cpp" />
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="RknnSink.cpp" />
