@@ -1,11 +1,7 @@
 #include "FramePool.h"
 
 // initializing the frame pool
-FramePool::FramePool(std::vector<FrameSpec> initialSpecs, Logger* logger) {
-	// pushing new frames to the vector in preperation for the start of the thingy
-	for (FrameSpec spec : initialSpecs) {
-		frameVector.push_back(new Frame(spec));
-	}
+FramePool::FramePool(Logger* logger) {
 	this->logger = logger;
 }
 

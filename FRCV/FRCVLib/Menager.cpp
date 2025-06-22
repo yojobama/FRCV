@@ -3,6 +3,7 @@
 Manager::Manager()
 {
 	logger = new Logger();
+	framePool = FramePool(logger); 
 }
 
 Manager::~Manager()

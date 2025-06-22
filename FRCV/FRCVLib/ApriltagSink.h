@@ -14,7 +14,7 @@ class ApriltagSink : public ISink
 public:
 	ApriltagSink(Logger* logger);
     ~ApriltagSink();
-	std::vector<std::string> getResults();
+	std::string getResults();
 private:
 	apriltag_family_t* family;
 	apriltag_detector_t* detector;

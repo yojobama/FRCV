@@ -7,7 +7,7 @@
 class FramePool
 {
 public:
-	FramePool(std::vector<FrameSpec> initialSpecs, Logger* logger);
+	FramePool(Logger* logger);
 	~FramePool();
 	int getCachedFrameCount();
 	Frame* getFrame(FrameSpec frameSpec);
