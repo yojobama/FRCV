@@ -1,15 +1,17 @@
 #include "Manager.h"
 
-Manager::Manager() : logger(), framePool(logger)
+Manager::Manager()
 {
+    logger = new Logger();
+    framePool = new FramePool(logger);
     logger->enterLog("Manager constructed");
 }
 
 Manager::~Manager()
 {
     logger->enterLog("Manager destructed");
+    delete framePool;
     delete logger;
-    delete& framePool;
 }
 
 vector<int> Manager::getAllSinks()
@@ -132,7 +134,7 @@ int Manager::createVideoFileSource(string path)
     logger->enterLog("createVideoFileSource called with path=" + path);
     int id = generateUUID();
 
-    VideoFileFrameSource source = VideoFileFrameSource(logger, path, &framePool);
+    VideoFileFrameSource source = VideoFileFrameSource(logger, path, framePool);
 
     sources.emplace(id, source);
 
@@ -252,7 +254,7 @@ string Manager::getAllSinkResults()
     return returnString;
 }
 
-vector<Log> Manager::getAllLogs()
+vector<Log*> *Manager::getAllLogs()
 {
     logger->enterLog("getAllLogs called");
     return logger->GetAllLogs();

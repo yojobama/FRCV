@@ -1,4 +1,5 @@
 #include "ISink.h"
+#include "Frame.h"
 
 ISink::ISink(Logger* logger) : logger(logger), source(nullptr) {
     if (logger) logger->enterLog("ISink constructed");

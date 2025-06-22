@@ -64,7 +64,7 @@ public:
 	string getSinkResult(int sinkId);
 	string getAllSinkResults();
 
-	vector<Log> getAllLogs();
+	vector<Log*> *getAllLogs();
 
 	void clearAllLogs();
 private:
@@ -77,7 +77,7 @@ private:
 	map<int, ISource> sources;
 	map<int, ISink> sinks;
 
-	FramePool framePool;
+	FramePool *framePool;
 
 	Logger* logger; // a logger for the entire application
 };

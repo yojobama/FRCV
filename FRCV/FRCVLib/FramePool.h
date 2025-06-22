@@ -1,8 +1,9 @@
 #pragma once
 #include <vector>
-#include "Frame.h"
 #include "FrameSpec.h"
 #include "Logger.h"
+
+class Frame;
 
 class FramePool
 {

@@ -1,6 +1,7 @@
 #include "ApriltagSink.h"
 #include <vector>
 #include <apriltag/tag36h11.h>
+#include "Frame.h"
 
 ApriltagSink::ApriltagSink(Logger* logger) : ISink(logger), logger(logger) {
     if (logger) logger->enterLog("ApriltagSink constructed");

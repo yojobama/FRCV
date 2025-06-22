@@ -1,4 +1,15 @@
 #include "PreProcessor.h"
+#include "Frame.h"
+
+PreProcessor::PreProcessor(FramePool* framePool)
+{
+	this->framePool = framePool;
+}
+
+PreProcessor::~PreProcessor()
+{
+	// TODO: implement this function
+}
 
 Frame* PreProcessor::transformFrame(Frame* src, FrameSpec spec)
 {

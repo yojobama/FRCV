@@ -28,5 +28,3 @@ private:
 	std::string devicePath;
 	std::string deviceName;
 };
-
-std::vector<std::string> enumerateCameraPaths();

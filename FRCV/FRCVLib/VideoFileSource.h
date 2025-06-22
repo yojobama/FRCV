@@ -3,6 +3,10 @@
 #include <string>
 #include "Logger.h"
 
+namespace cv {
+	class VideoCapture;
+}
+
 class VideoFileFrameSource : public ISource
 {
 public:

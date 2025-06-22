@@ -1,9 +1,9 @@
 #pragma once
-#include <opencv2/opencv.hpp>
 #include "Logger.h"
-#include "Frame.h"
 #include "FramePool.h"
 #include "FrameSpec.h"
+
+class Frame;
 
 class ISource
 {

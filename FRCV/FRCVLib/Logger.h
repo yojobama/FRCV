@@ -19,8 +19,8 @@ class Log {
 public:
 	Log(LogLevel logLevel, std::string message)
 		: logLevel(logLevel), message(message) {}
-	LogLevel GetLogLevel() const { return logLevel; }
-	std::string GetMessage() const { return message; }
+	LogLevel GetLogLevel() { return logLevel; }
+	std::string GetMessage() { return message; }
 private:
 	LogLevel logLevel;
 	std::string message;
@@ -33,11 +33,11 @@ public:
 	~Logger();
 	void enterLog(std::string message);
 	void enterLog(LogLevel logLevel, std::string message);
-	void enterLog(Log log);
-	std::vector<Log> GetAllLogs();
-	std::vector<Log> GetCertainLogs(LogLevel logLevel);
+	void enterLog(Log* log);
+	std::vector<Log*> *GetAllLogs();
+	std::vector<Log*> GetCertainLogs(LogLevel logLevel);
 	void clearAllLogs();
 private:
-	std::vector<Log> logs;
+	std::vector<Log*> logs;
 };
 

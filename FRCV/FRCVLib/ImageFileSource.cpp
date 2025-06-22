@@ -1,5 +1,6 @@
 #include "ImageFileSource.h"
 #include <opencv2/opencv.hpp>
+#include "Frame.h"
 
 ImageFileFrameSource::ImageFileFrameSource(std::string filePath, Logger* logger) : ISource(nullptr, logger) {
     cv::Mat img = cv::imread(filePath);

@@ -88,7 +88,6 @@
     <ClInclude Include="Frame.h" />
     <ClInclude Include="FramePool.h" />
     <ClInclude Include="FrameSpec.h" />
-    <ClInclude Include="FRCVLib.h" />
     <ClInclude Include="ISource.h" />
     <ClInclude Include="ImageFileSource.h" />
     <ClInclude Include="IObjectDetectionSink.h" />

@@ -1,4 +1,5 @@
 #include "FramePool.h"
+#include "Frame.h"
 
 // initializing the frame pool
 FramePool::FramePool(Logger* logger) : logger(logger) {
@@ -7,7 +8,6 @@ FramePool::FramePool(Logger* logger) : logger(logger) {
 
 FramePool::~FramePool() {
     if (logger) logger->enterLog("FramePool destructed");
-    delete &frameVector;
 }
 
 int FramePool::getCachedFrameCount() {

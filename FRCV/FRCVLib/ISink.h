@@ -1,10 +1,11 @@
 #pragma once
 
-#include "Frame.h"
 #include "Logger.h"
 #include <vector>
 #include "ISource.h"
 #include <string>
+
+class Frame;
 
 using namespace std;
 

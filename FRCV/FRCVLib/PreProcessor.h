@@ -1,7 +1,8 @@
 #pragma once
-#include "Frame.h"
 #include "FramePool.h"
 #include <opencv2/opencv.hpp>
+
+class Frame;
 
 class PreProcessor
 {

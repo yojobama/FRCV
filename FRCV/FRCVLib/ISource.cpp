@@ -1,4 +1,5 @@
 #include "ISource.h"
+#include "Frame.h"
 
 ISource::ISource(FramePool* framePool, Logger* logger)
 	: frameSpec(0, 0, 0) // Initialize frameSpec with default values
