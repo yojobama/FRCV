@@ -197,7 +197,15 @@ bool Manager::startAllSinks()
 bool Manager::stopAllSinks()
 {
     logger->enterLog("stopAllSinks called");
-    return false;
+    isRunning = false;
+    auto iterator = sinkThreads.begin();
+
+    while (iterator != sinkThreads.end()) {
+        (*iterator)->join();
+        iterator++;
+    }
+
+    return true;
 }
 
 string Manager::getAllSinkStatus()

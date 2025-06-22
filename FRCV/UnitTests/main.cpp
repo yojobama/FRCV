@@ -19,5 +19,11 @@ int main()
 
     manager.bindSourceToSink(source, apriltagSink);
 
+    manager.startAllSinks();
+
+    cout << manager.getSinkResult(apriltagSink);
+
+    manager.stopAllSinks();
+
     return 0;
 }
