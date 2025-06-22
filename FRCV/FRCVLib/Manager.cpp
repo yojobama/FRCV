@@ -74,7 +74,7 @@ vector<CameraHardwareInfo> Manager::enumerateAvailableCameras()
             }
             close(fd);
 
-            cameras.emplace_back(
+            cameras.push_back(
                 CameraHardwareInfo{
                     .name = deviceName,
                     .path = devicePath
@@ -96,13 +96,13 @@ bool Manager::bindSourceToSink(int sourceId, int sinkId) {
         logger->enterLog("Source not found: " + std::to_string(sourceId));
         return false;
     }
-    source = &sources.find(sourceId)->second;
+    source = sources.find(sourceId)->second;
 
     if (sinks.find(sinkId) != sinks.end()) {
         logger->enterLog("Sink not found: " + std::to_string(sinkId));
         return false;
     }
-    sink = &sinks.find(sinkId)->second;
+    sink = sinks.find(sinkId)->second;
 
     bool result = sink->bindSource(source);
     logger->enterLog("bindSourceToSink result: " + std::to_string(result));
@@ -117,7 +117,7 @@ bool Manager::unbindSourceFromSink(int sinkId) {
         logger->enterLog("Sink not found: " + std::to_string(sinkId));
         return false;
     }
-    sink = &sinks.find(sinkId)->second;
+    sink = sinks.find(sinkId)->second;
 
     bool result = sink->unbindSource();
     logger->enterLog("unbindSourceFromSink result: " + std::to_string(result));
@@ -135,7 +135,7 @@ int Manager::createVideoFileSource(string path)
     logger->enterLog("createVideoFileSource called with path=" + path);
     int id = generateUUID();
 
-    VideoFileFrameSource source = VideoFileFrameSource(logger, path, framePool);
+    VideoFileFrameSource* source = new VideoFileFrameSource(logger, path, framePool);
 
     sources.emplace(id, source);
 
@@ -148,7 +148,7 @@ int Manager::createImageFileSource(string path)
     logger->enterLog("createImageFileSource called with path=" + path);
     int id = generateUUID();
 
-    ImageFileFrameSource source = ImageFileFrameSource(path, logger);
+    ImageFileFrameSource* source = new ImageFileFrameSource(path, logger);
 
     sources.emplace(id, source);
 
@@ -161,7 +161,7 @@ int Manager::createApriltagSink()
     logger->enterLog("createApriltagSink called");
     int id = generateUUID();
 
-    ApriltagSink sink = ApriltagSink(logger);
+    ApriltagSink* sink = new ApriltagSink(logger);
 
     sinks.emplace(id, sink);
 
@@ -180,16 +180,16 @@ bool Manager::startAllSinks()
     logger->enterLog("startAllSinks called");
     isRunning = true;
 
-	auto iterator = sinks.begin();
+    auto iterator = sinks.begin();
 
     while (iterator != sinks.end()) {
         sinkThreads.push_back(new thread(
-            runSinkThread,
-            &iterator->first
+            [this](int sinkId) { runSinkThread(sinkId); }, // Use a lambda to bind `this` and pass sinkId
+            iterator->first
         ));
         
         iterator++;
-	}
+    }
 
     return true;
 }
@@ -218,7 +218,7 @@ string Manager::getAllSinkStatus()
 
     while (iterator != sinks.end()) {
         returnString += "\"";
-        returnString += iterator->second.getStatus();
+        returnString += iterator->second->getStatus();
         returnString += "\",";
         iterator++;
     }
@@ -237,7 +237,7 @@ string Manager::getSinkStatusById(int sinkId)
         logger->enterLog("Sink not found: " + std::to_string(sinkId));
         return "";
     }
-    sink = &sinks.find(sinkId)->second;
+    sink = sinks.find(sinkId)->second;
 
     string status = sink->getStatus();
     logger->enterLog("getSinkStatusById result: " + status);
@@ -311,6 +311,6 @@ int Manager::generateUUID()
 void Manager::runSinkThread(int sinkId)
 {
     while (isRunning) {
-		setSinkResult(sinkId, sinks.find(sinkId)->second.getResults());
+		setSinkResult(sinkId, sinks.find(sinkId)->second->getResults());
     }
 }

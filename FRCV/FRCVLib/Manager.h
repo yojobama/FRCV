@@ -80,8 +80,8 @@ private:
 
 	// maps for storing results, sources and sinks
 	map<int, string> results;
-	map<int, ISource> sources;
-	map<int, ISink> sinks;
+	map<int, ISource*> sources;
+	map<int, ISink*> sinks;
 
 	FramePool *framePool;
 

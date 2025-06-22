@@ -8,6 +8,10 @@ ISource::ISource(FramePool* framePool, Logger* logger)
 	this->logger = logger;
 }
 
+ISource::~ISource()
+{
+}
+
 // Provide a default implementation for the pure virtual function
 Frame* ISource::getFrame()
 {
