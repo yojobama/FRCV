@@ -12,6 +12,7 @@ VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath,
 
 Frame* VideoFileFrameSource::getFrame()
 {
+    lock.lock();
     if (logger) logger->enterLog("VideoFileFrameSource::getFrame called");
     Frame* frame = framePool->getFrame(frameSpec);
     if (capture->isOpened()) {
@@ -20,5 +21,6 @@ Frame* VideoFileFrameSource::getFrame()
         return frame;
     }
     logger->enterLog(ERROR, "camera is closed, returning a null pointer");
-    return nullptr;
+	lock.unlock();
+    return frame;
 }
