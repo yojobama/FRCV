@@ -5,12 +5,12 @@ ISink::ISink(Logger* logger) : logger(logger), source(nullptr) {
     if (logger) logger->enterLog("ISink constructed");
 }
 
-std::string ISink::getResults() {
+std::string ISink::getStatus() {
     return nullptr;
 }
 
-std::string ISink::getStatus() {
-    return nullptr;
+Frame* ISink::getFrame() {
+    return frame;
 }
 
 bool ISink::bindSource(ISource* source) {

@@ -35,13 +35,21 @@
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="CameraCalibrationPipeline.cpp" />
     <ClCompile Include="CameraCalibrationResult.cpp" />
-    <ClCompile Include="CameraSource.cpp" />
-    <ClCompile Include="ISource.cpp" />
-    <ClCompile Include="ImageFileSource.cpp" />
     <ClCompile Include="Manager.cpp" />
-    <ClCompile Include="VideoFileSource.cpp" />
     <ClCompile Include="RecordSink.cpp">
       <Filter>Sink</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageFileSource.cpp">
+      <Filter>FrameSource</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraSource.cpp">
+      <Filter>FrameSource</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoFileSource.cpp">
+      <Filter>FrameSource</Filter>
+    </ClCompile>
+    <ClCompile Include="ISource.cpp">
+      <Filter>FrameSource</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -68,13 +76,21 @@
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="CameraCalibrationPipeline.h" />
     <ClInclude Include="CameraCalibrationResult.h" />
-    <ClInclude Include="CameraSource.h" />
-    <ClInclude Include="ISource.h" />
-    <ClInclude Include="ImageFileSource.h" />
     <ClInclude Include="Manager.h" />
-    <ClInclude Include="VideoFileSource.h" />
     <ClInclude Include="RecordSink.h">
       <Filter>Sink</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageFileSource.h">
+      <Filter>FrameSource</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraSource.h">
+      <Filter>FrameSource</Filter>
+    </ClInclude>
+    <ClInclude Include="VideoFileSource.h">
+      <Filter>FrameSource</Filter>
+    </ClInclude>
+    <ClInclude Include="ISource.h">
+      <Filter>FrameSource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

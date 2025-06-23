@@ -13,12 +13,13 @@ class ISink {
 public:
     ISink(Logger* logger);
     ~ISink() = default;
-    virtual std::string getResults();
+    string getCurrentResults();
     bool bindSource(ISource* source);
 	bool unbindSource();
     virtual string getStatus();
 protected:
 	ISource* source;
     Logger* logger;
+    virtual void captureFrame() = 0;
 };
 
