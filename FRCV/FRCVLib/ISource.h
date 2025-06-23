@@ -13,16 +13,18 @@ public:
 	ISource(FramePool* framePool, Logger* logger);
 	virtual ~ISource();
 	Frame* getFrame();
+	void changeThreadStatus(bool threadWantedAlive);
 protected:
+	Frame* currentFrame;
 	virtual void captureFrame() = 0;
 	FramePool* framePool;
 	Logger* logger;
 	FrameSpec frameSpec;
 private:
-	void threadStart(void *pReference);
+	static void* sourceThreadStart(void *pReference);
+	void sourceThreadProc();
 	std::mutex lock;
 	pthread_t thread;
-	bool shouldTerminate = false;
-	// TODO: add basic functions and members (like a logger and such)
+	bool shouldTerminate;
 };
 

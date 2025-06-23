@@ -15,8 +15,33 @@ ISource::~ISource()
 // Provide a default implementation for the pure virtual function
 Frame* ISource::getFrame()
 {
-	// Default implementation can return nullptr or log an error
-	if (logger)
-		logger->enterLog(LogLevel::ERROR, "getFrame() not implemented in derived class.");
-	return nullptr;
+	return currentFrame;
+}
+
+void ISource::changeThreadStatus(bool threadWantedAlive)
+{
+	if (threadWantedAlive) {
+		shouldTerminate = false;
+		pthread_create(&thread, NULL, sourceThreadStart, this);
+	}
+	else {
+		if (thread) {
+			shouldTerminate = true;
+			while (shouldTerminate) sleep(1);
+		}
+	}
+}
+
+void* ISource::sourceThreadStart(void* pReference)
+{
+	((ISource*)pReference)->sourceThreadProc();
+	return NULL;
+}
+
+void ISource::sourceThreadProc()
+{
+	while (!shouldTerminate) {
+		captureFrame();
+	}
+	shouldTerminate = false;
 }
