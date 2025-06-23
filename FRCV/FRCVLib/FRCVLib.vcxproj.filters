@@ -40,7 +40,9 @@
     <ClCompile Include="ImageFileSource.cpp" />
     <ClCompile Include="Manager.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />
-    <ClCompile Include="RecordSink.cpp" />
+    <ClCompile Include="RecordSink.cpp">
+      <Filter>Sink</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">
@@ -71,7 +73,9 @@
     <ClInclude Include="ImageFileSource.h" />
     <ClInclude Include="Manager.h" />
     <ClInclude Include="VideoFileSource.h" />
-    <ClInclude Include="RecordSink.h" />
+    <ClInclude Include="RecordSink.h">
+      <Filter>Sink</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />

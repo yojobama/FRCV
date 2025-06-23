@@ -47,6 +47,8 @@ public:
 	int createApriltagSink();
 	int createObjectDetectionSink();
 
+	int createRecordingSink(int sourceId);
+
 	bool startAllSinks();
 	bool stopAllSinks();
 
@@ -56,6 +58,8 @@ public:
 
 	string getSinkResult(int sinkId);
 	string getAllSinkResults();
+
+	vector<string> getRecording(int recorderId);
 
 	vector<Log*> *getAllLogs();
 

@@ -3,6 +3,7 @@
 #include "VideoFileSource.h"
 #include "ApriltagSink.h"
 #include "CameraCalibrationResult.h"
+#include "RecordSink.h"
 
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
@@ -184,6 +185,15 @@ int Manager::createApriltagSink()
 int Manager::createObjectDetectionSink()
 {
     logger->enterLog("createObjectDetectionSink called");
+    return 0;
+}
+
+int Manager::createRecordingSink(int sourceId)
+{
+    int id = generateUUID();
+
+    RecordSink* recordSink = new RecordSink(logger, "", sourceId);
+
     return 0;
 }
 
