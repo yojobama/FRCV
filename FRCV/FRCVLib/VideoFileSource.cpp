@@ -10,17 +10,11 @@ VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath,
 	this->capture = new cv::VideoCapture(filePath);
 }
 
-Frame* VideoFileFrameSource::getFrame()
+void VideoFileFrameSource::captureFrame()
 {
-    lock.lock();
-    if (logger) logger->enterLog("VideoFileFrameSource::getFrame called");
-    Frame* frame = framePool->getFrame(frameSpec);
     if (capture->isOpened()) {
         logger->enterLog(INFO, "camera is open, grabbing frame and returning it");
-        capture->read(*frame);
-        return frame;
+        capture->read(*currentFrame);
     }
     logger->enterLog(ERROR, "camera is closed, returning a null pointer");
-	lock.unlock();
-    return frame;
 }

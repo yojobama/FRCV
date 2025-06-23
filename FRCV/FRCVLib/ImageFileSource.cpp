@@ -14,6 +14,7 @@ ImageFileFrameSource::ImageFileFrameSource(std::string filePath, Logger* logger)
     }
 }
 
-Frame* ImageFileFrameSource::getFrame() {
-    return frame;
+void ImageFileFrameSource::captureFrame()
+{
+    // there is nothing to do as the image is already loaded...
 }

@@ -24,6 +24,7 @@ public:
 
 	Frame* getFrame();
 private:
+	void captureFrame() override;
 	cv::VideoCapture* capture;
 	std::string devicePath;
 	std::string deviceName;

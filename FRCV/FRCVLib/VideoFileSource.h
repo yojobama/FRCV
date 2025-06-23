@@ -13,6 +13,7 @@ public:
 	VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool);
 	Frame* getFrame();
 private:
+	void captureFrame() override;
 	Logger* logger;
 	cv::VideoCapture* capture;
 };

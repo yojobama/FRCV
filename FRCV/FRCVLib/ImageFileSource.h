@@ -8,8 +8,8 @@ class ImageFileFrameSource : public ISource
 {
 public:
 	ImageFileFrameSource(std::string filePath, Logger* logger);
-	Frame* getFrame();
 private:
+	void captureFrame() override;
 	Frame* frame;
 };
 

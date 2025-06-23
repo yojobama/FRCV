@@ -35,15 +35,11 @@ void CameraFrameSource::changeDeviceName(std::string newName)
     this->deviceName = newName;
 }
 
-Frame* CameraFrameSource::getFrame() {  
-	lock.lock();
-    Frame* frame = framePool->getFrame(frameSpec);  
-    if (capture->isOpened()) {  
+void CameraFrameSource::captureFrame()
+{
+    if (capture->isOpened()) {
         logger->enterLog(INFO, "camera is open, grabbing frame and returning it");
-        capture->read(*frame);
-        return frame;
+        capture->read(*currentFrame);
     }
     logger->enterLog(ERROR, "camera is closed, returning a null pointer");
-	lock.unlock();
-    return frame;  
 }
