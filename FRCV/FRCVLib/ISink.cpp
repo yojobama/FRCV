@@ -9,8 +9,37 @@ std::string ISink::getStatus() {
     return nullptr;
 }
 
-Frame* ISink::getFrame() {
-    return frame;
+void* ISink::sinkThreadStart(void* pReference)
+{
+    ((ISink*)pReference)->sinkThreadProc();
+    return nullptr;
+}
+
+void ISink::changeThreadStatus(bool threadWantedAlive)
+{
+    if (threadWantedAlive) {
+        shouldTerminate = false;
+        pthread_create(&thread, NULL, sinkThreadStart, this);
+    }
+    else {
+        if (thread) {
+            shouldTerminate = true;
+            while (shouldTerminate) sleep(1);
+        }
+    }
+}
+
+void ISink::sinkThreadProc()
+{
+    while (!shouldTerminate) {
+        // do stuff
+    }
+    shouldTerminate = false;
+}
+
+string ISink::getCurrentResults()
+{
+    return results;
 }
 
 bool ISink::bindSource(ISource* source) {

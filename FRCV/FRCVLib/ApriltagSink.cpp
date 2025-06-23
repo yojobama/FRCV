@@ -30,8 +30,32 @@ void ApriltagSink::addCameraInfo(CameraCalibrationResult cameraInfo)
 	info.fy = cameraInfo.fy;
 }
 
-std::string ApriltagSink::getResults() {
-    if (logger) logger->enterLog("ApriltagSink::getResults called");
+std::string ApriltagSink::getStatus()
+{
+    // Pseudocode:
+    // 1. Log entry if logger is available.
+    // 2. Gather status information: detector/family pointers, source binding, etc.
+    // 3. Format as JSON string.
+    // 4. Return the JSON string.
+
+    if (logger) logger->enterLog("ApriltagSink::getStatus called");
+
+    bool detectorReady = (detector != nullptr);
+    bool familyReady = (family != nullptr);
+    bool sourceBound = (source != nullptr);
+
+    std::string status = "{";
+    status += "\"detectorReady\":" + std::string(detectorReady ? "true" : "false") + ",";
+    status += "\"familyReady\":" + std::string(familyReady ? "true" : "false") + ",";
+    status += "\"sourceBound\":" + std::string(sourceBound ? "true" : "false");
+    status += "}";
+
+    return status;
+}
+
+void ApriltagSink::processFrame()
+{
+	if (logger) logger->enterLog("ApriltagSink::getResults called");
 	Frame* frame = source->getFrame();
 
 	std::vector<ApriltagDetection> returnVector;
@@ -69,28 +93,5 @@ std::string ApriltagSink::getResults() {
 
 	returnString += "]}";
 
-	return returnString;
-}
-
-std::string ApriltagSink::getStatus()
-{
-    // Pseudocode:
-    // 1. Log entry if logger is available.
-    // 2. Gather status information: detector/family pointers, source binding, etc.
-    // 3. Format as JSON string.
-    // 4. Return the JSON string.
-
-    if (logger) logger->enterLog("ApriltagSink::getStatus called");
-
-    bool detectorReady = (detector != nullptr);
-    bool familyReady = (family != nullptr);
-    bool sourceBound = (source != nullptr);
-
-    std::string status = "{";
-    status += "\"detectorReady\":" + std::string(detectorReady ? "true" : "false") + ",";
-    status += "\"familyReady\":" + std::string(familyReady ? "true" : "false") + ",";
-    status += "\"sourceBound\":" + std::string(sourceBound ? "true" : "false");
-    status += "}";
-
-    return status;
+	results = returnString;
 }

@@ -17,8 +17,8 @@ public:
 	ApriltagSink(Logger* logger);
     ~ApriltagSink();
 	void addCameraInfo(CameraCalibrationResult cameraInfo);
-	std::string getResults();
 	std::string getStatus();
+	void processFrame() override;
 private:
 	apriltag_family_t* family;
 	apriltag_detector_t* detector;

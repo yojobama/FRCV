@@ -4,6 +4,8 @@
 #include <vector>
 #include "ISource.h"
 #include <string>
+#include <pthread.h>
+#include <mutex>
 
 class Frame;
 
@@ -17,9 +19,18 @@ public:
     bool bindSource(ISource* source);
 	bool unbindSource();
     virtual string getStatus();
+    void changeThreadStatus(bool threadWantedAlive);
 protected:
+    string results;
 	ISource* source;
     Logger* logger;
-    virtual void captureFrame() = 0;
+    string currentResults;
+    virtual void processFrame() = 0;
+private:
+    static void* sinkThreadStart(void* pReference);
+    void sinkThreadProc();
+    mutex lock;
+    pthread_t thread;
+    bool shouldTerminate;
 };
 
