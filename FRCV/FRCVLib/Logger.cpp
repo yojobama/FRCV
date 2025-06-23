@@ -1,4 +1,5 @@
 #include "Logger.h"
+#include "Manager.h"
 
 // Constructor
 Logger::Logger() {
@@ -50,4 +51,20 @@ std::vector<Log*> Logger::GetCertainLogs(LogLevel logLevel) {
 // Define the method to clear all logs
 void Logger::clearAllLogs() {
     logs.clear();
+}
+
+
+bool Manager::takeCalibrationImage(int cameraId)
+{
+    if (sources.find(cameraId) == sources.end()) {
+        return false;
+    }
+    calibrationImages.push_back(sources.find(cameraId)->second->getFrame());
+    return true;
+}
+
+CameraCalibrationResult Manager::conculdeCalibration()
+{
+    calibrationImages.clear();
+    return CameraCalibrationResult();
 }

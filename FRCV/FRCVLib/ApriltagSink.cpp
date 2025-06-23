@@ -2,6 +2,7 @@
 #include <vector>
 #include <apriltag/tag36h11.h>
 #include "Frame.h"
+#include "CameraCalibrationResult.h"
 
 ApriltagSink::ApriltagSink(Logger* logger) : ISink(logger), logger(logger) {
     if (logger) logger->enterLog("ApriltagSink constructed");
@@ -19,6 +20,14 @@ ApriltagSink::~ApriltagSink() {
     if (this->family) {
         tag36h11_destroy(this->family);
     }
+}
+
+void ApriltagSink::addCameraInfo(CameraCalibrationResult cameraInfo)
+{
+	info.cx = cameraInfo.cx;
+	info.cy = cameraInfo.cy;
+	info.fx = cameraInfo.fx;
+	info.fy = cameraInfo.fy;
 }
 
 std::string ApriltagSink::getResults() {

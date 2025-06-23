@@ -95,6 +95,7 @@
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Manager.h" />
     <ClInclude Include="PreProcessor.h" />
+    <ClInclude Include="RecordSink.h" />
     <ClInclude Include="RknnSink.h" />
     <ClInclude Include="TRTSink.h" />
     <ClInclude Include="VideoFileSource.h" />
@@ -115,6 +116,7 @@
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Manager.cpp" />
     <ClCompile Include="PreProcessor.cpp" />
+    <ClCompile Include="RecordSink.cpp" />
     <ClCompile Include="RknnSink.cpp" />
     <ClCompile Include="TRTSink.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />

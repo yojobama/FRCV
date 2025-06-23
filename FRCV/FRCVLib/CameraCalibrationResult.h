@@ -1,5 +1,4 @@
 #pragma once
-#include <apriltag_pose.h>
 
 class CameraCalibrationResult {
 public:
@@ -16,6 +15,5 @@ public:
     CameraCalibrationResult(double fx, double fy, double cx, double cy)
         : fx(fx), fy(fy), cx(cx), cy(cy) {
     }
-    void transferToApriltagInfo(apriltag_detection_info_t* detectionInfo);
 };
 

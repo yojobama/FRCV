@@ -12,18 +12,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CameraFrameSource.cpp">
-      <Filter>FrameSource</Filter>
-    </ClCompile>
-    <ClCompile Include="IFrameSource.cpp">
-      <Filter>FrameSource</Filter>
-    </ClCompile>
-    <ClCompile Include="ImageFileFrameSource.cpp">
-      <Filter>FrameSource</Filter>
-    </ClCompile>
-    <ClCompile Include="VideoFileFrameSource.cpp">
-      <Filter>FrameSource</Filter>
-    </ClCompile>
     <ClCompile Include="ApriltagSink.cpp">
       <Filter>Sink</Filter>
     </ClCompile>
@@ -39,15 +27,6 @@
     <ClCompile Include="TRTSink.cpp">
       <Filter>Sink</Filter>
     </ClCompile>
-    <ClCompile Include="SingleSourcePipeline.cpp">
-      <Filter>Pipeline</Filter>
-    </ClCompile>
-    <ClCompile Include="SterioPipeline.cpp">
-      <Filter>Pipeline</Filter>
-    </ClCompile>
-    <ClCompile Include="IPipeline.cpp">
-      <Filter>Pipeline</Filter>
-    </ClCompile>
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="FramePool.cpp" />
     <ClCompile Include="FrameSpec.cpp" />
@@ -56,21 +35,14 @@
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="CameraCalibrationPipeline.cpp" />
     <ClCompile Include="CameraCalibrationResult.cpp" />
-    <ClCompile Include="Menager.cpp" />
+    <ClCompile Include="CameraSource.cpp" />
+    <ClCompile Include="ISource.cpp" />
+    <ClCompile Include="ImageFileSource.cpp" />
+    <ClCompile Include="Manager.cpp" />
+    <ClCompile Include="VideoFileSource.cpp" />
+    <ClCompile Include="RecordSink.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CameraFrameSource.h">
-      <Filter>FrameSource</Filter>
-    </ClInclude>
-    <ClInclude Include="IFrameSource.h">
-      <Filter>FrameSource</Filter>
-    </ClInclude>
-    <ClInclude Include="ImageFileFrameSource.h">
-      <Filter>FrameSource</Filter>
-    </ClInclude>
-    <ClInclude Include="VideoFileFrameSource.h">
-      <Filter>FrameSource</Filter>
-    </ClInclude>
     <ClInclude Include="ApriltagSink.h">
       <Filter>Sink</Filter>
     </ClInclude>
@@ -86,25 +58,20 @@
     <ClInclude Include="TRTSink.h">
       <Filter>Sink</Filter>
     </ClInclude>
-    <ClInclude Include="SterioPipeline.h">
-      <Filter>Pipeline</Filter>
-    </ClInclude>
-    <ClInclude Include="SingleSourcePipeline.h">
-      <Filter>Pipeline</Filter>
-    </ClInclude>
-    <ClInclude Include="IPipeline.h">
-      <Filter>Pipeline</Filter>
-    </ClInclude>
     <ClInclude Include="Logger.h" />
     <ClInclude Include="FramePool.h" />
     <ClInclude Include="FrameSpec.h" />
     <ClInclude Include="Frame.h" />
-    <ClInclude Include="FRCVLib.h" />
     <ClInclude Include="ApriltagDetection.h" />
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="CameraCalibrationPipeline.h" />
     <ClInclude Include="CameraCalibrationResult.h" />
-    <ClInclude Include="Menager.h" />
+    <ClInclude Include="CameraSource.h" />
+    <ClInclude Include="ISource.h" />
+    <ClInclude Include="ImageFileSource.h" />
+    <ClInclude Include="Manager.h" />
+    <ClInclude Include="VideoFileSource.h" />
+    <ClInclude Include="RecordSink.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />

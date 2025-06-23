@@ -7,6 +7,8 @@
 #include "Logger.h"
 #include <string>
 
+
+class CameraCalibrationResult;
 // Forward declare Logger to avoid header conflicts
 
 class ApriltagSink : public ISink
@@ -14,6 +16,7 @@ class ApriltagSink : public ISink
 public:
 	ApriltagSink(Logger* logger);
     ~ApriltagSink();
+	void addCameraInfo(CameraCalibrationResult cameraInfo);
 	std::string getResults();
 	std::string getStatus();
 private:

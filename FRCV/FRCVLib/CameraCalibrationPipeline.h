@@ -1,7 +1,20 @@
 #include "CameraCalibrationResult.h"
-#include "IPipeline.h"
+#include <vector>
 
-class CameraCalibrationPipeline : IPipeline<CameraCalibrationResult>
+class Frame;
+class CameraCalibrationResult;
+class PreProcessor;
+class FramePool;
+
+using namespace std;
+
+class CameraCalibrationPipeline
 {
 public:
+	CameraCalibrationPipeline(PreProcessor* preProcessor, FramePool* framePool);
+	~CameraCalibrationPipeline();
+	CameraCalibrationResult getResults(vector<Frame*> frames, int CHECKERBOARD[2]);
+private:
+	PreProcessor* preProcessor;
+	FramePool* framePool;
 };

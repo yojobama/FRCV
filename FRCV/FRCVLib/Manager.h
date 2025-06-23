@@ -6,17 +6,7 @@
 #include <chrono>
 #include <thread>
 #include "ISink.h"
-#include "ImageFileSource.h"
-#include "VideoFileSource.h"
-#include "ApriltagSink.h"
-#include <sys/ioctl.h>
-#include <linux/videodev2.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <cstring>
-#include <iostream>
-#include <dirent.h>
-#include <thread>
+#include "CameraCalibrationResult.h"
 
 using namespace std;
 
@@ -32,6 +22,8 @@ typedef struct {
 //	NVDIA_DEV_X86_64,
 //	CPU_DEV_X86_64
 //};
+
+class CalibrationSink;
 
 class Manager
 {
@@ -68,6 +60,9 @@ public:
 	vector<Log*> *getAllLogs();
 
 	void clearAllLogs();
+
+	bool takeCalibrationImage(int cameraId);
+	CameraCalibrationResult conculdeCalibration();
 private:
 	bool setSinkResult(int sinkId, string result);
 
@@ -88,5 +83,9 @@ private:
 	Logger* logger; // a logger for the entire application
 
 	bool isRunning; // flag to control the running state of the manager
+
+	vector<Frame*> calibrationImages;
+
+	CalibrationSink* calibrationSink;
 };
 
