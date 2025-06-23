@@ -192,7 +192,11 @@ int Manager::createRecordingSink(int sourceId)
 {
     int id = generateUUID();
 
-    RecordSink* recordSink = new RecordSink(logger, "", sourceId);
+    // TODO: generate the path to the video file, an empty string will couse a faliure
+
+    RecordSink* recordSink = new RecordSink(logger, "");
+
+    sinks.emplace(id, recordSink);
 
     return 0;
 }
