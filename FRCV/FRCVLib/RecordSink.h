@@ -8,7 +8,7 @@
 
 using namespace std;
 
-class RecordSink : ISink
+class RecordSink : public ISink
 {
 public:
 	RecordSink(Logger* logger, string dstPath);

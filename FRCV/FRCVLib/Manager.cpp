@@ -57,43 +57,49 @@ vector<CameraHardwareInfo> Manager::enumerateAvailableCameras()
 
     struct dirent* entry;
     while ((entry = readdir(dir)) != nullptr) {
+        // Check if name starts with "video"
         if (strncmp(entry->d_name, "video", 5) == 0) {
-            std::string devicePath = std::string(video_dir) + entry->d_name;
-            int fd = open(devicePath.c_str(), O_RDONLY);
-            if (fd < 0) {
-                logger->enterLog("Failed to open device: " + devicePath);
-                continue;
-            }
-
-            struct v4l2_capability cap;
-            std::string deviceName = devicePath;
-            if (ioctl(fd, VIDIOC_QUERYCAP, &cap) == 0) {
-                std::string rawName = reinterpret_cast<char*>(cap.card);
-                std::string formattedName;
-                for (char c : rawName) {
-                    if (isalnum(static_cast<unsigned char>(c))) {
-                        formattedName += c;
+            // Check if the rest is an even number
+            const char* numPart = entry->d_name + 5;
+            char* endptr;
+            long num = strtol(numPart, &endptr, 10);
+            if (*numPart != '\0' && *endptr == '\0' && num % 2 == 0) {
+                std::string devicePath = std::string(video_dir) + entry->d_name;
+                int fd = open(devicePath.c_str(), O_RDONLY);
+                if (fd < 0) {
+                    logger->enterLog("Failed to open device: " + devicePath);
+                    continue;
+                }
+                struct v4l2_capability cap;
+                std::string deviceName = devicePath;
+                if (ioctl(fd, VIDIOC_QUERYCAP, &cap) == 0) {
+                    std::string rawName = reinterpret_cast<char*>(cap.card);
+                    std::string formattedName;
+                    for (char c : rawName) {
+                        if (isalnum(static_cast<unsigned char>(c))) {
+                            formattedName += c;
+                        }
+                        else if (c == ' ' || c == '-' || c == '.') {
+                            formattedName += '_';
+                        }
                     }
-                    else if (c == ' ' || c == '-' || c == '.') {
-                        formattedName += '_';
+                    size_t start = formattedName.find_first_not_of('_');
+                    size_t end = formattedName.find_last_not_of('_');
+                    if (start != std::string::npos && end != std::string::npos) {
+                        formattedName = formattedName.substr(start, end - start + 1);
                     }
+                    deviceName = formattedName;
                 }
-                size_t start = formattedName.find_first_not_of('_');
-                size_t end = formattedName.find_last_not_of('_');
-                if (start != std::string::npos && end != std::string::npos) {
-                    formattedName = formattedName.substr(start, end - start + 1);
-                }
-                deviceName = formattedName;
-            }
-            close(fd);
+                close(fd);
 
-            cameras.push_back(
-                CameraHardwareInfo{
-                    .name = deviceName,
-                    .path = devicePath
-                }
-            );
-            logger->enterLog("Camera found: " + deviceName + " at " + devicePath);
+                cameras.push_back(
+                    CameraHardwareInfo{
+                        .name = deviceName,
+                        .path = devicePath
+                    }
+                );
+                logger->enterLog("Camera found: " + deviceName + " at " + devicePath);
+            }
         }
     }
     closedir(dir);

@@ -8,7 +8,8 @@ public:
     Frame() : spec(0, 0, 0) {} // Default constructor
 	Frame(FrameSpec spec);
 
-	~Frame();
+	~Frame(); // TODO: implement the Frame classe's destructor
+
 	bool isIdentical(FrameSpec frameSpec);
 	FrameSpec getSpec();
 private:
