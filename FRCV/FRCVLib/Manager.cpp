@@ -18,7 +18,6 @@ Manager::Manager()
     logger = new Logger();
     framePool = new FramePool(logger);
     logger->enterLog("Manager constructed");
-    isRunning = false;
 }
 
 Manager::~Manager()
