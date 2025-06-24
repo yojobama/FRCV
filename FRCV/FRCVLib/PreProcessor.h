@@ -3,6 +3,7 @@
 #include <opencv2/opencv.hpp>
 
 class Frame;
+class Logger;
 
 class PreProcessor
 {
@@ -11,6 +12,7 @@ public:
 	~PreProcessor();
 	Frame* transformFrame(Frame* src, FrameSpec spec);
 private:
+	Logger* logger;
 	FramePool* framePool;
 };
 

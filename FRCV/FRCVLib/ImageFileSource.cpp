@@ -8,11 +8,16 @@ ImageFileFrameSource::ImageFileFrameSource(std::string filePath, Logger* logger,
         FrameSpec spec(img.rows, img.cols, img.type());
         frame = new Frame(spec);
         img.copyTo(*frame);
-        frames.push(frame);
     }
     else {
         frame = nullptr;
     }
+    doNotLoadThread = true;
+}
+
+Frame* ImageFileFrameSource::getLatestFrame()
+{
+    return frame;
 }
 
 void ImageFileFrameSource::captureFrame()

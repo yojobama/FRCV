@@ -4,6 +4,7 @@
 #include "Frame.h"
 #include "CameraCalibrationResult.h"
 #include "PreProcessor.h"
+#include <opencv2/opencv.hpp>
 
 ApriltagSink::ApriltagSink(Logger* logger, PreProcessor* preProcessor) : ISink(logger), logger(logger) {
     if (logger) logger->enterLog("ApriltagSink constructed");
@@ -59,49 +60,51 @@ void ApriltagSink::processFrame()
 {
 	if (logger) logger->enterLog("ApriltagSink::getResults called");
 	Frame* frame = source->getLatestFrame();
-
-	FrameSpec spec = frame->getSpec();
-
-	spec.setType(CV_8UC1);
-
-	Frame* gray = preProcessor->transformFrame(frame, spec);
-
-	std::vector<ApriltagDetection> returnVector;
-
-	logger->enterLog("making an image_u8_t from the opencv frame");
-
-	image_u8_t img = {
-		gray->cols,
-		gray->rows,
-		gray->cols,
-		gray->data
-	};
-
-	logger->enterLog("detecting apriltags using the detector");
-	zarray_t* detections = apriltag_detector_detect(detector, &img);
-
-	for (int i = 0; i < zarray_size(detections); i++) {
-		apriltag_detection_t* detection;
-		zarray_get(detections, i, &detection);
-
-		apriltag_pose_t pose;
-		/*double err = estimate_tag_pose(&info, &pose);*/
-
-		returnVector.push_back(ApriltagDetection(*detection, pose));
-	}
-
+	
 	std::string returnString = "{\"detections\":[";
+	
+	if (frame != nullptr) {
+		FrameSpec spec = frame->getSpec();
 
-	for (size_t i = 0; i < returnVector.size(); ++i) {
-		returnString += returnVector[i].toString();
-		if (i != returnVector.size() - 1) {
-			returnString += ",";
+		spec.setType(CV_8UC1);
+		//if (logger) logger->enterLog("spec.type after setType: " + std::to_string(spec.getType()));
+
+		Frame* gray = preProcessor->transformFrame(frame, spec);
+
+		std::vector<ApriltagDetection> returnVector;
+
+		logger->enterLog("making an image_u8_t from the opencv frame");
+
+		image_u8_t img = {
+			gray->cols,
+			gray->rows,
+			gray->cols,
+			gray->data
+		};
+
+		logger->enterLog("detecting apriltags using the detector");
+		zarray_t* detections = apriltag_detector_detect(detector, &img);
+
+		for (int i = 0; i < zarray_size(detections); i++) {
+			apriltag_detection_t* detection;
+			zarray_get(detections, i, &detection);
+
+			apriltag_pose_t pose;
+			/*double err = estimate_tag_pose(&info, &pose);*/
+
+			returnVector.push_back(ApriltagDetection(*detection, pose));
 		}
+
+		for (size_t i = 0; i < returnVector.size(); ++i) {
+			returnString += returnVector[i].toString();
+			if (i != returnVector.size() - 1) {
+				returnString += ",";
+			}
+		}
+		frame->dereference();
 	}
 
 	returnString += "]}";
-
-	frame->dereference();
 
 	results = returnString;
 }

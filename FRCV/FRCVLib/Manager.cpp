@@ -4,6 +4,7 @@
 #include "ApriltagSink.h"
 #include "CameraCalibrationResult.h"
 #include "RecordSink.h"
+#include "CameraSource.h"
 
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
@@ -147,7 +148,16 @@ bool Manager::unbindSourceFromSink(int sinkId) {
 int Manager::createCameraSource(CameraHardwareInfo info)
 {
     logger->enterLog("createCameraSource called with name=" + info.name + ", path=" + info.path);
-    return 0;
+    
+    int id = generateUUID();
+
+    CameraFrameSource* source = new CameraFrameSource(info.path, logger, framePool);
+
+    sources.emplace(id, source);
+
+    logger->enterLog("CameraFrameSource created with id=" + std::to_string(id));
+    
+    return id;
 }
 
 int Manager::createVideoFileSource(string path)

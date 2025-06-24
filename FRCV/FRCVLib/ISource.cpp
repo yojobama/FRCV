@@ -2,7 +2,7 @@
 #include "Frame.h"
 
 ISource::ISource(FramePool* framePool, Logger* logger)
-	: frameSpec(0, 0, 0) // Initialize frameSpec with default values
+	: frameSpec(0, 0, 0), lock() // Initialize frameSpec with default values
 {
 	this->framePool = framePool;
 	this->logger = logger;
@@ -15,34 +15,40 @@ ISource::~ISource()
 Frame* ISource::getLatestFrame()
 {
 	lock.lock();
-	frames.back()->reference();
-	bool hasReferences = frames.front()->getReferences() == 0;
-	while (!hasReferences) {
-		framePool->returnFrame(frames.front());
-		if (!frames.empty())
-		{
-			frames.pop();
-			hasReferences = frames.front()->getReferences() == 0;
+	if (!frames.empty()) {
+		frames.back()->reference();
+		bool hasReferences = frames.front()->getReferences() == 0;
+		while (!hasReferences) {
+			framePool->returnFrame(frames.front());
+			if (!frames.empty())
+			{
+				frames.pop();
+				hasReferences = frames.front()->getReferences() == 0;
+			}
+			else {
+				hasReferences = true;
+			}
 		}
-		else {
-			hasReferences = true;
-		}
+		Frame* frame = frames.back();
+		lock.unlock();
+		return frame;
+	} else {
+		logger->enterLog(ERROR, "frame queue is empty");
+		lock.unlock();
+		return nullptr;
 	}
-	Frame* frame = frames.back();
-	lock.unlock();
-	return frame;
 }
 
 void ISource::changeThreadStatus(bool threadWantedAlive)
 {
-	if (threadWantedAlive) {
+	if (threadWantedAlive && !doNotLoadThread) {
 		shouldTerminate = false;
 		pthread_create(&thread, NULL, sourceThreadStart, this);
 	}
-	else {
+	else if (!doNotLoadThread) {
 		if (thread) {
 			shouldTerminate = true;
-			while (shouldTerminate) sleep(1);
+			while (shouldTerminate);
 		}
 	}
 }

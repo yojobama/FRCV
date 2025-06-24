@@ -24,7 +24,7 @@ void ISink::changeThreadStatus(bool threadWantedAlive)
     else {
         if (thread) {
             shouldTerminate = true;
-            while (shouldTerminate) sleep(1);
+            while (shouldTerminate);
         }
     }
 }

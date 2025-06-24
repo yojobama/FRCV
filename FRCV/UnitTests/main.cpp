@@ -15,10 +15,12 @@ int main()
     }
 
     int sink = manager->createApriltagSink();
+    int sink2 = manager->createApriltagSink();
 
     int source = manager->createImageFileSource("/mnt/c/Users/yojob/Downloads/apriltag.png");
 
     manager->bindSourceToSink(source, sink);
+    manager->bindSourceToSink(source, sink2);
 
     manager->startAllSources();
     manager->startAllSinks();
@@ -28,7 +30,8 @@ int main()
     manager->stopAllSources();
     manager->stopAllSinks();
 
-    cout << manager->getSinkResult(sink) << endl;
+    cout << "sink 1: " << manager->getSinkResult(sink) << endl;
+    cout << "sink 2: " << manager->getSinkResult(sink2) << endl;
 
     return 0;
 }
