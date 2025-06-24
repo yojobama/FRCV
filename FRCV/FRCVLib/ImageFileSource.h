@@ -7,7 +7,7 @@
 class ImageFileFrameSource : public ISource
 {
 public:
-	ImageFileFrameSource(std::string filePath, Logger* logger);
+	ImageFileFrameSource(std::string filePath, Logger* logger, FramePool* framePool);
 private:
 	void captureFrame() override;
 	Frame* frame;

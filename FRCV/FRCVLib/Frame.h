@@ -2,6 +2,8 @@
 #include <opencv2/opencv.hpp>
 #include "FrameSpec.h"
 
+class FramePool;
+
 class Frame : public cv::Mat
 {
 public:
@@ -10,8 +12,13 @@ public:
 
 	~Frame(); // TODO: implement the Frame classe's destructor
 
+	int getReferences();
+	void reference();
+	void dereference();
+
 	bool isIdentical(FrameSpec frameSpec);
 	FrameSpec getSpec();
 private:
+	int referenceCount;
 	FrameSpec spec;
 };

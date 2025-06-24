@@ -12,10 +12,25 @@ ISource::~ISource()
 {
 }
 
-// Provide a default implementation for the pure virtual function
-Frame* ISource::getFrame()
+Frame* ISource::getLatestFrame()
 {
-	return currentFrame;
+	lock.lock();
+	frames.back()->reference();
+	bool hasReferences = frames.front()->getReferences() == 0;
+	while (!hasReferences) {
+		framePool->returnFrame(frames.front());
+		if (!frames.empty())
+		{
+			frames.pop();
+			hasReferences = frames.front()->getReferences() == 0;
+		}
+		else {
+			hasReferences = true;
+		}
+	}
+	Frame* frame = frames.back();
+	lock.unlock();
+	return frame;
 }
 
 void ISource::changeThreadStatus(bool threadWantedAlive)

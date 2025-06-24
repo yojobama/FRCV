@@ -33,6 +33,7 @@ void ISink::sinkThreadProc()
 {
     while (!shouldTerminate) {
         // do stuff
+        processFrame();
     }
     shouldTerminate = false;
 }

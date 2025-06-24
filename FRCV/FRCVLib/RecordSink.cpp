@@ -1,6 +1,6 @@
 #include "RecordSink.h"
 
-RecordSink::RecordSink(Logger* logger, string dstPath) : ISink(logger)
+RecordSink::RecordSink(Logger* logger, string dstPath)/* : ISink(logger)*/
 {
 	this->dstPath = dstPath;
 }
@@ -13,7 +13,7 @@ RecordSink::~RecordSink()
 
 void RecordSink::writeFrame()
 {
-	videoWriter->write(*source->getFrame());
+	//videoWriter->write(*source->getFrame());
 }
 
 string RecordSink::getVideoPath()

@@ -54,17 +54,3 @@ void Logger::clearAllLogs() {
 }
 
 
-bool Manager::takeCalibrationImage(int cameraId)
-{
-    if (sources.find(cameraId) == sources.end()) {
-        return false;
-    }
-    calibrationImages.push_back(sources.find(cameraId)->second->getFrame());
-    return true;
-}
-
-CameraCalibrationResult Manager::conculdeCalibration()
-{
-    calibrationImages.clear();
-    return CameraCalibrationResult();
-}

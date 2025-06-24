@@ -39,7 +39,9 @@ void CameraFrameSource::captureFrame()
 {
     if (capture->isOpened()) {
         logger->enterLog(INFO, "camera is open, grabbing frame and returning it");
-        capture->read(*currentFrame);
+        Frame* frame = framePool->getFrame(frameSpec);
+        capture->read(*frame);
+        frames.push(frame);
     }
     logger->enterLog(ERROR, "camera is closed, returning a null pointer");
 }

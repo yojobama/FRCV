@@ -1,7 +1,24 @@
 #include "Frame.h"
+#include "FramePool.h"
 
 Frame::Frame(FrameSpec spec)
     : cv::Mat(spec.getHeight(), spec.getWidth(), spec.getType()), spec(spec) {
+    referenceCount = 0;
+}
+
+int Frame::getReferences()
+{
+    return referenceCount;
+}
+
+void Frame::reference()
+{
+    referenceCount++;
+}
+
+void Frame::dereference()
+{
+    referenceCount--;
 }
 
 bool Frame::isIdentical(FrameSpec spec) {
@@ -14,5 +31,5 @@ bool Frame::isIdentical(FrameSpec spec) {
 
 FrameSpec Frame::getSpec()
 {
-    return spec;
+    return FrameSpec(cols, rows, type());
 }

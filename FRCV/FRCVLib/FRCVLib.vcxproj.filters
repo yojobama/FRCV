@@ -7,9 +7,6 @@
     <Filter Include="FrameSource">
       <UniqueIdentifier>{c1957aec-e258-4164-8cec-723bca593d3f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Pipeline">
-      <UniqueIdentifier>{b52e2975-b271-4d28-8697-adf22c98cdf8}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApriltagSink.cpp">

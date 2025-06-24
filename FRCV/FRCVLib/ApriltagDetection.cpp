@@ -28,10 +28,9 @@ std::string ApriltagDetection::toString()
             if (i < 3) oss << ",";
         }
     }
-    oss << "]";
-    oss << "},";
+    oss << "],";
 
-    // Pose parameters
+    // Pose parameters (now inside detection)
     oss << "\"pose\":{";
     // Rotation matrix
     oss << "\"R\":[";
@@ -56,9 +55,11 @@ std::string ApriltagDetection::toString()
         }
     }
     oss << "]";
-    oss << "}";
+    oss << "}"; // close pose
 
-    oss << "}";
+    oss << "}"; // close detection
+
+    oss << "}"; // close root
 
     return oss.str();
 }

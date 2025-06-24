@@ -4,7 +4,7 @@
 #include <map>
 #include <random>
 #include <chrono>
-#include <thread>
+#include <pthread.h>
 #include "ISink.h"
 #include "CameraCalibrationResult.h"
 
@@ -24,6 +24,7 @@ typedef struct {
 //};
 
 class CalibrationSink;
+class PreProcessor;
 
 class Manager
 {
@@ -80,11 +81,12 @@ private:
 	int generateUUID();
 
 	// maps for storing results, sources and sinks
-	map<int, string> results;
 	map<int, ISource*> sources;
 	map<int, ISink*> sinks;
 
 	FramePool *framePool;
+
+	PreProcessor* preProcessor;
 
 	Logger* logger; // a logger for the entire application
 

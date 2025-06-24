@@ -12,12 +12,14 @@
 #include <cstring>
 #include <iostream>
 #include <dirent.h>
+#include "PreProcessor.h"
 
 Manager::Manager()
 {
     logger = new Logger();
     framePool = new FramePool(logger);
     logger->enterLog("Manager constructed");
+    preProcessor = new PreProcessor(framePool);
 }
 
 Manager::~Manager()
@@ -116,7 +118,7 @@ bool Manager::bindSourceToSink(int sourceId, int sinkId) {
     }
     source = sources.find(sourceId)->second;
 
-    if (sinks.find(sinkId) != sinks.end()) {
+    if (sinks.find(sinkId) == sinks.end()) {
         logger->enterLog("Sink not found: " + std::to_string(sinkId));
         return false;
     }
@@ -166,7 +168,7 @@ int Manager::createImageFileSource(string path)
     logger->enterLog("createImageFileSource called with path=" + path);
     int id = generateUUID();
 
-    ImageFileFrameSource* source = new ImageFileFrameSource(path, logger);
+    ImageFileFrameSource* source = new ImageFileFrameSource(path, logger, framePool);
 
     sources.emplace(id, source);
 
@@ -179,7 +181,7 @@ int Manager::createApriltagSink()
     logger->enterLog("createApriltagSink called");
     int id = generateUUID();
 
-    ApriltagSink* sink = new ApriltagSink(logger);
+    ApriltagSink* sink = new ApriltagSink(logger, preProcessor);
 
     sinks.emplace(id, sink);
 
@@ -199,11 +201,11 @@ int Manager::createRecordingSink(int sourceId)
 
     // TODO: generate the path to the video file, an empty string will couse a faliure
 
-    RecordSink* recordSink = new RecordSink(logger, "");
+    /*RecordSink* recordSink = new RecordSink(logger, "");
 
-    sinks.emplace(id, recordSink);
+    sinks.emplace(id, recordSink);*/
 
-    return 0;
+    return id;
 }
 
 void Manager::startAllSources()
@@ -321,11 +323,11 @@ string Manager::getSinkStatusById(int sinkId)
 string Manager::getSinkResult(int sinkId)
 {
     logger->enterLog("getSinkResult called with sinkId=" + std::to_string(sinkId));
-    if (results.find(sinkId) == results.end()) {
+    if (sinks.find(sinkId) == sinks.end()) {
         logger->enterLog("Result not found for sinkId: " + std::to_string(sinkId));
         return "";
     }
-    string result = results.find(sinkId)->second;
+    string result = sinks.find(sinkId)->second->getCurrentResults();
     logger->enterLog("getSinkResult result: " + result);
     return result;
 }
@@ -335,15 +337,15 @@ string Manager::getAllSinkResults()
     logger->enterLog("getAllSinkResults called");
     string returnString;
     returnString += "{[";
+    auto iterator = sinks.begin();
 
-    auto iterator = results.begin();
-
-    while (iterator != results.end()) {
+    while (iterator != sinks.end()) {
         returnString += "{";
-        returnString += iterator->second;
+        returnString += iterator->second->getCurrentResults();
         returnString += "},";
         iterator++;
     }
+
 
     returnString += "]}";
 
@@ -359,12 +361,12 @@ vector<Log*> *Manager::getAllLogs()
 bool Manager::setSinkResult(int sinkId, string result)
 {
     logger->enterLog("setSinkResult called with sinkId=" + std::to_string(sinkId) + ", result=" + result);
-    if (results.find(sinkId) == results.end()) {
+    if (sinks.find(sinkId) == sinks.end()) {
         logger->enterLog("Result entry not found for sinkId: " + std::to_string(sinkId));
         return false;
     }
     else {
-        results.find(sinkId)->second = result;
+        sinks.find(sinkId)->second->getCurrentResults() = result;
         logger->enterLog("Result set for sinkId: " + std::to_string(sinkId));
         return true;
     }
@@ -379,5 +381,20 @@ int Manager::generateUUID()
 
     int randomNumber = dist(engine);
     logger->enterLog("Generated UUID: " + std::to_string(randomNumber));
-    return 0;
+    return randomNumber;
+}
+
+bool Manager::takeCalibrationImage(int cameraId)
+{
+    if (sources.find(cameraId) == sources.end()) {
+        return false;
+    }
+    calibrationImages.push_back(sources.find(cameraId)->second->getLatestFrame());
+    return true;
+}
+
+CameraCalibrationResult Manager::conculdeCalibration()
+{
+    calibrationImages.clear();
+    return CameraCalibrationResult();
 }
