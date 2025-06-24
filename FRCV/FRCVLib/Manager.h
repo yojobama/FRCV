@@ -49,8 +49,15 @@ public:
 
 	int createRecordingSink(int sourceId);
 
-	bool startAllSinks();
-	bool stopAllSinks();
+	void startAllSources();
+	void stopAllSources();
+	bool stopSourceById(int sourceId);
+	bool startSourceById(int sourceId);
+
+	void startAllSinks();
+	void stopAllSinks();
+	bool startSinkById(int sinkId);
+	bool stopSinkById(int sinkId);
 
 	string getAllSinkStatus();
 
@@ -59,7 +66,7 @@ public:
 	string getSinkResult(int sinkId);
 	string getAllSinkResults();
 
-	vector<string> getRecording(int recorderId);
+	vector<string> getRecording(int recorderId); // TODO: implement a recording mechanisem
 
 	vector<Log*> *getAllLogs();
 
@@ -72,11 +79,6 @@ private:
 
 	int generateUUID();
 
-	vector<thread*> sinkThreads; // threads for each sink to process frames
-	vector<thread*> sourceThreads; // threads for each source to read frames
-
-	void runSinkThread(int sinkId);
-
 	// maps for storing results, sources and sinks
 	map<int, string> results;
 	map<int, ISource*> sources;
@@ -85,8 +87,6 @@ private:
 	FramePool *framePool;
 
 	Logger* logger; // a logger for the entire application
-
-	bool isRunning; // flag to control the running state of the manager
 
 	vector<Frame*> calibrationImages;
 

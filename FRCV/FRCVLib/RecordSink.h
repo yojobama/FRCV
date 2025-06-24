@@ -8,7 +8,8 @@
 
 using namespace std;
 
-class RecordSink : public ISink
+// todo: implement inheritence from ISink
+class RecordSink
 {
 public:
 	RecordSink(Logger* logger, string dstPath);

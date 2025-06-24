@@ -207,36 +207,79 @@ int Manager::createRecordingSink(int sourceId)
     return 0;
 }
 
-bool Manager::startAllSinks()
+void Manager::startAllSources()
 {
-    logger->enterLog("startAllSinks called");
-    isRunning = true;
+    auto iterator = sources.begin();
 
-    auto iterator = sinks.begin();
-
-    while (iterator != sinks.end()) {
-        sinkThreads.push_back(new thread(
-            [this](int sinkId) { runSinkThread(sinkId); }, // Use a lambda to bind `this` and pass sinkId
-            iterator->first
-        ));
-        
+    while (iterator != sources.end()) {
+        iterator->second->changeThreadStatus(true);
         iterator++;
     }
+}
 
+void Manager::stopAllSources()
+{
+    auto iterator = sources.begin();
+
+    while (iterator != sources.end()) {
+        iterator->second->changeThreadStatus(false);
+        iterator++;
+    }
+}
+
+bool Manager::stopSourceById(int sourceId)
+{
+    auto source = sources.find(sourceId);
+    if (source == sources.end()) {
+        return false;
+    }
+    source->second->changeThreadStatus(false);
     return true;
 }
 
-bool Manager::stopAllSinks()
+bool Manager::startSourceById(int sourceId)
 {
-    logger->enterLog("stopAllSinks called");
-    isRunning = false;
-    auto iterator = sinkThreads.begin();
+    auto source = sources.find(sourceId);
+    if (source == sources.end()) {
+        return false;
+    }
+    source->second->changeThreadStatus(true);
+    return true;
+}
 
-    while (iterator != sinkThreads.end()) {
-        (*iterator)->join();
+void Manager::startAllSinks() {
+    auto iterator = sinks.begin();
+
+    while (iterator != sinks.end()) {
+        iterator->second->changeThreadStatus(true);
         iterator++;
     }
+}
 
+void Manager::stopAllSinks() {
+    auto iterator = sinks.begin();
+
+    while (iterator != sinks.end()) {
+        iterator->second->changeThreadStatus(false);
+        iterator++;
+    }
+}
+
+bool Manager::stopSinkById(int sinkId) {
+    auto sink = sinks.find(sinkId);
+    if (sink == sinks.end()) {
+        return false;
+    }
+    sink->second->changeThreadStatus(false);
+    return true;
+}
+
+bool Manager::startSinkById(int sinkId) {
+    auto sink = sinks.find(sinkId);
+    if (sink == sinks.end()) {
+        return false;
+    }
+    sink->second->changeThreadStatus(true);
     return true;
 }
 
@@ -338,11 +381,4 @@ int Manager::generateUUID()
     int randomNumber = dist(engine);
     logger->enterLog("Generated UUID: " + std::to_string(randomNumber));
     return 0;
-}
-
-void Manager::runSinkThread(int sinkId)
-{
-    while (isRunning) {
-		setSinkResult(sinkId, sinks.find(sinkId)->second->getResults());
-    }
 }
