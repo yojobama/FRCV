@@ -14,6 +14,8 @@
 #include <iostream>
 #include <dirent.h>
 #include "PreProcessor.h"
+#include "ISink.h"
+#include "CameraCalibrationResult.h"
 
 Manager::Manager()
 {

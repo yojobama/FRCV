@@ -2,13 +2,16 @@
 #include "ISource.h"
 #include <vector>
 #include <string>
-#include <opencv2/opencv.hpp>
 #include <dirent.h>
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <cstring>
+
+namespace cv {
+	class VideoCapture;
+};
 
 class CameraFrameSource : public ISource 
 {

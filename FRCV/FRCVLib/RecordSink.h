@@ -1,12 +1,14 @@
 #pragma once
-#include <opencv2/videoio.hpp>
 #include "Logger.h"
 #include <string>
-#include "Frame.h"
-#include "ISource.h"
-#include "ISink.h"
+
+class Frame;
 
 using namespace std;
+
+namespace cv {
+	class VideoWriter;
+};
 
 // todo: implement inheritence from ISink
 class RecordSink

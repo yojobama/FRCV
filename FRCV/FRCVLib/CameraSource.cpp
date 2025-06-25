@@ -1,5 +1,6 @@
 #include "CameraSource.h"
 #include "Frame.h"
+#include <opencv2/opencv.hpp>
 
 CameraFrameSource::CameraFrameSource(std::string devicePath, Logger* logger, FramePool* framePool) : ISource(framePool, logger)
 {

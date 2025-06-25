@@ -1,5 +1,6 @@
 #include "PreProcessor.h"
 #include "Frame.h"
+#include <opencv2/opencv.hpp>
 
 PreProcessor::PreProcessor(FramePool* framePool)
 {

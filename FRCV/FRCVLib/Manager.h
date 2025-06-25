@@ -5,10 +5,15 @@
 #include <random>
 #include <chrono>
 #include <pthread.h>
-#include "ISink.h"
-#include "CameraCalibrationResult.h"
 
 using namespace std;
+class ISink;
+class CameraCalibrationResult;
+class Log;
+class Logger;
+class FramePool;
+class ISource;
+class Frame;
 
 // TODO: temporary, rewrite this part
 typedef struct {
