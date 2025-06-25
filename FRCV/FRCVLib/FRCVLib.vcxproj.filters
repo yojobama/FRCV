@@ -51,21 +51,6 @@
     <ClCompile Include="ISource.cpp">
       <Filter>FrameSource</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\rknn_model_zoo\utils\file_utils.c">
-      <Filter>Sink\Rknn</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\rknn_model_zoo\utils\image_drawing.c">
-      <Filter>Sink\Rknn</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\rknn_model_zoo\utils\image_utils.c">
-      <Filter>Sink\Rknn</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\rknn_model_zoo\examples\yolo11\cpp\postprocess.cc">
-      <Filter>Sink\Rknn</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\rknn_model_zoo\examples\yolo11\cpp\rknpu2\yolo11.cc">
-      <Filter>Sink\Rknn</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">
@@ -106,27 +91,6 @@
     </ClInclude>
     <ClInclude Include="ISource.h">
       <Filter>FrameSource</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\rknn_model_zoo\utils\common.h">
-      <Filter>Sink\Rknn</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\rknn_model_zoo\utils\file_utils.h">
-      <Filter>Sink\Rknn</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\rknn_model_zoo\utils\font.h">
-      <Filter>Sink\Rknn</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\rknn_model_zoo\utils\image_drawing.h">
-      <Filter>Sink\Rknn</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\rknn_model_zoo\utils\image_utils.h">
-      <Filter>Sink\Rknn</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\rknn_model_zoo\examples\yolo11\cpp\postprocess.h">
-      <Filter>Sink\Rknn</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\rknn_model_zoo\examples\yolo11\cpp\yolo11.h">
-      <Filter>Sink\Rknn</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

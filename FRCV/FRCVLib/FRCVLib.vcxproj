@@ -80,13 +80,6 @@
     <WSLPath>Ubuntu-24.04</WSLPath>
   </PropertyGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\rknn_model_zoo\examples\yolo11\cpp\postprocess.h" />
-    <ClInclude Include="..\..\..\rknn_model_zoo\examples\yolo11\cpp\yolo11.h" />
-    <ClInclude Include="..\..\..\rknn_model_zoo\utils\common.h" />
-    <ClInclude Include="..\..\..\rknn_model_zoo\utils\file_utils.h" />
-    <ClInclude Include="..\..\..\rknn_model_zoo\utils\font.h" />
-    <ClInclude Include="..\..\..\rknn_model_zoo\utils\image_drawing.h" />
-    <ClInclude Include="..\..\..\rknn_model_zoo\utils\image_utils.h" />
     <ClInclude Include="ApriltagDetection.h" />
     <ClInclude Include="ApriltagSink.h" />
     <ClInclude Include="CameraCalibrationPipeline.h" />
@@ -108,11 +101,6 @@
     <ClInclude Include="VideoFileSource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\rknn_model_zoo\examples\yolo11\cpp\postprocess.cc" />
-    <ClCompile Include="..\..\..\rknn_model_zoo\examples\yolo11\cpp\rknpu2\yolo11.cc" />
-    <ClCompile Include="..\..\..\rknn_model_zoo\utils\file_utils.c" />
-    <ClCompile Include="..\..\..\rknn_model_zoo\utils\image_drawing.c" />
-    <ClCompile Include="..\..\..\rknn_model_zoo\utils\image_utils.c" />
     <ClCompile Include="ApriltagDetection.cpp" />
     <ClCompile Include="ApriltagSink.cpp" />
     <ClCompile Include="CameraCalibrationPipeline.cpp" />
