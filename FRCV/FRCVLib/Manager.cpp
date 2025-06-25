@@ -162,12 +162,12 @@ int Manager::createCameraSource(CameraHardwareInfo info)
     return id;
 }
 
-int Manager::createVideoFileSource(string path)
+int Manager::createVideoFileSource(string path, int fps)
 {
     logger->enterLog("createVideoFileSource called with path=" + path);
     int id = generateUUID();
 
-    VideoFileFrameSource* source = new VideoFileFrameSource(logger, path, framePool);
+    VideoFileFrameSource* source = new VideoFileFrameSource(logger, path, framePool, fps);
 
     sources.emplace(id, source);
 
@@ -409,4 +409,10 @@ CameraCalibrationResult Manager::conculdeCalibration()
 {
     calibrationImages.clear();
     return CameraCalibrationResult();
+}
+
+void Manager::clearAllLogs()
+{
+    logger->enterLog("clearAllLogs called");
+    logger->clearAllLogs();
 }

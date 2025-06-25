@@ -25,7 +25,6 @@ public:
 	std::string getDeviceName();
 	void changeDeviceName(std::string newName);
 
-	Frame* getFrame();
 private:
 	void captureFrame() override;
 	cv::VideoCapture* capture;

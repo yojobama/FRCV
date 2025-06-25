@@ -17,16 +17,13 @@ int main()
 
     int sink = manager->createApriltagSink();
     int sink2 = manager->createApriltagSink();
-    int sink3 = manager->createApriltagSink();
-    int sink4 = manager->createApriltagSink();
 
-    int source = manager->createImageFileSource("/mnt/c/Users/yojob/Downloads/apriltag.png");
+    //int source = manager->createImageFileSource("/mnt/c/Users/yojob/Downloads/apriltag.png");
     //int source = manager->createCameraSource(cameras[0]);
+    int source = manager->createVideoFileSource("/mnt/c/Users/yojob/Downloads/apriltagVideo.mp4", 60);
 
     manager->bindSourceToSink(source, sink);
     manager->bindSourceToSink(source, sink2);
-    manager->bindSourceToSink(source, sink3);
-    manager->bindSourceToSink(source, sink4);
 
     manager->startAllSources();
     manager->startAllSinks();

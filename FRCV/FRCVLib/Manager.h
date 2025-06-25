@@ -46,7 +46,7 @@ public:
 
 	// functions to create frame sources
 	int createCameraSource(CameraHardwareInfo info);
-	int createVideoFileSource(string path);
+	int createVideoFileSource(string path, int fps);
 	int createImageFileSource(string path);
 
 	// functions to create detection sinks
@@ -72,7 +72,7 @@ public:
 	string getSinkResult(int sinkId);
 	string getAllSinkResults();
 
-	vector<string> getRecording(int recorderId); // TODO: implement a recording mechanisem
+	//vector<string> getRecording(int recorderId); // TODO: implement a recording mechanisem
 
 	vector<Log*> *getAllLogs();
 

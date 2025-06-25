@@ -103,6 +103,10 @@ void ApriltagSink::processFrame()
 		}
 		frame->dereference();
 	}
+	else {
+		logger->enterLog(ERROR, "ApriltagSink::getResults: Frame is null");
+		returnString += "{}";
+	}
 
 	returnString += "]}";
 

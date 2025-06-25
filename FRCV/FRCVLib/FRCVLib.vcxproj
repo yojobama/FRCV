@@ -123,6 +123,7 @@
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="RecordSink.cpp" />
     <ClCompile Include="RknnSink.cpp" />
+    <ClCompile Include="swig_wrap.cxx" />
     <ClCompile Include="TRTSink.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />
   </ItemGroup>

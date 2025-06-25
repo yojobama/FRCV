@@ -23,7 +23,10 @@ Frame* ISource::getLatestFrame()
 			if (!frames.empty())
 			{
 				frames.pop();
-				hasReferences = frames.front()->getReferences() == 0;
+				if (frames.front() != nullptr) {
+					hasReferences = frames.front()->getReferences() == 0;
+				}
+				hasReferences = true;
 			}
 			else {
 				hasReferences = true;

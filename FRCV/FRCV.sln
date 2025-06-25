@@ -11,9 +11,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FRCVLib", "FRCVLib\FRCVLib.vcxproj", "{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{EC362AC0-EFA6-4C10-8C21-526DBAF72D71}"
-	ProjectSection(ProjectDependencies) = postProject
-		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279} = {2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}
-	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

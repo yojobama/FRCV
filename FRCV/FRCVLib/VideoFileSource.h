@@ -10,11 +10,12 @@ namespace cv {
 class VideoFileFrameSource : public ISource
 {
 public:
-	VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool);
+	VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool, int fps);
 	Frame* getFrame();
 private:
 	void captureFrame() override;
 	Logger* logger;
 	cv::VideoCapture* capture;
+	int fps;
 };
 
