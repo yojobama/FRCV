@@ -22,6 +22,16 @@ public:
 		: logLevel(logLevel), message(message) {}
 	LogLevel GetLogLevel() { return logLevel; }
 	std::string GetMessage() { return message; }
+	std::string GetLogLevelString() {
+		switch (logLevel) {
+			case INFO: return "INFO";
+			case WARNING: return "WARNING";
+			case DEBUG: return "DEBUG";
+			case ERROR: return "ERROR";
+			case WTF: return "WTF";
+			default: return "UNKNOWN";
+		}
+	}
 private:
 	LogLevel logLevel;
 	std::string message;
