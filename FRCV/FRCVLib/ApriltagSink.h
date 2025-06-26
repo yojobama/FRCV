@@ -17,7 +17,7 @@ public:
 	ApriltagSink(Logger* logger, PreProcessor* preProcessor);
     ~ApriltagSink();
 	void addCameraInfo(CameraCalibrationResult cameraInfo);
-	std::string getStatus();
+	std::string getStatus() override;
 	void processFrame() override;
 private:
 	PreProcessor* preProcessor;
