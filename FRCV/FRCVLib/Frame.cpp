@@ -4,22 +4,6 @@
 
 Frame::Frame(FrameSpec spec)
     : cv::Mat(spec.getHeight(), spec.getWidth(), spec.getType()), spec(spec) {
-    referenceCount = 0;
-}
-
-int Frame::getReferences()
-{
-    return referenceCount;
-}
-
-void Frame::reference()
-{
-    referenceCount++;
-}
-
-void Frame::dereference()
-{
-    referenceCount--;
 }
 
 bool Frame::isIdentical(FrameSpec spec) {

@@ -12,34 +12,24 @@ ISource::~ISource()
 {
 }
 
-Frame* ISource::getLatestFrame()
+std::shared_ptr<Frame> ISource::getLatestFrame()
 {
-	lock.lock();
-	if (!frames.empty()) {
-		frames.back()->reference();
-		bool hasReferences = frames.front()->getReferences() == 0;
-		while (!hasReferences) {
-			framePool->returnFrame(frames.front());
-			if (!frames.empty())
-			{
-				frames.pop();
-				if (frames.front() != nullptr) {
-					hasReferences = frames.front()->getReferences() == 0;
-				}
-				hasReferences = true;
-			}
-			else {
-				hasReferences = true;
-			}
+	std::lock_guard<std::mutex> guard(lock); // Use RAII for mutex locking
+
+	while (!frames.empty()) {
+		std::shared_ptr<Frame> frontFrame = frames.front();
+		if (frontFrame.use_count() > 1) {
+			// Frame is still in use, return the latest frame
+			return frames.back();
+		} else {
+			// Remove unused frame from the queue
+			frames.pop();
 		}
-		Frame* frame = frames.back();
-		lock.unlock();
-		return frame;
-	} else {
-		logger->enterLog(ERROR, "frame queue is empty");
-		lock.unlock();
-		return nullptr;
 	}
+
+	// If no valid frames are available, log an error and return nullptr
+	logger->enterLog(ERROR, "Frame queue is empty");
+	return nullptr;
 }
 
 void ISource::changeThreadStatus(bool threadWantedAlive)
@@ -47,11 +37,10 @@ void ISource::changeThreadStatus(bool threadWantedAlive)
 	if (threadWantedAlive && !doNotLoadThread) {
 		shouldTerminate = false;
 		pthread_create(&thread, NULL, sourceThreadStart, this);
-	}
-	else if (!doNotLoadThread) {
+	} else if (!doNotLoadThread) {
 		if (thread) {
 			shouldTerminate = true;
-			while (shouldTerminate);
+			pthread_join(thread, NULL); // Wait for the thread to terminate
 		}
 	}
 }

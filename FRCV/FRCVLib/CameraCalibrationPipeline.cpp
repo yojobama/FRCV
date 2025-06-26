@@ -18,7 +18,7 @@ CameraCalibrationPipeline::~CameraCalibrationPipeline()
 {
 }
 
-CameraCalibrationResult CameraCalibrationPipeline::getResults(vector<Frame*> frames, int CHECKERBOARD[2])
+CameraCalibrationResult CameraCalibrationPipeline::getResults(vector<shared_ptr<Frame>> frames, int CHECKERBOARD[2])
 {
     // Creating vector to store vectors of 3D points for each checkerboard image
     std::vector<std::vector<cv::Point3f> > objpoints;
@@ -34,7 +34,7 @@ CameraCalibrationResult CameraCalibrationPipeline::getResults(vector<Frame*> fra
             objp.push_back(cv::Point3f(j, i, 0));
     }
 
-    Frame* gray;
+    std::shared_ptr<Frame> gray;
 
     // vector to store the pixel coordinates of detected checker board corners 
     std::vector<cv::Point2f> corner_pts;
@@ -42,7 +42,7 @@ CameraCalibrationResult CameraCalibrationPipeline::getResults(vector<Frame*> fra
     for (auto i = frames.begin(); i < frames.end(); i++) {
         FrameSpec spec((*i)->getSpec().getHeight(), (*i)->getSpec().getWidth(), CV_8UC1);
 
-        gray = preProcessor->transformFrame((*i), spec);
+        gray = preProcessor->transformFrame(*i, spec);
 
         bool success = cv::findChessboardCorners(*gray, cv::Size(CHECKERBOARD[0], CHECKERBOARD[1]), corner_pts, cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_FAST_CHECK | cv::CALIB_CB_NORMALIZE_IMAGE
         );

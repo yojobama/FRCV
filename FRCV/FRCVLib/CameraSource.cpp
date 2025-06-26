@@ -41,7 +41,7 @@ void CameraFrameSource::captureFrame()
 {
     if (capture->isOpened()) {
         logger->enterLog(INFO, "camera is open, grabbing frame and returning it");
-        Frame* frame = framePool->getFrame(frameSpec);
+        std::shared_ptr<Frame> frame = framePool->getFrame(frameSpec);
 		capture->grab();
         capture->read(*frame);
         frames.push(frame);

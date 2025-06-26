@@ -10,6 +10,7 @@ VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath,
 	if (logger) logger->enterLog("VideoFileFrameSource constructed with filePath: " + filePath);
 	logger->enterLog(INFO, "initializing a video file capture device");
 	this->capture = new cv::VideoCapture(filePath);
+	if (!capture->isOpened()) throw "unable to open video file: " + filePath;
     this->fps = fps;
 }
 
@@ -17,11 +18,16 @@ void VideoFileFrameSource::captureFrame()
 {
     if (capture->isOpened()) {
         logger->enterLog(INFO, "camera is open, grabbing frame and returning it");
-        Frame* frame = framePool->getFrame(frameSpec);
+        std::shared_ptr<Frame> frame = framePool->getFrame(frameSpec);
         capture->grab();
         std::this_thread::sleep_for(std::chrono::milliseconds(1000 / fps));
-        capture->read(*frame);
-        frames.push(frame);
+        if (capture->read(*frame)) {
+            frames.push(frame);
+        } else {
+            logger->enterLog(ERROR, "Failed to read frame from video file");
+            framePool->returnFrame(frame); // Return unused frame to the pool
+        }
+    } else {
+        logger->enterLog(ERROR, "camera is closed, cannot capture frame");
     }
-    logger->enterLog(ERROR, "camera is closed, returning a null pointer");
 }

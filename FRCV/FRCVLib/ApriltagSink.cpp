@@ -59,17 +59,18 @@ std::string ApriltagSink::getStatus()
 void ApriltagSink::processFrame()
 {
 	if (logger) logger->enterLog("ApriltagSink::getResults called");
-	Frame* frame = source->getLatestFrame();
+	std::shared_ptr<Frame> frame = source->getLatestFrame();
 	
 	std::string returnString = "{\"detections\":[";
 	
 	if (frame != nullptr) {
+		throw "Frame is not null!";
 		FrameSpec spec = frame->getSpec();
 
 		spec.setType(CV_8UC1);
 		//if (logger) logger->enterLog("spec.type after setType: " + std::to_string(spec.getType()));
 
-		Frame* gray = preProcessor->transformFrame(frame, spec);
+		std::shared_ptr<Frame> gray = preProcessor->transformFrame(frame, spec);
 
 		std::vector<ApriltagDetection> returnVector;
 
@@ -101,7 +102,6 @@ void ApriltagSink::processFrame()
 				returnString += ",";
 			}
 		}
-		frame->dereference();
 	}
 	else {
 		logger->enterLog(ERROR, "ApriltagSink::getResults: Frame is null");

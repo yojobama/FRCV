@@ -9,62 +9,53 @@ PreProcessor::PreProcessor(FramePool* framePool)
 
 PreProcessor::~PreProcessor()
 {
-	// TODO: implement this function
+	// Cleanup resources if needed
 }
 
-Frame* PreProcessor::transformFrame(Frame* src, FrameSpec spec)
+std::shared_ptr<Frame> PreProcessor::transformFrame(std::shared_ptr<Frame> src, FrameSpec spec)
 {
-	// first check, see if enything has to be done or not
+	// Check if transformation is necessary
 	if (src->isIdentical(spec)) {
 		return src;
 	}
-	bool sameHeight, sameWidth, sameType;
 
-	// check height
-	sameHeight = (src->getSpec().getHeight() == spec.getHeight());
-	
-	// check width
-	sameWidth = (src->getSpec().getWidth() == spec.getWidth());
+	bool sameHeight = (src->getSpec().getHeight() == spec.getHeight());
+	bool sameWidth = (src->getSpec().getWidth() == spec.getWidth());
+	bool sameType = (src->getSpec().getType() == spec.getType());
 
-	// check frame type (RGB, BGR, gray scale, etc...)
-	sameType = (src->getSpec().getType() == spec.getType());
-
-	// If all are the same, return src (should not reach here due to isIdentical, but for safety)
+	// If all properties match, return the source frame
 	if (sameHeight && sameWidth && sameType) {
 		return src;
 	}
 
-	// Otherwise, create a new frame with the desired spec
+	// Create an intermediate frame with the desired type
 	FrameSpec midSpec = spec;
-
 	midSpec.setType(CV_8UC3);
+	std::shared_ptr<Frame> mid = framePool->getFrame(midSpec);
 
-	Frame* mid = framePool->getFrame(midSpec);
-
-	// Resize if needed
+	// Resize if dimensions differ
 	if (!sameHeight || !sameWidth) {
 		cv::resize(*src, *mid, cv::Size(spec.getWidth(), spec.getHeight()));
 	} else {
-		// Copy data if only type is different
+		// Copy data if only the type is different
 		src->copyTo(*mid);
 	}
 
-	Frame* dst = framePool->getFrame(spec);
+	// Create the final frame with the desired spec
+	std::shared_ptr<Frame> dst = framePool->getFrame(spec);
 
 	// Convert type if needed
 	if (!sameType) {
 		int srcType = src->getSpec().getType();
 		int dstType = spec.getType();
-		// Example: convert between color spaces (assuming OpenCV types)
 		if ((srcType == CV_8UC3 && dstType == CV_8UC1) || (srcType == CV_8UC1 && dstType == CV_8UC3)) {
 			int code = (srcType == CV_8UC3) ? cv::COLOR_BGR2GRAY : cv::COLOR_GRAY2BGR;
 			cv::cvtColor(*mid, *dst, code);
 		}
-		// Add more conversions as needed
 	}
 
-	// return src to the frame pool
-	//framePool->returnFrame(src);
+	// Return the intermediate frame to the pool
+	framePool->returnFrame(mid);
 
 	return dst;
 }

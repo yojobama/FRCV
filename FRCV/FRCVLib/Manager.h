@@ -5,6 +5,7 @@
 #include <random>
 #include <chrono>
 #include <pthread.h>
+#include <memory>
 
 using namespace std;
 class ISink;
@@ -95,7 +96,7 @@ private:
 
 	Logger* logger; // a logger for the entire application
 
-	vector<Frame*> calibrationImages;
+	vector<std::shared_ptr<Frame>> calibrationImages;
 
 	CalibrationSink* calibrationSink;
 };
