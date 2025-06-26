@@ -6,31 +6,27 @@ Logger::Logger() {
 }
 
 // Destructor
-Logger::~Logger() {}
+Logger::~Logger() {
+    clearAllLogs();
+}
 
 // Define the enterLog method for a single string message
 void Logger::enterLog(std::string message) {
-    lock.lock();
-    logs.push_back(new Log(INFO, message)); // Add the log to the logs vector
-    lock.unlock();
-    //std::cout << "[INFO]: " << message << std::endl; // Print the log to the console
+    std::lock_guard<std::mutex> guard(lock);  // RAII lock
+    logs.push_back(new Log(INFO, message));
 }
 
 // Define the enterLog method for a log level and message
 void Logger::enterLog(LogLevel logLevel, std::string message) {
-    lock.lock();
-	Log log(logLevel, message);
-    logs.push_back(&log); // Add the log to the logs vector
-    lock.unlock();
-	//log.GetLogLevelString(); // Print the log to the console
+    std::lock_guard<std::mutex> guard(lock);  // RAII lock
+    logs.push_back(new Log(logLevel, message));
 }
 
 // Define the enterLog method for a Log object
 void Logger::enterLog(Log *log) {
-    lock.lock();
-    logs.push_back(log); // Add the log to the logs vector
-    lock.unlock();
-    //std::cout << "[" << log->GetLogLevel() << "]: " << log->GetMessage() << std::endl; // Print the log to the console
+    if (!log) return;
+    std::lock_guard<std::mutex> guard(lock);  // RAII lock
+    logs.push_back(new Log(log->GetLogLevel(), log->GetMessage()));
 }
 
 // Define the method to get all logs
@@ -40,6 +36,7 @@ std::vector<Log*> *Logger::GetAllLogs() {
 
 // Define the method to get logs of a specific log level
 std::vector<Log*> Logger::GetCertainLogs(LogLevel logLevel) {
+    std::lock_guard<std::mutex> guard(lock);  // RAII lock
     std::vector<Log*> filteredLogs;
     for (const auto& log : logs) {
         if (log->GetLogLevel() == logLevel) {
@@ -51,6 +48,10 @@ std::vector<Log*> Logger::GetCertainLogs(LogLevel logLevel) {
 
 // Define the method to clear all logs
 void Logger::clearAllLogs() {
+    std::lock_guard<std::mutex> guard(lock);  // RAII lock
+    for (auto log : logs) {
+        delete log;
+    }
     logs.clear();
 }
 
