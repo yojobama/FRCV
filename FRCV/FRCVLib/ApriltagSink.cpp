@@ -64,7 +64,6 @@ void ApriltagSink::processFrame()
 	std::string returnString = "{\"detections\":[";
 	
 	if (frame != nullptr) {
-		throw "Frame is not null!";
 		FrameSpec spec = frame->getSpec();
 
 		spec.setType(CV_8UC1);

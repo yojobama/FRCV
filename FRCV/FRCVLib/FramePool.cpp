@@ -18,13 +18,15 @@ int FramePool::getCachedFrameCount() {
 
 std::shared_ptr<Frame> FramePool::getFrame(FrameSpec frameSpec) {
     if (logger) logger->enterLog("FramePool::getFrame called");
-    std::lock_guard<std::mutex> guard(lock);
-    for (auto it = frameVector.begin(); it != frameVector.end(); ++it) {
-        if ((*it)->isIdentical(frameSpec)) {
-            logger->enterLog(INFO, "retrieving an existing cached frame from the pool");
-            std::shared_ptr<Frame> frame = *it;
-            frameVector.erase(it); // Remove the frame from the pool
-            return frame;
+    {
+        std::lock_guard<std::mutex> guard(lock);
+        for (auto it = frameVector.begin(); it != frameVector.end(); ++it) {
+            if ((*it)->isIdentical(frameSpec)) {
+                logger->enterLog(INFO, "retrieving an existing cached frame from the pool");
+                std::shared_ptr<Frame> frame = *it;
+                frameVector.erase(it); // Remove the frame from the pool
+                return frame;
+            }
         }
     }
     return allocateFrame(frameSpec);
