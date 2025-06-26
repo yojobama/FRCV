@@ -51,6 +51,7 @@
     <ClCompile Include="ISource.cpp">
       <Filter>FrameSource</Filter>
     </ClCompile>
+    <ClCompile Include="swig_wrap.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">

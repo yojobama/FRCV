@@ -4,8 +4,10 @@
 
 CameraFrameSource::CameraFrameSource(std::string devicePath, Logger* logger, FramePool* framePool) : ISource(framePool, logger)
 {
-    capture = new cv::VideoCapture("v4l2://" + devicePath, cv::CAP_V4L2);
-    while (!capture->isOpened());
+    capture = new cv::VideoCapture(devicePath, cv::CAP_V4L2);
+
+    if (!capture->isOpened()) throw "unable to open webcam: " + devicePath;
+
     this->devicePath = devicePath;
     this->deviceName = getDeviceName();
 }
@@ -42,7 +44,6 @@ void CameraFrameSource::captureFrame()
     if (capture->isOpened()) {
         logger->enterLog(INFO, "camera is open, grabbing frame and returning it");
         std::shared_ptr<Frame> frame = framePool->getFrame(frameSpec);
-		capture->grab();
         capture->read(*frame);
         frames.push(frame);
     }
