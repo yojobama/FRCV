@@ -21,7 +21,7 @@ void VideoFileFrameSource::captureFrame()
         std::shared_ptr<Frame> frame = framePool->getFrame(frameSpec);
         capture->grab();
         std::this_thread::sleep_for(std::chrono::milliseconds(1000 / fps));
-        if (capture->read(*frame)) {
+        if (capture->read(*frame.get())) {
             frames.push(frame);
         } else {
             logger->enterLog(ERROR, "Failed to read frame from video file");
