@@ -1,1 +1,1 @@
-#include "../RknnSink.h"
+#include "RknnSink.h"

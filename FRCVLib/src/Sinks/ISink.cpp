@@ -1,4 +1,4 @@
-#include "../ISink.h"
+#include "ISink.h"
 #include "../Frame.h"
 
 ISink::ISink(Logger* logger) : logger(logger), source(nullptr) {

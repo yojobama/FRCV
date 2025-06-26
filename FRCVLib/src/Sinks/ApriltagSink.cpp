@@ -6,12 +6,19 @@
 #include "PreProcessor.h"
 #include <opencv2/opencv.hpp>
 
-ApriltagSink::ApriltagSink(Logger* logger, PreProcessor* preProcessor) : ISink(logger), logger(logger) {
+ApriltagSink::ApriltagSink(Logger* logger, PreProcessor* preProcessor, CameraCalibrationResult calibResult) : ISink(logger), logger(logger) {
     if (logger) logger->enterLog("ApriltagSink constructed");
 	this->family = tag36h11_create();
 	this->detector = apriltag_detector_create();
 	apriltag_detector_add_family(this->detector, this->family);
 	this->preProcessor = preProcessor;
+
+	this->info.fx = calibResult.fx;
+	this->info.fy = calibResult.fy;
+	this->info.cx = calibResult.cx;
+	this->info.cy = calibResult.cy;
+
+	if (logger) logger->enterLog("ApriltagSink initialized with camera info");
 }
 
 ApriltagSink::~ApriltagSink() {
@@ -90,9 +97,9 @@ void ApriltagSink::processFrame()
 			zarray_get(detections, i, &detection);
 
 			apriltag_pose_t pose;
-			/*double err = estimate_tag_pose(&info, &pose);*/
+			double err = estimate_tag_pose(&info, &pose);
 
-			returnVector.push_back(ApriltagDetection(*detection, pose));
+			returnVector.emplace_back(*detection, pose);
 		}
 
 		for (size_t i = 0; i < returnVector.size(); ++i) {

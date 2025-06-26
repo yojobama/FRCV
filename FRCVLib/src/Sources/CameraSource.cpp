@@ -1,4 +1,4 @@
-#include "../CameraSource.h"
+#include "CameraSource.h"
 #include "../Frame.h"
 #include <opencv2/opencv.hpp>
 

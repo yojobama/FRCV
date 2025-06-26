@@ -14,7 +14,7 @@ class CameraCalibrationResult;
 class ApriltagSink : public ISink
 {
 public:
-	ApriltagSink(Logger* logger, PreProcessor* preProcessor);
+	ApriltagSink(Logger* logger, PreProcessor* preProcessor, CameraCalibrationResult calibResult);
     ~ApriltagSink();
 	void addCameraInfo(CameraCalibrationResult cameraInfo);
 	std::string getStatus() override;

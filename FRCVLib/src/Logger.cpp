@@ -1,5 +1,4 @@
 #include "Logger.h"
-#include "Manager.h"
 
 // Constructor
 Logger::Logger() {

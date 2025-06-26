@@ -1,4 +1,4 @@
-#include "../RecordSink.h"
+#include "RecordSink.h"
 #include <opencv2/videoio.hpp>
 #include "../Frame.h"
 

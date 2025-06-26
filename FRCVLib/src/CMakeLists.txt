@@ -1,6 +1,19 @@
+file(GLOB_RECURSE source_files
+        "*.cpp"
+        "*.h"
+        "Sources/*.cpp"
+        "Sources/*.h"
+)
+
 add_library(FRCVLib SHARED
-        FRCVCore.h
-        FRCVCore.cpp
+    ${source_files}
+)
+
+# Ensure all source directories are included
+target_include_directories(FRCVLib PUBLIC
+        $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Sources>
 )
 
 target_include_directories(FRCVLib PUBLIC
@@ -15,3 +28,4 @@ target_link_libraries(FRCVLib PUBLIC
     ${OpenCV_LIBS}
     apriltag
 )
+

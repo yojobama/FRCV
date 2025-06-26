@@ -29,9 +29,9 @@ class CalibrationSink;
 class PreProcessor;
 
 class FRCVCore {
+public:
 	FRCVCore();
 	~FRCVCore();
-
 	// utill functions
 	vector<int> getAllSinks();
 
@@ -45,7 +45,7 @@ class FRCVCore {
 	int createImageFileSource(string path);
 
 	// functions to create detection sinks
-	int createApriltagSink();
+	int createApriltagSink(CameraCalibrationResult calibResult);
 	int createObjectDetectionSink();
 
 	int createRecordingSink(int sourceId);

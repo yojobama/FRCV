@@ -13,8 +13,12 @@
 #include <unistd.h>
 #include <cstring>
 #include <dirent.h>
+
+#include "CameraCalibrationPipeline.h"
 #include "PreProcessor.h"
 #include "Sinks/ISink.h"
+
+#include "CameraCalibrationResult.h"
 
 FRCVCore::FRCVCore()
 {
@@ -187,7 +191,7 @@ int FRCVCore::createImageFileSource(string path)
     return id;
 }
 
-int FRCVCore::createApriltagSink()
+int FRCVCore::createApriltagSink(CameraCalibrationResult calibResult)
 {
     logger->enterLog("createApriltagSink called");
     int id = generateUUID();
@@ -407,7 +411,9 @@ bool FRCVCore::takeCalibrationImage(int cameraId)
 CameraCalibrationResult FRCVCore::conculdeCalibration()
 {
     calibrationImages.clear();
-    return CameraCalibrationResult();
+    CameraCalibrationPipeline pipeline(preProcessor, framePool);
+    int checkerboard[2] = {6, 9};
+    return pipeline.getResults(calibrationImages, checkerboard);
 }
 
 void FRCVCore::clearAllLogs()
