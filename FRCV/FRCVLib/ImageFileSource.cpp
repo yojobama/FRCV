@@ -7,9 +7,9 @@ ImageFileFrameSource::ImageFileFrameSource(std::string filePath, Logger* logger,
     if (!img.empty()) {
         FrameSpec spec(img.rows, img.cols, img.type());
         frame = framePool->getFrame(spec); // Use FramePool to allocate the frame
-        img.copyTo(*frame);
+        img.copyTo(*frame.get());
     } else {
-        frame = nullptr;
+        frame = nullptr;    
         logger->enterLog(ERROR, "Failed to load image from file: " + filePath);
     }
     doNotLoadThread = true;

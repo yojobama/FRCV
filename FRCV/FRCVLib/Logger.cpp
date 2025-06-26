@@ -1,49 +1,47 @@
 #include "Logger.h"
-#include "Manager.h"
+#include <memory.h>
 
 // Constructor
-Logger::Logger() {
-}
+Logger::Logger() {}
 
 // Destructor
 Logger::~Logger() {}
 
 // Define the enterLog method for a single string message
 void Logger::enterLog(std::string message) {
-    lock.lock();
-    logs.push_back(new Log(INFO, message)); // Add the log to the logs vector
-    lock.unlock();
-    std::cout << "[INFO]: " << message << std::endl; // Print the log to the console
+    std::lock_guard<std::mutex> guard(lock);
+    logs.emplace_back(std::make_unique<Log>(LogLevel::INFO, message));
 }
 
 // Define the enterLog method for a log level and message
 void Logger::enterLog(LogLevel logLevel, std::string message) {
-    lock.lock();
-	Log log(logLevel, message);
-    logs.push_back(&log); // Add the log to the logs vector
-    lock.unlock();
-	log.GetLogLevelString(); // Print the log to the console
+    std::lock_guard<std::mutex> guard(lock);
+    logs.emplace_back(std::make_unique<Log>(logLevel, message));
 }
 
 // Define the enterLog method for a Log object
-void Logger::enterLog(Log *log) {
-    lock.lock();
-    logs.push_back(log); // Add the log to the logs vector
-    lock.unlock();
-    std::cout << "[" << log->GetLogLevel() << "]: " << log->GetMessage() << std::endl; // Print the log to the console
+void Logger::enterLog(std::unique_ptr<Log> log) {
+    std::lock_guard<std::mutex> guard(lock);
+    logs.emplace_back(std::move(log)); // Use std::move to transfer ownership
 }
 
 // Define the method to get all logs
-std::vector<Log*> *Logger::GetAllLogs() {
-    return &logs;
+std::vector<std::unique_ptr<Log>> Logger::GetAllLogs() {
+    std::lock_guard<std::mutex> guard(lock);
+    std::vector<std::unique_ptr<Log>> allLogs;
+    for (auto& log : logs) {
+        allLogs.emplace_back(std::make_unique<Log>(log->GetLogLevel(), log->GetMessage()));
+    }
+    return allLogs;
 }
 
 // Define the method to get logs of a specific log level
-std::vector<Log*> Logger::GetCertainLogs(LogLevel logLevel) {
-    std::vector<Log*> filteredLogs;
-    for (const auto& log : logs) {
+std::vector<std::unique_ptr<Log>> Logger::GetCertainLogs(LogLevel logLevel) {
+    std::lock_guard<std::mutex> guard(lock);
+    std::vector<std::unique_ptr<Log>> filteredLogs;
+    for (auto& log : logs) {
         if (log->GetLogLevel() == logLevel) {
-            filteredLogs.push_back(log);
+            filteredLogs.emplace_back(std::make_unique<Log>(log->GetLogLevel(), log->GetMessage()));
         }
     }
     return filteredLogs;
@@ -51,6 +49,7 @@ std::vector<Log*> Logger::GetCertainLogs(LogLevel logLevel) {
 
 // Define the method to clear all logs
 void Logger::clearAllLogs() {
+    std::lock_guard<std::mutex> guard(lock);
     logs.clear();
 }
 

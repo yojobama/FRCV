@@ -75,7 +75,7 @@ public:
 
 	//vector<string> getRecording(int recorderId); // TODO: implement a recording mechanisem
 
-	vector<Log*> *getAllLogs();
+	vector<unique_ptr<Log>> getAllLogs();
 
 	void clearAllLogs();
 

@@ -5,6 +5,7 @@
 #include <bits/stdc++.h>
 #include <iostream>
 #include <mutex>
+#include <memory>
 
 // TODO: add some stuff to make the logger functional
 enum LogLevel
@@ -44,12 +45,12 @@ public:
 	~Logger();
 	void enterLog(std::string message);
 	void enterLog(LogLevel logLevel, std::string message);
-	void enterLog(Log* log);
-	std::vector<Log*> *GetAllLogs();
-	std::vector<Log*> GetCertainLogs(LogLevel logLevel);
+	void enterLog(std::unique_ptr<Log> log);
+	std::vector<std::unique_ptr<Log>> GetAllLogs();
+	std::vector<std::unique_ptr<Log>> GetCertainLogs(LogLevel logLevel);
 	void clearAllLogs();
 private:
 	std::mutex lock;
-	std::vector<Log*> logs;
+	std::vector<std::unique_ptr<Log>> logs;
 };
 

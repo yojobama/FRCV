@@ -364,7 +364,7 @@ string Manager::getAllSinkResults()
     return returnString;
 }
 
-vector<Log*> *Manager::getAllLogs()
+vector<unique_ptr<Log>> Manager::getAllLogs()
 {
     logger->enterLog("getAllLogs called");
     return logger->GetAllLogs();
