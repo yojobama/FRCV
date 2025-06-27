@@ -36,7 +36,8 @@ class PreProcessor;
 class Manager
 {
 public:
-	Manager(string logDir);
+	Manager(string logFile);
+	Manager();
 	~Manager();
 
 	// utill functions
@@ -76,7 +77,7 @@ public:
 
 	//vector<string> getRecording(int recorderId); // TODO: implement a recording mechanisem
 
-	vector<unique_ptr<Log>> getAllLogs();
+	vector<Log*> getAllLogs();
 
 	void clearAllLogs();
 

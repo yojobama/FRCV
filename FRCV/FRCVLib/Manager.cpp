@@ -17,9 +17,16 @@
 #include "ISink.h"
 #include "CameraCalibrationSink.h"
 
-Manager::Manager(string logDir)
+Manager::Manager(string logFile)
 {
-    logger = new Logger();
+    logger = new Logger(logFile);
+    framePool = new FramePool(logger);
+    logger->enterLog("Manager constructed");
+    preProcessor = new PreProcessor(framePool);
+}
+
+Manager::Manager()
+{
     framePool = new FramePool(logger);
     logger->enterLog("Manager constructed");
     preProcessor = new PreProcessor(framePool);
@@ -364,7 +371,7 @@ string Manager::getAllSinkResults()
     return returnString;
 }
 
-vector<unique_ptr<Log>> Manager::getAllLogs()
+vector<Log*> Manager::getAllLogs()
 {
     logger->enterLog("getAllLogs called");
     return logger->GetAllLogs();
