@@ -14,6 +14,9 @@ public:
 	int getType() const { return type; }
 	void setType(int t) { type = t; }
 
+	bool operator== (const FrameSpec& other) const {
+		return (height == other.height && width == other.width && type == other.type);
+	}
 private:
 	int height, width, type;
 };

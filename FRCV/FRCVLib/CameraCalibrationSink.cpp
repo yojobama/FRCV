@@ -4,7 +4,7 @@
 #include "CameraCalibrationResult.h"
 #include "PreProcessor.h"
 
-CameraCalibrationSink::CameraCalibrationSink(Logger* logger, PreProcessor* preProcessor)
+CameraCalibrationSink::CameraCalibrationSink(Logger* logger, PreProcessor* preProcessor, FrameSpec frameSpec) : frameSpec(frameSpec)
 {
 	this->logger = logger;
 	this->preProcessor = preProcessor;
@@ -18,7 +18,14 @@ CameraCalibrationSink::~CameraCalibrationSink()
 
 void CameraCalibrationSink::grabFrame()
 {
-	frames.push_back(source->getLatestFrame(true));
+	std::shared_ptr<Frame> src = source->getLatestFrame(true);
+    if (src->getSpec() == frameSpec) {
+		frames.push_back(src);
+    }
+    else {
+		std::shared_ptr<Frame> dst = preProcessor->transformFrame(src, frameSpec);
+		frames.push_back(dst);
+    }
 }
 
 CameraCalibrationResult CameraCalibrationSink::getResults()
