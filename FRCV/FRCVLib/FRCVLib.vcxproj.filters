@@ -33,7 +33,6 @@
     <ClCompile Include="Frame.cpp" />
     <ClCompile Include="ApriltagDetection.cpp" />
     <ClCompile Include="PreProcessor.cpp" />
-    <ClCompile Include="CameraCalibrationPipeline.cpp" />
     <ClCompile Include="CameraCalibrationResult.cpp" />
     <ClCompile Include="Manager.cpp" />
     <ClCompile Include="RecordSink.cpp">
@@ -77,7 +76,6 @@
     <ClInclude Include="Frame.h" />
     <ClInclude Include="ApriltagDetection.h" />
     <ClInclude Include="PreProcessor.h" />
-    <ClInclude Include="CameraCalibrationPipeline.h" />
     <ClInclude Include="CameraCalibrationResult.h" />
     <ClInclude Include="Manager.h" />
     <ClInclude Include="RecordSink.h">

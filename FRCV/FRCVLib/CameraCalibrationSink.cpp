@@ -80,7 +80,7 @@ CameraCalibrationResult CameraCalibrationSink::getResults()
         cy = cameraMatrix.at<double>(1, 2);
     }
 
-    return CameraCalibrationResult(fx, fy, cx, cy);
+    return CameraCalibrationResult(fx, fy, cx, cy, frameSpec);
 }
 
 void CameraCalibrationSink::bindSource(ISource* source)
