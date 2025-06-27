@@ -1,8 +1,15 @@
 #include "Logger.h"
 #include <memory.h>
+#include <fstream>
+#include <iostream>
 
 // Constructor
-Logger::Logger() {}
+Logger::Logger() {
+}
+
+Logger::Logger(std::string filePath) {
+    this->filePath = filePath;
+}
 
 // Destructor
 Logger::~Logger() {
@@ -29,11 +36,11 @@ void Logger::enterLog(Log *log) {
 }
 
 // Define the method to get all logs
-std::vector<std::unique_ptr<Log>> Logger::GetAllLogs() {
+std::vector<Log*> Logger::GetAllLogs() {
     std::lock_guard<std::mutex> guard(lock);
-    std::vector<std::unique_ptr<Log>> allLogs;
+    std::vector<Log*> allLogs;
     for (auto& log : logs) {
-        allLogs.emplace_back(std::make_unique<Log>(log->GetLogLevel(), log->GetMessage()));
+        allLogs.emplace_back(new Log(log->GetLogLevel(), log->GetMessage()));
     }
     return allLogs;
 }
@@ -44,7 +51,7 @@ std::vector<Log*> Logger::GetCertainLogs(LogLevel logLevel) {
     std::vector<Log*> filteredLogs;
     for (const auto& log : logs) {
         if (log->GetLogLevel() == logLevel) {
-            filteredLogs.emplace_back(std::make_unique<Log>(log->GetLogLevel(), log->GetMessage()));
+            filteredLogs.emplace_back(new Log(log->GetLogLevel(), log->GetMessage()));
         }
     }
     return filteredLogs;
@@ -57,6 +64,23 @@ void Logger::clearAllLogs() {
         delete log;
     }
     logs.clear();
+}
+
+void Logger::flushLogs()
+{
+    if (filePath != "") {
+        std::ofstream logFile(filePath, std::ios::out | std::ios::app | std::ios::binary);
+
+        if (logFile.is_open()) {
+            std::lock_guard<std::mutex> guard(lock);  // RAII lock
+            while (!logs.empty()) {
+                logFile << "[" + logs.back()->GetLogLevelString() + "]: " + logs.back()->GetMessage() + "\n";
+                logs.pop_back();
+            }
+        }
+
+        logFile.close();
+    }
 }
 
 

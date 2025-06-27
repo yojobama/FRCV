@@ -15,6 +15,7 @@ class Logger;
 class FramePool;
 class ISource;
 class Frame;
+class CameraCalibrationSink;
 
 // TODO: temporary, rewrite this part
 typedef struct {
@@ -35,7 +36,7 @@ class PreProcessor;
 class Manager
 {
 public:
-	Manager();
+	Manager(string logDir);
 	~Manager();
 
 	// utill functions
@@ -79,8 +80,11 @@ public:
 
 	void clearAllLogs();
 
-	bool takeCalibrationImage(int cameraId);
-	CameraCalibrationResult conculdeCalibration();
+	int createCameraCalibrationSink();
+	void bindSourceToCalibrationSink(int sourceId);
+	void cameraCalibrationSinkGrabFrame(int sinkId);
+
+	CameraCalibrationResult getCameraCalibrationResults(int sinkId);
 private:
 	bool setSinkResult(int sinkId, string result);
 
@@ -89,6 +93,7 @@ private:
 	// maps for storing results, sources and sinks
 	map<int, ISource*> sources;
 	map<int, ISink*> sinks;
+	map<int, CameraCalibrationSink*> cameraCalibrationSinks; // camera calibration sinks
 
 	FramePool *framePool;
 

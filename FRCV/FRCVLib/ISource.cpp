@@ -12,6 +12,30 @@ ISource::~ISource()
 {
 }
 
+std::shared_ptr<Frame> ISource::getLatestFrame(bool forceNewFrame)
+{
+	std::lock_guard<std::mutex> guard(lock); // Use RAII for mutex locking
+
+	if (forceNewFrame) {
+		logger->enterLog(INFO, "Forcing new frame capture");
+		captureFrame();
+	}
+	while (!frames.empty()) {
+		std::shared_ptr<Frame> frontFrame = frames.front();
+		if (frontFrame.use_count() > 1) {
+			// Frame is still in use, return the latest frame
+			return frames.back();
+		} else {
+			// Remove unused frame from the queue
+			frames.pop();
+		}
+	}
+
+	// If no valid frames are available, log an error and return nullptr
+	logger->enterLog(ERROR, "Frame queue is empty");
+	return nullptr;
+}
+
 std::shared_ptr<Frame> ISource::getLatestFrame()
 {
 	std::lock_guard<std::mutex> guard(lock); // Use RAII for mutex locking
@@ -21,7 +45,8 @@ std::shared_ptr<Frame> ISource::getLatestFrame()
 		if (frontFrame.use_count() > 1) {
 			// Frame is still in use, return the latest frame
 			return frames.back();
-		} else {
+		}
+		else {
 			// Remove unused frame from the queue
 			frames.pop();
 		}

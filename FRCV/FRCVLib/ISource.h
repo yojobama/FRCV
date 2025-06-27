@@ -14,6 +14,7 @@ public:
 	ISource(FramePool* framePool, Logger* logger);
 	virtual ~ISource();
 	virtual std::shared_ptr<Frame> getLatestFrame();
+	virtual std::shared_ptr<Frame> getLatestFrame(bool ForceNewFrame);
 	void changeThreadStatus(bool threadWantedAlive);
 protected:
 	virtual void captureFrame() = 0;

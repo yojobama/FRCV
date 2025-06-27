@@ -51,7 +51,9 @@
     <ClCompile Include="ISource.cpp">
       <Filter>FrameSource</Filter>
     </ClCompile>
-    <ClCompile Include="swig_wrap.cxx" />
+    <ClCompile Include="CameraCalibrationSink.cpp">
+      <Filter>Sink</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">
@@ -92,6 +94,9 @@
     </ClInclude>
     <ClInclude Include="ISource.h">
       <Filter>FrameSource</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraCalibrationSink.h">
+      <Filter>Sink</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

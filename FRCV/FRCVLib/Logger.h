@@ -42,15 +42,18 @@ class Logger
 {
 public:
 	Logger();
+	Logger(std::string filePath);
 	~Logger();
 	void enterLog(std::string message);
 	void enterLog(LogLevel logLevel, std::string message);
-	void enterLog(std::unique_ptr<Log> log);
-	std::vector<std::unique_ptr<Log>> GetAllLogs();
-	std::vector<std::unique_ptr<Log>> GetCertainLogs(LogLevel logLevel);
+	void enterLog(Log* log);
+	std::vector<Log*> GetAllLogs();
+	std::vector<Log*> GetCertainLogs(LogLevel logLevel);
 	void clearAllLogs();
+	void flushLogs();
 private:
+	std::string filePath;
 	std::mutex lock;
-	std::vector<std::unique_ptr<Log>> logs;
+	std::vector<Log*> logs;
 };
 

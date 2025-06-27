@@ -15,9 +15,9 @@
 #include <dirent.h>
 #include "PreProcessor.h"
 #include "ISink.h"
-#include "CameraCalibrationResult.h"
+#include "CameraCalibrationSink.h"
 
-Manager::Manager()
+Manager::Manager(string logDir)
 {
     logger = new Logger();
     framePool = new FramePool(logger);
@@ -396,23 +396,46 @@ int Manager::generateUUID()
     return randomNumber;
 }
 
-bool Manager::takeCalibrationImage(int cameraId)
-{
-    if (sources.find(cameraId) == sources.end()) {
-        return false;
-    }
-    calibrationImages.push_back(sources.find(cameraId)->second->getLatestFrame());
-    return true;
-}
-
-CameraCalibrationResult Manager::conculdeCalibration()
-{
-    calibrationImages.clear();
-    return CameraCalibrationResult();
-}
 
 void Manager::clearAllLogs()
 {
     logger->enterLog("clearAllLogs called");
     logger->clearAllLogs();
+}
+
+int Manager::createCameraCalibrationSink()
+{
+	int id = generateUUID();
+
+	CameraCalibrationSink* sink = new CameraCalibrationSink(logger, preProcessor);
+
+	cameraCalibrationSinks.emplace(id, sink);
+
+    return 0;
+}
+
+void Manager::bindSourceToCalibrationSink(int sourceId)
+{
+	auto sink = cameraCalibrationSinks.find(sourceId);
+    if (sink != cameraCalibrationSinks.end() && sources.find(sourceId) != sources.end()) {
+		sink->second->bindSource(sources.find(sourceId)->second);
+    }
+}
+
+void Manager::cameraCalibrationSinkGrabFrame(int sinkId)
+{
+    auto sink = cameraCalibrationSinks.find(sinkId);
+    if (sink != cameraCalibrationSinks.end()) {
+        sink->second->grabFrame();
+    } else {
+        logger->enterLog("CameraCalibrationSink not found with id: " + std::to_string(sinkId));
+	}
+}
+
+CameraCalibrationResult Manager::getCameraCalibrationResults(int sinkId)
+{
+	auto sink = cameraCalibrationSinks.find(sinkId);
+    if (sink != cameraCalibrationSinks.end()) {
+		return sink->second->getResults();
+    }
 }
