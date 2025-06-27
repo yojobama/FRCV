@@ -2,6 +2,7 @@
 class FrameSpec
 {
 public:
+	FrameSpec() = default;
 	FrameSpec(int height, int width, int type);
 	~FrameSpec() = default;
 

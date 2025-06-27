@@ -355,7 +355,6 @@ template <typename T> T SwigValueInit() {
 
 #include "Manager.h"
 #include "CameraCalibrationResult.h"
-#include "Logger.h"
 
 
 #include <string>
@@ -1042,7 +1041,23 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_CameraHardwareInfo(void * jarg1) {
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_new_Manager() {
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_Manager__SWIG_0(const char * jarg1) {
+  void * jresult ;
+  std::string arg1 ;
+  Manager *result = 0 ;
+  
+  if (!jarg1) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "null string", 0);
+    return 0;
+  }
+  (&arg1)->assign(jarg1); 
+  result = (Manager *)new Manager(SWIG_STD_MOVE(arg1));
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_Manager__SWIG_1() {
   void * jresult ;
   Manager *result = 0 ;
   
@@ -1350,47 +1365,51 @@ SWIGEXPORT const char * SWIGSTDCALL CSharp_Manager_getAllSinkResults(void * jarg
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_Manager_getAllLogs(void * jarg1) {
-  void * jresult ;
-  Manager *arg1 = (Manager *) 0 ;
-  SwigValueWrapper< std::vector< std::unique_ptr< Log > > > result;
-  
-  arg1 = (Manager *)jarg1; 
-  result = (arg1)->getAllLogs();
-  jresult = new std::vector< std::unique_ptr< Log > >(result); 
-  return jresult;
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_Manager_clearAllLogs(void * jarg1) {
-  Manager *arg1 = (Manager *) 0 ;
-  
-  arg1 = (Manager *)jarg1; 
-  (arg1)->clearAllLogs();
-}
-
-
-SWIGEXPORT unsigned int SWIGSTDCALL CSharp_Manager_takeCalibrationImage(void * jarg1, int jarg2) {
-  unsigned int jresult ;
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createCameraCalibrationSink(void * jarg1, int jarg2, int jarg3) {
+  int jresult ;
   Manager *arg1 = (Manager *) 0 ;
   int arg2 ;
-  bool result;
+  int arg3 ;
+  int result;
   
   arg1 = (Manager *)jarg1; 
   arg2 = (int)jarg2; 
-  result = (bool)(arg1)->takeCalibrationImage(arg2);
+  arg3 = (int)jarg3; 
+  result = (int)(arg1)->createCameraCalibrationSink(arg2,arg3);
   jresult = result; 
   return jresult;
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_Manager_conculdeCalibration(void * jarg1) {
+SWIGEXPORT void SWIGSTDCALL CSharp_Manager_bindSourceToCalibrationSink(void * jarg1, int jarg2) {
+  Manager *arg1 = (Manager *) 0 ;
+  int arg2 ;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  (arg1)->bindSourceToCalibrationSink(arg2);
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_Manager_cameraCalibrationSinkGrabFrame(void * jarg1, int jarg2) {
+  Manager *arg1 = (Manager *) 0 ;
+  int arg2 ;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  (arg1)->cameraCalibrationSinkGrabFrame(arg2);
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_Manager_getCameraCalibrationResults(void * jarg1, int jarg2) {
   void * jresult ;
   Manager *arg1 = (Manager *) 0 ;
+  int arg2 ;
   CameraCalibrationResult result;
   
   arg1 = (Manager *)jarg1; 
-  result = (arg1)->conculdeCalibration();
+  arg2 = (int)jarg2; 
+  result = (arg1)->getCameraCalibrationResults(arg2);
   jresult = new CameraCalibrationResult(result); 
   return jresult;
 }
@@ -1484,6 +1503,34 @@ SWIGEXPORT double SWIGSTDCALL CSharp_CameraCalibrationResult_cy_get(void * jarg1
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_CameraCalibrationResult_frameSpec_set(void * jarg1, void * jarg2) {
+  CameraCalibrationResult *arg1 = (CameraCalibrationResult *) 0 ;
+  FrameSpec arg2 ;
+  FrameSpec *argp2 ;
+  
+  arg1 = (CameraCalibrationResult *)jarg1; 
+  argp2 = (FrameSpec *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null FrameSpec", 0);
+    return ;
+  }
+  arg2 = *argp2; 
+  if (arg1) (arg1)->frameSpec = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_CameraCalibrationResult_frameSpec_get(void * jarg1) {
+  void * jresult ;
+  CameraCalibrationResult *arg1 = (CameraCalibrationResult *) 0 ;
+  FrameSpec result;
+  
+  arg1 = (CameraCalibrationResult *)jarg1; 
+  result =  ((arg1)->frameSpec);
+  jresult = new FrameSpec(result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_CameraCalibrationResult__SWIG_0() {
   void * jresult ;
   CameraCalibrationResult *result = 0 ;
@@ -1494,19 +1541,27 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_new_CameraCalibrationResult__SWIG_0() {
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_new_CameraCalibrationResult__SWIG_1(double jarg1, double jarg2, double jarg3, double jarg4) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_CameraCalibrationResult__SWIG_1(double jarg1, double jarg2, double jarg3, double jarg4, void * jarg5) {
   void * jresult ;
   double arg1 ;
   double arg2 ;
   double arg3 ;
   double arg4 ;
+  FrameSpec arg5 ;
+  FrameSpec *argp5 ;
   CameraCalibrationResult *result = 0 ;
   
   arg1 = (double)jarg1; 
   arg2 = (double)jarg2; 
   arg3 = (double)jarg3; 
   arg4 = (double)jarg4; 
-  result = (CameraCalibrationResult *)new CameraCalibrationResult(arg1,arg2,arg3,arg4);
+  argp5 = (FrameSpec *)jarg5; 
+  if (!argp5) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null FrameSpec", 0);
+    return 0;
+  }
+  arg5 = *argp5; 
+  result = (CameraCalibrationResult *)new CameraCalibrationResult(arg1,arg2,arg3,arg4,SWIG_STD_MOVE(arg5));
   jresult = (void *)result; 
   return jresult;
 }
@@ -1544,7 +1599,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_Log_GetLogLevel(void * jarg1) {
   LogLevel result;
   
   arg1 = (Log *)jarg1; 
-  result = (LogLevel)((Log const *)arg1)->GetLogLevel();
+  result = (LogLevel)(arg1)->GetLogLevel();
   jresult = (int)result; 
   return jresult;
 }
@@ -1553,11 +1608,11 @@ SWIGEXPORT int SWIGSTDCALL CSharp_Log_GetLogLevel(void * jarg1) {
 SWIGEXPORT const char * SWIGSTDCALL CSharp_Log_GetMessage(void * jarg1) {
   const char * jresult ;
   Log *arg1 = (Log *) 0 ;
-  std::string *result = 0 ;
+  std::string result;
   
   arg1 = (Log *)jarg1; 
-  result = (std::string *) &((Log const *)arg1)->GetMessage();
-  jresult = SWIG_csharp_string_callback(result->c_str()); 
+  result = (arg1)->GetMessage();
+  jresult = SWIG_csharp_string_callback((&result)->c_str()); 
   return jresult;
 }
 
@@ -1568,7 +1623,7 @@ SWIGEXPORT const char * SWIGSTDCALL CSharp_Log_GetLogLevelString(void * jarg1) {
   std::string result;
   
   arg1 = (Log *)jarg1; 
-  result = ((Log const *)arg1)->GetLogLevelString();
+  result = (arg1)->GetLogLevelString();
   jresult = SWIG_csharp_string_callback((&result)->c_str()); 
   return jresult;
 }
@@ -1582,11 +1637,27 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_Log(void * jarg1) {
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_new_Logger() {
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_Logger__SWIG_0() {
   void * jresult ;
   Logger *result = 0 ;
   
   result = (Logger *)new Logger();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_Logger__SWIG_1(const char * jarg1) {
+  void * jresult ;
+  std::string arg1 ;
+  Logger *result = 0 ;
+  
+  if (!jarg1) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "null string", 0);
+    return 0;
+  }
+  (&arg1)->assign(jarg1); 
+  result = (Logger *)new Logger(SWIG_STD_MOVE(arg1));
   jresult = (void *)result; 
   return jresult;
 }
@@ -1602,23 +1673,22 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_Logger(void * jarg1) {
 
 SWIGEXPORT void SWIGSTDCALL CSharp_Logger_enterLog__SWIG_0(void * jarg1, const char * jarg2) {
   Logger *arg1 = (Logger *) 0 ;
-  std::string *arg2 = 0 ;
+  std::string arg2 ;
   
   arg1 = (Logger *)jarg1; 
   if (!jarg2) {
     SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "null string", 0);
     return ;
   }
-  std::string arg2_str(jarg2);
-  arg2 = &arg2_str; 
-  (arg1)->enterLog((std::string const &)*arg2);
+  (&arg2)->assign(jarg2); 
+  (arg1)->enterLog(SWIG_STD_MOVE(arg2));
 }
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_Logger_enterLog__SWIG_1(void * jarg1, int jarg2, const char * jarg3) {
   Logger *arg1 = (Logger *) 0 ;
   LogLevel arg2 ;
-  std::string *arg3 = 0 ;
+  std::string arg3 ;
   
   arg1 = (Logger *)jarg1; 
   arg2 = (LogLevel)jarg2; 
@@ -1626,51 +1696,18 @@ SWIGEXPORT void SWIGSTDCALL CSharp_Logger_enterLog__SWIG_1(void * jarg1, int jar
     SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "null string", 0);
     return ;
   }
-  std::string arg3_str(jarg3);
-  arg3 = &arg3_str; 
-  (arg1)->enterLog(arg2,(std::string const &)*arg3);
+  (&arg3)->assign(jarg3); 
+  (arg1)->enterLog(arg2,SWIG_STD_MOVE(arg3));
 }
 
 
 SWIGEXPORT void SWIGSTDCALL CSharp_Logger_enterLog__SWIG_2(void * jarg1, void * jarg2) {
   Logger *arg1 = (Logger *) 0 ;
-  std::unique_ptr< Log > arg2 ;
-  std::unique_ptr< Log > *argp2 ;
+  Log *arg2 = (Log *) 0 ;
   
   arg1 = (Logger *)jarg1; 
-  argp2 = (std::unique_ptr< Log > *)jarg2; 
-  if (!argp2) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null std::unique_ptr< Log >", 0);
-    return ;
-  }
-  arg2 = *argp2; 
-  (arg1)->enterLog(SWIG_STD_MOVE(arg2));
-}
-
-
-SWIGEXPORT void * SWIGSTDCALL CSharp_Logger_GetAllLogs(void * jarg1) {
-  void * jresult ;
-  Logger *arg1 = (Logger *) 0 ;
-  SwigValueWrapper< std::vector< std::unique_ptr< Log > > > result;
-  
-  arg1 = (Logger *)jarg1; 
-  result = (arg1)->GetAllLogs();
-  jresult = new std::vector< std::unique_ptr< Log > >(result); 
-  return jresult;
-}
-
-
-SWIGEXPORT void * SWIGSTDCALL CSharp_Logger_GetCertainLogs(void * jarg1, int jarg2) {
-  void * jresult ;
-  Logger *arg1 = (Logger *) 0 ;
-  LogLevel arg2 ;
-  SwigValueWrapper< std::vector< std::unique_ptr< Log > > > result;
-  
-  arg1 = (Logger *)jarg1; 
-  arg2 = (LogLevel)jarg2; 
-  result = (arg1)->GetCertainLogs(arg2);
-  jresult = new std::vector< std::unique_ptr< Log > >(result); 
-  return jresult;
+  arg2 = (Log *)jarg2; 
+  (arg1)->enterLog(arg2);
 }
 
 
@@ -1679,6 +1716,14 @@ SWIGEXPORT void SWIGSTDCALL CSharp_Logger_clearAllLogs(void * jarg1) {
   
   arg1 = (Logger *)jarg1; 
   (arg1)->clearAllLogs();
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_Logger_flushLogs(void * jarg1) {
+  Logger *arg1 = (Logger *) 0 ;
+  
+  arg1 = (Logger *)jarg1; 
+  (arg1)->flushLogs();
 }
 
 

@@ -2,7 +2,6 @@
 #include "ImageFileSource.h"
 #include "VideoFileSource.h"
 #include "ApriltagSink.h"
-#include "CameraCalibrationResult.h"
 #include "RecordSink.h"
 #include "CameraSource.h"
 
@@ -16,6 +15,7 @@
 #include "PreProcessor.h"
 #include "ISink.h"
 #include "CameraCalibrationSink.h"
+#include <opencv2/opencv.hpp>
 
 Manager::Manager(string logFile)
 {
@@ -371,12 +371,6 @@ string Manager::getAllSinkResults()
     return returnString;
 }
 
-vector<Log*> Manager::getAllLogs()
-{
-    logger->enterLog("getAllLogs called");
-    return logger->GetAllLogs();
-}
-
 bool Manager::setSinkResult(int sinkId, string result)
 {
     logger->enterLog("setSinkResult called with sinkId=" + std::to_string(sinkId) + ", result=" + result);
@@ -403,18 +397,11 @@ int Manager::generateUUID()
     return randomNumber;
 }
 
-
-void Manager::clearAllLogs()
-{
-    logger->enterLog("clearAllLogs called");
-    logger->clearAllLogs();
-}
-
-int Manager::createCameraCalibrationSink()
+int Manager::createCameraCalibrationSink(int width, int height)
 {
 	int id = generateUUID();
 
-	CameraCalibrationSink* sink = new CameraCalibrationSink(logger, preProcessor);
+	CameraCalibrationSink* sink = new CameraCalibrationSink(logger, preProcessor, FrameSpec(height, width, CV_8UC3));
 
 	cameraCalibrationSinks.emplace(id, sink);
 

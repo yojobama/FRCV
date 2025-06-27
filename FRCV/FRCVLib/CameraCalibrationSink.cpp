@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "CameraCalibrationResult.h"
 #include "PreProcessor.h"
+#include "ISource.h"
 
 CameraCalibrationSink::CameraCalibrationSink(Logger* logger, PreProcessor* preProcessor, FrameSpec frameSpec) : frameSpec(frameSpec)
 {

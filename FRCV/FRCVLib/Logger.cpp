@@ -20,12 +20,18 @@ Logger::~Logger() {
 void Logger::enterLog(std::string message) {
     std::lock_guard<std::mutex> guard(lock);  // RAII lock
     logs.push_back(new Log(INFO, message));
+    if (logs.size() > 100) {
+        flushLogs();
+    }
 }
 
 // Define the enterLog method for a log level and message
 void Logger::enterLog(LogLevel logLevel, std::string message) {
     std::lock_guard<std::mutex> guard(lock);  // RAII lock
     logs.push_back(new Log(logLevel, message));
+    if (logs.size() > 100) {
+        flushLogs();
+    }
 }
 
 // Define the enterLog method for a Log object
@@ -33,28 +39,9 @@ void Logger::enterLog(Log *log) {
     if (!log) return;
     std::lock_guard<std::mutex> guard(lock);  // RAII lock
     logs.push_back(new Log(log->GetLogLevel(), log->GetMessage()));
-}
-
-// Define the method to get all logs
-std::vector<Log*> Logger::GetAllLogs() {
-    std::lock_guard<std::mutex> guard(lock);
-    std::vector<Log*> allLogs;
-    for (auto& log : logs) {
-        allLogs.emplace_back(new Log(log->GetLogLevel(), log->GetMessage()));
+    if (logs.size() > 100) {
+        flushLogs();
     }
-    return allLogs;
-}
-
-// Define the method to get logs of a specific log level
-std::vector<Log*> Logger::GetCertainLogs(LogLevel logLevel) {
-    std::lock_guard<std::mutex> guard(lock);  // RAII lock
-    std::vector<Log*> filteredLogs;
-    for (const auto& log : logs) {
-        if (log->GetLogLevel() == logLevel) {
-            filteredLogs.emplace_back(new Log(log->GetLogLevel(), log->GetMessage()));
-        }
-    }
-    return filteredLogs;
 }
 
 // Define the method to clear all logs

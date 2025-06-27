@@ -2,7 +2,6 @@
 %{
 #include "Manager.h"
 #include "CameraCalibrationResult.h"
-#include "Logger.h"
 %}
 
 %include "std_string.i"

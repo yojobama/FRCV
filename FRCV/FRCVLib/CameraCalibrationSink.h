@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <memory>
-#include "ISink.h"
+#include "FrameSpec.h"
 
 using namespace std;
 

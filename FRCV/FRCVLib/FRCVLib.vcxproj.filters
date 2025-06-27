@@ -53,6 +53,7 @@
     <ClCompile Include="CameraCalibrationSink.cpp">
       <Filter>Sink</Filter>
     </ClCompile>
+    <ClCompile Include="swig_wrap.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">

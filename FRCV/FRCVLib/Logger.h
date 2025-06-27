@@ -47,8 +47,6 @@ public:
 	void enterLog(std::string message);
 	void enterLog(LogLevel logLevel, std::string message);
 	void enterLog(Log* log);
-	std::vector<Log*> GetAllLogs();
-	std::vector<Log*> GetCertainLogs(LogLevel logLevel);
 	void clearAllLogs();
 	void flushLogs();
 private:

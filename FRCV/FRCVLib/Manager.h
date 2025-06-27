@@ -7,15 +7,15 @@
 #include <pthread.h>
 #include <memory>
 
+#include "ISink.h"
+#include "CameraCalibrationResult.h"
+#include "Logger.h"
+#include "FramePool.h"
+#include "ISource.h"
+#include "Frame.h"
+#include "CameraCalibrationSink.h"
+
 using namespace std;
-class ISink;
-class CameraCalibrationResult;
-class Log;
-class Logger;
-class FramePool;
-class ISource;
-class Frame;
-class CameraCalibrationSink;
 
 // TODO: temporary, rewrite this part
 typedef struct {
@@ -77,11 +77,7 @@ public:
 
 	//vector<string> getRecording(int recorderId); // TODO: implement a recording mechanisem
 
-	vector<Log*> getAllLogs();
-
-	void clearAllLogs();
-
-	int createCameraCalibrationSink();
+	int createCameraCalibrationSink(int height, int width);
 	void bindSourceToCalibrationSink(int sourceId);
 	void cameraCalibrationSinkGrabFrame(int sinkId);
 
