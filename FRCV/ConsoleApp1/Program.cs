@@ -1,10 +1,12 @@
-﻿namespace ConsoleApp1
+﻿using System.Threading.Channels;
+
+namespace ConsoleApp1
 {
     internal class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
-
+            
         }
     }
 }
