@@ -225,16 +225,16 @@ class FRCVCorePINVOKE {
 
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_CameraHardwareInfo_name_set")]
-  public static extern void CameraHardwareInfo_name_set(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+  public static extern void CameraHardwareInfo_name_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_CameraHardwareInfo_name_get")]
-  public static extern global::System.IntPtr CameraHardwareInfo_name_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern string CameraHardwareInfo_name_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_CameraHardwareInfo_path_set")]
-  public static extern void CameraHardwareInfo_path_set(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+  public static extern void CameraHardwareInfo_path_set(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_CameraHardwareInfo_path_get")]
-  public static extern global::System.IntPtr CameraHardwareInfo_path_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern string CameraHardwareInfo_path_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_CameraHardwareInfo")]
   public static extern global::System.IntPtr new_CameraHardwareInfo();
@@ -242,8 +242,11 @@ class FRCVCorePINVOKE {
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_delete_CameraHardwareInfo")]
   public static extern void delete_CameraHardwareInfo(global::System.Runtime.InteropServices.HandleRef jarg1);
 
-  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_Manager")]
-  public static extern global::System.IntPtr new_Manager();
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_Manager__SWIG_0")]
+  public static extern global::System.IntPtr new_Manager__SWIG_0(string jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_Manager__SWIG_1")]
+  public static extern global::System.IntPtr new_Manager__SWIG_1();
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_delete_Manager")]
   public static extern void delete_Manager(global::System.Runtime.InteropServices.HandleRef jarg1);
@@ -264,10 +267,10 @@ class FRCVCorePINVOKE {
   public static extern int Manager_createCameraSource(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_createVideoFileSource")]
-  public static extern int Manager_createVideoFileSource(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, int jarg3);
+  public static extern int Manager_createVideoFileSource(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, int jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_createImageFileSource")]
-  public static extern int Manager_createImageFileSource(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+  public static extern int Manager_createImageFileSource(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_createApriltagSink")]
   public static extern int Manager_createApriltagSink(global::System.Runtime.InteropServices.HandleRef jarg1);
@@ -303,28 +306,28 @@ class FRCVCorePINVOKE {
   public static extern bool Manager_stopSinkById(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_getAllSinkStatus")]
-  public static extern global::System.IntPtr Manager_getAllSinkStatus(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern string Manager_getAllSinkStatus(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_getSinkStatusById")]
-  public static extern global::System.IntPtr Manager_getSinkStatusById(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+  public static extern string Manager_getSinkStatusById(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_getSinkResult")]
-  public static extern global::System.IntPtr Manager_getSinkResult(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+  public static extern string Manager_getSinkResult(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_getAllSinkResults")]
-  public static extern global::System.IntPtr Manager_getAllSinkResults(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern string Manager_getAllSinkResults(global::System.Runtime.InteropServices.HandleRef jarg1);
 
-  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_getAllLogs")]
-  public static extern global::System.IntPtr Manager_getAllLogs(global::System.Runtime.InteropServices.HandleRef jarg1);
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_createCameraCalibrationSink")]
+  public static extern int Manager_createCameraCalibrationSink(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, int jarg3);
 
-  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_clearAllLogs")]
-  public static extern void Manager_clearAllLogs(global::System.Runtime.InteropServices.HandleRef jarg1);
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_bindSourceToCalibrationSink")]
+  public static extern void Manager_bindSourceToCalibrationSink(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
-  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_takeCalibrationImage")]
-  public static extern bool Manager_takeCalibrationImage(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_cameraCalibrationSinkGrabFrame")]
+  public static extern void Manager_cameraCalibrationSinkGrabFrame(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
-  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_conculdeCalibration")]
-  public static extern global::System.IntPtr Manager_conculdeCalibration(global::System.Runtime.InteropServices.HandleRef jarg1);
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Manager_getCameraCalibrationResults")]
+  public static extern global::System.IntPtr Manager_getCameraCalibrationResults(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_CameraCalibrationResult_fx_set")]
   public static extern void CameraCalibrationResult_fx_set(global::System.Runtime.InteropServices.HandleRef jarg1, double jarg2);
@@ -350,53 +353,59 @@ class FRCVCorePINVOKE {
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_CameraCalibrationResult_cy_get")]
   public static extern double CameraCalibrationResult_cy_get(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_CameraCalibrationResult_frameSpec_set")]
+  public static extern void CameraCalibrationResult_frameSpec_set(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_CameraCalibrationResult_frameSpec_get")]
+  public static extern global::System.IntPtr CameraCalibrationResult_frameSpec_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_CameraCalibrationResult__SWIG_0")]
   public static extern global::System.IntPtr new_CameraCalibrationResult__SWIG_0();
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_CameraCalibrationResult__SWIG_1")]
-  public static extern global::System.IntPtr new_CameraCalibrationResult__SWIG_1(double jarg1, double jarg2, double jarg3, double jarg4);
+  public static extern global::System.IntPtr new_CameraCalibrationResult__SWIG_1(double jarg1, double jarg2, double jarg3, double jarg4, global::System.Runtime.InteropServices.HandleRef jarg5);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_delete_CameraCalibrationResult")]
   public static extern void delete_CameraCalibrationResult(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_Log")]
-  public static extern global::System.IntPtr new_Log(int jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+  public static extern global::System.IntPtr new_Log(int jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Log_GetLogLevel")]
   public static extern int Log_GetLogLevel(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Log_GetMessage")]
-  public static extern global::System.IntPtr Log_GetMessage(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern string Log_GetMessage(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Log_GetLogLevelString")]
-  public static extern global::System.IntPtr Log_GetLogLevelString(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern string Log_GetLogLevelString(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_delete_Log")]
   public static extern void delete_Log(global::System.Runtime.InteropServices.HandleRef jarg1);
 
-  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_Logger")]
-  public static extern global::System.IntPtr new_Logger();
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_Logger__SWIG_0")]
+  public static extern global::System.IntPtr new_Logger__SWIG_0();
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_Logger__SWIG_1")]
+  public static extern global::System.IntPtr new_Logger__SWIG_1(string jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_delete_Logger")]
   public static extern void delete_Logger(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Logger_enterLog__SWIG_0")]
-  public static extern void Logger_enterLog__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+  public static extern void Logger_enterLog__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Logger_enterLog__SWIG_1")]
-  public static extern void Logger_enterLog__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, global::System.Runtime.InteropServices.HandleRef jarg3);
+  public static extern void Logger_enterLog__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, string jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Logger_enterLog__SWIG_2")]
   public static extern void Logger_enterLog__SWIG_2(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
 
-  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Logger_GetAllLogs")]
-  public static extern global::System.IntPtr Logger_GetAllLogs(global::System.Runtime.InteropServices.HandleRef jarg1);
-
-  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Logger_GetCertainLogs")]
-  public static extern global::System.IntPtr Logger_GetCertainLogs(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
-
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Logger_clearAllLogs")]
   public static extern void Logger_clearAllLogs(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_Logger_flushLogs")]
+  public static extern void Logger_flushLogs(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_VectorInt__SWIG_0")]
   public static extern global::System.IntPtr new_VectorInt__SWIG_0();
@@ -697,4 +706,154 @@ class FRCVCorePINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_delete_VectorCameraHardwareInfo")]
   public static extern void delete_VectorCameraHardwareInfo(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_VectorFrame__SWIG_0")]
+  public static extern global::System.IntPtr new_VectorFrame__SWIG_0();
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_VectorFrame__SWIG_1")]
+  public static extern global::System.IntPtr new_VectorFrame__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_Clear")]
+  public static extern void VectorFrame_Clear(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_Add")]
+  public static extern void VectorFrame_Add(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_size")]
+  public static extern uint VectorFrame_size(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_empty")]
+  public static extern bool VectorFrame_empty(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_capacity")]
+  public static extern uint VectorFrame_capacity(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_reserve")]
+  public static extern void VectorFrame_reserve(global::System.Runtime.InteropServices.HandleRef jarg1, uint jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_VectorFrame__SWIG_2")]
+  public static extern global::System.IntPtr new_VectorFrame__SWIG_2(int jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_getitemcopy")]
+  public static extern global::System.IntPtr VectorFrame_getitemcopy(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_getitem")]
+  public static extern global::System.IntPtr VectorFrame_getitem(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_setitem")]
+  public static extern void VectorFrame_setitem(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, global::System.Runtime.InteropServices.HandleRef jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_AddRange")]
+  public static extern void VectorFrame_AddRange(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_GetRange")]
+  public static extern global::System.IntPtr VectorFrame_GetRange(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, int jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_Insert")]
+  public static extern void VectorFrame_Insert(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, global::System.Runtime.InteropServices.HandleRef jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_InsertRange")]
+  public static extern void VectorFrame_InsertRange(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, global::System.Runtime.InteropServices.HandleRef jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_RemoveAt")]
+  public static extern void VectorFrame_RemoveAt(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_RemoveRange")]
+  public static extern void VectorFrame_RemoveRange(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, int jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_Repeat")]
+  public static extern global::System.IntPtr VectorFrame_Repeat(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_Reverse__SWIG_0")]
+  public static extern void VectorFrame_Reverse__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_Reverse__SWIG_1")]
+  public static extern void VectorFrame_Reverse__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, int jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrame_SetRange")]
+  public static extern void VectorFrame_SetRange(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, global::System.Runtime.InteropServices.HandleRef jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_delete_VectorFrame")]
+  public static extern void delete_VectorFrame(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_VectorFrameSpec__SWIG_0")]
+  public static extern global::System.IntPtr new_VectorFrameSpec__SWIG_0();
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_VectorFrameSpec__SWIG_1")]
+  public static extern global::System.IntPtr new_VectorFrameSpec__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_Clear")]
+  public static extern void VectorFrameSpec_Clear(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_Add")]
+  public static extern void VectorFrameSpec_Add(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_size")]
+  public static extern uint VectorFrameSpec_size(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_empty")]
+  public static extern bool VectorFrameSpec_empty(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_capacity")]
+  public static extern uint VectorFrameSpec_capacity(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_reserve")]
+  public static extern void VectorFrameSpec_reserve(global::System.Runtime.InteropServices.HandleRef jarg1, uint jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_VectorFrameSpec__SWIG_2")]
+  public static extern global::System.IntPtr new_VectorFrameSpec__SWIG_2(int jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_getitemcopy")]
+  public static extern global::System.IntPtr VectorFrameSpec_getitemcopy(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_getitem")]
+  public static extern global::System.IntPtr VectorFrameSpec_getitem(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_setitem")]
+  public static extern void VectorFrameSpec_setitem(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, global::System.Runtime.InteropServices.HandleRef jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_AddRange")]
+  public static extern void VectorFrameSpec_AddRange(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_GetRange")]
+  public static extern global::System.IntPtr VectorFrameSpec_GetRange(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, int jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_Insert")]
+  public static extern void VectorFrameSpec_Insert(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, global::System.Runtime.InteropServices.HandleRef jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_InsertRange")]
+  public static extern void VectorFrameSpec_InsertRange(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, global::System.Runtime.InteropServices.HandleRef jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_RemoveAt")]
+  public static extern void VectorFrameSpec_RemoveAt(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_RemoveRange")]
+  public static extern void VectorFrameSpec_RemoveRange(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, int jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_Repeat")]
+  public static extern global::System.IntPtr VectorFrameSpec_Repeat(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_Reverse__SWIG_0")]
+  public static extern void VectorFrameSpec_Reverse__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_Reverse__SWIG_1")]
+  public static extern void VectorFrameSpec_Reverse__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, int jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_VectorFrameSpec_SetRange")]
+  public static extern void VectorFrameSpec_SetRange(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, global::System.Runtime.InteropServices.HandleRef jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_delete_VectorFrameSpec")]
+  public static extern void delete_VectorFrameSpec(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_UniquePtrLog")]
+  public static extern global::System.IntPtr new_UniquePtrLog();
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_delete_UniquePtrLog")]
+  public static extern void delete_UniquePtrLog(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_new_UniquePtrFrame")]
+  public static extern global::System.IntPtr new_UniquePtrFrame();
+
+  [global::System.Runtime.InteropServices.DllImport("FRCVCore", EntryPoint="CSharp_delete_UniquePtrFrame")]
+  public static extern void delete_UniquePtrFrame(global::System.Runtime.InteropServices.HandleRef jarg1);
 }

@@ -96,10 +96,23 @@ public class CameraCalibrationResult : global::System.IDisposable {
     } 
   }
 
+  public SWIGTYPE_p_FrameSpec frameSpec {
+    set {
+      FRCVCorePINVOKE.CameraCalibrationResult_frameSpec_set(swigCPtr, SWIGTYPE_p_FrameSpec.getCPtr(value));
+      if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    } 
+    get {
+      SWIGTYPE_p_FrameSpec ret = new SWIGTYPE_p_FrameSpec(FRCVCorePINVOKE.CameraCalibrationResult_frameSpec_get(swigCPtr), true);
+      if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+      return ret;
+    } 
+  }
+
   public CameraCalibrationResult() : this(FRCVCorePINVOKE.new_CameraCalibrationResult__SWIG_0(), true) {
   }
 
-  public CameraCalibrationResult(double fx, double fy, double cx, double cy) : this(FRCVCorePINVOKE.new_CameraCalibrationResult__SWIG_1(fx, fy, cx, cy), true) {
+  public CameraCalibrationResult(double fx, double fy, double cx, double cy, SWIGTYPE_p_FrameSpec frameSpec) : this(FRCVCorePINVOKE.new_CameraCalibrationResult__SWIG_1(fx, fy, cx, cy, SWIGTYPE_p_FrameSpec.getCPtr(frameSpec)), true) {
+    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
   }
 
 }

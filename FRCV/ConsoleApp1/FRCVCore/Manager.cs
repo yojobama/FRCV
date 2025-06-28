@@ -56,7 +56,11 @@ public class Manager : global::System.IDisposable {
     }
   }
 
-  public Manager() : this(FRCVCorePINVOKE.new_Manager(), true) {
+  public Manager(string logFile) : this(FRCVCorePINVOKE.new_Manager__SWIG_0(logFile), true) {
+    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+  }
+
+  public Manager() : this(FRCVCorePINVOKE.new_Manager__SWIG_1(), true) {
   }
 
   public VectorInt getAllSinks() {
@@ -85,14 +89,14 @@ public class Manager : global::System.IDisposable {
     return ret;
   }
 
-  public int createVideoFileSource(SWIGTYPE_p_std__string path, int fps) {
-    int ret = FRCVCorePINVOKE.Manager_createVideoFileSource(swigCPtr, SWIGTYPE_p_std__string.getCPtr(path), fps);
+  public int createVideoFileSource(string path, int fps) {
+    int ret = FRCVCorePINVOKE.Manager_createVideoFileSource(swigCPtr, path, fps);
     if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
-  public int createImageFileSource(SWIGTYPE_p_std__string path) {
-    int ret = FRCVCorePINVOKE.Manager_createImageFileSource(swigCPtr, SWIGTYPE_p_std__string.getCPtr(path));
+  public int createImageFileSource(string path) {
+    int ret = FRCVCorePINVOKE.Manager_createImageFileSource(swigCPtr, path);
     if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
@@ -148,43 +152,41 @@ public class Manager : global::System.IDisposable {
     return ret;
   }
 
-  public SWIGTYPE_p_std__string getAllSinkStatus() {
-    SWIGTYPE_p_std__string ret = new SWIGTYPE_p_std__string(FRCVCorePINVOKE.Manager_getAllSinkStatus(swigCPtr), true);
+  public string getAllSinkStatus() {
+    string ret = FRCVCorePINVOKE.Manager_getAllSinkStatus(swigCPtr);
     return ret;
   }
 
-  public SWIGTYPE_p_std__string getSinkStatusById(int sinkId) {
-    SWIGTYPE_p_std__string ret = new SWIGTYPE_p_std__string(FRCVCorePINVOKE.Manager_getSinkStatusById(swigCPtr, sinkId), true);
+  public string getSinkStatusById(int sinkId) {
+    string ret = FRCVCorePINVOKE.Manager_getSinkStatusById(swigCPtr, sinkId);
     return ret;
   }
 
-  public SWIGTYPE_p_std__string getSinkResult(int sinkId) {
-    SWIGTYPE_p_std__string ret = new SWIGTYPE_p_std__string(FRCVCorePINVOKE.Manager_getSinkResult(swigCPtr, sinkId), true);
+  public string getSinkResult(int sinkId) {
+    string ret = FRCVCorePINVOKE.Manager_getSinkResult(swigCPtr, sinkId);
     return ret;
   }
 
-  public SWIGTYPE_p_std__string getAllSinkResults() {
-    SWIGTYPE_p_std__string ret = new SWIGTYPE_p_std__string(FRCVCorePINVOKE.Manager_getAllSinkResults(swigCPtr), true);
+  public string getAllSinkResults() {
+    string ret = FRCVCorePINVOKE.Manager_getAllSinkResults(swigCPtr);
     return ret;
   }
 
-  public SWIGTYPE_p_std__vectorT_Log_p_t getAllLogs() {
-    global::System.IntPtr cPtr = FRCVCorePINVOKE.Manager_getAllLogs(swigCPtr);
-    SWIGTYPE_p_std__vectorT_Log_p_t ret = (cPtr == global::System.IntPtr.Zero) ? null : new SWIGTYPE_p_std__vectorT_Log_p_t(cPtr, false);
+  public int createCameraCalibrationSink(int height, int width) {
+    int ret = FRCVCorePINVOKE.Manager_createCameraCalibrationSink(swigCPtr, height, width);
     return ret;
   }
 
-  public void clearAllLogs() {
-    FRCVCorePINVOKE.Manager_clearAllLogs(swigCPtr);
+  public void bindSourceToCalibrationSink(int sourceId) {
+    FRCVCorePINVOKE.Manager_bindSourceToCalibrationSink(swigCPtr, sourceId);
   }
 
-  public bool takeCalibrationImage(int cameraId) {
-    bool ret = FRCVCorePINVOKE.Manager_takeCalibrationImage(swigCPtr, cameraId);
-    return ret;
+  public void cameraCalibrationSinkGrabFrame(int sinkId) {
+    FRCVCorePINVOKE.Manager_cameraCalibrationSinkGrabFrame(swigCPtr, sinkId);
   }
 
-  public CameraCalibrationResult conculdeCalibration() {
-    CameraCalibrationResult ret = new CameraCalibrationResult(FRCVCorePINVOKE.Manager_conculdeCalibration(swigCPtr), true);
+  public CameraCalibrationResult getCameraCalibrationResults(int sinkId) {
+    CameraCalibrationResult ret = new CameraCalibrationResult(FRCVCorePINVOKE.Manager_getCameraCalibrationResults(swigCPtr, sinkId), true);
     return ret;
   }
 

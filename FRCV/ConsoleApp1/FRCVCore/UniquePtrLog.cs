@@ -9,20 +9,20 @@
 //------------------------------------------------------------------------------
 
 
-public class Logger : global::System.IDisposable {
+public class UniquePtrLog : global::System.IDisposable {
   private global::System.Runtime.InteropServices.HandleRef swigCPtr;
   protected bool swigCMemOwn;
 
-  internal Logger(global::System.IntPtr cPtr, bool cMemoryOwn) {
+  internal UniquePtrLog(global::System.IntPtr cPtr, bool cMemoryOwn) {
     swigCMemOwn = cMemoryOwn;
     swigCPtr = new global::System.Runtime.InteropServices.HandleRef(this, cPtr);
   }
 
-  internal static global::System.Runtime.InteropServices.HandleRef getCPtr(Logger obj) {
+  internal static global::System.Runtime.InteropServices.HandleRef getCPtr(UniquePtrLog obj) {
     return (obj == null) ? new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero) : obj.swigCPtr;
   }
 
-  internal static global::System.Runtime.InteropServices.HandleRef swigRelease(Logger obj) {
+  internal static global::System.Runtime.InteropServices.HandleRef swigRelease(UniquePtrLog obj) {
     if (obj != null) {
       if (!obj.swigCMemOwn)
         throw new global::System.ApplicationException("Cannot release ownership as memory is not owned");
@@ -35,7 +35,7 @@ public class Logger : global::System.IDisposable {
     }
   }
 
-  ~Logger() {
+  ~UniquePtrLog() {
     Dispose(false);
   }
 
@@ -49,40 +49,14 @@ public class Logger : global::System.IDisposable {
       if (swigCPtr.Handle != global::System.IntPtr.Zero) {
         if (swigCMemOwn) {
           swigCMemOwn = false;
-          FRCVCorePINVOKE.delete_Logger(swigCPtr);
+          FRCVCorePINVOKE.delete_UniquePtrLog(swigCPtr);
         }
         swigCPtr = new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero);
       }
     }
   }
 
-  public Logger() : this(FRCVCorePINVOKE.new_Logger__SWIG_0(), true) {
-  }
-
-  public Logger(string filePath) : this(FRCVCorePINVOKE.new_Logger__SWIG_1(filePath), true) {
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
-  }
-
-  public void enterLog(string message) {
-    FRCVCorePINVOKE.Logger_enterLog__SWIG_0(swigCPtr, message);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
-  }
-
-  public void enterLog(LogLevel logLevel, string message) {
-    FRCVCorePINVOKE.Logger_enterLog__SWIG_1(swigCPtr, (int)logLevel, message);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
-  }
-
-  public void enterLog(Log log) {
-    FRCVCorePINVOKE.Logger_enterLog__SWIG_2(swigCPtr, Log.getCPtr(log));
-  }
-
-  public void clearAllLogs() {
-    FRCVCorePINVOKE.Logger_clearAllLogs(swigCPtr);
-  }
-
-  public void flushLogs() {
-    FRCVCorePINVOKE.Logger_flushLogs(swigCPtr);
+  public UniquePtrLog() : this(FRCVCorePINVOKE.new_UniquePtrLog(), true) {
   }
 
 }

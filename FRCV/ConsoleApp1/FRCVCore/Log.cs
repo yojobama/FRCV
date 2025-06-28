@@ -56,7 +56,7 @@ public class Log : global::System.IDisposable {
     }
   }
 
-  public Log(LogLevel logLevel, SWIGTYPE_p_std__string message) : this(FRCVCorePINVOKE.new_Log((int)logLevel, SWIGTYPE_p_std__string.getCPtr(message)), true) {
+  public Log(LogLevel logLevel, string message) : this(FRCVCorePINVOKE.new_Log((int)logLevel, message), true) {
     if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
   }
 
@@ -65,13 +65,13 @@ public class Log : global::System.IDisposable {
     return ret;
   }
 
-  public SWIGTYPE_p_std__string GetMessage() {
-    SWIGTYPE_p_std__string ret = new SWIGTYPE_p_std__string(FRCVCorePINVOKE.Log_GetMessage(swigCPtr), true);
+  public string GetMessage() {
+    string ret = FRCVCorePINVOKE.Log_GetMessage(swigCPtr);
     return ret;
   }
 
-  public SWIGTYPE_p_std__string GetLogLevelString() {
-    SWIGTYPE_p_std__string ret = new SWIGTYPE_p_std__string(FRCVCorePINVOKE.Log_GetLogLevelString(swigCPtr), true);
+  public string GetLogLevelString() {
+    string ret = FRCVCorePINVOKE.Log_GetLogLevelString(swigCPtr);
     return ret;
   }
 

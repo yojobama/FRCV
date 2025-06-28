@@ -56,25 +56,25 @@ public class CameraHardwareInfo : global::System.IDisposable {
     }
   }
 
-  public SWIGTYPE_p_std__string name {
+  public string name {
     set {
-      FRCVCorePINVOKE.CameraHardwareInfo_name_set(swigCPtr, SWIGTYPE_p_std__string.getCPtr(value));
+      FRCVCorePINVOKE.CameraHardwareInfo_name_set(swigCPtr, value);
       if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
     } 
     get {
-      SWIGTYPE_p_std__string ret = new SWIGTYPE_p_std__string(FRCVCorePINVOKE.CameraHardwareInfo_name_get(swigCPtr), false);
+      string ret = FRCVCorePINVOKE.CameraHardwareInfo_name_get(swigCPtr);
       if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
       return ret;
     } 
   }
 
-  public SWIGTYPE_p_std__string path {
+  public string path {
     set {
-      FRCVCorePINVOKE.CameraHardwareInfo_path_set(swigCPtr, SWIGTYPE_p_std__string.getCPtr(value));
+      FRCVCorePINVOKE.CameraHardwareInfo_path_set(swigCPtr, value);
       if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
     } 
     get {
-      SWIGTYPE_p_std__string ret = new SWIGTYPE_p_std__string(FRCVCorePINVOKE.CameraHardwareInfo_path_get(swigCPtr), false);
+      string ret = FRCVCorePINVOKE.CameraHardwareInfo_path_get(swigCPtr);
       if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
       return ret;
     } 
