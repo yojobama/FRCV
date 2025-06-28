@@ -9,6 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="FRCVCore\SWIGTYPE_p_Log.cs" />
+    <Compile Remove="FRCVCore\SWIGTYPE_p_std__string.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="FRCVCore\" />
   </ItemGroup>
 

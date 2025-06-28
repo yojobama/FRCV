@@ -3,7 +3,7 @@
     "Name": "New Profile",
     "Projects": [
       {
-        "Path": "ConsoleApp1\\ConsoleApp1.csproj",
+        "Path": "ConsoleApp1\\FRCVHost.csproj",
         "Action": "Start"
       }
     ]
