@@ -8,7 +8,7 @@ extern "C" {
 #include <libswscale/swscale.h>
 #include <libavutil/opt.h>
 }
-
+#include <algorithm>
 #include <vector>
 
 class ISource;
@@ -28,9 +28,18 @@ constexpr int WIDTH = 640, HEIGHT = 480;
 class SterioSink
 {
 public:
-	SterioSink(ISource* sourceLeft, ISource* sourceRight);
+	SterioSink(ISource* sourceLeft, ISource* sourceRight, double baseline);
 	~SterioSink();
+	shared_ptr<Frame> getCurrentDepth();
 private:
+	AVFrame* frameLeft;
+	AVFrame* frameRight;
+	AVFrame* regularFrame;
+	double baseline;
+	const AVCodec* encoder;
+	const AVCodec* decoder;
+	AVCodecContext* encoderCtx;
+	AVCodecContext* decoderCtx;
 	void encodeFrames(shared_ptr<Frame> firstFrame, shared_ptr<Frame> secondFrame, EncodedPacket* output);
 	void decodeAndExtractDepth(EncodedPacket* packet, const double fx, const double baseline);
 	ISource* sourceLeft;

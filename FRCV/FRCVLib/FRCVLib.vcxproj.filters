@@ -54,7 +54,9 @@
       <Filter>Sink</Filter>
     </ClCompile>
     <ClCompile Include="swig_wrap.cxx" />
-    <ClCompile Include="SterioSink.cpp" />
+    <ClCompile Include="SterioSink.cpp">
+      <Filter>Sink</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">
@@ -98,7 +100,9 @@
     <ClInclude Include="CameraCalibrationSink.h">
       <Filter>Sink</Filter>
     </ClInclude>
-    <ClInclude Include="SterioSink.h" />
+    <ClInclude Include="SterioSink.h">
+      <Filter>Sink</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />
