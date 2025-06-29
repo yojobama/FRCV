@@ -1,0 +1,70 @@
+@using MudBlazor
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-2" /> Add Vision Sink
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-height: 400px; overflow-y: auto">
+            <MudText Class="mb-4">Select the type of vision processing sink to add:</MudText>
+            <MudRadioGroup T="string" @bind-SelectedOption="selectedType" Class="mt-4">
+                <MudCard Elevation="0" Class="mb-2">
+                    <MudRadio T="string" Option="Apriltag" Color="Color.Primary">
+                        <MudStack Row="true" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.TagFaces" />
+                            <div>
+                                <MudText>Apriltag Detection</MudText>
+                                <MudText Typo="Typo.caption">Detects and decodes AprilTag fiducial markers</MudText>
+                            </div>
+                        </MudStack>
+                    </MudRadio>
+                </MudCard>
+
+                <MudCard Elevation="0" Class="mb-2">
+                    <MudRadio T="string" Option="Object Detection" Color="Color.Primary">
+                        <MudStack Row="true" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.PhotoCamera" />
+                            <div>
+                                <MudText>Object Detection</MudText>
+                                <MudText Typo="Typo.caption">Identifies and locates objects in the video stream</MudText>
+                            </div>
+                        </MudStack>
+                    </MudRadio>
+                </MudCard>
+
+                <MudCard Elevation="0" Class="mb-2">
+                    <MudRadio T="string" Option="Recording" Color="Color.Primary">
+                        <MudStack Row="true" Spacing="2">
+                            <MudIcon Icon="@Icons.Material.Filled.VideoFile" />
+                            <div>
+                                <MudText>Recording</MudText>
+                                <MudText Typo="Typo.caption">Records video stream to a file</MudText>
+                            </div>
+                        </MudStack>
+                    </MudRadio>
+                </MudCard>
+            </MudRadioGroup>
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" 
+                  Variant="Variant.Filled" 
+                  OnClick="Submit" 
+                  Disabled="@string.IsNullOrEmpty(selectedType)">
+            Add Sink
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    [Parameter] public string[] SinkTypes { get; set; } = Array.Empty<string>();
+
+    private string selectedType = string.Empty;
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(selectedType));
+    private void Cancel() => MudDialog.Cancel();
+}

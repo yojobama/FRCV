@@ -1,0 +1,82 @@
+﻿@using MudBlazor
+﻿@using FRCVHost.Services
+@inject IVisionManagerService VisionManager
+@inject ISnackbar Snackbar
+@using MudBlazor.Utilities
+
+<MudDialog>
+    <DialogContent>
+        <MudTabs>
+            <MudTabPanel Text="Camera">
+                <MudSelect T="CameraInfo" Label="Select Camera" @bind-Value="_selectedCamera">
+                    @foreach (var camera in _availableCameras)
+                    {
+                        <MudSelectItem Value="@camera">@camera.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudTabPanel>
+            <MudTabPanel Text="Video File">
+                <MudTextField @bind-Value="_videoPath" Label="Video File Path" />
+                <MudNumericField @bind-Value="_fps" Label="FPS" Min="1" Max="120" />
+            </MudTabPanel>
+            <MudTabPanel Text="Image">
+                <MudTextField @bind-Value="_imagePath" Label="Image File Path" />
+            </MudTabPanel>
+        </MudTabs>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Add</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+
+    private List<CameraInfo> _availableCameras = new();
+    private CameraInfo _selectedCamera;
+    private string _videoPath;
+    private int _fps = 30;
+    private string _imagePath;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _availableCameras = await VisionManager.GetAvailableCamerasAsync();
+    }
+
+    private async Task Submit()
+    {
+        try
+        {
+            int sourceId = -1;
+
+            if (_selectedCamera != null)
+            {
+                sourceId = await VisionManager.CreateCameraSourceAsync(_selectedCamera);
+            }
+            else if (!string.IsNullOrEmpty(_videoPath))
+            {
+                sourceId = await VisionManager.CreateVideoFileSourceAsync(_videoPath, _fps);
+            }
+            else if (!string.IsNullOrEmpty(_imagePath))
+            {
+                sourceId = await VisionManager.CreateImageFileSourceAsync(_imagePath);
+            }
+
+            if (sourceId != -1)
+            {
+                MudDialog.Close(DialogResult.Ok(sourceId));
+            }
+            else
+            {
+                Snackbar.Add("Please select a source", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error creating source: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

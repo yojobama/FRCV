@@ -1,0 +1,111 @@
+﻿@using MudBlazor
+@inherits LayoutComponentBase
+
+<MudThemeProvider Theme="_currentTheme"/>
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudText Typo="Typo.h6" Class="ml-4">FRCV Vision Manager</MudText>
+        </MudHidden>
+        <MudSpacer />
+        <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)" 
+                       Color="Color.Inherit" 
+                       OnClick="@((e) => ToggleTheme())" />
+    </MudAppBar>
+    
+    <MudDrawer @bind-Open="@_drawerOpen" 
+               ClipMode="DrawerClipMode.Always" 
+               Elevation="2" 
+               Variant="@DrawerVariant.Mini" 
+               OpenMiniOnHover="true">
+        <MudNavMenu>
+            <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
+                <MudText>Dashboard</MudText>
+            </MudNavLink>
+            <MudNavLink Href="sources" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.VideoCameraBack">
+                <MudText>Sources</MudText>
+            </MudNavLink>
+            <MudNavLink Href="sinks" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Output">
+                <MudText>Sinks</MudText>
+            </MudNavLink>
+            <MudNavLink Href="calibration" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.CameraEnhance">
+                <MudText>Calibration</MudText>
+            </MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+<MudScrollToTop>
+    <MudFab Color="Color.Tertiary" Icon="@Icons.Material.Filled.ArrowUpward" />
+</MudScrollToTop>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode = true;
+    
+    private MudTheme _currentTheme = new MudTheme
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#594AE2",
+            Secondary = "#ff4081",
+            Tertiary = "#1ec8a5",
+            Background = "#f5f5f5",
+            DrawerBackground = "#FFF",
+            DrawerText = "rgba(0,0,0,0.7)",
+            AppbarBackground = "#594AE2"
+        },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#594AE2",
+            Secondary = "#ff4081",
+            Tertiary = "#1ec8a5",
+            Background = "#1a1a27",
+            DrawerBackground = "#1a1a27",
+            DrawerText = "rgba(255,255,255,0.7)",
+            AppbarBackground = "#1a1a27",
+            Surface = "#1a1a27"
+        }
+    };
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    private void ToggleTheme()
+    {
+        _isDarkMode = !_isDarkMode;
+            
+        if (_isDarkMode)
+        {
+            _currentTheme = new MudTheme
+            {
+                PaletteDark = _currentTheme.PaletteDark
+            };
+        }
+        else 
+        {
+            _currentTheme = new MudTheme
+            {
+                PaletteLight = _currentTheme.PaletteLight
+            };
+        }
+    }
+}
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>

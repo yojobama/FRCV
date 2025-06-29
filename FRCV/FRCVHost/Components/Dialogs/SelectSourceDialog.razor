@@ -1,0 +1,75 @@
+@using MudBlazor
+@using FRCVHost.Services
+@inject IVisionManagerService VisionManager
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.VideoCall" Class="mr-2" /> Select Source
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudContainer Style="max-height: 300px; overflow-y: auto">
+            @if (_sources.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Class="my-2">No video sources available. Add a source first.</MudAlert>
+            }
+            else
+            {
+                <MudList T="SourceInfo" Dense="true" DisablePadding="true">
+                    @foreach (var source in _sources)
+                    {
+                        <MudListItem OnClick="@(() => selectedSourceId = source.Id)"
+                                   Selected="@(selectedSourceId == source.Id)">
+                            <MudStack Row="true" Spacing="3" AlignItems="AlignItems.Center">
+                                <MudIcon Icon="@GetSourceIcon(source.Type)" />
+                                <div>
+                                    <MudText>Source @source.Id</MudText>
+                                    <MudText Typo="Typo.caption">@source.Type</MudText>
+                                </div>
+                                <MudChip Size="Size.Small" 
+                                        Color="@(source.Status == "Running" ? Color.Success : Color.Default)"
+                                        Class="ml-auto">
+                                    @source.Status
+                                </MudChip>
+                            </MudStack>
+                        </MudListItem>
+                        <MudDivider />
+                    }
+                </MudList>
+            }
+        </MudContainer>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary"
+                  Variant="Variant.Filled"
+                  OnClick="Submit"
+                  Disabled="@(selectedSourceId == 0)">
+            Select Source
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
+    
+    private List<SourceInfo> _sources = new();
+    private int selectedSourceId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _sources = await VisionManager.GetAllSourcesAsync();
+    }
+
+    private string GetSourceIcon(string sourceType) => sourceType switch
+    {
+        "Camera" => Icons.Material.Filled.Videocam,
+        "Video File" => Icons.Material.Filled.VideoFile,
+        "Image" => Icons.Material.Filled.Image,
+        _ => Icons.Material.Filled.VideoCall
+    };
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(selectedSourceId));
+    private void Cancel() => MudDialog.Cancel();
+}

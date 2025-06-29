@@ -1,0 +1,62 @@
+@using MudBlazor
+@using FRCVHost.Services
+@inject IVisionManagerService VisionManager
+
+<MudPaper Class="pa-4">
+    <MudText Typo="Typo.h6" Class="mb-4">Sources</MudText>
+    <MudTable Items="@_sources" Dense="true" Hover="true" Bordered="true">
+        <HeaderContent>
+            <MudTh>ID</MudTh>
+            <MudTh>Type</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="ID">@context.Id</MudTd>
+            <MudTd DataLabel="Type">@context.Type</MudTd>
+            <MudTd DataLabel="Status">@context.Status</MudTd>
+            <MudTd>
+                @if (context.Status == "Stopped")
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" OnClick="@(() => StartSource(context.Id))" />
+                }
+                else
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Stop" Color="Color.Error" OnClick="@(() => StopSource(context.Id))" />
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+</MudPaper>
+
+@code {
+    private List<SourceInfo> _sources = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshSources();
+    }
+
+    private async Task RefreshSources()
+    {
+        // Assumes GetAllSourcesAsync is implemented in IVisionManagerService
+        var getSources = VisionManager.GetType().GetMethod("GetAllSourcesAsync");
+        if (getSources != null)
+        {
+            var task = (Task<List<SourceInfo>>)getSources.Invoke(VisionManager, null);
+            _sources = await task;
+        }
+    }
+
+    private async Task StartSource(int sourceId)
+    {
+        await VisionManager.StartSourceAsync(sourceId);
+        await RefreshSources();
+    }
+
+    private async Task StopSource(int sourceId)
+    {
+        await VisionManager.StopSourceAsync(sourceId);
+        await RefreshSources();
+    }
+}

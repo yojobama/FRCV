@@ -1,0 +1,199 @@
+﻿@page "/sinks"
+@using FRCVHost.Services
+@using MudBlazor
+@using Microsoft.AspNetCore.SignalR.Client
+@using FRCVHost.Components.Dialogs
+@inject IVisionManagerService VisionManager
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+
+<MudText Typo="Typo.h4" Class="mb-4">Vision Sinks</MudText>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-4">Available Sinks</MudText>
+            <MudButton Color="Color.Primary" OnClick="AddSink" Class="mb-4">Add Sink</MudButton>
+
+            <MudTable Items="@_sinks" Dense="true" Hover="true" Bordered="true">
+                <HeaderContent>
+                    <MudTh>ID</MudTh>
+                    <MudTh>Type</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Source</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="ID">@context.Id</MudTd>
+                    <MudTd DataLabel="Type">@context.Type</MudTd>
+                    <MudTd DataLabel="Status">@context.Status</MudTd>
+                    <MudTd DataLabel="Source">
+                        <MudSelect T="int?" @bind-Value="@_sinkSources[context.Id]" 
+                                 OnChange="@(() => BindSource(context.Id))">
+                            <MudSelectItem Value="@((int?)null)">None</MudSelectItem>
+                            @foreach (var source in _sources)
+                            {
+                                <MudSelectItem Value="@source.Id">Source @source.Id</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd>
+                        @if (context.Status == "Stopped")
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.PlayArrow" Color="Color.Success" 
+                                OnClick="@(() => StartSink(context.Id))" />
+                        }
+                        else
+                        {
+                            <MudIconButton Icon="@Icons.Material.Filled.Stop" Color="Color.Error" 
+                                OnClick="@(() => StopSink(context.Id))" />
+                        }
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" 
+                            OnClick="@(() => DeleteSink(context.Id))" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-4">Sink Results</MudText>
+            <MudTable Items="@_sinks" Dense="true" Hover="true" Bordered="true">
+                <HeaderContent>
+                    <MudTh>ID</MudTh>
+                    <MudTh>Type</MudTh>
+                    <MudTh>Latest Result</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="ID">@context.Id</MudTd>
+                    <MudTd DataLabel="Type">@context.Type</MudTd>
+                    <MudTd DataLabel="Result">@context.Result</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code
+{
+    private List<SinkInfo> _sinks = new();
+    private List<SourceInfo> _sources = new();
+    private Dictionary<int, int?> _sinkSources = new();
+    private HubConnection? _hubConnection;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshData();
+
+        // Setup SignalR connection
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(NavigationManager.ToAbsoluteUri("/visionHub"))
+            .Build();
+
+        _hubConnection.On<int, string>("ReceiveSinkResult", (sinkId, result) =>
+        {
+            var sink = _sinks.FirstOrDefault(s => s.Id == sinkId);
+            if (sink != null)
+            {
+                var index = _sinks.IndexOf(sink);
+                _sinks[index] = sink with { Result = result };
+                StateHasChanged();
+            }
+        });
+
+        await _hubConnection.StartAsync();
+    }
+
+    private async Task RefreshData()
+    {
+        _sinks = await VisionManager.GetAllSinksAsync();
+        _sources = await VisionManager.GetAllSourcesAsync();
+        foreach (var sink in _sinks)
+        {
+            if (!_sinkSources.ContainsKey(sink.Id))
+                _sinkSources[sink.Id] = null;
+        }
+    }
+
+    private async Task AddSink()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var parameters = new DialogParameters
+        {
+            { "SinkTypes", new[] { "Apriltag", "Object Detection", "Recording" } }
+        };
+
+        var dialog = await DialogService.ShowAsync<AddSinkDialog>("Add Sink", parameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled)
+        {
+            var type = result.Data.ToString();
+            int sinkId = -1;
+
+            switch (type)
+            {
+                case "Apriltag":
+                    sinkId = await VisionManager.CreateApriltagSinkAsync();
+                    break;
+                case "Object Detection":
+                    sinkId = await VisionManager.CreateObjectDetectionSinkAsync();
+                    break;
+                case "Recording":
+                    {
+                        var sourceDialog = await DialogService.ShowAsync<SelectSourceDialog>("Select Source");
+                        var sourceResult = await sourceDialog.Result;
+                        if (!sourceResult.Canceled)
+                        {
+                            sinkId = await VisionManager.CreateRecordingSinkAsync((int)sourceResult.Data);
+                        }
+                        break;
+                    }
+            }
+
+            if (sinkId != -1)
+            {
+                await RefreshData();
+            }
+        }
+    }
+
+    private async Task StartSink(int sinkId)
+    {
+        await VisionManager.StartSinkAsync(sinkId);
+        await RefreshData();
+    }
+
+    private async Task StopSink(int sinkId)
+    {
+        await VisionManager.StopSinkAsync(sinkId);
+        await RefreshData();
+    }
+
+    private async Task DeleteSink(int sinkId)
+    {
+        await VisionManager.UnbindSourceFromSinkAsync(sinkId);
+        await RefreshData();
+    }
+
+    private async Task BindSource(int sinkId)
+    {
+        if (_sinkSources.TryGetValue(sinkId, out var sourceId) && sourceId.HasValue)
+        {
+            await VisionManager.BindSourceToSinkAsync(sourceId.Value, sinkId);
+        }
+        else
+        {
+            await VisionManager.UnbindSourceFromSinkAsync(sinkId);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            await _hubConnection.DisposeAsync();
+        }
+    }
+}
