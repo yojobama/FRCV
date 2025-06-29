@@ -102,6 +102,7 @@
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="RecordSink.h" />
     <ClInclude Include="RknnSink.h" />
+    <ClInclude Include="SterioSink.h" />
     <ClInclude Include="TRTSink.h" />
     <ClInclude Include="VideoFileSource.h" />
   </ItemGroup>
@@ -123,6 +124,7 @@
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="RecordSink.cpp" />
     <ClCompile Include="RknnSink.cpp" />
+    <ClCompile Include="SterioSink.cpp" />
     <ClCompile Include="swig_wrap.cxx" />
     <ClCompile Include="TRTSink.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />
@@ -138,7 +140,7 @@
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>/local/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d</LibraryDependencies>
+      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;avcodec;avformat;avutil;swscale</LibraryDependencies>
       <AdditionalOptions>-Wthread-safety %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
