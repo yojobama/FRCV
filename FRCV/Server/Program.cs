@@ -1,4 +1,6 @@
-﻿namespace Server
+﻿using EmbedIO;
+
+namespace Server
 {
     internal class Program
     {

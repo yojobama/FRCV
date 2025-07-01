@@ -1,8 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "quCoxYpkSj0=",
+  "dgSpecHash": "MTOYI4CVNVg=",
   "success": true,
   "projectFilePath": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\Server\\Server.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\yojob\\.nuget\\packages\\embedio\\3.5.2\\embedio.3.5.2.nupkg.sha512",
+    "C:\\Users\\yojob\\.nuget\\packages\\system.valuetuple\\4.5.0\\system.valuetuple.4.5.0.nupkg.sha512",
+    "C:\\Users\\yojob\\.nuget\\packages\\unosquare.swan.lite\\3.1.0\\unosquare.swan.lite.3.1.0.nupkg.sha512"
+  ],
   "logs": []
 }
