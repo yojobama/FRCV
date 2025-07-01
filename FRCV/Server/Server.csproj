@@ -7,4 +7,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="FRCVCore\" />
+  </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="swig -c++ -csharp -outdir .\FRCVCore ..\FRCVLib\swig.i" />
+  </Target>
+
 </Project>
