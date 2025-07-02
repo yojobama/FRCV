@@ -42,6 +42,7 @@ public:
 
 	// utill functions
 	vector<int> getAllSinks();
+	vector<int> getAllSources();
 
 	vector<CameraHardwareInfo> enumerateAvailableCameras();
 	bool bindSourceToSink(int sourceId, int sinkId);

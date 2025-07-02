@@ -55,6 +55,20 @@ vector<int> Manager::getAllSinks()
     return returnVector;
 }
 
+vector<int> Manager::getAllSources()
+{
+	vector<int> sourceIds;
+
+	auto iterator = sources.begin();
+
+    while (iterator != sources.end()) {
+		sourceIds.push_back(iterator->first);
+        iterator++;
+    }
+
+    return vector<int>();
+}
+
 vector<CameraHardwareInfo> Manager::enumerateAvailableCameras()
 {
     logger->enterLog("enumerateAvailableCameras called");
