@@ -43,6 +43,26 @@ namespace Server
             }
         }
 
+        public int[] getAllSinkIds()
+        {
+            List<int> ids = new List<int>();
+            foreach (var sink in sinks)
+            {
+                ids.Add(sink.id);
+            }
+            return ids.ToArray();
+        }
+
+        public void SetSinkName(string name)
+        {
+
+        }
+
+        public void AddSink(SinkType type)
+        {
+            
+        }
+
         public Channel<string> createResultChannel()
         {
             Channel<string> channel = Channel.CreateUnbounded<string>();
@@ -55,6 +75,7 @@ namespace Server
         // update results
         private void updateResults()
         {
+            currentResults = manager.getAllSinkResults();
             // Logic to update results in sinks
             // This could involve iterating through sinks and updating their state based on the data received.
         }
@@ -78,14 +99,53 @@ namespace Server
         // stop sink by id
         public void StopSinkById(int id)
         {
+            Source source = null;
+            foreach (var sink in sinks)
+            {
+                if (sink.id == id)
+                {
+                    if (sink.source != null)
+                    {
+                        source = sink.source;
+                    }
+                    manager.stopSinkById(id);
+                    break;
+                }
+            }
+            if (source != null)
+            {
+                bool isSourceUsed = false;
+                foreach (var s in sinks)
+                {
+                    if (s.source != null && s.source.id == source.id)
+                    {
+                        isSourceUsed = true;
+                        break;
+                    }
+                }
+                if (!isSourceUsed)
+                {
+                    sourceManager.DisableSourceById(source.id);
+                }
+            }
             // Logic to stop a sink by its ID
             // This could involve finding the sink in the sinks list and stopping it.
         }
         // start sink by id
         public void StartSinkById(int id)
         {
-            // Logic to start a sink by its ID
-            // This could involve finding the sink in the sinks list and starting it.
+            foreach (var sink in sinks)
+            {
+                if (sink.id == id)
+                {
+                    if (sink.source != null)
+                    {
+                        sourceManager.EnableSourceById(sink.source.id);
+                    }
+                    manager.startSinkById(id);
+                    return;
+                }
+            }
         }
     }
 }

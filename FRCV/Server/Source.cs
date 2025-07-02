@@ -15,9 +15,9 @@ namespace Server
 
     internal class Source
     {
-        int id { get; set; }
-        string name { get; set; }
-        SourceType type { get; set; }
+        public int id { get; set; }
+        public string name { get; set; }
+        public SourceType type { get; set; }
 
         public Source(int id, string name, SourceType type)
         {

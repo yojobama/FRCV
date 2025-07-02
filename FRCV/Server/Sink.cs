@@ -14,15 +14,17 @@ namespace Server
 
     internal class Sink
     {
-        SinkType type { get; set; }
-        int id { get; set; }
-        string name { get; set; }
+        public SinkType type { get; set; }
+        public int id { get; set; }
+        public Source source { get; set; }
+        public string name { get; set; }
 
-        public Sink(int id, string name, SinkType type)
+        public Sink(int id, string name, SinkType type, Source? source = null)
         {
             this.id = id;
             this.name = name;
             this.type = type;
+            this.source = source;
         }
     }
 }

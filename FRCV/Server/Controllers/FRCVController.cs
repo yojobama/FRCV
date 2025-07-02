@@ -7,12 +7,16 @@ namespace Server.Controllers
     internal class FRCVController
     {
         Manager _manager;
+        SinkManager _sinkManager;
+        SourceManager _sourceManager;
         DB _db;
 
-        public FRCVController(Manager manager, DB db)
+        public FRCVController(Manager manager, DB db, SinkManager sinkManager, SourceManager sourceManager)
         {
             _manager = manager;
             _db = db;
+            _sinkManager = sinkManager;
+            _sourceManager = sourceManager;
             // Constructor logic here
         }
 
