@@ -10,6 +10,7 @@ namespace Server.Controllers
         SinkManager _sinkManager;
         SourceManager _sourceManager;
         DB _db;
+        List<UDPServer> udpServers = new List<UDPServer>();
 
         public FRCVController(Manager manager, DB db, SinkManager sinkManager, SourceManager sourceManager)
         {
@@ -27,13 +28,13 @@ namespace Server.Controllers
         [Route(HttpVerbs.Get, "/api/frcv/getAllSinkIds")]
         public int[] GetAllSinkIds()
         {
-            return null;
+            return _sinkManager.getAllSinkIds();
         }
         // Get: /api/frcv/getSinkById/{id}
         [Route(HttpVerbs.Get, "/api/frcv/getSinkById/{id}")]
         public Sink GetSinkById(int id)
         {
-            return null;
+            return _sinkManager.GetSinkById(id);
         }
 
         // Get: /api/frcv/getAllSourceIds
@@ -160,6 +161,7 @@ namespace Server.Controllers
         [Route(HttpVerbs.Put, "/api/frcv/startUDPStream")]
         public void StartUDPStream()
         {
+            udpServers.Add(new UDPServer(_sinkManager.createResultChannel(), "localhost", 12345));
             // Logic to start a UDP stream
         }
         // Put: /api/frcv/stopUDPStream

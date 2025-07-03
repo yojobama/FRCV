@@ -43,6 +43,18 @@ namespace Server
             }
         }
 
+        public Sink GetSinkById(int id)
+        {
+            foreach (var sink in sinks)
+            {
+                if (sink.id == id)
+                {
+                    return sink;
+                }
+            }
+            return null; // or throw an exception if preferred
+        }
+
         public int[] getAllSinkIds()
         {
             List<int> ids = new List<int>();
