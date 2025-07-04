@@ -10,6 +10,9 @@
     <Filter Include="Sink\Rknn">
       <UniqueIdentifier>{7c56e81f-9bc5-436b-a0c1-654cb3e96e84}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{082836c7-729a-46be-8e36-60a390a0eb50}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApriltagSink.cpp">
@@ -55,6 +58,10 @@
     </ClCompile>
     <ClCompile Include="swig_wrap.cxx" />
     <ClCompile Include="SterioSink.cpp">
+      <Filter>Sink</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanHelpers.cpp" />
+    <ClCompile Include="VkApriltagSink.cpp">
       <Filter>Sink</Filter>
     </ClCompile>
   </ItemGroup>
@@ -103,8 +110,24 @@
     <ClInclude Include="SterioSink.h">
       <Filter>Sink</Filter>
     </ClInclude>
+    <ClInclude Include="VulkanHelpers.h" />
+    <ClInclude Include="VkApriltagSink.h">
+      <Filter>Sink</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />
+    <None Include="gray_decimate.comp">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="adaptive_threshold.comp">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="ccl_union_find.comp">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="extract_quads.comp">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
