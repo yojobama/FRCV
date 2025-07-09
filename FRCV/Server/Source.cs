@@ -15,10 +15,21 @@ namespace Server
 
     internal class Source
     {
-        public int id { get; set; }
-        public string name { get; set; }
-        public SourceType type { get; set; }
+        private int id { get; set; }
+        private string name { get; set; }
+        private SourceType type { get; set; }
 
+        public int Id
+        {
+            get; set;
+        }
+        
+        public string Name
+        {
+            get => name;
+            set => name = value;
+        }
+        
         public Source(int id, string name, SourceType type)
         {
             this.id = id;

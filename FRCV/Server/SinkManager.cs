@@ -22,10 +22,15 @@ namespace Server
             this.manager = manager;
             this.sourceManager = sourceManager;
             thread = new Thread(ThreadProc);
-        
+
             sinks = new List<Sink>();
             channels = new List<Channel<string>>();
             isRunning = false;
+        }
+
+        public string GetResults()
+        {
+            return currentResults;
         }
 
         private void ThreadProc()
@@ -47,11 +52,12 @@ namespace Server
         {
             foreach (var sink in sinks)
             {
-                if (sink.id == id)
+                if (sink.Id == id)
                 {
                     return sink;
                 }
             }
+
             return null; // or throw an exception if preferred
         }
 
@@ -60,19 +66,39 @@ namespace Server
             List<int> ids = new List<int>();
             foreach (var sink in sinks)
             {
-                ids.Add(sink.id);
+                ids.Add(sink.Id);
             }
+
             return ids.ToArray();
         }
 
-        public void SetSinkName(string name)
+        public void SetSinkName(int sinkId, string dstName)
         {
-
+            foreach (var sink in sinks)
+            {
+                if (sink.Id == sinkId)
+                {
+                    sink.Name = dstName;
+                    break;
+                }
+            }
         }
 
         public void AddSink(SinkType type)
         {
-            
+            int id;
+
+            switch (type)
+            {
+                case SinkType.ApriltagSink:
+                    id = manager.createApriltagSink();
+                    sinks.Add(new Sink(id, "Apriltag Sink", SinkType.ApriltagSink));
+                    break;
+                case SinkType.ObjectDetectionSink:
+                    id = manager.createObjectDetectionSink();
+                    sinks.Add(new Sink(id, "Object Detection Sink", SinkType.ObjectDetectionSink));
+                    break;
+            }
         }
 
         public Channel<string> createResultChannel()
@@ -93,13 +119,14 @@ namespace Server
         }
 
         // start the sink manager thread
-        public void StartManagerThread()
+        public void EnableManagerThread()
         {
             isRunning = true;
             thread.Start();
         }
+
         // stop the sink manager thread
-        public void StopManagerThread()
+        public void DisableManagerThread()
         {
             isRunning = false;
             if (thread.IsAlive)
@@ -109,55 +136,87 @@ namespace Server
         }
 
         // stop sink by id
-        public void StopSinkById(int id)
+        public void DisableSinkById(int id)
         {
             Source source = null;
             foreach (var sink in sinks)
             {
-                if (sink.id == id)
+                if (sink.Id == id)
                 {
-                    if (sink.source != null)
+                    if (sink.Source != null)
                     {
-                        source = sink.source;
+                        source = sink.Source;
                     }
+
                     manager.stopSinkById(id);
                     break;
                 }
             }
+
             if (source != null)
             {
                 bool isSourceUsed = false;
                 foreach (var s in sinks)
                 {
-                    if (s.source != null && s.source.id == source.id)
+                    if (s.Source != null && s.Source.Id == source.Id)
                     {
                         isSourceUsed = true;
                         break;
                     }
                 }
+
                 if (!isSourceUsed)
                 {
-                    sourceManager.DisableSourceById(source.id);
+                    sourceManager.DisableSourceById(source.Id);
                 }
             }
             // Logic to stop a sink by its ID
             // This could involve finding the sink in the sinks list and stopping it.
         }
+
         // start sink by id
-        public void StartSinkById(int id)
+        public void EnableSinkById(int id)
         {
             foreach (var sink in sinks)
             {
-                if (sink.id == id)
+                if (sink.Id == id)
                 {
-                    if (sink.source != null)
+                    if (sink.Source != null)
                     {
-                        sourceManager.EnableSourceById(sink.source.id);
+                        sourceManager.EnableSourceById(sink.Source.Id);
                     }
+
                     manager.startSinkById(id);
                     return;
                 }
             }
+        }
+
+        public void EnableAllSinks()
+        {
+            foreach (var sink in sinks)
+            {
+                if (sink.Source != null)
+                {
+                    sourceManager.EnableSourceById(sink.Source.Id);
+                }
+
+                manager.startSinkById(sink.Id);
+            }
+        }
+
+        public void UnbindSourceFromSink(int sinkId, int sourceId)
+        {
+            foreach (var sink in sinks)
+            {
+                if (sink.Id == sinkId)
+                {
+                    sink.Source = null;
+                    break;
+                }
+            }
+            // Logic to unbind a source from a sink
+            // This could involve setting the source property of the sink to null or removing the association.
         }
     }
 }

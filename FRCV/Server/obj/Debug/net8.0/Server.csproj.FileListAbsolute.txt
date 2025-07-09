@@ -22,3 +22,17 @@ D:\Projects\FRCV\FRCV\Server\obj\Debug\net8.0\Server.sourcelink.json
 D:\Projects\FRCV\FRCV\Server\obj\Debug\net8.0\Server.dll
 D:\Projects\FRCV\FRCV\Server\obj\Debug\net8.0\refint\Server.dll
 D:\Projects\FRCV\FRCV\Server\obj\Debug\net8.0\Server.pdb
+D:\Projects\FRCV\FRCV\Server\bin\Debug\net8.0\Server.exe
+D:\Projects\FRCV\FRCV\Server\bin\Debug\net8.0\Server.deps.json
+D:\Projects\FRCV\FRCV\Server\bin\Debug\net8.0\Server.runtimeconfig.json
+D:\Projects\FRCV\FRCV\Server\bin\Debug\net8.0\Server.dll
+D:\Projects\FRCV\FRCV\Server\bin\Debug\net8.0\Server.pdb
+D:\Projects\FRCV\FRCV\Server\bin\Debug\net8.0\EmbedIO.dll
+D:\Projects\FRCV\FRCV\Server\bin\Debug\net8.0\System.IO.Pipelines.dll
+D:\Projects\FRCV\FRCV\Server\bin\Debug\net8.0\System.Text.Encodings.Web.dll
+D:\Projects\FRCV\FRCV\Server\bin\Debug\net8.0\System.Text.Json.dll
+D:\Projects\FRCV\FRCV\Server\bin\Debug\net8.0\Swan.Lite.dll
+D:\Projects\FRCV\FRCV\Server\bin\Debug\net8.0\runtimes\browser\lib\net8.0\System.Text.Encodings.Web.dll
+D:\Projects\FRCV\FRCV\Server\obj\Debug\net8.0\Server.csproj.Up2Date
+D:\Projects\FRCV\FRCV\Server\obj\Debug\net8.0\Server.genruntimeconfig.cache
+D:\Projects\FRCV\FRCV\Server\obj\Debug\net8.0\ref\Server.dll

@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "dgSpecHash": "mF1KJR9HIH4=",
+  "success": false,
+  "projectFilePath": "D:\\Projects\\FRCV\\FRCV\\AngularProject1\\AngularProject1.esproj",
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1012",
+      "level": "Error",
+      "message": "Platform version is not present for one or more target frameworks, even though they have specified a platform: net6.0-none",
+      "projectPath": "D:\\Projects\\FRCV\\FRCV\\AngularProject1\\AngularProject1.esproj",
+      "filePath": "D:\\Projects\\FRCV\\FRCV\\AngularProject1\\AngularProject1.esproj",
+      "targetGraphs": []
+    }
+  ]
+}

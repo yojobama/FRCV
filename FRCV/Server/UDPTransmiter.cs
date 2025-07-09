@@ -8,15 +8,22 @@ using System.Threading.Tasks;
 
 namespace Server
 {
-    internal class UDPServer
+    internal class UDPTransmiter
     {
         Channel<string> channel;
         Thread thread;
         bool threadWantedAlive;
 
         UdpClient udpClient;
+
+        private string hostName;
         
-        public UDPServer(Channel<string> channel, string hostName, int port)
+        public string HostName
+        {
+            get => hostName;
+        }
+        
+        public UDPTransmiter(Channel<string> channel, string hostName, int port)
         {
             this.channel = channel;
             // Initialize the UDP server
@@ -27,13 +34,13 @@ namespace Server
             udpClient = new UdpClient(hostName, port);
         }
 
-        public void Start()
+        public void Enable()
         {
             threadWantedAlive = true;
             thread.Start();
         }
 
-        public void Stop() 
+        public void Disable() 
         {
             threadWantedAlive = false;
             thread.Join();

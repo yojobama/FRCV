@@ -6,13 +6,19 @@ using System.Threading.Tasks;
 
 namespace Server
 {
-    internal class DB
+    public class DB
     {
         string jsonPath;
+        
         
         public DB(string jsonPath)
         {
             this.jsonPath = jsonPath;
+        }
+
+        void addObjectToDB(object obj)
+        {
+            
         }
     }
 }

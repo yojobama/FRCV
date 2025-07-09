@@ -14,17 +14,78 @@ namespace Server
 
     internal class Sink
     {
-        public SinkType type { get; set; }
-        public int id { get; set; }
-        public Source source { get; set; }
-        public string name { get; set; }
+       // class members 
+        private SinkType type { get; set; }
+        private int id { get; set; }
+        private string name { get; set; }
+        
+        private Source? source;
+        
+        // properties for the sink
+
+        public SinkType Type
+        {
+            get => type;
+            set
+            {
+                switch (value)
+                {
+                    case SinkType.ApriltagSink:
+                        id = ManagerWrapper.Instance.createApriltagSink();
+                        break;
+                    case SinkType.ObjectDetectionSink:
+                        id = ManagerWrapper.Instance.createObjectDetectionSink();
+                        break;
+                }
+                type = value;
+            }
+        }
+
+        public int Id
+        {
+            get => id;
+        }
+
+        public string Name
+        {
+            get => name;
+            set => name = value;
+        }
+        
+        public Source? Source
+        {
+            get => source; 
+            set
+            {
+                if (value != null) // add a chech with the manager to see that the source exists
+                {
+                    source = value;
+                }
+                else
+                {
+                    ManagerWrapper.Instance.unbindSourceFromSink(id);
+                }
+            }
+        }
 
         public Sink(int id, string name, SinkType type, Source? source = null)
         {
             this.id = id;
             this.name = name;
             this.type = type;
-            this.source = source;
+        }
+
+        public void ChangeType(SinkType type)
+        {
+            switch (type)
+            {
+                case SinkType.ApriltagSink:
+                    id = ManagerWrapper.Instance.createApriltagSink();
+                    break;
+                case SinkType.ObjectDetectionSink:
+                    id = ManagerWrapper.Instance.createObjectDetectionSink();
+                    break;
+            }
         }
     }
 }

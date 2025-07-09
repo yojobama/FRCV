@@ -4,13 +4,15 @@ using System.Diagnostics.Contracts;
 
 namespace Server.Controllers
 {
+    // TODO: seperate this controller into multiple controllers based on functionality
+    
     internal class FRCVController
     {
         Manager _manager;
         SinkManager _sinkManager;
         SourceManager _sourceManager;
         DB _db;
-        List<UDPServer> udpServers = new List<UDPServer>();
+        List<UDPTransmiter> udpServers = new List<UDPTransmiter>();
 
         public FRCVController(Manager manager, DB db, SinkManager sinkManager, SourceManager sourceManager)
         {
@@ -41,28 +43,33 @@ namespace Server.Controllers
         [Route(HttpVerbs.Get, "/api/frcv/getAllSourceIds")]
         public int[] GetAllSourceIds()
         {
-            return null;
+            return _sourceManager.GetAllSourceIds();
         }
         // Get: /api/frcv/getSourceById/{id}
         [Route(HttpVerbs.Get, "/api/frcv/getSourceById/{id}")]
         public Source GetSourceById(int id)
         {
-            return null;
+            return _sourceManager.GetSourceById(id);
         }
 
         // Post: /api/frcv/addSink
         [Route(HttpVerbs.Post, "/api/frcv/addSink")]
-        public void AddSink(Sink sink)
+        public void AddSink(SinkType type)
         {
+            _sinkManager.AddSink(type);
             // Logic to add a sink
         }
         // Post: /api/frcv/addSource
         [Route(HttpVerbs.Post, "/api/frcv/addSource")]
-        public void AddSource(Source source)
+        public void AddSource(SourceType type)
         {
+            _sourceManager.AddSource(type);
             // Logic to add a source
         }
-
+        
+        
+        // TODO: seperate these endpoints into different controllers
+        
         // Put: /api/frcv/updateSink
         [Route(HttpVerbs.Put, "/api/frcv/updateSink")]
         public void UpdateSink(Sink sink)
@@ -93,12 +100,14 @@ namespace Server.Controllers
         [Route(HttpVerbs.Put, "/api/frcv/enableSink/{id}")]
         public void EnableSink(int id)
         {
+            _sinkManager.EnableSinkById(id);
             // Logic to enable a sink
         }
         // Put: /api/frcv/enableSource/{id}
         [Route(HttpVerbs.Put, "/api/frcv/enableSource/{id}")]
         public void EnableSource(int id)
         {
+            _sourceManager.EnableSourceById(id);
             // Logic to enable a source
         }
 
@@ -106,12 +115,14 @@ namespace Server.Controllers
         [Route(HttpVerbs.Put, "/api/frcv/disableSink/{id}")]
         public void DisableSink(int id)
         {
+            _sinkManager.DisableSinkById(id);
             // Logic to disable a sink
         }
         // Put: /api/frcv/disableSource/{id}
         [Route(HttpVerbs.Put, "/api/frcv/disableSource/{id}")]
         public void DisableSource(int id)
         {
+            _sourceManager.DisableSourceById(id);
             // Logic to disable a source
         }
 
@@ -119,12 +130,14 @@ namespace Server.Controllers
         [Route(HttpVerbs.Put, "/api/frcv/enableAllSinks")]
         public void EnableAllSinks()
         {
+            _sinkManager.EnableAllSinks();
             // Logic to enable all sinks
         }
         // Put: /api/frcv/enableAllSources
         [Route(HttpVerbs.Put, "/api/frcv/enableAllSources")]
         public void EnableAllSources()
         {
+            _sourceManager.EnableAllSources();
             // Logic to enable all sources
         }
 
@@ -132,12 +145,14 @@ namespace Server.Controllers
         [Route(HttpVerbs.Put, "/api/frcv/bindSinkToSource/{sinkId}/{sourceId}")]
         public void BindSinkToSource(int sinkId, int sourceId)
         {
+            _manager.bindSourceToSink(sourceId, sinkId);
             // Logic to bind a sink to a source
         }
         // Put: /api/frcv/unbindSinkFromSource/{sinkId}/{sourceId}
         [Route(HttpVerbs.Put, "/api/frcv/unbindSinkFromSource/{sinkId}/{sourceId}")]
         public void UnbindSinkFromSource(int sinkId, int sourceId)
         {
+            _sinkManager.UnbindSourceFromSink(sinkId, sourceId);
             // Logic to unbind a sink from a source
         }
 
@@ -151,24 +166,30 @@ namespace Server.Controllers
 
         // Get: /api/frcv/getAllCurrentResults
         [Route(HttpVerbs.Get, "/api/frcv/getAllCurrentResults")]
-        public string[] GetAllCurrentResults()
+        public string GetAllCurrentResults()
         {
+            return _sinkManager.GetResults();
             // Logic to retrieve all current results
-            return null;
         }
 
         // Put: /api/frcv/startUDPStream
         [Route(HttpVerbs.Put, "/api/frcv/startUDPStream")]
-        public void StartUDPStream()
+        public void StartUDPStream(IHttpContext context)
         {
-            udpServers.Add(new UDPServer(_sinkManager.createResultChannel(), "localhost", 12345));
+            udpServers.Add(new UDPTransmiter(_sinkManager.createResultChannel(), context.Request.RemoteEndPoint.Address.ToString(), 12345));
             // Logic to start a UDP stream
         }
         // Put: /api/frcv/stopUDPStream
         [Route(HttpVerbs.Put, "/api/frcv/stopUDPStream")]
-        public void StopUDPStream()
+        public void StopUDPStream(IHttpContext context)
         {
-            // Logic to stop a UDP stream
+            string clientAddress = context.Request.RemoteEndPoint.Address.ToString();
+            var transmitter = udpServers.FirstOrDefault(x => x.HostName == clientAddress);
+            if (transmitter != null)
+            {
+                transmitter.Disable();
+                udpServers.Remove(transmitter);
+            }
         }
         // ------------------------------------------------
     }
