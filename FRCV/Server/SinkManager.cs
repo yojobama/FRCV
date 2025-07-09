@@ -10,16 +10,14 @@ namespace Server
     internal class SinkManager
     {
         private string currentResults;
-        private Manager manager;
         private Thread thread;
         private List<Channel<string>> channels;
         private List<Sink> sinks;
         private readonly SourceManager sourceManager;
         private bool isRunning;
 
-        public SinkManager(ref SourceManager sourceManager, ref Manager manager)
+        public SinkManager(ref SourceManager sourceManager)
         {
-            this.manager = manager;
             this.sourceManager = sourceManager;
             thread = new Thread(ThreadProc);
 
@@ -91,11 +89,11 @@ namespace Server
             switch (type)
             {
                 case SinkType.ApriltagSink:
-                    id = manager.createApriltagSink();
+                    id = ManagerWrapper.Instance.createApriltagSink();
                     sinks.Add(new Sink(id, "Apriltag Sink", SinkType.ApriltagSink));
                     break;
                 case SinkType.ObjectDetectionSink:
-                    id = manager.createObjectDetectionSink();
+                    id = ManagerWrapper.Instance.createObjectDetectionSink();
                     sinks.Add(new Sink(id, "Object Detection Sink", SinkType.ObjectDetectionSink));
                     break;
             }
@@ -113,7 +111,7 @@ namespace Server
         // update results
         private void updateResults()
         {
-            currentResults = manager.getAllSinkResults();
+            currentResults = ManagerWrapper.Instance.getAllSinkResults();
             // Logic to update results in sinks
             // This could involve iterating through sinks and updating their state based on the data received.
         }
@@ -148,7 +146,7 @@ namespace Server
                         source = sink.Source;
                     }
 
-                    manager.stopSinkById(id);
+                    ManagerWrapper.Instance.stopSinkById(id);
                     break;
                 }
             }
@@ -186,7 +184,7 @@ namespace Server
                         sourceManager.EnableSourceById(sink.Source.Id);
                     }
 
-                    manager.startSinkById(id);
+                    ManagerWrapper.Instance.startSinkById(id);
                     return;
                 }
             }
@@ -201,7 +199,7 @@ namespace Server
                     sourceManager.EnableSourceById(sink.Source.Id);
                 }
 
-                manager.startSinkById(sink.Id);
+                ManagerWrapper.Instance.startSinkById(sink.Id);
             }
         }
 

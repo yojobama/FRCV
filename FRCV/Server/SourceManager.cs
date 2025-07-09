@@ -9,11 +9,9 @@ namespace Server
     internal class SourceManager
     {
         private List<Source> sources;
-        private readonly Manager manager;
 
-        public SourceManager(ref Manager manager)
+        public SourceManager()
         {
-            this.manager = manager;
             // Initialize the source manager
             // This could include setting up data sources, initializing channels, etc.
         }
@@ -34,7 +32,7 @@ namespace Server
             {
                 // Logic to disable the source
                 // This could involve setting its state to stopped and releasing any resources it holds.
-                manager.stopSourceById(source.Id); // Assuming Source has an isEnabled property
+                ManagerWrapper.Instance.stopSourceById(source.Id); // Assuming Source has an isEnabled property
             }
             // Logic to stop all sources
             // This could involve iterating through a list of sources and stopping each one.
@@ -45,7 +43,7 @@ namespace Server
             {
                 // Logic to enable the source
                 // This could involve setting its state to running and initializing any necessary resources.
-                manager.startSourceById(source.Id); // Assuming Source has an isEnabled property
+                ManagerWrapper.Instance.startSourceById(source.Id); // Assuming Source has an isEnabled property
             }
             // Logic to start all sources
             // This could involve iterating through a list of sources and starting each one.
@@ -59,7 +57,7 @@ namespace Server
                 {
                     // Logic to disable the source
                     // This could involve setting its state to stopped and releasing any resources it holds.
-                    manager.stopSourceById(source.Id); // Assuming Source has an isEnabled property
+                    ManagerWrapper.Instance.stopSourceById(source.Id); // Assuming Source has an isEnabled property
                     return;
                 }
             }
@@ -74,7 +72,7 @@ namespace Server
                 {
                     // Logic to enable the source
                     // This could involve setting its state to running and initializing any necessary resources.
-                    manager.startSourceById(source.Id); // Assuming Source has an isEnabled property
+                    ManagerWrapper.Instance.startSourceById(source.Id); // Assuming Source has an isEnabled property
                     return;
                 }
             }
@@ -97,6 +95,16 @@ namespace Server
 
         public void AddSource(SourceType type)
         {
+            int id = -1;
+            
+            switch(type)
+            {
+                case SourceType.Camera:
+                    
+            }
+            
+            sources.Add(new Source(id, "Source", type));;
+            
             throw new NotImplementedException();
         }
     }

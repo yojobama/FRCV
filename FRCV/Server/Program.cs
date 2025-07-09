@@ -19,6 +19,10 @@ namespace Server
 
         static void Main(string[] args)
         {
+            var server = createWebServer("http://localhost:8175");
+            
+            server.Start();
+            
             Console.WriteLine("Hello, World!");
         }
     }
