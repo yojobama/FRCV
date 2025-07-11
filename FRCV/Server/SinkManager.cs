@@ -7,18 +7,18 @@ using System.Threading.Tasks;
 
 namespace Server
 {
-    internal class SinkManager
+    public class SinkManager
     {
+        public static SinkManager Instance { get; } = new SinkManager();
+
         private string currentResults;
         private Thread thread;
         private List<Channel<string>> channels;
         private List<Sink> sinks;
-        private readonly SourceManager sourceManager;
         private bool isRunning;
 
-        public SinkManager(ref SourceManager sourceManager)
+        private SinkManager()
         {
-            this.sourceManager = sourceManager;
             thread = new Thread(ThreadProc);
 
             sinks = new List<Sink>();
@@ -82,19 +82,29 @@ namespace Server
             }
         }
 
-        public void AddSink(SinkType type)
+        public void ChangeSinkName(int sinkId, string newName)
+        {
+
+        }
+
+        public void DeleteSink(int sinkId)
+        {
+
+        }
+
+        public void AddSink(string name, string type)
         {
             int id;
 
             switch (type)
             {
-                case SinkType.ApriltagSink:
+                case "ApriltagSink":
                     id = ManagerWrapper.Instance.createApriltagSink();
-                    sinks.Add(new Sink(id, "Apriltag Sink", SinkType.ApriltagSink));
+                    sinks.Add(new Sink(id, name, SinkType.ApriltagSink));
                     break;
-                case SinkType.ObjectDetectionSink:
+                case "ObjectDetectionSink":
                     id = ManagerWrapper.Instance.createObjectDetectionSink();
-                    sinks.Add(new Sink(id, "Object Detection Sink", SinkType.ObjectDetectionSink));
+                    sinks.Add(new Sink(id, name, SinkType.ObjectDetectionSink));
                     break;
             }
         }
@@ -165,7 +175,7 @@ namespace Server
 
                 if (!isSourceUsed)
                 {
-                    sourceManager.DisableSourceById(source.Id);
+                    SourceManager.Instance.DisableSourceById(source.Id);
                 }
             }
             // Logic to stop a sink by its ID
@@ -181,7 +191,7 @@ namespace Server
                 {
                     if (sink.Source != null)
                     {
-                        sourceManager.EnableSourceById(sink.Source.Id);
+                        SourceManager.Instance.EnableSourceById(sink.Source.Id);
                     }
 
                     ManagerWrapper.Instance.startSinkById(id);
@@ -196,7 +206,7 @@ namespace Server
             {
                 if (sink.Source != null)
                 {
-                    sourceManager.EnableSourceById(sink.Source.Id);
+                    SourceManager.Instance.EnableSourceById(sink.Source.Id);
                 }
 
                 ManagerWrapper.Instance.startSinkById(sink.Id);

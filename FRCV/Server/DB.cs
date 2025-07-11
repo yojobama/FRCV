@@ -8,17 +8,33 @@ namespace Server
 {
     public class DB
     {
+        public static DB Instance { get; } = new DB("data.json");
+
         string jsonPath;
         
         
-        public DB(string jsonPath)
+        private DB(string jsonPath)
         {
             this.jsonPath = jsonPath;
         }
 
-        void addObjectToDB(object obj)
+        public void RemoveSink(Sink sink)
         {
-            
+
+        }
+        public void AddSink(Sink sink)
+        {
+
+        }
+
+
+        public void RemoveSource()
+        {
+
+        }
+        public void AddSource()
+        {
+
         }
     }
 }

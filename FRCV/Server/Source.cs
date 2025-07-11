@@ -13,7 +13,7 @@ namespace Server
         VideoFile
     }
 
-    internal class Source
+    public class Source
     {
         private int id { get; set; }
         private string name { get; set; }

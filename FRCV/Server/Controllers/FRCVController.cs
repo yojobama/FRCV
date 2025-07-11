@@ -54,9 +54,9 @@ namespace Server.Controllers
 
         // Post: /api/frcv/addSink
         [Route(HttpVerbs.Post, "/api/frcv/addSink")]
-        public void AddSink(SinkType type)
+        public void AddSink(string name, SinkType type)
         {
-            _sinkManager.AddSink(type);
+            _sinkManager.AddSink(name, type);
             // Logic to add a sink
         }
         // Post: /api/frcv/addSource

@@ -12,7 +12,7 @@ namespace Server
         ObjectDetectionSink,
     }
 
-    internal class Sink
+    public class Sink
     {
        // class members 
         private SinkType type { get; set; }

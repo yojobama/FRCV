@@ -404,7 +404,7 @@ int Manager::generateUUID()
     logger->enterLog("generateUUID called");
     std::mt19937 engine(std::chrono::high_resolution_clock::now().time_since_epoch().count());
 
-    std::uniform_int_distribution<int> dist(-2147483648, 2147483647);
+    std::uniform_int_distribution<int> dist(0, 2147483647);
 
     int randomNumber = dist(engine);
     logger->enterLog("Generated UUID: " + std::to_string(randomNumber));

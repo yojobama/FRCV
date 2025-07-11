@@ -6,11 +6,13 @@ using System.Threading.Tasks;
 
 namespace Server
 {
-    internal class SourceManager
+    public class SourceManager
     {
+        public static SourceManager Instance { get; } = new SourceManager();
+
         private List<Source> sources;
 
-        public SourceManager()
+        private SourceManager()
         {
             // Initialize the source manager
             // This could include setting up data sources, initializing channels, etc.
@@ -87,7 +89,6 @@ namespace Server
                 if (source.Id == id)
                 {
                     return source;
-                    break;
                 }
             }
             return null;
