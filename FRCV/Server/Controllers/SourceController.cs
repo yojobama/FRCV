@@ -52,15 +52,17 @@ public class SourceController : WebApiController
     
     // upload a new video file (client to server)
     [Route(HttpVerbs.Post, "/source/createVideoFileSource")]
-    public Task CreateVideoFileSourceAsync(IHttpContext context, [QueryField] int fps)
+    public Task CreateVideoFileSourceAsync([QueryField] int fps)
     {
         // Logic to handle video file upload
-        var parser = MultipartFormDataParser.Parse(context.OpenRequestStream());
+        var parser = MultipartFormDataParser.Parse(HttpContext.OpenRequestStream());
 
         foreach (var file in parser.Files)
         {
             string fileName = file.FileName;
             Stream fileStream = file.Data;
+
+            Directory.CreateDirectory("videos");
 
             using (var output = File.Create(Path.Combine("videos", fileName)))
             {
@@ -75,15 +77,17 @@ public class SourceController : WebApiController
     
     // upload a new image file
     [Route(HttpVerbs.Post, "/source/createImageFileSource")]
-    public Task CreateImageFileSourceAsync(IHttpContext context)
+    public Task CreateImageFileSourceAsync()
     {
         // logic to upload image file
-        var parser = MultipartFormDataParser.Parse(context.OpenRequestStream());
+        var parser = MultipartFormDataParser.Parse(HttpContext.OpenRequestStream());
 
         foreach (var file in parser.Files)
         {
             string fileName = file.FileName;
             Stream fileStream = file.Data;
+
+            Directory.CreateDirectory("images");
 
             using (var output = File.Create(Path.Combine("images", fileName)))
             {
