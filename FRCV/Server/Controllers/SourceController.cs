@@ -1,7 +1,9 @@
-﻿using System.Diagnostics.Contracts;
-using System.Text.Json;
-using EmbedIO;
+﻿using EmbedIO;
 using EmbedIO.Routing;
+using HttpMultipartParser;
+using System.Diagnostics.Contracts;
+using System.Net.Http;
+using System.Text.Json;
 
 namespace Server.Controllers;
 
@@ -30,13 +32,15 @@ public class SourceController
         // Logic to retrieve a parsed source by its ID
         return Task.FromResult(JsonSerializer.Serialize(source));
     }
+
+    // add camera source
     
-    // add source
-    [Route(HttpVerbs.Put, "/source/add {name} {type}")]
-    public Task AddSourceAsync(string name, string type)
-    {
-        return Task.CompletedTask;
-    }
+    //// add source
+    //[Route(HttpVerbs.Put, "/source/add {name} {type}")]
+    //public Task AddSourceAsync(string name, string type)
+    //{
+    //    return Task.CompletedTask;
+    //}
     
     // change source name
     [Route(HttpVerbs.Put, "/source/changeName {sourceId} {name}")]
@@ -48,17 +52,47 @@ public class SourceController
     }
     
     // upload a new video file (client to server)
-    [Route(HttpVerbs.Post, "/source/uploadVideoFile")]
-    public Task UploadVideoFileAsync()
+    [Route(HttpVerbs.Post, "/source/createVideoFileSource {fps}")]
+    public Task CreateVideoFileSourceAsync(IHttpContext context, int fps)
     {
         // Logic to handle video file upload
+        var parser = MultipartFormDataParser.Parse(context.OpenRequestStream());
+
+        foreach (var file in parser.Files)
+        {
+            string fileName = file.FileName;
+            Stream fileStream = file.Data;
+
+            using (var output = File.Create(Path.Combine("videos", fileName)))
+            {
+                fileStream.CopyTo(output);
+                SourceManager.Instance.InitializeVideoFileSource(Path.Combine("videos", fileName), fps, Path.GetFileNameWithoutExtension(fileName));
+            }
+
+        }
+
         return Task.CompletedTask;
     }
     
     // upload a new image file
-    [Route(HttpVerbs.Post, "/source/uploadImageFile")]
-    public Task UploadImageFileAsync()
+    [Route(HttpVerbs.Post, "/source/createImageFileSource")]
+    public Task CreateImageFileSourceAsync(IHttpContext context)
     {
+        var parser = MultipartFormDataParser.Parse(context.OpenRequestStream());
+
+        foreach (var file in parser.Files)
+        {
+            string fileName = file.FileName;
+            Stream fileStream = file.Data;
+
+            using (var output = File.Create(Path.Combine("images", fileName)))
+            {
+                fileStream.CopyTo(output);
+                //SourceManager.Instance.InitializeVideoFileSource(Path.Combine("videos", fileName), fps, Path.GetFileNameWithoutExtension(fileName));
+                SourceManager.Instance.initializeImageFileSource(Path.Combine("images", fileName), Path.GetFileNameWithoutExtension(fileName));
+            }
+        }
+
         // logic to upload image file
         return Task.CompletedTask;
     }

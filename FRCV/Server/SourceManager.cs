@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Server
 {
@@ -14,13 +15,18 @@ namespace Server
 
         private SourceManager()
         {
+            sources = new List<Source>();
             // Initialize the source manager
             // This could include setting up data sources, initializing channels, etc.
         }
 
         public void ChangeSourceName(int sourceId, string newName)
         {
-            
+            Source source = GetSourceById(sourceId);
+            if (source != null)
+            {
+                source.Name = newName;
+            }
         }
 
         public int[] GetAllSourceIds()
@@ -99,11 +105,19 @@ namespace Server
             return null;
         }
 
-        public void AddSource(SourceType type)
+        public void InitializeCameraSource(CameraHardwareInfo cameraHardwareInfo, string name = "default")
         {
-            int id = -1;
-            
-            sources.Add(new Source(id, "Source", type));;
+            sources.Add(new Source(ManagerWrapper.Instance.createCameraSource(cameraHardwareInfo), name, SourceType.Camera));
+        }
+
+        public void InitializeVideoFileSource(string filePath, int fps = 30, string name = "default")
+        {
+            sources.Add(new Source(ManagerWrapper.Instance.createVideoFileSource(filePath, fps), name, SourceType.VideoFile));
+        }
+        
+        public void initializeImageFileSource(string filePath, string name = "default")
+        {
+            sources.Add(new Source(ManagerWrapper.Instance.createImageFileSource(filePath), name, SourceType.ImageFile));
         }
     }
 }
