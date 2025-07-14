@@ -49,149 +49,149 @@ public class Manager : global::System.IDisposable {
       if (swigCPtr.Handle != global::System.IntPtr.Zero) {
         if (swigCMemOwn) {
           swigCMemOwn = false;
-          FRCVLibPINVOKE.delete_Manager(swigCPtr);
+          libFRCVLibPINVOKE.delete_Manager(swigCPtr);
         }
         swigCPtr = new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero);
       }
     }
   }
 
-  public Manager(string logFile) : this(FRCVLibPINVOKE.new_Manager__SWIG_0(logFile), true) {
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+  public Manager(string logFile) : this(libFRCVLibPINVOKE.new_Manager__SWIG_0(logFile), true) {
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
-  public Manager() : this(FRCVLibPINVOKE.new_Manager__SWIG_1(), true) {
+  public Manager() : this(libFRCVLibPINVOKE.new_Manager__SWIG_1(), true) {
   }
 
   public VectorInt getAllSinks() {
-    VectorInt ret = new VectorInt(FRCVLibPINVOKE.Manager_getAllSinks(swigCPtr), true);
+    VectorInt ret = new VectorInt(libFRCVLibPINVOKE.Manager_getAllSinks(swigCPtr), true);
     return ret;
   }
 
   public VectorInt getAllSources() {
-    VectorInt ret = new VectorInt(FRCVLibPINVOKE.Manager_getAllSources(swigCPtr), true);
+    VectorInt ret = new VectorInt(libFRCVLibPINVOKE.Manager_getAllSources(swigCPtr), true);
     return ret;
   }
 
   public VectorCameraHardwareInfo enumerateAvailableCameras() {
-    VectorCameraHardwareInfo ret = new VectorCameraHardwareInfo(FRCVLibPINVOKE.Manager_enumerateAvailableCameras(swigCPtr), true);
+    VectorCameraHardwareInfo ret = new VectorCameraHardwareInfo(libFRCVLibPINVOKE.Manager_enumerateAvailableCameras(swigCPtr), true);
     return ret;
   }
 
   public bool bindSourceToSink(int sourceId, int sinkId) {
-    bool ret = FRCVLibPINVOKE.Manager_bindSourceToSink(swigCPtr, sourceId, sinkId);
+    bool ret = libFRCVLibPINVOKE.Manager_bindSourceToSink(swigCPtr, sourceId, sinkId);
     return ret;
   }
 
   public bool unbindSourceFromSink(int sinkId) {
-    bool ret = FRCVLibPINVOKE.Manager_unbindSourceFromSink(swigCPtr, sinkId);
+    bool ret = libFRCVLibPINVOKE.Manager_unbindSourceFromSink(swigCPtr, sinkId);
     return ret;
   }
 
   public int createCameraSource(CameraHardwareInfo info) {
-    int ret = FRCVLibPINVOKE.Manager_createCameraSource(swigCPtr, CameraHardwareInfo.getCPtr(info));
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    int ret = libFRCVLibPINVOKE.Manager_createCameraSource(swigCPtr, CameraHardwareInfo.getCPtr(info));
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public int createVideoFileSource(string path, int fps) {
-    int ret = FRCVLibPINVOKE.Manager_createVideoFileSource(swigCPtr, path, fps);
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    int ret = libFRCVLibPINVOKE.Manager_createVideoFileSource(swigCPtr, path, fps);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public int createImageFileSource(string path) {
-    int ret = FRCVLibPINVOKE.Manager_createImageFileSource(swigCPtr, path);
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    int ret = libFRCVLibPINVOKE.Manager_createImageFileSource(swigCPtr, path);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public int createApriltagSink() {
-    int ret = FRCVLibPINVOKE.Manager_createApriltagSink(swigCPtr);
+    int ret = libFRCVLibPINVOKE.Manager_createApriltagSink(swigCPtr);
     return ret;
   }
 
   public int createObjectDetectionSink() {
-    int ret = FRCVLibPINVOKE.Manager_createObjectDetectionSink(swigCPtr);
+    int ret = libFRCVLibPINVOKE.Manager_createObjectDetectionSink(swigCPtr);
     return ret;
   }
 
   public int createRecordingSink(int sourceId) {
-    int ret = FRCVLibPINVOKE.Manager_createRecordingSink(swigCPtr, sourceId);
+    int ret = libFRCVLibPINVOKE.Manager_createRecordingSink(swigCPtr, sourceId);
     return ret;
   }
 
   public void startAllSources() {
-    FRCVLibPINVOKE.Manager_startAllSources(swigCPtr);
+    libFRCVLibPINVOKE.Manager_startAllSources(swigCPtr);
   }
 
   public void stopAllSources() {
-    FRCVLibPINVOKE.Manager_stopAllSources(swigCPtr);
+    libFRCVLibPINVOKE.Manager_stopAllSources(swigCPtr);
   }
 
   public bool stopSourceById(int sourceId) {
-    bool ret = FRCVLibPINVOKE.Manager_stopSourceById(swigCPtr, sourceId);
+    bool ret = libFRCVLibPINVOKE.Manager_stopSourceById(swigCPtr, sourceId);
     return ret;
   }
 
   public bool startSourceById(int sourceId) {
-    bool ret = FRCVLibPINVOKE.Manager_startSourceById(swigCPtr, sourceId);
+    bool ret = libFRCVLibPINVOKE.Manager_startSourceById(swigCPtr, sourceId);
     return ret;
   }
 
   public void startAllSinks() {
-    FRCVLibPINVOKE.Manager_startAllSinks(swigCPtr);
+    libFRCVLibPINVOKE.Manager_startAllSinks(swigCPtr);
   }
 
   public void stopAllSinks() {
-    FRCVLibPINVOKE.Manager_stopAllSinks(swigCPtr);
+    libFRCVLibPINVOKE.Manager_stopAllSinks(swigCPtr);
   }
 
   public bool startSinkById(int sinkId) {
-    bool ret = FRCVLibPINVOKE.Manager_startSinkById(swigCPtr, sinkId);
+    bool ret = libFRCVLibPINVOKE.Manager_startSinkById(swigCPtr, sinkId);
     return ret;
   }
 
   public bool stopSinkById(int sinkId) {
-    bool ret = FRCVLibPINVOKE.Manager_stopSinkById(swigCPtr, sinkId);
+    bool ret = libFRCVLibPINVOKE.Manager_stopSinkById(swigCPtr, sinkId);
     return ret;
   }
 
   public string getAllSinkStatus() {
-    string ret = FRCVLibPINVOKE.Manager_getAllSinkStatus(swigCPtr);
+    string ret = libFRCVLibPINVOKE.Manager_getAllSinkStatus(swigCPtr);
     return ret;
   }
 
   public string getSinkStatusById(int sinkId) {
-    string ret = FRCVLibPINVOKE.Manager_getSinkStatusById(swigCPtr, sinkId);
+    string ret = libFRCVLibPINVOKE.Manager_getSinkStatusById(swigCPtr, sinkId);
     return ret;
   }
 
   public string getSinkResult(int sinkId) {
-    string ret = FRCVLibPINVOKE.Manager_getSinkResult(swigCPtr, sinkId);
+    string ret = libFRCVLibPINVOKE.Manager_getSinkResult(swigCPtr, sinkId);
     return ret;
   }
 
   public string getAllSinkResults() {
-    string ret = FRCVLibPINVOKE.Manager_getAllSinkResults(swigCPtr);
+    string ret = libFRCVLibPINVOKE.Manager_getAllSinkResults(swigCPtr);
     return ret;
   }
 
   public int createCameraCalibrationSink(int height, int width) {
-    int ret = FRCVLibPINVOKE.Manager_createCameraCalibrationSink(swigCPtr, height, width);
+    int ret = libFRCVLibPINVOKE.Manager_createCameraCalibrationSink(swigCPtr, height, width);
     return ret;
   }
 
   public void bindSourceToCalibrationSink(int sourceId) {
-    FRCVLibPINVOKE.Manager_bindSourceToCalibrationSink(swigCPtr, sourceId);
+    libFRCVLibPINVOKE.Manager_bindSourceToCalibrationSink(swigCPtr, sourceId);
   }
 
   public void cameraCalibrationSinkGrabFrame(int sinkId) {
-    FRCVLibPINVOKE.Manager_cameraCalibrationSinkGrabFrame(swigCPtr, sinkId);
+    libFRCVLibPINVOKE.Manager_cameraCalibrationSinkGrabFrame(swigCPtr, sinkId);
   }
 
   public CameraCalibrationResult getCameraCalibrationResults(int sinkId) {
-    CameraCalibrationResult ret = new CameraCalibrationResult(FRCVLibPINVOKE.Manager_getCameraCalibrationResults(swigCPtr, sinkId), true);
+    CameraCalibrationResult ret = new CameraCalibrationResult(libFRCVLibPINVOKE.Manager_getCameraCalibrationResults(swigCPtr, sinkId), true);
     return ret;
   }
 

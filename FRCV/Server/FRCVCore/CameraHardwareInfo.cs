@@ -49,7 +49,7 @@ public class CameraHardwareInfo : global::System.IDisposable {
       if (swigCPtr.Handle != global::System.IntPtr.Zero) {
         if (swigCMemOwn) {
           swigCMemOwn = false;
-          FRCVLibPINVOKE.delete_CameraHardwareInfo(swigCPtr);
+          libFRCVLibPINVOKE.delete_CameraHardwareInfo(swigCPtr);
         }
         swigCPtr = new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero);
       }
@@ -58,29 +58,29 @@ public class CameraHardwareInfo : global::System.IDisposable {
 
   public string name {
     set {
-      FRCVLibPINVOKE.CameraHardwareInfo_name_set(swigCPtr, value);
-      if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+      libFRCVLibPINVOKE.CameraHardwareInfo_name_set(swigCPtr, value);
+      if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
     } 
     get {
-      string ret = FRCVLibPINVOKE.CameraHardwareInfo_name_get(swigCPtr);
-      if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+      string ret = libFRCVLibPINVOKE.CameraHardwareInfo_name_get(swigCPtr);
+      if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
       return ret;
     } 
   }
 
   public string path {
     set {
-      FRCVLibPINVOKE.CameraHardwareInfo_path_set(swigCPtr, value);
-      if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+      libFRCVLibPINVOKE.CameraHardwareInfo_path_set(swigCPtr, value);
+      if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
     } 
     get {
-      string ret = FRCVLibPINVOKE.CameraHardwareInfo_path_get(swigCPtr);
-      if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+      string ret = libFRCVLibPINVOKE.CameraHardwareInfo_path_get(swigCPtr);
+      if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
       return ret;
     } 
   }
 
-  public CameraHardwareInfo() : this(FRCVLibPINVOKE.new_CameraHardwareInfo(), true) {
+  public CameraHardwareInfo() : this(libFRCVLibPINVOKE.new_CameraHardwareInfo(), true) {
   }
 
 }

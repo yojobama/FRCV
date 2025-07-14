@@ -27,11 +27,18 @@ namespace Server
 
         static void Main(string[] args)
         {
+            Console.WriteLine("doing a slight test to see if the swig interop is working:");
+
+            Manager manager = new Manager();
+
+            //ManagerWrapper.Instance.startAllSinks();
+
+            Console.WriteLine("Hello, World!");
+            
             var server = CreateWebServer("http://localhost:8175");
             
             server.Start();
             
-            Console.WriteLine("Hello, World!");
 
             Console.ReadLine();
         }

@@ -4,6 +4,22 @@
     "D:\\Projects\\FRCV\\FRCV\\Server\\Server.csproj": {}
   },
   "projects": {
+    "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj": {
+      "restore": {
+        "projectUniqueName": "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj",
+        "projectName": "FRCVLib",
+        "projectPath": "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj",
+        "UsingMicrosoftNETSdk": false,
+        "frameworks": {
+          "native": {
+            "projectReferences": {}
+          }
+        }
+      },
+      "frameworks": {
+        "native": {}
+      }
+    },
     "D:\\Projects\\FRCV\\FRCV\\Server\\Server.csproj": {
       "version": "1.0.0",
       "restore": {
@@ -32,7 +48,11 @@
         "frameworks": {
           "net8.0": {
             "targetAlias": "net8.0",
-            "projectReferences": {}
+            "projectReferences": {
+              "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj": {
+                "projectPath": "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj"
+              }
+            }
           }
         },
         "warningProperties": {
@@ -55,6 +75,10 @@
               "target": "Package",
               "version": "[3.5.2, )"
             },
+            "HttpMultipartParser": {
+              "target": "Package",
+              "version": "[9.0.0, )"
+            },
             "System.Text.Json": {
               "target": "Package",
               "version": "[9.0.6, )"
@@ -76,7 +100,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

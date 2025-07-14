@@ -1,10 +1,14 @@
 {
   "version": 2,
-  "dgSpecHash": "GZSs6O/ahWY=",
+  "dgSpecHash": "VVs/ay5BhnA=",
   "success": true,
   "projectFilePath": "D:\\Projects\\FRCV\\FRCV\\Server\\Server.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\yojob\\.nuget\\packages\\embedio\\3.5.2\\embedio.3.5.2.nupkg.sha512",
+    "C:\\Users\\yojob\\.nuget\\packages\\httpmultipartparser\\9.0.0\\httpmultipartparser.9.0.0.nupkg.sha512",
+    "C:\\Users\\yojob\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512",
+    "C:\\Users\\yojob\\.nuget\\packages\\microsoft.io.recyclablememorystream\\3.0.1\\microsoft.io.recyclablememorystream.3.0.1.nupkg.sha512",
+    "C:\\Users\\yojob\\.nuget\\packages\\system.buffers\\4.6.0\\system.buffers.4.6.0.nupkg.sha512",
     "C:\\Users\\yojob\\.nuget\\packages\\system.io.pipelines\\9.0.6\\system.io.pipelines.9.0.6.nupkg.sha512",
     "C:\\Users\\yojob\\.nuget\\packages\\system.text.encodings.web\\9.0.6\\system.text.encodings.web.9.0.6.nupkg.sha512",
     "C:\\Users\\yojob\\.nuget\\packages\\system.text.json\\9.0.6\\system.text.json.9.0.6.nupkg.sha512",

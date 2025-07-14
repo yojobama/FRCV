@@ -1,4 +1,4 @@
-%module FRCVLib
+%module libFRCVLib
 %{
 #include "Manager.h"
 #include "CameraCalibrationResult.h"

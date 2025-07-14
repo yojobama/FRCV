@@ -49,40 +49,40 @@ public class Logger : global::System.IDisposable {
       if (swigCPtr.Handle != global::System.IntPtr.Zero) {
         if (swigCMemOwn) {
           swigCMemOwn = false;
-          FRCVLibPINVOKE.delete_Logger(swigCPtr);
+          libFRCVLibPINVOKE.delete_Logger(swigCPtr);
         }
         swigCPtr = new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero);
       }
     }
   }
 
-  public Logger() : this(FRCVLibPINVOKE.new_Logger__SWIG_0(), true) {
+  public Logger() : this(libFRCVLibPINVOKE.new_Logger__SWIG_0(), true) {
   }
 
-  public Logger(string filePath) : this(FRCVLibPINVOKE.new_Logger__SWIG_1(filePath), true) {
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+  public Logger(string filePath) : this(libFRCVLibPINVOKE.new_Logger__SWIG_1(filePath), true) {
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void enterLog(string message) {
-    FRCVLibPINVOKE.Logger_enterLog__SWIG_0(swigCPtr, message);
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    libFRCVLibPINVOKE.Logger_enterLog__SWIG_0(swigCPtr, message);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void enterLog(LogLevel logLevel, string message) {
-    FRCVLibPINVOKE.Logger_enterLog__SWIG_1(swigCPtr, (int)logLevel, message);
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    libFRCVLibPINVOKE.Logger_enterLog__SWIG_1(swigCPtr, (int)logLevel, message);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void enterLog(Log log) {
-    FRCVLibPINVOKE.Logger_enterLog__SWIG_2(swigCPtr, Log.getCPtr(log));
+    libFRCVLibPINVOKE.Logger_enterLog__SWIG_2(swigCPtr, Log.getCPtr(log));
   }
 
   public void clearAllLogs() {
-    FRCVLibPINVOKE.Logger_clearAllLogs(swigCPtr);
+    libFRCVLibPINVOKE.Logger_clearAllLogs(swigCPtr);
   }
 
   public void flushLogs() {
-    FRCVLibPINVOKE.Logger_flushLogs(swigCPtr);
+    libFRCVLibPINVOKE.Logger_flushLogs(swigCPtr);
   }
 
 }

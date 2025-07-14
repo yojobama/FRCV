@@ -9,6 +9,8 @@
       "Server/1.0.0": {
         "dependencies": {
           "EmbedIO": "3.5.2",
+          "FRCVLib": "1.0.0",
+          "HttpMultipartParser": "9.0.0",
           "System.Text.Json": "9.0.6"
         },
         "runtime": {
@@ -26,6 +28,29 @@
           }
         }
       },
+      "HttpMultipartParser/9.0.0": {
+        "dependencies": {
+          "Microsoft.CSharp": "4.7.0",
+          "Microsoft.IO.RecyclableMemoryStream": "3.0.1",
+          "System.Buffers": "4.6.0"
+        },
+        "runtime": {
+          "lib/netstandard2.1/HttpMultipartParser.dll": {
+            "assemblyVersion": "9.0.0.0",
+            "fileVersion": "9.0.0.0"
+          }
+        }
+      },
+      "Microsoft.CSharp/4.7.0": {},
+      "Microsoft.IO.RecyclableMemoryStream/3.0.1": {
+        "runtime": {
+          "lib/net6.0/Microsoft.IO.RecyclableMemoryStream.dll": {
+            "assemblyVersion": "3.0.1.0",
+            "fileVersion": "3.0.1.0"
+          }
+        }
+      },
+      "System.Buffers/4.6.0": {},
       "System.IO.Pipelines/9.0.6": {
         "runtime": {
           "lib/net8.0/System.IO.Pipelines.dll": {
@@ -88,6 +113,34 @@
       "sha512": "sha512-YU4j+3XvuO8/VPkNf7KWOF1TpMhnyVhXnPsG1mvnDhTJ9D5BZOFXVDvCpE/SkQ1AJ0Aa+dXOVSW3ntgmLL7aJg==",
       "path": "embedio/3.5.2",
       "hashPath": "embedio.3.5.2.nupkg.sha512"
+    },
+    "HttpMultipartParser/9.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-WeGKDK62waagwo9nokRY62DrLukwVCNXOPVjrzi/qSS73D+B6zPOBkImsFqzhvRNweIobR74js9M2HTV+PTeIg==",
+      "path": "httpmultipartparser/9.0.0",
+      "hashPath": "httpmultipartparser.9.0.0.nupkg.sha512"
+    },
+    "Microsoft.CSharp/4.7.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-pTj+D3uJWyN3My70i2Hqo+OXixq3Os2D1nJ2x92FFo6sk8fYS1m1WLNTs0Dc1uPaViH0YvEEwvzddQ7y4rhXmA==",
+      "path": "microsoft.csharp/4.7.0",
+      "hashPath": "microsoft.csharp.4.7.0.nupkg.sha512"
+    },
+    "Microsoft.IO.RecyclableMemoryStream/3.0.1": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-s/s20YTVY9r9TPfTrN5g8zPF1YhwxyqO6PxUkrYTGI2B+OGPe9AdajWZrLhFqXIvqIW23fnUE4+ztrUWNU1+9g==",
+      "path": "microsoft.io.recyclablememorystream/3.0.1",
+      "hashPath": "microsoft.io.recyclablememorystream.3.0.1.nupkg.sha512"
+    },
+    "System.Buffers/4.6.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-lN6tZi7Q46zFzAbRYXTIvfXcyvQQgxnY7Xm6C6xQ9784dEL1amjM6S6Iw4ZpsvesAKnRVsM4scrDQaDqSClkjA==",
+      "path": "system.buffers/4.6.0",
+      "hashPath": "system.buffers.4.6.0.nupkg.sha512"
     },
     "System.IO.Pipelines/9.0.6": {
       "type": "package",

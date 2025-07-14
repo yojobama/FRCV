@@ -50,7 +50,7 @@ public class VectorInt : global::System.IDisposable, global::System.Collections.
       if (swigCPtr.Handle != global::System.IntPtr.Zero) {
         if (swigCMemOwn) {
           swigCMemOwn = false;
-          FRCVLibPINVOKE.delete_VectorInt(swigCPtr);
+          libFRCVLibPINVOKE.delete_VectorInt(swigCPtr);
         }
         swigCPtr = new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero);
       }
@@ -235,131 +235,131 @@ public class VectorInt : global::System.IDisposable, global::System.Collections.
     }
   }
 
-  public VectorInt() : this(FRCVLibPINVOKE.new_VectorInt__SWIG_0(), true) {
+  public VectorInt() : this(libFRCVLibPINVOKE.new_VectorInt__SWIG_0(), true) {
   }
 
-  public VectorInt(VectorInt other) : this(FRCVLibPINVOKE.new_VectorInt__SWIG_1(VectorInt.getCPtr(other)), true) {
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+  public VectorInt(VectorInt other) : this(libFRCVLibPINVOKE.new_VectorInt__SWIG_1(VectorInt.getCPtr(other)), true) {
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void Clear() {
-    FRCVLibPINVOKE.VectorInt_Clear(swigCPtr);
+    libFRCVLibPINVOKE.VectorInt_Clear(swigCPtr);
   }
 
   public void Add(int x) {
-    FRCVLibPINVOKE.VectorInt_Add(swigCPtr, x);
+    libFRCVLibPINVOKE.VectorInt_Add(swigCPtr, x);
   }
 
   private uint size() {
-    uint ret = FRCVLibPINVOKE.VectorInt_size(swigCPtr);
+    uint ret = libFRCVLibPINVOKE.VectorInt_size(swigCPtr);
     return ret;
   }
 
   private bool empty() {
-    bool ret = FRCVLibPINVOKE.VectorInt_empty(swigCPtr);
+    bool ret = libFRCVLibPINVOKE.VectorInt_empty(swigCPtr);
     return ret;
   }
 
   private uint capacity() {
-    uint ret = FRCVLibPINVOKE.VectorInt_capacity(swigCPtr);
+    uint ret = libFRCVLibPINVOKE.VectorInt_capacity(swigCPtr);
     return ret;
   }
 
   private void reserve(uint n) {
-    FRCVLibPINVOKE.VectorInt_reserve(swigCPtr, n);
+    libFRCVLibPINVOKE.VectorInt_reserve(swigCPtr, n);
   }
 
-  public VectorInt(int capacity) : this(FRCVLibPINVOKE.new_VectorInt__SWIG_2(capacity), true) {
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+  public VectorInt(int capacity) : this(libFRCVLibPINVOKE.new_VectorInt__SWIG_2(capacity), true) {
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   private int getitemcopy(int index) {
-    int ret = FRCVLibPINVOKE.VectorInt_getitemcopy(swigCPtr, index);
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    int ret = libFRCVLibPINVOKE.VectorInt_getitemcopy(swigCPtr, index);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   private int getitem(int index) {
-    int ret = FRCVLibPINVOKE.VectorInt_getitem(swigCPtr, index);
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    int ret = libFRCVLibPINVOKE.VectorInt_getitem(swigCPtr, index);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   private void setitem(int index, int val) {
-    FRCVLibPINVOKE.VectorInt_setitem(swigCPtr, index, val);
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    libFRCVLibPINVOKE.VectorInt_setitem(swigCPtr, index, val);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void AddRange(VectorInt values) {
-    FRCVLibPINVOKE.VectorInt_AddRange(swigCPtr, VectorInt.getCPtr(values));
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    libFRCVLibPINVOKE.VectorInt_AddRange(swigCPtr, VectorInt.getCPtr(values));
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public VectorInt GetRange(int index, int count) {
-    global::System.IntPtr cPtr = FRCVLibPINVOKE.VectorInt_GetRange(swigCPtr, index, count);
+    global::System.IntPtr cPtr = libFRCVLibPINVOKE.VectorInt_GetRange(swigCPtr, index, count);
     VectorInt ret = (cPtr == global::System.IntPtr.Zero) ? null : new VectorInt(cPtr, true);
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public void Insert(int index, int x) {
-    FRCVLibPINVOKE.VectorInt_Insert(swigCPtr, index, x);
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    libFRCVLibPINVOKE.VectorInt_Insert(swigCPtr, index, x);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void InsertRange(int index, VectorInt values) {
-    FRCVLibPINVOKE.VectorInt_InsertRange(swigCPtr, index, VectorInt.getCPtr(values));
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    libFRCVLibPINVOKE.VectorInt_InsertRange(swigCPtr, index, VectorInt.getCPtr(values));
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void RemoveAt(int index) {
-    FRCVLibPINVOKE.VectorInt_RemoveAt(swigCPtr, index);
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    libFRCVLibPINVOKE.VectorInt_RemoveAt(swigCPtr, index);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void RemoveRange(int index, int count) {
-    FRCVLibPINVOKE.VectorInt_RemoveRange(swigCPtr, index, count);
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    libFRCVLibPINVOKE.VectorInt_RemoveRange(swigCPtr, index, count);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public static VectorInt Repeat(int value, int count) {
-    global::System.IntPtr cPtr = FRCVLibPINVOKE.VectorInt_Repeat(value, count);
+    global::System.IntPtr cPtr = libFRCVLibPINVOKE.VectorInt_Repeat(value, count);
     VectorInt ret = (cPtr == global::System.IntPtr.Zero) ? null : new VectorInt(cPtr, true);
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public void Reverse() {
-    FRCVLibPINVOKE.VectorInt_Reverse__SWIG_0(swigCPtr);
+    libFRCVLibPINVOKE.VectorInt_Reverse__SWIG_0(swigCPtr);
   }
 
   public void Reverse(int index, int count) {
-    FRCVLibPINVOKE.VectorInt_Reverse__SWIG_1(swigCPtr, index, count);
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    libFRCVLibPINVOKE.VectorInt_Reverse__SWIG_1(swigCPtr, index, count);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void SetRange(int index, VectorInt values) {
-    FRCVLibPINVOKE.VectorInt_SetRange(swigCPtr, index, VectorInt.getCPtr(values));
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    libFRCVLibPINVOKE.VectorInt_SetRange(swigCPtr, index, VectorInt.getCPtr(values));
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public bool Contains(int value) {
-    bool ret = FRCVLibPINVOKE.VectorInt_Contains(swigCPtr, value);
+    bool ret = libFRCVLibPINVOKE.VectorInt_Contains(swigCPtr, value);
     return ret;
   }
 
   public int IndexOf(int value) {
-    int ret = FRCVLibPINVOKE.VectorInt_IndexOf(swigCPtr, value);
+    int ret = libFRCVLibPINVOKE.VectorInt_IndexOf(swigCPtr, value);
     return ret;
   }
 
   public int LastIndexOf(int value) {
-    int ret = FRCVLibPINVOKE.VectorInt_LastIndexOf(swigCPtr, value);
+    int ret = libFRCVLibPINVOKE.VectorInt_LastIndexOf(swigCPtr, value);
     return ret;
   }
 
   public bool Remove(int value) {
-    bool ret = FRCVLibPINVOKE.VectorInt_Remove(swigCPtr, value);
+    bool ret = libFRCVLibPINVOKE.VectorInt_Remove(swigCPtr, value);
     return ret;
   }
 

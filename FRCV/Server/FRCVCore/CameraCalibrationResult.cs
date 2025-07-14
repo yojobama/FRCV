@@ -49,7 +49,7 @@ public class CameraCalibrationResult : global::System.IDisposable {
       if (swigCPtr.Handle != global::System.IntPtr.Zero) {
         if (swigCMemOwn) {
           swigCMemOwn = false;
-          FRCVLibPINVOKE.delete_CameraCalibrationResult(swigCPtr);
+          libFRCVLibPINVOKE.delete_CameraCalibrationResult(swigCPtr);
         }
         swigCPtr = new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero);
       }
@@ -58,61 +58,61 @@ public class CameraCalibrationResult : global::System.IDisposable {
 
   public double fx {
     set {
-      FRCVLibPINVOKE.CameraCalibrationResult_fx_set(swigCPtr, value);
+      libFRCVLibPINVOKE.CameraCalibrationResult_fx_set(swigCPtr, value);
     } 
     get {
-      double ret = FRCVLibPINVOKE.CameraCalibrationResult_fx_get(swigCPtr);
+      double ret = libFRCVLibPINVOKE.CameraCalibrationResult_fx_get(swigCPtr);
       return ret;
     } 
   }
 
   public double fy {
     set {
-      FRCVLibPINVOKE.CameraCalibrationResult_fy_set(swigCPtr, value);
+      libFRCVLibPINVOKE.CameraCalibrationResult_fy_set(swigCPtr, value);
     } 
     get {
-      double ret = FRCVLibPINVOKE.CameraCalibrationResult_fy_get(swigCPtr);
+      double ret = libFRCVLibPINVOKE.CameraCalibrationResult_fy_get(swigCPtr);
       return ret;
     } 
   }
 
   public double cx {
     set {
-      FRCVLibPINVOKE.CameraCalibrationResult_cx_set(swigCPtr, value);
+      libFRCVLibPINVOKE.CameraCalibrationResult_cx_set(swigCPtr, value);
     } 
     get {
-      double ret = FRCVLibPINVOKE.CameraCalibrationResult_cx_get(swigCPtr);
+      double ret = libFRCVLibPINVOKE.CameraCalibrationResult_cx_get(swigCPtr);
       return ret;
     } 
   }
 
   public double cy {
     set {
-      FRCVLibPINVOKE.CameraCalibrationResult_cy_set(swigCPtr, value);
+      libFRCVLibPINVOKE.CameraCalibrationResult_cy_set(swigCPtr, value);
     } 
     get {
-      double ret = FRCVLibPINVOKE.CameraCalibrationResult_cy_get(swigCPtr);
+      double ret = libFRCVLibPINVOKE.CameraCalibrationResult_cy_get(swigCPtr);
       return ret;
     } 
   }
 
   public SWIGTYPE_p_FrameSpec frameSpec {
     set {
-      FRCVLibPINVOKE.CameraCalibrationResult_frameSpec_set(swigCPtr, SWIGTYPE_p_FrameSpec.getCPtr(value));
-      if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+      libFRCVLibPINVOKE.CameraCalibrationResult_frameSpec_set(swigCPtr, SWIGTYPE_p_FrameSpec.getCPtr(value));
+      if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
     } 
     get {
-      SWIGTYPE_p_FrameSpec ret = new SWIGTYPE_p_FrameSpec(FRCVLibPINVOKE.CameraCalibrationResult_frameSpec_get(swigCPtr), true);
-      if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+      SWIGTYPE_p_FrameSpec ret = new SWIGTYPE_p_FrameSpec(libFRCVLibPINVOKE.CameraCalibrationResult_frameSpec_get(swigCPtr), true);
+      if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
       return ret;
     } 
   }
 
-  public CameraCalibrationResult() : this(FRCVLibPINVOKE.new_CameraCalibrationResult__SWIG_0(), true) {
+  public CameraCalibrationResult() : this(libFRCVLibPINVOKE.new_CameraCalibrationResult__SWIG_0(), true) {
   }
 
-  public CameraCalibrationResult(double fx, double fy, double cx, double cy, SWIGTYPE_p_FrameSpec frameSpec) : this(FRCVLibPINVOKE.new_CameraCalibrationResult__SWIG_1(fx, fy, cx, cy, SWIGTYPE_p_FrameSpec.getCPtr(frameSpec)), true) {
-    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
+  public CameraCalibrationResult(double fx, double fy, double cx, double cy, SWIGTYPE_p_FrameSpec frameSpec) : this(libFRCVLibPINVOKE.new_CameraCalibrationResult__SWIG_1(fx, fy, cx, cy, SWIGTYPE_p_FrameSpec.getCPtr(frameSpec)), true) {
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
 }

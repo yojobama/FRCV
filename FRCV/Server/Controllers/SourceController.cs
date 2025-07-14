@@ -26,8 +26,8 @@ public class SourceController : WebApiController
     }
 
     // get parsed source by id
-    [Route(HttpVerbs.Get, "/source/{sourceId}")]
-    public Task<string> GetParsedSourceByIdAsync(int sourceId)
+    [Route(HttpVerbs.Get, "/source")]
+    public Task<string> GetParsedSourceByIdAsync([QueryField] int sourceId)
     {
         Source source = SourceManager.Instance.GetSourceById(sourceId);
         // Logic to retrieve a parsed source by its ID
@@ -35,8 +35,8 @@ public class SourceController : WebApiController
     }
 
     // change source name
-    [Route(HttpVerbs.Put, "/source/changeName {sourceId} {name}")]
-    public Task ChangeSourceNameAsync(int sourceId, string name)
+    [Route(HttpVerbs.Put, "/source/changeName")]
+    public Task ChangeSourceNameAsync([QueryField] int sourceId, [QueryField] string name)
     {
         
         // Logic to change the source name
@@ -51,8 +51,8 @@ public class SourceController : WebApiController
     }
     
     // upload a new video file (client to server)
-    [Route(HttpVerbs.Post, "/source/createVideoFileSource {fps}")]
-    public Task CreateVideoFileSourceAsync(IHttpContext context, int fps)
+    [Route(HttpVerbs.Post, "/source/createVideoFileSource")]
+    public Task CreateVideoFileSourceAsync(IHttpContext context, [QueryField] int fps)
     {
         // Logic to handle video file upload
         var parser = MultipartFormDataParser.Parse(context.OpenRequestStream());
@@ -104,8 +104,8 @@ public class SourceController : WebApiController
     }
     
     // delete source
-    [Route(HttpVerbs.Delete, "/source/delete {sourceId}")]
-    public Task DeleteSourceAsync(int sourceId)
+    [Route(HttpVerbs.Delete, "/source/delete")]
+    public Task DeleteSourceAsync([QueryField] int sourceId)
     {
         // Logic to delete a source by its ID
         return Task.CompletedTask;

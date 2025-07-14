@@ -17,6 +17,10 @@
     <PackageReference Include="System.Text.Json" Version="9.0.6" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FRCVLib\FRCVLib.vcxproj" />
+  </ItemGroup>
+
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
     <Exec Command="swig -c++ -csharp -outdir .\FRCVCore ..\FRCVLib\swig.i" />
   </Target>

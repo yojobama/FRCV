@@ -27,6 +27,7 @@ Manager::Manager(string logFile)
 
 Manager::Manager()
 {
+    logger = new Logger("FRCVLog.txt");
     framePool = new FramePool(logger);
     logger->enterLog("Manager constructed");
     preProcessor = new PreProcessor(framePool);
@@ -66,7 +67,7 @@ vector<int> Manager::getAllSources()
         iterator++;
     }
 
-    return vector<int>();
+    return sourceIds;
 }
 
 vector<CameraHardwareInfo> Manager::enumerateAvailableCameras()
@@ -282,11 +283,13 @@ bool Manager::startSourceById(int sourceId)
 }
 
 void Manager::startAllSinks() {
-    auto iterator = sinks.begin();
+    if (!sinks.empty()) {
+        auto iterator = sinks.begin();
 
-    while (iterator != sinks.end()) {
-        iterator->second->changeThreadStatus(true);
-        iterator++;
+        while (iterator != sinks.end()) {
+            //iterator->second->changeThreadStatus(true);
+            iterator++;
+        }
     }
 }
 
