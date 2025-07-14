@@ -7,6 +7,8 @@ namespace Server.Controllers;
 
 public class SinkController
 {
+    private List<UDPTransmiter> udpTransmiters = new List<UDPTransmiter>();
+    
     public SinkController()
     {
         
@@ -103,17 +105,24 @@ public class SinkController
     
     // start udp transmissions to my address
     [Route(HttpVerbs.Put, "/sink/startUdp")]
-    public Task StartUdpTransmissionsAsync(string ipAddress, int port)
+    public Task StartUdpTransmissionsAsync(IHttpContext context)
     {
-        
+        udpTransmiters.Add(new UDPTransmiter(SinkManager.Instance.createResultChannel(), context.Request.RemoteEndPoint.Address.ToString(), 12345));
         return Task.CompletedTask;
     }
     
     // stop udp transmissions to my address
     [Route(HttpVerbs.Put, "/sink/stopUdp")]
-    public Task StopUdpTransmissionsAsync()
+    public Task StopUdpTransmissionsAsync(IHttpContext context)
     {
         // Logic to start UDP transmissions
+        string clientAddress = context.Request.RemoteEndPoint.Address.ToString();
+        var transmitter = udpTransmiters.FirstOrDefault(x => x.HostName == clientAddress);
+        if (transmitter != null)
+        {
+            transmitter.Disable();
+            udpTransmiters.Remove(transmitter);
+        }
         return Task.CompletedTask;
     }
 }

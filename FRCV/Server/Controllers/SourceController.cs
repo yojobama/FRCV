@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.Contracts;
+using System.Text.Json;
 using EmbedIO;
 using EmbedIO.Routing;
 
@@ -18,15 +19,16 @@ public class SourceController
     public Task<int[]> GetAllSourceIdsAsync()
     {
         // Logic to retrieve all source IDs
-        return Task.FromResult(new int[] { });
+        return Task.FromResult(SourceManager.Instance.GetAllSourceIds());
     }
 
     // get parsed source by id
     [Route(HttpVerbs.Get, "/source/{sourceId}")]
-    public Task<Source> GetParsedSourceByIdAsync(int sourceId)
+    public Task<string> GetParsedSourceByIdAsync(int sourceId)
     {
+        Source source = SourceManager.Instance.GetSourceById(sourceId);
         // Logic to retrieve a parsed source by its ID
-        return Task.FromResult(new Source(0, "Default", SourceType.Camera));
+        return Task.FromResult(JsonSerializer.Serialize(source));
     }
     
     // add source
@@ -36,17 +38,11 @@ public class SourceController
         return Task.CompletedTask;
     }
     
-    // change source type
-    [Route(HttpVerbs.Put, "/source/changeType {sourceId} {type}")]
-    public Task ChangeSourceTypeAsync(int sourceId, string type)
-    {
-        return Task.CompletedTask;
-    }
-    
     // change source name
     [Route(HttpVerbs.Put, "/source/changeName {sourceId} {name}")]
     public Task ChangeSourceNameAsync(int sourceId, string name)
     {
+        
         // Logic to change the source name
         return Task.CompletedTask;
     }

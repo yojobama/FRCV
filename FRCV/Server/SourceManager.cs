@@ -18,6 +18,11 @@ namespace Server
             // This could include setting up data sources, initializing channels, etc.
         }
 
+        public void ChangeSourceName(int sourceId, string newName)
+        {
+            
+        }
+
         public int[] GetAllSourceIds()
         {
             List<int> ids = new List<int>();
@@ -98,15 +103,7 @@ namespace Server
         {
             int id = -1;
             
-            switch(type)
-            {
-                case SourceType.Camera:
-                    
-            }
-            
             sources.Add(new Source(id, "Source", type));;
-            
-            throw new NotImplementedException();
         }
     }
 }
