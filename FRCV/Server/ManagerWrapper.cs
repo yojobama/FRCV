@@ -6,5 +6,5 @@ public class ManagerWrapper : Manager
     // Singleton instance of ManagerWrapper
     public static ManagerWrapper Instance { get; } = new ManagerWrapper();
 
-    private ManagerWrapper() {}
+    private ManagerWrapper() : base() {}
 }

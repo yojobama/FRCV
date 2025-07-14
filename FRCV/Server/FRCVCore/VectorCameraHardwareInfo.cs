@@ -50,7 +50,7 @@ public class VectorCameraHardwareInfo : global::System.IDisposable, global::Syst
       if (swigCPtr.Handle != global::System.IntPtr.Zero) {
         if (swigCMemOwn) {
           swigCMemOwn = false;
-          FRCVCorePINVOKE.delete_VectorCameraHardwareInfo(swigCPtr);
+          FRCVLibPINVOKE.delete_VectorCameraHardwareInfo(swigCPtr);
         }
         swigCPtr = new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero);
       }
@@ -235,113 +235,113 @@ public class VectorCameraHardwareInfo : global::System.IDisposable, global::Syst
     }
   }
 
-  public VectorCameraHardwareInfo() : this(FRCVCorePINVOKE.new_VectorCameraHardwareInfo__SWIG_0(), true) {
+  public VectorCameraHardwareInfo() : this(FRCVLibPINVOKE.new_VectorCameraHardwareInfo__SWIG_0(), true) {
   }
 
-  public VectorCameraHardwareInfo(VectorCameraHardwareInfo other) : this(FRCVCorePINVOKE.new_VectorCameraHardwareInfo__SWIG_1(VectorCameraHardwareInfo.getCPtr(other)), true) {
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+  public VectorCameraHardwareInfo(VectorCameraHardwareInfo other) : this(FRCVLibPINVOKE.new_VectorCameraHardwareInfo__SWIG_1(VectorCameraHardwareInfo.getCPtr(other)), true) {
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void Clear() {
-    FRCVCorePINVOKE.VectorCameraHardwareInfo_Clear(swigCPtr);
+    FRCVLibPINVOKE.VectorCameraHardwareInfo_Clear(swigCPtr);
   }
 
   public void Add(CameraHardwareInfo x) {
-    FRCVCorePINVOKE.VectorCameraHardwareInfo_Add(swigCPtr, CameraHardwareInfo.getCPtr(x));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorCameraHardwareInfo_Add(swigCPtr, CameraHardwareInfo.getCPtr(x));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   private uint size() {
-    uint ret = FRCVCorePINVOKE.VectorCameraHardwareInfo_size(swigCPtr);
+    uint ret = FRCVLibPINVOKE.VectorCameraHardwareInfo_size(swigCPtr);
     return ret;
   }
 
   private bool empty() {
-    bool ret = FRCVCorePINVOKE.VectorCameraHardwareInfo_empty(swigCPtr);
+    bool ret = FRCVLibPINVOKE.VectorCameraHardwareInfo_empty(swigCPtr);
     return ret;
   }
 
   private uint capacity() {
-    uint ret = FRCVCorePINVOKE.VectorCameraHardwareInfo_capacity(swigCPtr);
+    uint ret = FRCVLibPINVOKE.VectorCameraHardwareInfo_capacity(swigCPtr);
     return ret;
   }
 
   private void reserve(uint n) {
-    FRCVCorePINVOKE.VectorCameraHardwareInfo_reserve(swigCPtr, n);
+    FRCVLibPINVOKE.VectorCameraHardwareInfo_reserve(swigCPtr, n);
   }
 
-  public VectorCameraHardwareInfo(int capacity) : this(FRCVCorePINVOKE.new_VectorCameraHardwareInfo__SWIG_2(capacity), true) {
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+  public VectorCameraHardwareInfo(int capacity) : this(FRCVLibPINVOKE.new_VectorCameraHardwareInfo__SWIG_2(capacity), true) {
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   private CameraHardwareInfo getitemcopy(int index) {
-    CameraHardwareInfo ret = new CameraHardwareInfo(FRCVCorePINVOKE.VectorCameraHardwareInfo_getitemcopy(swigCPtr, index), true);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    CameraHardwareInfo ret = new CameraHardwareInfo(FRCVLibPINVOKE.VectorCameraHardwareInfo_getitemcopy(swigCPtr, index), true);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   private CameraHardwareInfo getitem(int index) {
-    CameraHardwareInfo ret = new CameraHardwareInfo(FRCVCorePINVOKE.VectorCameraHardwareInfo_getitem(swigCPtr, index), false);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    CameraHardwareInfo ret = new CameraHardwareInfo(FRCVLibPINVOKE.VectorCameraHardwareInfo_getitem(swigCPtr, index), false);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   private void setitem(int index, CameraHardwareInfo val) {
-    FRCVCorePINVOKE.VectorCameraHardwareInfo_setitem(swigCPtr, index, CameraHardwareInfo.getCPtr(val));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorCameraHardwareInfo_setitem(swigCPtr, index, CameraHardwareInfo.getCPtr(val));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void AddRange(VectorCameraHardwareInfo values) {
-    FRCVCorePINVOKE.VectorCameraHardwareInfo_AddRange(swigCPtr, VectorCameraHardwareInfo.getCPtr(values));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorCameraHardwareInfo_AddRange(swigCPtr, VectorCameraHardwareInfo.getCPtr(values));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public VectorCameraHardwareInfo GetRange(int index, int count) {
-    global::System.IntPtr cPtr = FRCVCorePINVOKE.VectorCameraHardwareInfo_GetRange(swigCPtr, index, count);
+    global::System.IntPtr cPtr = FRCVLibPINVOKE.VectorCameraHardwareInfo_GetRange(swigCPtr, index, count);
     VectorCameraHardwareInfo ret = (cPtr == global::System.IntPtr.Zero) ? null : new VectorCameraHardwareInfo(cPtr, true);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public void Insert(int index, CameraHardwareInfo x) {
-    FRCVCorePINVOKE.VectorCameraHardwareInfo_Insert(swigCPtr, index, CameraHardwareInfo.getCPtr(x));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorCameraHardwareInfo_Insert(swigCPtr, index, CameraHardwareInfo.getCPtr(x));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void InsertRange(int index, VectorCameraHardwareInfo values) {
-    FRCVCorePINVOKE.VectorCameraHardwareInfo_InsertRange(swigCPtr, index, VectorCameraHardwareInfo.getCPtr(values));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorCameraHardwareInfo_InsertRange(swigCPtr, index, VectorCameraHardwareInfo.getCPtr(values));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void RemoveAt(int index) {
-    FRCVCorePINVOKE.VectorCameraHardwareInfo_RemoveAt(swigCPtr, index);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorCameraHardwareInfo_RemoveAt(swigCPtr, index);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void RemoveRange(int index, int count) {
-    FRCVCorePINVOKE.VectorCameraHardwareInfo_RemoveRange(swigCPtr, index, count);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorCameraHardwareInfo_RemoveRange(swigCPtr, index, count);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public static VectorCameraHardwareInfo Repeat(CameraHardwareInfo value, int count) {
-    global::System.IntPtr cPtr = FRCVCorePINVOKE.VectorCameraHardwareInfo_Repeat(CameraHardwareInfo.getCPtr(value), count);
+    global::System.IntPtr cPtr = FRCVLibPINVOKE.VectorCameraHardwareInfo_Repeat(CameraHardwareInfo.getCPtr(value), count);
     VectorCameraHardwareInfo ret = (cPtr == global::System.IntPtr.Zero) ? null : new VectorCameraHardwareInfo(cPtr, true);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public void Reverse() {
-    FRCVCorePINVOKE.VectorCameraHardwareInfo_Reverse__SWIG_0(swigCPtr);
+    FRCVLibPINVOKE.VectorCameraHardwareInfo_Reverse__SWIG_0(swigCPtr);
   }
 
   public void Reverse(int index, int count) {
-    FRCVCorePINVOKE.VectorCameraHardwareInfo_Reverse__SWIG_1(swigCPtr, index, count);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorCameraHardwareInfo_Reverse__SWIG_1(swigCPtr, index, count);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void SetRange(int index, VectorCameraHardwareInfo values) {
-    FRCVCorePINVOKE.VectorCameraHardwareInfo_SetRange(swigCPtr, index, VectorCameraHardwareInfo.getCPtr(values));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorCameraHardwareInfo_SetRange(swigCPtr, index, VectorCameraHardwareInfo.getCPtr(values));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
 }

@@ -1,11 +1,12 @@
 ﻿using EmbedIO;
 using EmbedIO.Routing;
+using EmbedIO.WebApi;
 using System.ComponentModel;
 using System.Xml.Linq;
 
 namespace Server.Controllers;
 
-public class SinkController
+public class SinkController : WebApiController
 {
     private List<UDPTransmiter> udpTransmiters = new List<UDPTransmiter>();
     
@@ -46,10 +47,10 @@ public class SinkController
         SinkManager.Instance.DisableSinkById(sinkId);
         return Task.CompletedTask;
     }
-    
+
     // add sink
-    [Route(HttpVerbs.Post, "/sink/add {name} {type}")]
-    public Task AddSinkAsync(string name, string type)
+    [Route(HttpVerbs.Post, "/sink/add")]
+    public Task AddSinkAsync([QueryField] string name, [QueryField] string type)
     {
         SinkManager.Instance.AddSink(name, type);
         return Task.CompletedTask;

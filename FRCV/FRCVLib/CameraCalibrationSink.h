@@ -2,6 +2,7 @@
 #include <vector>
 #include <memory>
 #include "FrameSpec.h"
+#include <opencv2/opencv.hpp>
 
 using namespace std;
 
@@ -12,6 +13,7 @@ class Logger;
 class PreProcessor;
 class FrameSpec;
 
+
 class CameraCalibrationSink
 {
 public:
@@ -19,13 +21,19 @@ public:
 	~CameraCalibrationSink();
 
 	void bindSource(ISource* source);
-	void grabFrame();
+	void grabAndProcessFrame();
 	CameraCalibrationResult getResults();
 private:
 	FrameSpec frameSpec;
 	ISource* source;
 	int CHECKERBOARD[2] = { 6, 9 }; // Number of inner corners per a chessboard row and column
-	vector<shared_ptr<Frame>> frames;
+
+	std::vector<std::vector<cv::Point3f> > objpoints;
+	// Creating vector to store vectors of 2D points for each checkerboard image
+	std::vector<std::vector<cv::Point2f> > imgpoints;
+	std::vector<cv::Point3f> objp;
+	std::vector<cv::Point2f> corner_pts;
+
 	Logger* logger;
 	PreProcessor* preProcessor;
 };

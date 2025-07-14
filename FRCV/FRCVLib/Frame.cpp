@@ -1,7 +1,6 @@
 #include "Frame.h"
 #include "FramePool.h"
 
-
 Frame::Frame(FrameSpec spec)
     : cv::Mat(spec.getHeight(), spec.getWidth(), spec.getType()), spec(spec) {
 }

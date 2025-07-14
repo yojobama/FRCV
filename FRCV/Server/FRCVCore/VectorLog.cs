@@ -50,7 +50,7 @@ public class VectorLog : global::System.IDisposable, global::System.Collections.
       if (swigCPtr.Handle != global::System.IntPtr.Zero) {
         if (swigCMemOwn) {
           swigCMemOwn = false;
-          FRCVCorePINVOKE.delete_VectorLog(swigCPtr);
+          FRCVLibPINVOKE.delete_VectorLog(swigCPtr);
         }
         swigCPtr = new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero);
       }
@@ -235,113 +235,113 @@ public class VectorLog : global::System.IDisposable, global::System.Collections.
     }
   }
 
-  public VectorLog() : this(FRCVCorePINVOKE.new_VectorLog__SWIG_0(), true) {
+  public VectorLog() : this(FRCVLibPINVOKE.new_VectorLog__SWIG_0(), true) {
   }
 
-  public VectorLog(VectorLog other) : this(FRCVCorePINVOKE.new_VectorLog__SWIG_1(VectorLog.getCPtr(other)), true) {
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+  public VectorLog(VectorLog other) : this(FRCVLibPINVOKE.new_VectorLog__SWIG_1(VectorLog.getCPtr(other)), true) {
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void Clear() {
-    FRCVCorePINVOKE.VectorLog_Clear(swigCPtr);
+    FRCVLibPINVOKE.VectorLog_Clear(swigCPtr);
   }
 
   public void Add(Log x) {
-    FRCVCorePINVOKE.VectorLog_Add(swigCPtr, Log.getCPtr(x));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorLog_Add(swigCPtr, Log.getCPtr(x));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   private uint size() {
-    uint ret = FRCVCorePINVOKE.VectorLog_size(swigCPtr);
+    uint ret = FRCVLibPINVOKE.VectorLog_size(swigCPtr);
     return ret;
   }
 
   private bool empty() {
-    bool ret = FRCVCorePINVOKE.VectorLog_empty(swigCPtr);
+    bool ret = FRCVLibPINVOKE.VectorLog_empty(swigCPtr);
     return ret;
   }
 
   private uint capacity() {
-    uint ret = FRCVCorePINVOKE.VectorLog_capacity(swigCPtr);
+    uint ret = FRCVLibPINVOKE.VectorLog_capacity(swigCPtr);
     return ret;
   }
 
   private void reserve(uint n) {
-    FRCVCorePINVOKE.VectorLog_reserve(swigCPtr, n);
+    FRCVLibPINVOKE.VectorLog_reserve(swigCPtr, n);
   }
 
-  public VectorLog(int capacity) : this(FRCVCorePINVOKE.new_VectorLog__SWIG_2(capacity), true) {
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+  public VectorLog(int capacity) : this(FRCVLibPINVOKE.new_VectorLog__SWIG_2(capacity), true) {
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   private Log getitemcopy(int index) {
-    Log ret = new Log(FRCVCorePINVOKE.VectorLog_getitemcopy(swigCPtr, index), true);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    Log ret = new Log(FRCVLibPINVOKE.VectorLog_getitemcopy(swigCPtr, index), true);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   private Log getitem(int index) {
-    Log ret = new Log(FRCVCorePINVOKE.VectorLog_getitem(swigCPtr, index), false);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    Log ret = new Log(FRCVLibPINVOKE.VectorLog_getitem(swigCPtr, index), false);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   private void setitem(int index, Log val) {
-    FRCVCorePINVOKE.VectorLog_setitem(swigCPtr, index, Log.getCPtr(val));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorLog_setitem(swigCPtr, index, Log.getCPtr(val));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void AddRange(VectorLog values) {
-    FRCVCorePINVOKE.VectorLog_AddRange(swigCPtr, VectorLog.getCPtr(values));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorLog_AddRange(swigCPtr, VectorLog.getCPtr(values));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public VectorLog GetRange(int index, int count) {
-    global::System.IntPtr cPtr = FRCVCorePINVOKE.VectorLog_GetRange(swigCPtr, index, count);
+    global::System.IntPtr cPtr = FRCVLibPINVOKE.VectorLog_GetRange(swigCPtr, index, count);
     VectorLog ret = (cPtr == global::System.IntPtr.Zero) ? null : new VectorLog(cPtr, true);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public void Insert(int index, Log x) {
-    FRCVCorePINVOKE.VectorLog_Insert(swigCPtr, index, Log.getCPtr(x));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorLog_Insert(swigCPtr, index, Log.getCPtr(x));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void InsertRange(int index, VectorLog values) {
-    FRCVCorePINVOKE.VectorLog_InsertRange(swigCPtr, index, VectorLog.getCPtr(values));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorLog_InsertRange(swigCPtr, index, VectorLog.getCPtr(values));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void RemoveAt(int index) {
-    FRCVCorePINVOKE.VectorLog_RemoveAt(swigCPtr, index);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorLog_RemoveAt(swigCPtr, index);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void RemoveRange(int index, int count) {
-    FRCVCorePINVOKE.VectorLog_RemoveRange(swigCPtr, index, count);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorLog_RemoveRange(swigCPtr, index, count);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public static VectorLog Repeat(Log value, int count) {
-    global::System.IntPtr cPtr = FRCVCorePINVOKE.VectorLog_Repeat(Log.getCPtr(value), count);
+    global::System.IntPtr cPtr = FRCVLibPINVOKE.VectorLog_Repeat(Log.getCPtr(value), count);
     VectorLog ret = (cPtr == global::System.IntPtr.Zero) ? null : new VectorLog(cPtr, true);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public void Reverse() {
-    FRCVCorePINVOKE.VectorLog_Reverse__SWIG_0(swigCPtr);
+    FRCVLibPINVOKE.VectorLog_Reverse__SWIG_0(swigCPtr);
   }
 
   public void Reverse(int index, int count) {
-    FRCVCorePINVOKE.VectorLog_Reverse__SWIG_1(swigCPtr, index, count);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorLog_Reverse__SWIG_1(swigCPtr, index, count);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void SetRange(int index, VectorLog values) {
-    FRCVCorePINVOKE.VectorLog_SetRange(swigCPtr, index, VectorLog.getCPtr(values));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorLog_SetRange(swigCPtr, index, VectorLog.getCPtr(values));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
 }

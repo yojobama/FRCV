@@ -49,14 +49,14 @@ public class UniquePtrFrame : global::System.IDisposable {
       if (swigCPtr.Handle != global::System.IntPtr.Zero) {
         if (swigCMemOwn) {
           swigCMemOwn = false;
-          FRCVCorePINVOKE.delete_UniquePtrFrame(swigCPtr);
+          FRCVLibPINVOKE.delete_UniquePtrFrame(swigCPtr);
         }
         swigCPtr = new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero);
       }
     }
   }
 
-  public UniquePtrFrame() : this(FRCVCorePINVOKE.new_UniquePtrFrame(), true) {
+  public UniquePtrFrame() : this(FRCVLibPINVOKE.new_UniquePtrFrame(), true) {
   }
 
 }

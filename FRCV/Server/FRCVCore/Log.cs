@@ -49,29 +49,29 @@ public class Log : global::System.IDisposable {
       if (swigCPtr.Handle != global::System.IntPtr.Zero) {
         if (swigCMemOwn) {
           swigCMemOwn = false;
-          FRCVCorePINVOKE.delete_Log(swigCPtr);
+          FRCVLibPINVOKE.delete_Log(swigCPtr);
         }
         swigCPtr = new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero);
       }
     }
   }
 
-  public Log(LogLevel logLevel, string message) : this(FRCVCorePINVOKE.new_Log((int)logLevel, message), true) {
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+  public Log(LogLevel logLevel, string message) : this(FRCVLibPINVOKE.new_Log((int)logLevel, message), true) {
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public LogLevel GetLogLevel() {
-    LogLevel ret = (LogLevel)FRCVCorePINVOKE.Log_GetLogLevel(swigCPtr);
+    LogLevel ret = (LogLevel)FRCVLibPINVOKE.Log_GetLogLevel(swigCPtr);
     return ret;
   }
 
   public string GetMessage() {
-    string ret = FRCVCorePINVOKE.Log_GetMessage(swigCPtr);
+    string ret = FRCVLibPINVOKE.Log_GetMessage(swigCPtr);
     return ret;
   }
 
   public string GetLogLevelString() {
-    string ret = FRCVCorePINVOKE.Log_GetLogLevelString(swigCPtr);
+    string ret = FRCVLibPINVOKE.Log_GetLogLevelString(swigCPtr);
     return ret;
   }
 

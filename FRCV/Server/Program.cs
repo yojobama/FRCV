@@ -1,29 +1,39 @@
 ﻿using EmbedIO;
 using EmbedIO.WebApi;
+using Server.Controllers;
 
 namespace Server
 {
     internal class Program
     {
-        private static WebServer createWebServer(string url)
+        private static WebServer CreateWebServer(string url)
         {
             var server = new WebServer(o => o
                     .WithUrlPrefix(url)
                     .WithMode(HttpListenerMode.EmbedIO))
-                // First, we will configure our web server by adding Modules.
-                .WithLocalSessionManager();
-            // Listen for state changes.
+                .WithLocalSessionManager()
+                .WithWebApi("/api", m =>
+                {
+                    m.WithController<SourceController>();
+                    m.WithController<SinkController>();
+                });
+
+            // Optional: Listen for state changes
+            server.StateChanged += (s, e) =>
+                Console.WriteLine($"WebServer New State - {e.NewState}");
 
             return server;
         }
 
         static void Main(string[] args)
         {
-            var server = createWebServer("http://localhost:8175");
+            var server = CreateWebServer("http://localhost:8175");
             
             server.Start();
             
             Console.WriteLine("Hello, World!");
+
+            Console.ReadLine();
         }
     }
 }

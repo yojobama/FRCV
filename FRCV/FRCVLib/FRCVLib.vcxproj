@@ -105,8 +105,6 @@
     <ClInclude Include="SterioSink.h" />
     <ClInclude Include="TRTSink.h" />
     <ClInclude Include="VideoFileSource.h" />
-    <ClInclude Include="VkApriltagSink.h" />
-    <ClInclude Include="VulkanHelpers.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApriltagDetection.cpp" />
@@ -130,19 +128,13 @@
     <ClCompile Include="swig_wrap.cxx" />
     <ClCompile Include="TRTSink.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />
-    <ClCompile Include="VkApriltagSink.cpp" />
-    <ClCompile Include="VulkanHelpers.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="adaptive_threshold.comp" />
-    <None Include="ccl_union_find.comp" />
-    <None Include="extract_quads.comp" />
-    <None Include="gray_decimate.comp" />
     <None Include="swig.i" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>/usr/include;/usr/local/include;/usr/include/opencv4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>/usr/local/include;/usr/include/opencv4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CppLanguageStandard>c++20</CppLanguageStandard>
     </ClCompile>
     <Link>

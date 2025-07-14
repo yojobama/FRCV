@@ -434,7 +434,7 @@ void Manager::cameraCalibrationSinkGrabFrame(int sinkId)
 {
     auto sink = cameraCalibrationSinks.find(sinkId);
     if (sink != cameraCalibrationSinks.end()) {
-        sink->second->grabFrame();
+        sink->second->grabAndProcessFrame();
     } else {
         logger->enterLog("CameraCalibrationSink not found with id: " + std::to_string(sinkId));
 	}

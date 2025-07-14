@@ -50,7 +50,7 @@ public class VectorFrameSpec : global::System.IDisposable, global::System.Collec
       if (swigCPtr.Handle != global::System.IntPtr.Zero) {
         if (swigCMemOwn) {
           swigCMemOwn = false;
-          FRCVCorePINVOKE.delete_VectorFrameSpec(swigCPtr);
+          FRCVLibPINVOKE.delete_VectorFrameSpec(swigCPtr);
         }
         swigCPtr = new global::System.Runtime.InteropServices.HandleRef(null, global::System.IntPtr.Zero);
       }
@@ -235,113 +235,113 @@ public class VectorFrameSpec : global::System.IDisposable, global::System.Collec
     }
   }
 
-  public VectorFrameSpec() : this(FRCVCorePINVOKE.new_VectorFrameSpec__SWIG_0(), true) {
+  public VectorFrameSpec() : this(FRCVLibPINVOKE.new_VectorFrameSpec__SWIG_0(), true) {
   }
 
-  public VectorFrameSpec(VectorFrameSpec other) : this(FRCVCorePINVOKE.new_VectorFrameSpec__SWIG_1(VectorFrameSpec.getCPtr(other)), true) {
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+  public VectorFrameSpec(VectorFrameSpec other) : this(FRCVLibPINVOKE.new_VectorFrameSpec__SWIG_1(VectorFrameSpec.getCPtr(other)), true) {
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void Clear() {
-    FRCVCorePINVOKE.VectorFrameSpec_Clear(swigCPtr);
+    FRCVLibPINVOKE.VectorFrameSpec_Clear(swigCPtr);
   }
 
   public void Add(SWIGTYPE_p_FrameSpec x) {
-    FRCVCorePINVOKE.VectorFrameSpec_Add(swigCPtr, SWIGTYPE_p_FrameSpec.getCPtr(x));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorFrameSpec_Add(swigCPtr, SWIGTYPE_p_FrameSpec.getCPtr(x));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   private uint size() {
-    uint ret = FRCVCorePINVOKE.VectorFrameSpec_size(swigCPtr);
+    uint ret = FRCVLibPINVOKE.VectorFrameSpec_size(swigCPtr);
     return ret;
   }
 
   private bool empty() {
-    bool ret = FRCVCorePINVOKE.VectorFrameSpec_empty(swigCPtr);
+    bool ret = FRCVLibPINVOKE.VectorFrameSpec_empty(swigCPtr);
     return ret;
   }
 
   private uint capacity() {
-    uint ret = FRCVCorePINVOKE.VectorFrameSpec_capacity(swigCPtr);
+    uint ret = FRCVLibPINVOKE.VectorFrameSpec_capacity(swigCPtr);
     return ret;
   }
 
   private void reserve(uint n) {
-    FRCVCorePINVOKE.VectorFrameSpec_reserve(swigCPtr, n);
+    FRCVLibPINVOKE.VectorFrameSpec_reserve(swigCPtr, n);
   }
 
-  public VectorFrameSpec(int capacity) : this(FRCVCorePINVOKE.new_VectorFrameSpec__SWIG_2(capacity), true) {
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+  public VectorFrameSpec(int capacity) : this(FRCVLibPINVOKE.new_VectorFrameSpec__SWIG_2(capacity), true) {
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   private SWIGTYPE_p_FrameSpec getitemcopy(int index) {
-    SWIGTYPE_p_FrameSpec ret = new SWIGTYPE_p_FrameSpec(FRCVCorePINVOKE.VectorFrameSpec_getitemcopy(swigCPtr, index), true);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    SWIGTYPE_p_FrameSpec ret = new SWIGTYPE_p_FrameSpec(FRCVLibPINVOKE.VectorFrameSpec_getitemcopy(swigCPtr, index), true);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   private SWIGTYPE_p_FrameSpec getitem(int index) {
-    SWIGTYPE_p_FrameSpec ret = new SWIGTYPE_p_FrameSpec(FRCVCorePINVOKE.VectorFrameSpec_getitem(swigCPtr, index), false);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    SWIGTYPE_p_FrameSpec ret = new SWIGTYPE_p_FrameSpec(FRCVLibPINVOKE.VectorFrameSpec_getitem(swigCPtr, index), false);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   private void setitem(int index, SWIGTYPE_p_FrameSpec val) {
-    FRCVCorePINVOKE.VectorFrameSpec_setitem(swigCPtr, index, SWIGTYPE_p_FrameSpec.getCPtr(val));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorFrameSpec_setitem(swigCPtr, index, SWIGTYPE_p_FrameSpec.getCPtr(val));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void AddRange(VectorFrameSpec values) {
-    FRCVCorePINVOKE.VectorFrameSpec_AddRange(swigCPtr, VectorFrameSpec.getCPtr(values));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorFrameSpec_AddRange(swigCPtr, VectorFrameSpec.getCPtr(values));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public VectorFrameSpec GetRange(int index, int count) {
-    global::System.IntPtr cPtr = FRCVCorePINVOKE.VectorFrameSpec_GetRange(swigCPtr, index, count);
+    global::System.IntPtr cPtr = FRCVLibPINVOKE.VectorFrameSpec_GetRange(swigCPtr, index, count);
     VectorFrameSpec ret = (cPtr == global::System.IntPtr.Zero) ? null : new VectorFrameSpec(cPtr, true);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public void Insert(int index, SWIGTYPE_p_FrameSpec x) {
-    FRCVCorePINVOKE.VectorFrameSpec_Insert(swigCPtr, index, SWIGTYPE_p_FrameSpec.getCPtr(x));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorFrameSpec_Insert(swigCPtr, index, SWIGTYPE_p_FrameSpec.getCPtr(x));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void InsertRange(int index, VectorFrameSpec values) {
-    FRCVCorePINVOKE.VectorFrameSpec_InsertRange(swigCPtr, index, VectorFrameSpec.getCPtr(values));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorFrameSpec_InsertRange(swigCPtr, index, VectorFrameSpec.getCPtr(values));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void RemoveAt(int index) {
-    FRCVCorePINVOKE.VectorFrameSpec_RemoveAt(swigCPtr, index);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorFrameSpec_RemoveAt(swigCPtr, index);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void RemoveRange(int index, int count) {
-    FRCVCorePINVOKE.VectorFrameSpec_RemoveRange(swigCPtr, index, count);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorFrameSpec_RemoveRange(swigCPtr, index, count);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public static VectorFrameSpec Repeat(SWIGTYPE_p_FrameSpec value, int count) {
-    global::System.IntPtr cPtr = FRCVCorePINVOKE.VectorFrameSpec_Repeat(SWIGTYPE_p_FrameSpec.getCPtr(value), count);
+    global::System.IntPtr cPtr = FRCVLibPINVOKE.VectorFrameSpec_Repeat(SWIGTYPE_p_FrameSpec.getCPtr(value), count);
     VectorFrameSpec ret = (cPtr == global::System.IntPtr.Zero) ? null : new VectorFrameSpec(cPtr, true);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public void Reverse() {
-    FRCVCorePINVOKE.VectorFrameSpec_Reverse__SWIG_0(swigCPtr);
+    FRCVLibPINVOKE.VectorFrameSpec_Reverse__SWIG_0(swigCPtr);
   }
 
   public void Reverse(int index, int count) {
-    FRCVCorePINVOKE.VectorFrameSpec_Reverse__SWIG_1(swigCPtr, index, count);
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorFrameSpec_Reverse__SWIG_1(swigCPtr, index, count);
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
   public void SetRange(int index, VectorFrameSpec values) {
-    FRCVCorePINVOKE.VectorFrameSpec_SetRange(swigCPtr, index, VectorFrameSpec.getCPtr(values));
-    if (FRCVCorePINVOKE.SWIGPendingException.Pending) throw FRCVCorePINVOKE.SWIGPendingException.Retrieve();
+    FRCVLibPINVOKE.VectorFrameSpec_SetRange(swigCPtr, index, VectorFrameSpec.getCPtr(values));
+    if (FRCVLibPINVOKE.SWIGPendingException.Pending) throw FRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
 }
