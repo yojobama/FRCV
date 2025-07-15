@@ -15,9 +15,14 @@ namespace Server
 
     public class Source
     {
-        private int id { get; set; }
-        private string name { get; set; }
-        private SourceType type { get; set; }
+        private int id;
+        private string name;
+        private SourceType type;
+
+        public SourceType Type
+        {
+            get { return type; }
+        }
 
         public int Id
         {
