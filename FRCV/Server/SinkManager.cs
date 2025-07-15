@@ -219,12 +219,25 @@ namespace Server
             {
                 if (sink.Id == sinkId)
                 {
-                    sink.Source = null;
+                    ManagerWrapper.Instance.unbindSourceFromSink(sinkId);
                     break;
                 }
             }
             // Logic to unbind a source from a sink
             // This could involve setting the source property of the sink to null or removing the association.
+        }
+
+        public void BindSourceToSink(int sinkId, int sourceId)
+        {
+            foreach(var sink in sinks)
+            {
+                if(sink.Id == sinkId)
+                {
+                    sink.Source = SourceManager.Instance.GetSourceById(sourceId);
+                    ManagerWrapper.Instance.bindSourceToSink(sourceId, sinkId);
+                    break;
+                }
+            }
         }
     }
 }

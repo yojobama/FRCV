@@ -54,18 +54,8 @@ namespace Server
         
         public Source? Source
         {
-            get => source; 
-            set
-            {
-                if (value != null) // add a chech with the manager to see that the source exists
-                {
-                    source = value;
-                }
-                else
-                {
-                    ManagerWrapper.Instance.unbindSourceFromSink(id);
-                }
-            }
+            get => source;
+            set => source = value;
         }
 
         public Sink(int id, string name, SinkType type, Source? source = null)

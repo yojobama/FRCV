@@ -92,7 +92,7 @@ public class SinkController : WebApiController
     [Route(HttpVerbs.Put, "/sink/bind")]
     public Task BindSinkToSourceAsync([QueryField] int sourceId, [QueryField] int sinkId)
     {
-        ManagerWrapper.Instance.bindSourceToSink(sourceId, sinkId);
+        SinkManager.Instance.BindSourceToSink(sinkId, sourceId);
         return Task.CompletedTask;
     }
     
@@ -106,18 +106,18 @@ public class SinkController : WebApiController
     
     // start udp transmissions to my address
     [Route(HttpVerbs.Put, "/sink/startUdp")]
-    public Task StartUdpTransmissionsAsync(IHttpContext context)
+    public Task StartUdpTransmissionsAsync()
     {
-        udpTransmiters.Add(new UDPTransmiter(SinkManager.Instance.createResultChannel(), context.Request.RemoteEndPoint.Address.ToString(), 12345));
+        udpTransmiters.Add(new UDPTransmiter(SinkManager.Instance.createResultChannel(), HttpContext.Request.RemoteEndPoint.Address.ToString(), 12345));
         return Task.CompletedTask;
     }
     
     // stop udp transmissions to my address
     [Route(HttpVerbs.Put, "/sink/stopUdp")]
-    public Task StopUdpTransmissionsAsync(IHttpContext context)
+    public Task StopUdpTransmissionsAsync()
     {
         // Logic to start UDP transmissions
-        string clientAddress = context.Request.RemoteEndPoint.Address.ToString();
+        string clientAddress = HttpContext.Request.RemoteEndPoint.Address.ToString();
         var transmitter = udpTransmiters.FirstOrDefault(x => x.HostName == clientAddress);
         if (transmitter != null)
         {

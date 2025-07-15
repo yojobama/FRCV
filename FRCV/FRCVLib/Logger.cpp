@@ -56,7 +56,7 @@ void Logger::clearAllLogs() {
 void Logger::flushLogs()
 {
     if (filePath != "") {
-        std::ofstream logFile(filePath, std::ios::out | std::ios::app | std::ios::binary);
+        std::ofstream logFile(filePath, std::ios::out | std::ios::app);
 
         if (logFile.is_open()) {
             std::lock_guard<std::mutex> guard(lock);  // RAII lock
