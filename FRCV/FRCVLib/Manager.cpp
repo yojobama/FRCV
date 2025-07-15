@@ -27,7 +27,7 @@ Manager::Manager(string logFile)
 
 Manager::Manager()
 {
-    logger = new Logger("FRCVLog.txt");
+    logger = new Logger("/mnt/d/Projects/FRCV/FRCV/Server/bin/Debug/net8.0/FRCVLog.txt");
     framePool = new FramePool(logger);
     logger->enterLog("Manager constructed");
     preProcessor = new PreProcessor(framePool);

@@ -21,7 +21,7 @@ namespace Server
 
         public int Id
         {
-            get; set;
+            get => id; set => id = value;
         }
         
         public string Name
