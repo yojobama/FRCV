@@ -108,7 +108,10 @@ public class SinkController : WebApiController
     [Route(HttpVerbs.Put, "/sink/startUdp")]
     public Task StartUdpTransmissionsAsync()
     {
-        udpTransmiters.Add(new UDPTransmiter(SinkManager.Instance.createResultChannel(), HttpContext.Request.RemoteEndPoint.Address.ToString(), 12345));
+        SinkManager.Instance.EnableManagerThread();
+        var transmitter = new UDPTransmiter(SinkManager.Instance.createResultChannel(), HttpContext.Request.RemoteEndPoint.Address.ToString(), 12345);
+        transmitter.Enable();
+        udpTransmiters.Add(transmitter);
         return Task.CompletedTask;
     }
     
@@ -123,6 +126,10 @@ public class SinkController : WebApiController
         {
             transmitter.Disable();
             udpTransmiters.Remove(transmitter);
+        }
+        if(udpTransmiters.Count == 0)
+        {
+            SinkManager.Instance.DisableManagerThread();
         }
         return Task.CompletedTask;
     }

@@ -140,7 +140,7 @@
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>/local/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;avcodec;avformat;avutil;swscale;vulkan</LibraryDependencies>
+      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;avcodec;avformat;avutil;swscale</LibraryDependencies>
       <AdditionalOptions>-Wthread-safety %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>

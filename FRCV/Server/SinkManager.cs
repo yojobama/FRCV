@@ -129,16 +129,19 @@ namespace Server
         // start the sink manager thread
         public void EnableManagerThread()
         {
-            isRunning = true;
-            thread.Start();
+            if (!isRunning)
+            {
+                isRunning = true;
+                thread.Start();
+            }
         }
 
         // stop the sink manager thread
         public void DisableManagerThread()
         {
-            isRunning = false;
             if (thread.IsAlive)
             {
+                isRunning = false;
                 thread.Join();
             }
         }

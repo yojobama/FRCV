@@ -1,37 +1,36 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Channels;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace Server
 {
     internal class UDPTransmiter
     {
-        Channel<string> channel;
-        Thread thread;
-        bool threadWantedAlive;
+        private readonly Channel<string> channel;
+        private readonly Thread thread;
+        private volatile bool threadWantedAlive;
 
-        UdpClient udpClient;
+        private readonly UdpClient udpClient;
+        private readonly IPEndPoint remoteEP;
+        private readonly string hostName;
+        private readonly int port;
 
-        private string hostName;
-        
-        public string HostName
-        {
-            get => hostName;
-        }
-        
+        public string HostName => hostName;
+
         public UDPTransmiter(Channel<string> channel, string hostName, int port)
         {
             this.channel = channel;
-            // Initialize the UDP server
-            // This could include setting up sockets, binding to ports, etc.
-            thread = new Thread(ThreadProc);
-            threadWantedAlive = false;
+            this.hostName = hostName;
+            this.port = port;
 
-            udpClient = new UdpClient(hostName, port);
+            // Create a connectionless UDP client
+            udpClient = new UdpClient();
+            remoteEP = new IPEndPoint(IPAddress.Parse(hostName), port);
+
+            thread = new Thread(ThreadProc);
         }
 
         public void Enable()
@@ -40,7 +39,7 @@ namespace Server
             thread.Start();
         }
 
-        public void Disable() 
+        public void Disable()
         {
             threadWantedAlive = false;
             thread.Join();
@@ -48,10 +47,31 @@ namespace Server
 
         private void ThreadProc()
         {
-            while (threadWantedAlive)
+            try
             {
-                byte[] msg = Encoding.UTF8.GetBytes(channel.Reader.ToString()!);
-                udpClient.Send(msg, msg.Length);
+                byte[] testMsg = Encoding.UTF8.GetBytes("starting udp transmissions");
+                udpClient.Send(testMsg, testMsg.Length, remoteEP);
+
+                while (threadWantedAlive)
+                {
+                    if (channel.Reader.TryRead(out string? message))
+                    {
+                        byte[] msg = Encoding.UTF8.GetBytes(message);
+                        udpClient.Send(msg, msg.Length, remoteEP);
+                    }
+                    else
+                    {
+                        Thread.Sleep(10); // Prevent tight loop if nothing to read
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"UDPTransmiter error: {ex.Message}");
+            }
+            finally
+            {
+                udpClient.Dispose();
             }
         }
     }
