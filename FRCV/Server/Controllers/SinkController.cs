@@ -52,7 +52,9 @@ public class SinkController : WebApiController
     [Route(HttpVerbs.Post, "/sink/add")]
     public Task<int> AddSinkAsync([QueryField] string name, [QueryField] string type)
     {
-        return Task.FromResult(SinkManager.Instance.AddSink(name, type));
+        int sinkId = SinkManager.Instance.AddSink(name, type);
+        DB.Instance.Save(); // Save changes to the database
+        return Task.FromResult(sinkId);
     }
 
     // change sink name
@@ -61,7 +63,7 @@ public class SinkController : WebApiController
     {
         try
         {
-            SinkManager.Instance.ChangeSinkName(sinkId, name);
+            SinkManager.Instance.SetSinkName(sinkId, name);
         }
         catch (Exception ex)
         {
@@ -92,6 +94,7 @@ public class SinkController : WebApiController
     public Task BindSinkToSourceAsync([QueryField] int sourceId, [QueryField] int sinkId)
     {
         SinkManager.Instance.BindSourceToSink(sinkId, sourceId);
+        DB.Instance.Save(); // Save changes to the database
         return Task.CompletedTask;
     }
     
@@ -100,6 +103,7 @@ public class SinkController : WebApiController
     public Task UnbindSinkFromSourceAsync([QueryField] int sinkId, [QueryField] int sourceId)
     {
         SinkManager.Instance.UnbindSourceFromSink(sinkId, sourceId);
+        DB.Instance.Save(); // Save changes to the database
         return Task.CompletedTask;
     }
     
