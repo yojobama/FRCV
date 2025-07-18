@@ -39,11 +39,11 @@ public class SourceController : WebApiController
     public Task ChangeSourceNameAsync([QueryField] int sourceId, [QueryField] string name)
     {
         
-        // Logic to change the source name
+        SourceManager.Instance.ChangeSourceName(sourceId, name);
         return Task.CompletedTask;
     }
 
-    // TODO: implement this fu,nction
+    // TODO: implement this function
     [Route(HttpVerbs.Post, "/source/createCameraSource")]
     public Task<int> CreateCameraSource(CameraHardwareInfo hardwareInfo)
     {

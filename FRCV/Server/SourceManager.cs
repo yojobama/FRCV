@@ -26,6 +26,7 @@ namespace Server
             if (source != null)
             {
                 source.Name = newName;
+                DB.Instance.Save(); // Save changes to the database
             }
         }
 
@@ -109,6 +110,7 @@ namespace Server
         {
             var sourceId = ManagerWrapper.Instance.createCameraSource(cameraHardwareInfo);
             sources.Add(new Source(sourceId, name, SourceType.Camera));
+            DB.Instance.Save(); // Save changes to the database
             return sourceId;
         }
 
@@ -116,6 +118,7 @@ namespace Server
         {
             var sourceId = ManagerWrapper.Instance.createVideoFileSource(filePath, fps);
             sources.Add(new Source(sourceId, name, SourceType.VideoFile));
+            DB.Instance.Save(); // Save changes to the database
             return sourceId;
         }
         
@@ -123,6 +126,7 @@ namespace Server
         {
             var sourceId = ManagerWrapper.Instance.createImageFileSource(filePath);
             sources.Add(new Source(sourceId, name, SourceType.ImageFile));
+            DB.Instance.Save(); // Save changes to the database
             return sourceId;
         }
     }

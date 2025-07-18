@@ -77,19 +77,16 @@ namespace Server
                 if (sink.Id == sinkId)
                 {
                     sink.Name = dstName;
+                    DB.Instance.Save(); // Save changes to the database
                     break;
                 }
             }
         }
 
-        public void ChangeSinkName(int sinkId, string newName)
-        {
-
-        }
-
         public void DeleteSink(int sinkId)
         {
-
+            sinks.RemoveAll(sink => sink.Id == sinkId);
+            DB.Instance.Save(); // Save changes to the database
         }
 
         public int AddSink(string name, string type)
@@ -108,6 +105,7 @@ namespace Server
                     break;
             }
 
+            DB.Instance.Save(); // Save changes to the database
             return id;
         }
 
@@ -225,11 +223,11 @@ namespace Server
                 if (sink.Id == sinkId)
                 {
                     ManagerWrapper.Instance.unbindSourceFromSink(sinkId);
+                    sink.Source = null; // Unbind the source
+                    DB.Instance.Save(); // Save changes to the database
                     break;
                 }
             }
-            // Logic to unbind a source from a sink
-            // This could involve setting the source property of the sink to null or removing the association.
         }
 
         public void BindSourceToSink(int sinkId, int sourceId)
@@ -240,6 +238,7 @@ namespace Server
                 {
                     sink.Source = SourceManager.Instance.GetSourceById(sourceId);
                     ManagerWrapper.Instance.bindSourceToSink(sourceId, sinkId);
+                    DB.Instance.Save(); // Save changes to the database
                     break;
                 }
             }

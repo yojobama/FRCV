@@ -27,13 +27,15 @@ namespace Server
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello, World!");
-            
-            var server = CreateWebServer("http://localhost:8175");
-            
-            server.Start();
-            
+            Console.WriteLine("Loading database...");
+            DB.Instance.Load();
+            DB.Instance.Verify();
 
+            Console.WriteLine("Starting HTTP server...");
+            var server = CreateWebServer("http://localhost:8175");
+            server.Start();
+
+            Console.WriteLine("Server is running. Press Enter to exit.");
             Console.ReadLine();
         }
     }
