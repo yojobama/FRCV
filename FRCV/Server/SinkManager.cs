@@ -92,9 +92,9 @@ namespace Server
 
         }
 
-        public void AddSink(string name, string type)
+        public int AddSink(string name, string type)
         {
-            int id;
+            int id = -1;
 
             switch (type)
             {
@@ -107,6 +107,8 @@ namespace Server
                     sinks.Add(new Sink(id, name, SinkType.ObjectDetectionSink));
                     break;
             }
+
+            return id;
         }
 
         public Channel<string> createResultChannel()

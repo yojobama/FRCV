@@ -45,9 +45,10 @@ public class SourceController : WebApiController
 
     // TODO: implement this fu,nction
     [Route(HttpVerbs.Post, "/source/createCameraSource")]
-    public Task CreateCameraSource()
+    public Task<int> CreateCameraSource(CameraHardwareInfo hardwareInfo)
     {
-        return Task.CompletedTask;
+        int sourceId = SourceManager.Instance.InitializeCameraSource(hardwareInfo);
+        return Task.FromResult(sourceId);
     }
     
     // upload a new video file (client to server)
@@ -57,7 +58,9 @@ public class SourceController : WebApiController
         // Logic to handle video file upload
         var parser = MultipartFormDataParser.Parse(HttpContext.OpenRequestStream());
 
-        foreach (var file in parser.Files)
+        var file = parser.Files.FirstOrDefault();
+
+        if (file != null)
         {
             string fileName = file.FileName;
             Stream fileStream = file.Data;
@@ -67,22 +70,24 @@ public class SourceController : WebApiController
             using (var output = File.Create(Path.Combine("videos", fileName)))
             {
                 fileStream.CopyTo(output);
-                SourceManager.Instance.InitializeVideoFileSource(Path.Combine("videos", fileName), fps, Path.GetFileNameWithoutExtension(fileName));
+                return Task.FromResult(SourceManager.Instance.InitializeVideoFileSource(Path.Combine("videos", fileName), fps, Path.GetFileNameWithoutExtension(fileName)));
             }
 
         }
 
-        return Task.CompletedTask;
+        return Task.FromResult(-1);
     }
     
     // upload a new image file
     [Route(HttpVerbs.Post, "/source/createImageFileSource")]
-    public Task CreateImageFileSourceAsync()
+    public Task<int> CreateImageFileSourceAsync()
     {
         // logic to upload image file
         var parser = MultipartFormDataParser.Parse(HttpContext.OpenRequestStream());
 
-        foreach (var file in parser.Files)
+        var file = parser.Files.FirstOrDefault();
+
+        if (file != null)
         {
             string fileName = file.FileName;
             Stream fileStream = file.Data;
@@ -92,11 +97,10 @@ public class SourceController : WebApiController
             using (var output = File.Create(Path.Combine("images", fileName)))
             {
                 fileStream.CopyTo(output);
-                SourceManager.Instance.initializeImageFileSource(Path.Combine("images", fileName), Path.GetFileNameWithoutExtension(fileName));
+                return Task.FromResult(SourceManager.Instance.initializeImageFileSource(Path.Combine("images", fileName), Path.GetFileNameWithoutExtension(fileName)));
             }
         }
-
-        return Task.CompletedTask;
+        return Task.FromResult(-1);
     }
     
     // get all camera hardware infos
@@ -104,7 +108,7 @@ public class SourceController : WebApiController
     public Task<CameraHardwareInfo[]> GetCameraHardwareInfosAsync()
     {
         // Logic to retrieve all camera hardware infos
-        return Task.FromResult(new CameraHardwareInfo[] { });
+        return Task.FromResult(ManagerWrapper.Instance.enumerateAvailableCameras().ToArray());
     }
     
     // delete source

@@ -105,19 +105,25 @@ namespace Server
             return null;
         }
 
-        public void InitializeCameraSource(CameraHardwareInfo cameraHardwareInfo, string name = "default")
+        public int InitializeCameraSource(CameraHardwareInfo cameraHardwareInfo, string name = "default")
         {
-            sources.Add(new Source(ManagerWrapper.Instance.createCameraSource(cameraHardwareInfo), name, SourceType.Camera));
+            var sourceId = ManagerWrapper.Instance.createCameraSource(cameraHardwareInfo);
+            sources.Add(new Source(sourceId, name, SourceType.Camera));
+            return sourceId;
         }
 
-        public void InitializeVideoFileSource(string filePath, int fps = 30, string name = "default")
+        public int InitializeVideoFileSource(string filePath, int fps = 30, string name = "default")
         {
-            sources.Add(new Source(ManagerWrapper.Instance.createVideoFileSource(filePath, fps), name, SourceType.VideoFile));
+            var sourceId = ManagerWrapper.Instance.createVideoFileSource(filePath, fps);
+            sources.Add(new Source(sourceId, name, SourceType.VideoFile));
+            return sourceId;
         }
         
-        public void initializeImageFileSource(string filePath, string name = "default")
+        public int initializeImageFileSource(string filePath, string name = "default")
         {
-            sources.Add(new Source(ManagerWrapper.Instance.createImageFileSource(filePath), name, SourceType.ImageFile));
+            var sourceId = ManagerWrapper.Instance.createImageFileSource(filePath);
+            sources.Add(new Source(sourceId, name, SourceType.ImageFile));
+            return sourceId;
         }
     }
 }

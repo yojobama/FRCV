@@ -50,10 +50,9 @@ public class SinkController : WebApiController
 
     // add sink
     [Route(HttpVerbs.Post, "/sink/add")]
-    public Task AddSinkAsync([QueryField] string name, [QueryField] string type)
+    public Task<int> AddSinkAsync([QueryField] string name, [QueryField] string type)
     {
-        SinkManager.Instance.AddSink(name, type);
-        return Task.CompletedTask;
+        return Task.FromResult(SinkManager.Instance.AddSink(name, type));
     }
 
     // change sink name
