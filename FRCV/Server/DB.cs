@@ -29,6 +29,16 @@ namespace Server
             sources = new List<Source>();
         }
 
+        public string GetJson()
+        {
+            var dbData = new DBData
+            {
+                Sinks = sinks,
+                Sources = sources
+            };
+            return JsonSerializer.Serialize(dbData, new JsonSerializerOptions { WriteIndented = true });
+        }
+
         public void Load()
         {
             if (File.Exists(jsonPath))

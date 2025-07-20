@@ -5,10 +5,12 @@
 
 // Constructor
 Logger::Logger() {
+    enterLog("Logger constructed");
 }
 
 Logger::Logger(std::string filePath) {
     this->filePath = filePath;
+    enterLog("Logger constructed with file path: " + filePath);
 }
 
 // Destructor
