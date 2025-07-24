@@ -17,6 +17,7 @@ namespace Server
         private readonly IPEndPoint remoteEP;
         private readonly string hostName;
         private readonly int port;
+        private readonly Logger logger;
 
         public string HostName => hostName;
 
@@ -31,18 +32,23 @@ namespace Server
             remoteEP = new IPEndPoint(IPAddress.Parse(hostName), port);
 
             thread = new Thread(ThreadProc);
+            logger = new Logger("UDPTransmiterLog.txt");
         }
 
         public void Enable()
         {
+            logger.enterLog("UDPTransmiter Enable called");
             threadWantedAlive = true;
             thread.Start();
+            logger.enterLog("UDPTransmiter thread started");
         }
 
         public void Disable()
         {
+            logger.enterLog("UDPTransmiter Disable called");
             threadWantedAlive = false;
             thread.Join();
+            logger.enterLog("UDPTransmiter thread stopped");
         }
 
         private void ThreadProc()

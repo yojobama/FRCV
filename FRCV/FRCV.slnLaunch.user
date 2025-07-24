@@ -1,19 +1,25 @@
 [
   {
-    "Name": "New Profile",
+    "Name": "Server",
     "Projects": [
       {
-        "Path": "ConsoleApp1\\FRCVHost.csproj",
-        "Action": "Start"
+        "Path": "Server\\Server.csproj",
+        "Action": "Start",
+        "DebugTarget": "WSL"
       }
     ]
   },
   {
-    "Name": "New Profile (1)",
+    "Name": "Unit Tests",
     "Projects": [
       {
         "Path": "UnitTests\\UnitTests.vcxproj",
-        "Action": "StartWithoutDebugging",
+        "Action": "Start",
+        "DebugTarget": "GDB Debugger"
+      },
+      {
+        "Path": "FRCVLib\\FRCVLib.vcxproj",
+        "Action": "Start",
         "DebugTarget": "GDB Debugger"
       }
     ]

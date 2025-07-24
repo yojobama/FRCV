@@ -58,56 +58,59 @@ std::string ApriltagSink::getStatus()
 
 void ApriltagSink::processFrame()
 {
-	if (logger) logger->enterLog("ApriltagSink::getResults called");
+	if (logger) logger->enterLog("ApriltagSink::processFrame called");
+
 	std::shared_ptr<Frame> frame = source->getLatestFrame();
-	
+	if (frame == nullptr) {
+		if (logger) logger->enterLog(ERROR, "ApriltagSink::processFrame: Frame is null");
+		return;
+	}
+
+	if (logger) logger->enterLog("Processing frame for Apriltag detection");
+
 	std::string returnString = "{\"detections\":[";
 	
-	if (frame != nullptr) {
-		FrameSpec spec = frame->getSpec();
+	FrameSpec spec = frame->getSpec();
 
-		spec.setType(CV_8UC1);
-		//if (logger) logger->enterLog("spec.type after setType: " + std::to_string(spec.getType()));
+	spec.setType(CV_8UC1);
+	//if (logger) logger->enterLog("spec.type after setType: " + std::to_string(spec.getType()));
 
-		std::shared_ptr<Frame> gray = preProcessor->transformFrame(frame, spec);
+	std::shared_ptr<Frame> gray = preProcessor->transformFrame(frame, spec);
 
-		std::vector<ApriltagDetection> returnVector;
+	std::vector<ApriltagDetection> returnVector;
 
-		logger->enterLog("making an image_u8_t from the opencv frame");
+	logger->enterLog("making an image_u8_t from the opencv frame");
 
-		image_u8_t img = {
-			gray->cols,
-			gray->rows,
-			gray->cols,
-			gray->data
-		};
+	image_u8_t img = {
+		gray->cols,
+		gray->rows,
+		gray->cols,
+		gray->data
+	};
 
-		logger->enterLog("detecting apriltags using the detector");
-		zarray_t* detections = apriltag_detector_detect(detector, &img);
+	logger->enterLog("detecting apriltags using the detector");
+	zarray_t* detections = apriltag_detector_detect(detector, &img);
 
-		for (int i = 0; i < zarray_size(detections); i++) {
-			apriltag_detection_t* detection;
-			zarray_get(detections, i, &detection);
+	for (int i = 0; i < zarray_size(detections); i++) {
+		apriltag_detection_t* detection;
+		zarray_get(detections, i, &detection);
 
-			apriltag_pose_t pose;
-			/*double err = estimate_tag_pose(&info, &pose);*/
+		apriltag_pose_t pose;
+		/*double err = estimate_tag_pose(&info, &pose);*/
 
-			returnVector.push_back(ApriltagDetection(*detection, pose));
-		}
-
-		for (size_t i = 0; i < returnVector.size(); ++i) {
-			returnString += returnVector[i].toString();
-			if (i != returnVector.size() - 1) {
-				returnString += ",";
-			}
-		}
-	}
-	else {
-		logger->enterLog(ERROR, "ApriltagSink::getResults: Frame is null");
-		returnString += "{}";
+		returnVector.push_back(ApriltagDetection(*detection, pose));
 	}
 
+	for (size_t i = 0; i < returnVector.size(); ++i) {
+		returnString += returnVector[i].toString();
+		if (i != returnVector.size() - 1) {
+			returnString += ",";
+		}
+	}
+	
 	returnString += "]}";
 
 	results = returnString;
+
+	if (logger) logger->enterLog("ApriltagSink::processFrame completed");
 }

@@ -22,18 +22,16 @@ Logger::~Logger() {
 void Logger::enterLog(std::string message) {
     std::lock_guard<std::recursive_mutex> guard(lock);  // RAII lock
     logs.push_back(new Log(INFO, message));
-    if (logs.size() > 100) {
-        flushLogs();
-    }
+    flushLogs();
+    std::cout << "[INFO]: " << message << std::endl; // Added console output for immediate feedback
 }
 
 // Define the enterLog method for a log level and message
 void Logger::enterLog(LogLevel logLevel, std::string message) {
     std::lock_guard<std::recursive_mutex> guard(lock);  // RAII lock
     logs.push_back(new Log(logLevel, message));
-    if (logs.size() > 100) {
-        flushLogs();
-    }
+    flushLogs();
+    std::cout << "[" << logLevel << "]: " << message << std::endl; // Added console output for immediate feedback
 }
 
 // Define the enterLog method for a Log object

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
@@ -121,7 +122,8 @@ namespace Server
         // update results
         private void updateResults()
         {
-            currentResults = ManagerWrapper.Instance.getAllSinkResults();
+            string[] results = getAllSinkIds().Select(id => ManagerWrapper.Instance.getSinkResult(id)).ToArray();
+            currentResults = JsonSerializer.Serialize(results);
             // Logic to update results in sinks
             // This could involve iterating through sinks and updating their state based on the data received.
         }
@@ -238,6 +240,7 @@ namespace Server
                 {
                     sink.Source = SourceManager.Instance.GetSourceById(sourceId);
                     ManagerWrapper.Instance.bindSourceToSink(sourceId, sinkId);
+                    SourceManager.Instance.EnableSourceById(sink.Source.Id);
                     DB.Instance.Save(); // Save changes to the database
                     break;
                 }

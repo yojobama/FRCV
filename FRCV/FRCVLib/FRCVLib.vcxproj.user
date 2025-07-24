@@ -3,6 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <RemoteTarget>939420187;192.168.55.138 (username=, port=22, authentication=Password)</RemoteTarget>
     <RemoteDebuggingTarget>-530215962;192.168.55.137 (username=, port=22, authentication=Password)</RemoteDebuggingTarget>
-    <DebuggerFlavor>LinuxDebugger</DebuggerFlavor>
+    <DebuggerFlavor>LinuxWSLDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

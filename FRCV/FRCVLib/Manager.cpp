@@ -324,19 +324,22 @@ bool Manager::startSinkById(int sinkId) {
 string Manager::getAllSinkStatus()
 {
     logger->enterLog("getAllSinkStatus called");
-    string returnString;
-    returnString += "{[";
+    string returnString = "{";
 
     auto iterator = sinks.begin();
 
     while (iterator != sinks.end()) {
-        returnString += "\"";
+        returnString += "\"" + std::to_string(iterator->first) + "\": \"";
         returnString += iterator->second->getStatus();
-        returnString += "\",";
+        returnString += "\"";
+
         iterator++;
+        if (iterator != sinks.end()) {
+            returnString += ", ";
+        }
     }
 
-    returnString += "]}";
+    returnString += "}";
 
     return returnString;
 }
@@ -372,19 +375,22 @@ string Manager::getSinkResult(int sinkId)
 string Manager::getAllSinkResults()
 {
     logger->enterLog("getAllSinkResults called");
-    string returnString;
-    returnString += "{[";
+    string returnString = "{";
+
     auto iterator = sinks.begin();
 
     while (iterator != sinks.end()) {
-        returnString += "{";
+        returnString += "\"" + std::to_string(iterator->first) + "\": \"";
         returnString += iterator->second->getCurrentResults();
-        returnString += "},";
+        returnString += "\"";
+
         iterator++;
+        if (iterator != sinks.end()) {
+            returnString += ", ";
+        }
     }
 
-
-    returnString += "]}";
+    returnString += "}";
 
     return returnString;
 }

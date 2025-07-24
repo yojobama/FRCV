@@ -21,12 +21,14 @@ namespace Server
         private string jsonPath;
         private List<Sink> sinks;
         private List<Source> sources;
+        private readonly Logger logger;
 
         private DB(string jsonPath)
         {
             this.jsonPath = jsonPath;
             sinks = new List<Sink>();
             sources = new List<Source>();
+            logger = new Logger("DBLog.txt"); // Initialize logger with a log file
         }
 
         public string GetJson()
@@ -41,6 +43,7 @@ namespace Server
 
         public void Load()
         {
+            logger.enterLog("DB Load called");
             if (File.Exists(jsonPath))
             {
                 string jsonData = File.ReadAllText(jsonPath);
@@ -51,11 +54,17 @@ namespace Server
                     sinks = dbData.Sinks ?? new List<Sink>();
                     sources = dbData.Sources ?? new List<Source>();
                 }
+                logger.enterLog("DB loaded successfully from " + jsonPath);
+            }
+            else
+            {
+                logger.enterLog("DB file not found: " + jsonPath);
             }
         }
 
         public void Save()
         {
+            logger.enterLog("DB Save called");
             var dbData = new DBData
             {
                 Sinks = sinks,
@@ -64,6 +73,7 @@ namespace Server
 
             string jsonData = JsonSerializer.Serialize(dbData, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(jsonPath, jsonData);
+            logger.enterLog("DB saved successfully to " + jsonPath);
         }
 
         public void AddSink(Sink sink)
