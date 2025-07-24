@@ -355,6 +355,7 @@ template <typename T> T SwigValueInit() {
 
 #include "Manager.h"
 #include "CameraCalibrationResult.h"
+#include "Frame.h"
 
 
 #include <string>

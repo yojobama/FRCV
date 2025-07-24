@@ -4,6 +4,7 @@
 #include "ApriltagSink.h"
 #include "RecordSink.h"
 #include "CameraSource.h"
+#include "Frame.h"
 
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
@@ -27,7 +28,7 @@ Manager::Manager(string logFile)
 
 Manager::Manager()
 {
-    logger = new Logger("/mnt/d/Projects/FRCV/FRCV/Server/bin/Debug/net8.0/FRCVLog.txt");
+    logger = new Logger("FRCVLog.txt");
     framePool = new FramePool(logger);
     logger->enterLog("Manager constructed");
     preProcessor = new PreProcessor(framePool);
@@ -287,7 +288,7 @@ void Manager::startAllSinks() {
         auto iterator = sinks.begin();
 
         while (iterator != sinks.end()) {
-            //iterator->second->changeThreadStatus(true);
+            iterator->second->changeThreadStatus(true);
             iterator++;
         }
     }

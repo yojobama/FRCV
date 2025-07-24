@@ -18,8 +18,7 @@ int main()
     int sink = manager->createApriltagSink();
     int sink2 = manager->createApriltagSink();
 
-    //int source = manager->createImageFileSource("/mnt/c/Users/yojob/Downloads/apriltag.png");
-    int source = manager->createCameraSource(cameras[0]);
+    int source = manager->createImageFileSource("/mnt/c/Users/yojob/Downloads/apriltag.png");
     //int source = manager->createVideoFileSource("/mnt/c/Users/yojob/Downloads/apriltagVideo.mp4", 60);
 
     manager->bindSourceToSink(source, sink);
@@ -28,6 +27,10 @@ int main()
     manager->startAllSources();
     manager->startAllSinks();
 
+    sleep(1);
+    
+	manager->getAllSinkResults();
+    
     sleep(1);
 
     manager->stopAllSources();

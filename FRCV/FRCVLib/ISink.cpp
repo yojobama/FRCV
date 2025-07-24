@@ -24,7 +24,7 @@ void ISink::changeThreadStatus(bool threadWantedAlive)
     else {
         if (thread) {
             shouldTerminate = true;
-            while (shouldTerminate);
+            pthread_join(thread, NULL);
         }
     }
 }
@@ -36,6 +36,7 @@ void ISink::sinkThreadProc()
         processFrame();
     }
     shouldTerminate = false;
+	pthread_exit(NULL);
 }
 
 string ISink::getCurrentResults()

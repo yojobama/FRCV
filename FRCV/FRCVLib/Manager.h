@@ -12,8 +12,6 @@
 #include "Logger.h"
 #include "FramePool.h"
 #include "ISource.h"
-#include "Frame.h"
-#include "CameraCalibrationSink.h"
 
 using namespace std;
 
@@ -30,8 +28,9 @@ typedef struct {
 //	CPU_DEV_X86_64
 //};
 
-class CalibrationSink;
 class PreProcessor;
+class Frame;
+class CameraCalibrationSink;
 
 class Manager
 {
@@ -100,7 +99,5 @@ private:
 	Logger* logger; // a logger for the entire application
 
 	vector<std::shared_ptr<Frame>> calibrationImages;
-
-	CalibrationSink* calibrationSink;
 };
 

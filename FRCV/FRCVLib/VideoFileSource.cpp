@@ -2,6 +2,7 @@
 #include "ImageFileSource.h"
 #include "Frame.h"
 #include <chrono>
+#include <thread>
 #include <pthread.h>
 
 VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool, int fps) : ISource(framePool, logger)
