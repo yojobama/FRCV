@@ -266,20 +266,35 @@ class libFRCVLibPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_unbindSourceFromSink")]
   public static extern bool Manager_unbindSourceFromSink(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
-  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createCameraSource")]
-  public static extern int Manager_createCameraSource(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createCameraSource__SWIG_0")]
+  public static extern int Manager_createCameraSource__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
 
-  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createVideoFileSource")]
-  public static extern int Manager_createVideoFileSource(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, int jarg3);
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createCameraSource__SWIG_1")]
+  public static extern int Manager_createCameraSource__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2, int jarg3);
 
-  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createImageFileSource")]
-  public static extern int Manager_createImageFileSource(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createVideoFileSource__SWIG_0")]
+  public static extern int Manager_createVideoFileSource__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, int jarg3);
 
-  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createApriltagSink")]
-  public static extern int Manager_createApriltagSink(global::System.Runtime.InteropServices.HandleRef jarg1);
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createVideoFileSource__SWIG_1")]
+  public static extern int Manager_createVideoFileSource__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, int jarg3, int jarg4);
 
-  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createObjectDetectionSink")]
-  public static extern int Manager_createObjectDetectionSink(global::System.Runtime.InteropServices.HandleRef jarg1);
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createImageFileSource__SWIG_0")]
+  public static extern int Manager_createImageFileSource__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createImageFileSource__SWIG_1")]
+  public static extern int Manager_createImageFileSource__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2, int jarg3);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createApriltagSink__SWIG_0")]
+  public static extern int Manager_createApriltagSink__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createApriltagSink__SWIG_1")]
+  public static extern int Manager_createApriltagSink__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createObjectDetectionSink__SWIG_0")]
+  public static extern int Manager_createObjectDetectionSink__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createObjectDetectionSink__SWIG_1")]
+  public static extern int Manager_createObjectDetectionSink__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_createRecordingSink")]
   public static extern int Manager_createRecordingSink(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);

@@ -185,10 +185,35 @@ int Manager::createCameraSource(CameraHardwareInfo info)
     return id;
 }
 
+int Manager::createCameraSource(CameraHardwareInfo info, int id)
+{
+    logger->enterLog("createCameraSource called with name=" + info.name + ", path=" + info.path);
+
+    CameraFrameSource* source = new CameraFrameSource(info.path, logger, framePool);
+
+    sources.emplace(id, source);
+
+    logger->enterLog("CameraFrameSource created with id=" + std::to_string(id));
+
+    return id;
+}
+
 int Manager::createVideoFileSource(string path, int fps)
 {
     logger->enterLog("createVideoFileSource called with path=" + path);
     int id = generateUUID();
+
+    VideoFileFrameSource* source = new VideoFileFrameSource(logger, path, framePool, fps);
+
+    sources.emplace(id, source);
+
+    logger->enterLog("VideoFileFrameSource created with id=" + std::to_string(id));
+    return id;
+}
+
+int Manager::createVideoFileSource(string path, int fps, int id)
+{
+    logger->enterLog("createVideoFileSource called with path=" + path);
 
     VideoFileFrameSource* source = new VideoFileFrameSource(logger, path, framePool, fps);
 
@@ -211,10 +236,34 @@ int Manager::createImageFileSource(string path)
     return id;
 }
 
+int Manager::createImageFileSource(string path, int id)
+{
+    logger->enterLog("createImageFileSource called with path=" + path);
+
+    ImageFileFrameSource* source = new ImageFileFrameSource(path, logger, framePool);
+
+    sources.emplace(id, source);
+
+    logger->enterLog("ImageFileFrameSource created with id=" + std::to_string(id));
+    return id;
+}
+
 int Manager::createApriltagSink()
 {
     logger->enterLog("createApriltagSink called");
     int id = generateUUID();
+
+    ApriltagSink* sink = new ApriltagSink(logger, preProcessor);
+
+    sinks.emplace(id, sink);
+
+    logger->enterLog("ApriltagSink created with id=" + std::to_string(id));
+    return id;
+}
+
+int Manager::createApriltagSink(int id)
+{
+    logger->enterLog("createApriltagSink called");
 
     ApriltagSink* sink = new ApriltagSink(logger, preProcessor);
 

@@ -18,7 +18,10 @@ namespace Server
         private int id;
         private string name;
         private SourceType type;
-
+        
+        public CameraHardwareInfo? CameraHardwareInfo { get; set; } // Optional camera hardware info for camera sources
+        public int? Fps { get; set; } // Optional frames per second for camera sources
+        public string? FilePath { get; set; } // Optional file path for image or video sources
         public SourceType Type
         {
             get { return type; }
@@ -34,12 +37,15 @@ namespace Server
             get => name;
             set => name = value;
         }
-        
-        public Source(int id, string name, SourceType type)
+
+        public Source(int id, string name, SourceType type, string? filePath = null, int? fps = null, CameraHardwareInfo? cameraHardwareInfo = null)
         {
             this.id = id;
             this.name = name;
             this.type = type;
+            this.FilePath = filePath;
+            this.Fps = fps;
+            this.CameraHardwareInfo = cameraHardwareInfo;
         }
     }
 }

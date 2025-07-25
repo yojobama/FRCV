@@ -89,30 +89,58 @@ public class Manager : global::System.IDisposable {
   }
 
   public int createCameraSource(CameraHardwareInfo info) {
-    int ret = libFRCVLibPINVOKE.Manager_createCameraSource(swigCPtr, CameraHardwareInfo.getCPtr(info));
+    int ret = libFRCVLibPINVOKE.Manager_createCameraSource__SWIG_0(swigCPtr, CameraHardwareInfo.getCPtr(info));
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
+  public int createCameraSource(CameraHardwareInfo info, int id) {
+    int ret = libFRCVLibPINVOKE.Manager_createCameraSource__SWIG_1(swigCPtr, CameraHardwareInfo.getCPtr(info), id);
     if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public int createVideoFileSource(string path, int fps) {
-    int ret = libFRCVLibPINVOKE.Manager_createVideoFileSource(swigCPtr, path, fps);
+    int ret = libFRCVLibPINVOKE.Manager_createVideoFileSource__SWIG_0(swigCPtr, path, fps);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
+  public int createVideoFileSource(string path, int fps, int id) {
+    int ret = libFRCVLibPINVOKE.Manager_createVideoFileSource__SWIG_1(swigCPtr, path, fps, id);
     if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public int createImageFileSource(string path) {
-    int ret = libFRCVLibPINVOKE.Manager_createImageFileSource(swigCPtr, path);
+    int ret = libFRCVLibPINVOKE.Manager_createImageFileSource__SWIG_0(swigCPtr, path);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
+  public int createImageFileSource(string path, int id) {
+    int ret = libFRCVLibPINVOKE.Manager_createImageFileSource__SWIG_1(swigCPtr, path, id);
     if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
     return ret;
   }
 
   public int createApriltagSink() {
-    int ret = libFRCVLibPINVOKE.Manager_createApriltagSink(swigCPtr);
+    int ret = libFRCVLibPINVOKE.Manager_createApriltagSink__SWIG_0(swigCPtr);
+    return ret;
+  }
+
+  public int createApriltagSink(int id) {
+    int ret = libFRCVLibPINVOKE.Manager_createApriltagSink__SWIG_1(swigCPtr, id);
     return ret;
   }
 
   public int createObjectDetectionSink() {
-    int ret = libFRCVLibPINVOKE.Manager_createObjectDetectionSink(swigCPtr);
+    int ret = libFRCVLibPINVOKE.Manager_createObjectDetectionSink__SWIG_0(swigCPtr);
+    return ret;
+  }
+
+  public int createObjectDetectionSink(int id) {
+    int ret = libFRCVLibPINVOKE.Manager_createObjectDetectionSink__SWIG_1(swigCPtr, id);
     return ret;
   }
 

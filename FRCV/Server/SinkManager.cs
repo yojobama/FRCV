@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
@@ -90,24 +91,40 @@ namespace Server
             DB.Instance.Save(); // Save changes to the database
         }
 
-        public int AddSink(string name, string type)
+        public int AddSink(string name, string type, int? id = null)
         {
-            int id = -1;
-
-            switch (type)
+            if (id.HasValue)
             {
-                case "ApriltagSink":
-                    id = ManagerWrapper.Instance.createApriltagSink();
-                    sinks.Add(new Sink(id, name, SinkType.ApriltagSink));
-                    break;
-                case "ObjectDetectionSink":
-                    id = ManagerWrapper.Instance.createObjectDetectionSink();
-                    sinks.Add(new Sink(id, name, SinkType.ObjectDetectionSink));
-                    break;
+                switch (type)
+                {
+                    case "ApriltagSink":
+                        id = ManagerWrapper.Instance.createApriltagSink(id.Value);
+                        sinks.Add(new Sink(id.Value, name, SinkType.ApriltagSink));
+                        break;
+                    case "ObjectDetectionSink":
+                        id = ManagerWrapper.Instance.createObjectDetectionSink(id.Value);
+                        sinks.Add(new Sink(id.Value, name, SinkType.ObjectDetectionSink));
+                        break;
+                }
+                return id.GetValueOrDefault(-1);
             }
+            else
+            {
+                switch (type)
+                {
+                    case "ApriltagSink":
+                        id = ManagerWrapper.Instance.createApriltagSink();
+                        sinks.Add(new Sink(id.Value, name, SinkType.ApriltagSink));
+                        break;
+                    case "ObjectDetectionSink":
+                        id = ManagerWrapper.Instance.createObjectDetectionSink();
+                        sinks.Add(new Sink(id.Value, name, SinkType.ObjectDetectionSink));
+                        break;
+                }
 
-            DB.Instance.Save(); // Save changes to the database
-            return id;
+                DB.Instance.Save(); // Save changes to the database
+                return id.GetValueOrDefault(-1);
+            }
         }
 
         public Channel<string> createResultChannel()

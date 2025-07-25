@@ -86,7 +86,7 @@ namespace Server
                 {
                     // Logic to enable the source
                     // This could involve setting its state to running and initializing any necessary resources.
-                    ManagerWrapper.Instance.startSourceById(source.Id); // Assuming Source has an isEnabled property
+                    if (!ManagerWrapper.Instance.startSourceById(source.Id)) throw new Exception("unable to start source"); // Assuming Source has an isEnabled property
                     return;
                 }
             }
@@ -106,26 +106,44 @@ namespace Server
             return null;
         }
 
-        public int InitializeCameraSource(CameraHardwareInfo cameraHardwareInfo, string name = "default")
+        public int InitializeCameraSource(CameraHardwareInfo cameraHardwareInfo, string name = "default", int? id = null)
         {
-            var sourceId = ManagerWrapper.Instance.createCameraSource(cameraHardwareInfo);
-            sources.Add(new Source(sourceId, name, SourceType.Camera));
+            int sourceId = -1;
+
+            if (id.HasValue)
+                sourceId = ManagerWrapper.Instance.createCameraSource(cameraHardwareInfo, id.Value);
+            else
+                sourceId = ManagerWrapper.Instance.createCameraSource(cameraHardwareInfo);
+
+            sources.Add(new Source(sourceId, name, SourceType.Camera, cameraHardwareInfo: cameraHardwareInfo));
             DB.Instance.Save(); // Save changes to the database
             return sourceId;
         }
 
-        public int InitializeVideoFileSource(string filePath, int fps = 30, string name = "default")
+        public int InitializeVideoFileSource(string filePath, int fps = 30, string name = "default", int? id = null)
         {
-            var sourceId = ManagerWrapper.Instance.createVideoFileSource(filePath, fps);
-            sources.Add(new Source(sourceId, name, SourceType.VideoFile));
+            int sourceId = -1;
+
+            if (id.HasValue)
+                sourceId = ManagerWrapper.Instance.createVideoFileSource(filePath, fps, id.Value);
+            else
+                sourceId = ManagerWrapper.Instance.createVideoFileSource(filePath, fps);
+            
+            sources.Add(new Source(sourceId, name, SourceType.VideoFile, filePath, fps));
             DB.Instance.Save(); // Save changes to the database
             return sourceId;
         }
         
-        public int initializeImageFileSource(string filePath, string name = "default")
+        public int initializeImageFileSource(string filePath, string name = "default", int? id = null)
         {
-            var sourceId = ManagerWrapper.Instance.createImageFileSource(filePath);
-            sources.Add(new Source(sourceId, name, SourceType.ImageFile));
+            int sourceId = -1;
+            
+            if (id.HasValue)
+                sourceId = ManagerWrapper.Instance.createImageFileSource(filePath, id.Value);
+            else
+                sourceId = ManagerWrapper.Instance.createImageFileSource(filePath);
+            
+            sources.Add(new Source(sourceId, name, SourceType.ImageFile, filePath));
             DB.Instance.Save(); // Save changes to the database
             return sourceId;
         }

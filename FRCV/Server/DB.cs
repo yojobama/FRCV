@@ -54,6 +54,27 @@ namespace Server
                     sinks = dbData.Sinks ?? new List<Sink>();
                     sources = dbData.Sources ?? new List<Source>();
                 }
+
+                foreach (var source in sources)
+                {
+                    switch(source.Type)
+                    {
+                        case SourceType.ImageFile:
+                            SourceManager.Instance.initializeImageFileSource(source.FilePath, source.Name, source.Id);
+                            break;
+                        case SourceType.VideoFile:
+                            SourceManager.Instance.InitializeVideoFileSource(source.FilePath, source.Fps ?? 30, source.Name, source.Id);
+                            break;
+                        case SourceType.Camera:
+                            SourceManager.Instance.InitializeCameraSource(source.CameraHardwareInfo ,id: source.Id);
+                            break;
+                    }
+                }
+                foreach (var sink in sinks)
+                {
+                    SinkManager.Instance.AddSink(sink.Name, sink.Type.ToString());
+                }
+
                 logger.enterLog("DB loaded successfully from " + jsonPath);
             }
             else
@@ -65,6 +86,18 @@ namespace Server
         public void Save()
         {
             logger.enterLog("DB Save called");
+            List<Sink> sinks = new List<Sink>();
+            List<Source> sources = new List<Source>();
+
+            foreach (var sink in SinkManager.Instance.getAllSinkIds())
+            {
+                sinks.Add(SinkManager.Instance.GetSinkById(sink));
+            }
+            foreach (var source in SourceManager.Instance.GetAllSourceIds())
+            {
+                sources.Add(SourceManager.Instance.GetSourceById(source));
+            }
+
             var dbData = new DBData
             {
                 Sinks = sinks,
@@ -76,21 +109,9 @@ namespace Server
             logger.enterLog("DB saved successfully to " + jsonPath);
         }
 
-        public void AddSink(Sink sink)
-        {
-            sinks.Add(sink);
-            Save();
-        }
-
         public void RemoveSink(Sink sink)
         {
             sinks.Remove(sink);
-            Save();
-        }
-
-        public void AddSource(Source source)
-        {
-            sources.Add(source);
             Save();
         }
 
@@ -128,7 +149,5 @@ namespace Server
                 }
             }
         }
-
-        
     }
 }

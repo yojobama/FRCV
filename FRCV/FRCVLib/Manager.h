@@ -49,12 +49,17 @@ public:
 
 	// functions to create frame sources
 	int createCameraSource(CameraHardwareInfo info);
+	int createCameraSource(CameraHardwareInfo info, int id);
 	int createVideoFileSource(string path, int fps);
+	int createVideoFileSource(string path, int fps, int id);
 	int createImageFileSource(string path);
+	int createImageFileSource(string path, int id);
 
 	// functions to create detection sinks
 	int createApriltagSink();
+	int createApriltagSink(int id);
 	int createObjectDetectionSink();
+	int createObjectDetectionSink(int id);
 
 	int createRecordingSink(int sourceId);
 

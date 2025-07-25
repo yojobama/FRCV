@@ -1142,7 +1142,7 @@ SWIGEXPORT unsigned int SWIGSTDCALL CSharp_Manager_unbindSourceFromSink(void * j
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createCameraSource(void * jarg1, void * jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createCameraSource__SWIG_0(void * jarg1, void * jarg2) {
   int jresult ;
   Manager *arg1 = (Manager *) 0 ;
   CameraHardwareInfo arg2 ;
@@ -1162,7 +1162,29 @@ SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createCameraSource(void * jarg1, void 
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createVideoFileSource(void * jarg1, const char * jarg2, int jarg3) {
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createCameraSource__SWIG_1(void * jarg1, void * jarg2, int jarg3) {
+  int jresult ;
+  Manager *arg1 = (Manager *) 0 ;
+  CameraHardwareInfo arg2 ;
+  int arg3 ;
+  CameraHardwareInfo *argp2 ;
+  int result;
+  
+  arg1 = (Manager *)jarg1; 
+  argp2 = (CameraHardwareInfo *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null CameraHardwareInfo", 0);
+    return 0;
+  }
+  arg2 = *argp2; 
+  arg3 = (int)jarg3; 
+  result = (int)(arg1)->createCameraSource(SWIG_STD_MOVE(arg2),arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createVideoFileSource__SWIG_0(void * jarg1, const char * jarg2, int jarg3) {
   int jresult ;
   Manager *arg1 = (Manager *) 0 ;
   std::string arg2 ;
@@ -1182,7 +1204,29 @@ SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createVideoFileSource(void * jarg1, co
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createImageFileSource(void * jarg1, const char * jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createVideoFileSource__SWIG_1(void * jarg1, const char * jarg2, int jarg3, int jarg4) {
+  int jresult ;
+  Manager *arg1 = (Manager *) 0 ;
+  std::string arg2 ;
+  int arg3 ;
+  int arg4 ;
+  int result;
+  
+  arg1 = (Manager *)jarg1; 
+  if (!jarg2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "null string", 0);
+    return 0;
+  }
+  (&arg2)->assign(jarg2); 
+  arg3 = (int)jarg3; 
+  arg4 = (int)jarg4; 
+  result = (int)(arg1)->createVideoFileSource(SWIG_STD_MOVE(arg2),arg3,arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createImageFileSource__SWIG_0(void * jarg1, const char * jarg2) {
   int jresult ;
   Manager *arg1 = (Manager *) 0 ;
   std::string arg2 ;
@@ -1200,7 +1244,27 @@ SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createImageFileSource(void * jarg1, co
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createApriltagSink(void * jarg1) {
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createImageFileSource__SWIG_1(void * jarg1, const char * jarg2, int jarg3) {
+  int jresult ;
+  Manager *arg1 = (Manager *) 0 ;
+  std::string arg2 ;
+  int arg3 ;
+  int result;
+  
+  arg1 = (Manager *)jarg1; 
+  if (!jarg2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "null string", 0);
+    return 0;
+  }
+  (&arg2)->assign(jarg2); 
+  arg3 = (int)jarg3; 
+  result = (int)(arg1)->createImageFileSource(SWIG_STD_MOVE(arg2),arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createApriltagSink__SWIG_0(void * jarg1) {
   int jresult ;
   Manager *arg1 = (Manager *) 0 ;
   int result;
@@ -1212,13 +1276,41 @@ SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createApriltagSink(void * jarg1) {
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createObjectDetectionSink(void * jarg1) {
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createApriltagSink__SWIG_1(void * jarg1, int jarg2) {
+  int jresult ;
+  Manager *arg1 = (Manager *) 0 ;
+  int arg2 ;
+  int result;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (int)(arg1)->createApriltagSink(arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createObjectDetectionSink__SWIG_0(void * jarg1) {
   int jresult ;
   Manager *arg1 = (Manager *) 0 ;
   int result;
   
   arg1 = (Manager *)jarg1; 
   result = (int)(arg1)->createObjectDetectionSink();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_createObjectDetectionSink__SWIG_1(void * jarg1, int jarg2) {
+  int jresult ;
+  Manager *arg1 = (Manager *) 0 ;
+  int arg2 ;
+  int result;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (int)(arg1)->createObjectDetectionSink(arg2);
   jresult = result; 
   return jresult;
 }
