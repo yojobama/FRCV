@@ -8,33 +8,33 @@
 #include <fstream>
 
 // Log levels
-enum LogLevel {
-    INFO,
-    WARNING,
-    DEBUG,
-    ERROR,
-    WTF
+enum class LogLevel {
+    Info,
+    Warning,
+    Debug,
+    Error,
+    Wtf
 };
 
 class Log {
 public:
     Log(LogLevel logLevel, std::string message)
-        : logLevel(logLevel), message(message) {}
-    LogLevel GetLogLevel() { return logLevel; }
-    std::string GetMessage() { return message; }
+        : m_LogLevel(logLevel), m_Message(message) {}
+    LogLevel GetLogLevel() { return m_LogLevel; }
+    std::string GetMessage() { return m_Message; }
     std::string GetLogLevelString() {
-        switch (logLevel) {
-            case INFO: return "INFO";
-            case WARNING: return "WARNING";
-            case DEBUG: return "DEBUG";
-            case ERROR: return "ERROR";
-            case WTF: return "WTF";
+        switch (m_LogLevel) {
+            case LogLevel::Info: return "INFO";
+            case LogLevel::Warning: return "WARNING";
+            case LogLevel::Debug: return "DEBUG";
+            case LogLevel::Error: return "ERROR";
+            case LogLevel::Wtf: return "WTF";
             default: return "UNKNOWN";
         }
     }
 private:
-    LogLevel logLevel;
-    std::string message;
+    LogLevel m_LogLevel;
+    std::string m_Message;
 };
 
 class Logger {
@@ -42,14 +42,14 @@ public:
     Logger();
     Logger(std::string filePath);
     ~Logger();
-    void enterLog(std::string message);
-    void enterLog(LogLevel logLevel, std::string message);
-    void enterLog(Log* log);
-    void clearAllLogs();
-    void flushLogs();
+    void EnterLog(std::string message);
+    void EnterLog(LogLevel logLevel, std::string message);
+    void EnterLog(Log* p_Log);
+    void ClearAllLogs();
+    void FlushLogs();
 private:
-    std::string filePath;
-    std::recursive_mutex lock;
-    std::vector<Log*> logs;
+    std::string m_FilePath;
+    std::recursive_mutex m_Lock;
+    std::vector<Log*> m_Logs;
 };
 

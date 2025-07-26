@@ -31,10 +31,10 @@ namespace Server
                 switch (value)
                 {
                     case SinkType.ApriltagSink:
-                        id = ManagerWrapper.Instance.createApriltagSink();
+                        id = ManagerWrapper.Instance.CreateApriltagSink();
                         break;
                     case SinkType.ObjectDetectionSink:
-                        id = ManagerWrapper.Instance.createObjectDetectionSink();
+                        id = ManagerWrapper.Instance.CreateObjectDetectionSink();
                         break;
                 }
                 type = value;
@@ -70,10 +70,10 @@ namespace Server
             switch (type)
             {
                 case SinkType.ApriltagSink:
-                    id = ManagerWrapper.Instance.createApriltagSink();
+                    id = ManagerWrapper.Instance.CreateApriltagSink();
                     break;
                 case SinkType.ObjectDetectionSink:
-                    id = ManagerWrapper.Instance.createObjectDetectionSink();
+                    id = ManagerWrapper.Instance.CreateObjectDetectionSink();
                     break;
             }
         }

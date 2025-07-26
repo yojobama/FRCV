@@ -20,19 +20,19 @@ public:
 	CameraCalibrationSink(Logger* logger, PreProcessor* preProcessor, FrameSpec frameSpec);
 	~CameraCalibrationSink();
 
-	void bindSource(ISource* source);
-	void grabAndProcessFrame();
-	CameraCalibrationResult getResults();
+	void BindSource(ISource* source);
+	void GrabAndProcessFrame();
+	CameraCalibrationResult GetResults();
 private:
-	FrameSpec frameSpec;
-	ISource* source;
+	FrameSpec m_FrameSpec;
+	ISource* m_Source;
 	int CHECKERBOARD[2] = { 6, 9 }; // Number of inner corners per a chessboard row and column
 
-	std::vector<std::vector<cv::Point3f> > objpoints;
+	std::vector<std::vector<cv::Point3f> > m_Objpoints;
 	// Creating vector to store vectors of 2D points for each checkerboard image
-	std::vector<std::vector<cv::Point2f> > imgpoints;
-	std::vector<cv::Point3f> objp;
-	std::vector<cv::Point2f> corner_pts;
+	std::vector<std::vector<cv::Point2f> > m_Imgpoints;
+	std::vector<cv::Point3f> m_Objp;
+	std::vector<cv::Point2f> M_CornerPts;
 
 	Logger* logger;
 	PreProcessor* preProcessor;

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Swan;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -98,11 +99,11 @@ namespace Server
                 switch (type)
                 {
                     case "ApriltagSink":
-                        id = ManagerWrapper.Instance.createApriltagSink(id.Value);
+                        id = ManagerWrapper.Instance.CreateApriltagSink(id.Value);
                         sinks.Add(new Sink(id.Value, name, SinkType.ApriltagSink));
                         break;
                     case "ObjectDetectionSink":
-                        id = ManagerWrapper.Instance.createObjectDetectionSink(id.Value);
+                        id = ManagerWrapper.Instance.CreateObjectDetectionSink(id.Value);
                         sinks.Add(new Sink(id.Value, name, SinkType.ObjectDetectionSink));
                         break;
                 }
@@ -113,11 +114,11 @@ namespace Server
                 switch (type)
                 {
                     case "ApriltagSink":
-                        id = ManagerWrapper.Instance.createApriltagSink();
+                        id = ManagerWrapper.Instance.CreateApriltagSink();
                         sinks.Add(new Sink(id.Value, name, SinkType.ApriltagSink));
                         break;
                     case "ObjectDetectionSink":
-                        id = ManagerWrapper.Instance.createObjectDetectionSink();
+                        id = ManagerWrapper.Instance.CreateObjectDetectionSink();
                         sinks.Add(new Sink(id.Value, name, SinkType.ObjectDetectionSink));
                         break;
                 }
@@ -139,7 +140,7 @@ namespace Server
         // update results
         private void updateResults()
         {
-            string[] results = getAllSinkIds().Select(id => ManagerWrapper.Instance.getSinkResult(id)).ToArray();
+            string[] results = getAllSinkIds().Select(id => ManagerWrapper.Instance.GetSinkResult(id)).ToArray();
             currentResults = JsonSerializer.Serialize(results);
             // Logic to update results in sinks
             // This could involve iterating through sinks and updating their state based on the data received.
@@ -178,7 +179,7 @@ namespace Server
                         source = sink.Source;
                     }
 
-                    ManagerWrapper.Instance.stopSinkById(id);
+                    ManagerWrapper.Instance.StopSinkById(id);
                     break;
                 }
             }
@@ -216,7 +217,7 @@ namespace Server
                         SourceManager.Instance.EnableSourceById(sink.Source.Id);
                     }
 
-                    ManagerWrapper.Instance.startSinkById(id);
+                    ManagerWrapper.Instance.StartSinkById(id);
                     return;
                 }
             }
@@ -231,7 +232,7 @@ namespace Server
                     SourceManager.Instance.EnableSourceById(sink.Source.Id);
                 }
 
-                ManagerWrapper.Instance.startSinkById(sink.Id);
+                ManagerWrapper.Instance.StartSinkById(sink.Id);
             }
         }
 
@@ -241,7 +242,7 @@ namespace Server
             {
                 if (sink.Id == sinkId)
                 {
-                    ManagerWrapper.Instance.unbindSourceFromSink(sinkId);
+                    ManagerWrapper.Instance.UnbindSourceFromSink(sinkId);
                     sink.Source = null; // Unbind the source
                     DB.Instance.Save(); // Save changes to the database
                     break;
@@ -256,7 +257,7 @@ namespace Server
                 if(sink.Id == sinkId)
                 {
                     sink.Source = SourceManager.Instance.GetSourceById(sourceId);
-                    ManagerWrapper.Instance.bindSourceToSink(sourceId, sinkId);
+                    ManagerWrapper.Instance.BindSourceToSink(sourceId, sinkId);
                     SourceManager.Instance.EnableSourceById(sink.Source.Id);
                     DB.Instance.Save(); // Save changes to the database
                     break;

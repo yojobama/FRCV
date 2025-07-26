@@ -108,7 +108,7 @@ public class SourceController : WebApiController
     public Task<CameraHardwareInfo[]> GetCameraHardwareInfosAsync()
     {
         // Logic to retrieve all camera hardware infos
-        return Task.FromResult(ManagerWrapper.Instance.enumerateAvailableCameras().ToArray());
+        return Task.FromResult(ManagerWrapper.Instance.EnumerateAvailableCameras().ToArray());
     }
     
     // delete source

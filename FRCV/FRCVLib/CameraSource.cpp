@@ -8,15 +8,15 @@ CameraFrameSource::CameraFrameSource(std::string devicePath, Logger* logger, Fra
 
     if (!capture->isOpened()) throw "unable to open webcam: " + devicePath;
 
-    this->devicePath = devicePath;
-    this->deviceName = getDeviceName();
+    this->m_DevicePath = devicePath;
+    this->m_DeviceName = getDeviceName();
 }
 
 CameraFrameSource::CameraFrameSource(std::string devicePath, std::string deviceName, Logger* logger, FramePool* framePool) : ISource(framePool, logger)
 {
 	capture = new cv::VideoCapture(devicePath, cv::CAP_V4L2);
-	this->deviceName = deviceName;
-	this->devicePath = devicePath;
+	this->m_DeviceName = deviceName;
+	this->m_DevicePath = devicePath;
 }
 
 CameraFrameSource::~CameraFrameSource()
@@ -26,26 +26,26 @@ CameraFrameSource::~CameraFrameSource()
 
 std::string CameraFrameSource::getDevicePath()
 {
-    return devicePath;
+    return m_DevicePath;
 }
 
 std::string CameraFrameSource::getDeviceName()
 {
-    return deviceName;
+    return m_DeviceName;
 }
 
 void CameraFrameSource::changeDeviceName(std::string newName)
 {
-    this->deviceName = newName;
+    this->m_DeviceName = newName;
 }
 
-void CameraFrameSource::captureFrame()
+void CameraFrameSource::CaptureFrame()
 {
     if (capture->isOpened()) {
-        logger->enterLog(INFO, "camera is open, grabbing frame and returning it");
-        std::shared_ptr<Frame> frame = framePool->getFrame(frameSpec);
+        m_Logger->EnterLog(LogLevel::Info, "camera is open, grabbing frame and returning it");
+        std::shared_ptr<Frame> frame = m_FramePool->GetFrame(m_FrameSpec);
         capture->read(*frame);
-        frames.push(frame);
+        m_Frames.push(frame);
     }
-    logger->enterLog(ERROR, "camera is closed, returning a null pointer");
+    m_Logger->EnterLog(LogLevel::Error, "camera is closed, returning a null pointer");
 }

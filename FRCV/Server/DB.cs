@@ -43,7 +43,7 @@ namespace Server
 
         public void Load()
         {
-            logger.enterLog("DB Load called");
+            logger.EnterLog("DB Load called");
             if (File.Exists(jsonPath))
             {
                 string jsonData = File.ReadAllText(jsonPath);
@@ -75,17 +75,17 @@ namespace Server
                     SinkManager.Instance.AddSink(sink.Name, sink.Type.ToString());
                 }
 
-                logger.enterLog("DB loaded successfully from " + jsonPath);
+                logger.EnterLog("DB loaded successfully from " + jsonPath);
             }
             else
             {
-                logger.enterLog("DB file not found: " + jsonPath);
+                logger.EnterLog("DB file not found: " + jsonPath);
             }
         }
 
         public void Save()
         {
-            logger.enterLog("DB Save called");
+            logger.EnterLog("DB Save called");
             List<Sink> sinks = new List<Sink>();
             List<Source> sources = new List<Source>();
 
@@ -106,7 +106,7 @@ namespace Server
 
             string jsonData = JsonSerializer.Serialize(dbData, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(jsonPath, jsonData);
-            logger.enterLog("DB saved successfully to " + jsonPath);
+            logger.EnterLog("DB saved successfully to " + jsonPath);
         }
 
         public void RemoveSink(Sink sink)

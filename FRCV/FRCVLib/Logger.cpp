@@ -5,64 +5,64 @@
 
 // Constructor
 Logger::Logger() {
-    enterLog("Logger constructed");
+    EnterLog("Logger constructed");
 }
 
 Logger::Logger(std::string filePath) {
-    this->filePath = filePath;
-    enterLog("Logger constructed with file path: " + filePath);
+    m_FilePath = filePath;
+    EnterLog("Logger constructed with file path: " + filePath);
 }
 
 // Destructor
 Logger::~Logger() {
-    clearAllLogs();
+    ClearAllLogs();
 }
 
-// Define the enterLog method for a single string message
-void Logger::enterLog(std::string message) {
-    std::lock_guard<std::recursive_mutex> guard(lock);  // RAII lock
-    logs.push_back(new Log(INFO, message));
-    flushLogs();
+// Define the EnterLog method for a single string message
+void Logger::EnterLog(std::string message) {
+    std::lock_guard<std::recursive_mutex> guard(m_Lock);  // RAII lock
+    m_Logs.push_back(new Log(LogLevel::Info, message));
+    FlushLogs();
     std::cout << "[INFO]: " << message << std::endl; // Added console output for immediate feedback
 }
 
-// Define the enterLog method for a log level and message
-void Logger::enterLog(LogLevel logLevel, std::string message) {
-    std::lock_guard<std::recursive_mutex> guard(lock);  // RAII lock
-    logs.push_back(new Log(logLevel, message));
-    flushLogs();
-    std::cout << "[" << logLevel << "]: " << message << std::endl; // Added console output for immediate feedback
+// Define the EnterLog method for a log level and message
+void Logger::EnterLog(LogLevel logLevel, std::string message) {
+    std::lock_guard<std::recursive_mutex> guard(m_Lock);  // RAII lock
+    m_Logs.push_back(new Log(logLevel, message));
+    FlushLogs();
+    std::cout << "[" << static_cast<int>(logLevel) << "]: " << message << std::endl; // Added console output for immediate feedback
 }
 
-// Define the enterLog method for a Log object
-void Logger::enterLog(Log *log) {
-    if (!log) return;
-    std::lock_guard<std::recursive_mutex> guard(lock);  // RAII lock
-    logs.push_back(new Log(log->GetLogLevel(), log->GetMessage()));
-    if (logs.size() > 100) {
-        flushLogs();
+// Define the EnterLog method for a Log object
+void Logger::EnterLog(Log* p_Log) {
+    if (!p_Log) return;
+    std::lock_guard<std::recursive_mutex> guard(m_Lock);  // RAII lock
+    m_Logs.push_back(new Log(p_Log->GetLogLevel(), p_Log->GetMessage()));
+    if (m_Logs.size() > 100) {
+        FlushLogs();
     }
 }
 
 // Define the method to clear all logs
-void Logger::clearAllLogs() {
-    std::lock_guard<std::recursive_mutex> guard(lock);  // RAII lock
-    for (auto log : logs) {
-        delete log;
+void Logger::ClearAllLogs() {
+    std::lock_guard<std::recursive_mutex> guard(m_Lock);  // RAII lock
+    for (auto p_Log : m_Logs) {
+        delete p_Log;
     }
-    logs.clear();
+    m_Logs.clear();
 }
 
-void Logger::flushLogs()
+void Logger::FlushLogs()
 {
-    if (filePath != "") {
-        std::ofstream logFile(filePath, std::ios::out | std::ios::app);
+    if (m_FilePath != "") {
+        std::ofstream logFile(m_FilePath, std::ios::out | std::ios::app);
 
         if (logFile.is_open()) {
-            std::lock_guard<std::recursive_mutex> guard(lock);  // RAII lock
-            while (!logs.empty()) {
-                logFile << "[" + logs.back()->GetLogLevelString() + "]: " + logs.back()->GetMessage() + "\n";
-                logs.pop_back();
+            std::lock_guard<std::recursive_mutex> guard(m_Lock);  // RAII lock
+            while (!m_Logs.empty()) {
+                logFile << "[" + m_Logs.back()->GetLogLevelString() + "]: " + m_Logs.back()->GetMessage() + "\n";
+                m_Logs.pop_back();
             }
         }
 

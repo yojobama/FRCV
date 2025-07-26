@@ -1,65 +1,65 @@
 #include "ISink.h"
 #include "Frame.h"
 
-ISink::ISink(Logger* logger) : logger(logger), source(nullptr) {
-    if (logger) logger->enterLog("ISink constructed");
+ISink::ISink(Logger* p_Logger) : m_Logger(p_Logger), m_Source(nullptr) {
+    if (m_Logger) m_Logger->EnterLog("ISink constructed");
 }
 
-std::string ISink::getStatus() {
-    return nullptr;
+std::string ISink::GetStatus() {
+    return "";
 }
 
-void* ISink::sinkThreadStart(void* pReference)
+void* ISink::SinkThreadStart(void* p_Reference)
 {
-    ((ISink*)pReference)->sinkThreadProc();
+    ((ISink*)p_Reference)->SinkThreadProc();
     return nullptr;
 }
 
-void ISink::changeThreadStatus(bool threadWantedAlive)
+void ISink::ChangeThreadStatus(bool threadWantedAlive)
 {
     if (threadWantedAlive) {
-        shouldTerminate = false;
-        pthread_create(&thread, NULL, sinkThreadStart, this);
+        m_ShouldTerminate = false;
+        pthread_create(&m_Thread, NULL, SinkThreadStart, this);
     }
     else {
-        if (thread) {
-            shouldTerminate = true;
-            pthread_join(thread, NULL);
+        if (m_Thread) {
+            m_ShouldTerminate = true;
+            pthread_join(m_Thread, NULL);
         }
     }
 }
 
-void ISink::sinkThreadProc()
+void ISink::SinkThreadProc()
 {
-    while (!shouldTerminate) {
+    while (!m_ShouldTerminate) {
         // do stuff
-        processFrame();
+        ProcessFrame();
     }
-    shouldTerminate = false;
+    m_ShouldTerminate = false;
 	pthread_exit(NULL);
 }
 
-string ISink::getCurrentResults()
+string ISink::GetCurrentResults()
 {
-    return results;
+    return m_Results;
 }
 
-bool ISink::bindSource(ISource* source) {
-    if (logger) logger->enterLog("ISink::bindSource called");
-    if (source == nullptr) {
-        logger->enterLog(ERROR, "ISink::bindSource: Source is null");
+bool ISink::BindSource(ISource* p_Source) {
+    if (m_Logger) m_Logger->EnterLog("ISink::BindSource called");
+    if (p_Source == nullptr) {
+        m_Logger->EnterLog(LogLevel::Error, "ISink::BindSource: Source is null");
         return false;
     }
-    this->source = source;
+    this->m_Source = p_Source;
     return true;
 }
 
-bool ISink::unbindSource() {
-    if (logger) logger->enterLog("ISink::unbindSource called");
-    if (source == nullptr) {
-        logger->enterLog(ERROR, "ISink::unbindSource: Source is already null");
+bool ISink::UnbindSource() {
+    if (m_Logger) m_Logger->EnterLog("ISink::UnbindSource called");
+    if (m_Source == nullptr) {
+        m_Logger->EnterLog(LogLevel::Error, "ISink::UnbindSource: Source is already null");
         return false;
     }
-    source = nullptr;
+    m_Source = nullptr;
     return true;
 }

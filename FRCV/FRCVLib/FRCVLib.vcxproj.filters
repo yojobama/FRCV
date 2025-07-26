@@ -51,6 +51,7 @@
     <ClCompile Include="SterioSink.cpp">
       <Filter>Sink</Filter>
     </ClCompile>
+    <ClCompile Include="SystemMonitor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">
@@ -95,6 +96,8 @@
       <Filter>Sink</Filter>
     </ClInclude>
     <ClInclude Include="object_detection_utils.h" />
+    <ClInclude Include="LinuxSystemUsage.h" />
+    <ClInclude Include="SystemMonitor.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />

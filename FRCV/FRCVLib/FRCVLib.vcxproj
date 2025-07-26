@@ -96,6 +96,7 @@
     <ClInclude Include="ISource.h" />
     <ClInclude Include="ImageFileSource.h" />
     <ClInclude Include="ISink.h" />
+    <ClInclude Include="LinuxSystemUsage.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Manager.h" />
     <ClInclude Include="object_detection_utils.h" />
@@ -103,6 +104,7 @@
     <ClInclude Include="RecordSink.h" />
     <ClInclude Include="RknnSink.h" />
     <ClInclude Include="SterioSink.h" />
+    <ClInclude Include="SystemMonitor.h" />
     <ClInclude Include="TRTSink.h" />
     <ClInclude Include="VideoFileSource.h" />
   </ItemGroup>
@@ -125,6 +127,7 @@
     <ClCompile Include="RknnSink.cpp" />
     <ClCompile Include="SterioSink.cpp" />
     <ClCompile Include="swig_wrap.cxx" />
+    <ClCompile Include="SystemMonitor.cpp" />
     <ClCompile Include="TRTSink.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />
   </ItemGroup>

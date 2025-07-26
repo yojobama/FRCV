@@ -37,18 +37,18 @@ namespace Server
 
         public void Enable()
         {
-            logger.enterLog("UDPTransmiter Enable called");
+            logger.EnterLog("UDPTransmiter Enable called");
             threadWantedAlive = true;
             thread.Start();
-            logger.enterLog("UDPTransmiter thread started");
+            logger.EnterLog("UDPTransmiter thread started");
         }
 
         public void Disable()
         {
-            logger.enterLog("UDPTransmiter Disable called");
+            logger.EnterLog("UDPTransmiter Disable called");
             threadWantedAlive = false;
             thread.Join();
-            logger.enterLog("UDPTransmiter thread stopped");
+            logger.EnterLog("UDPTransmiter thread stopped");
         }
 
         private void ThreadProc()

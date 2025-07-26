@@ -124,8 +124,8 @@ void SterioSink::decodeAndExtractDepth(EncodedPacket* packet, const double fx, c
 }
 
 shared_ptr<Frame> SterioSink::getCurrentDepth() {
-    auto left = sourceLeft->getLatestFrame(true);
-    auto right = sourceRight->getLatestFrame(true);
+    auto left = sourceLeft->GetLatestFrame(true);
+    auto right = sourceRight->GetLatestFrame(true);
 
     if (!left || !right) return nullptr;
 

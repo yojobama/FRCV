@@ -22,7 +22,7 @@ public class SinkController : WebApiController
     public Task<int[]> GetAllSinkIdsAsync()
     {
         // Logic to retrieve all sink IDs
-        return Task.FromResult(ManagerWrapper.Instance.getAllSinks().ToArray());
+        return Task.FromResult(ManagerWrapper.Instance.GetAllSinks().ToArray());
     }
     
     // get parsed sink by id

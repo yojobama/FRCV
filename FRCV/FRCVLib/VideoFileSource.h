@@ -11,11 +11,10 @@ class VideoFileFrameSource : public ISource
 {
 public:
 	VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool, int fps);
-	Frame* getFrame();
 private:
-	void captureFrame() override;
-	Logger* logger;
-	cv::VideoCapture* capture;
-	int fps;
+	void CaptureFrame() override;
+	Logger* m_Logger;
+	cv::VideoCapture* m_Capture;
+	int m_Fps;
 };
 

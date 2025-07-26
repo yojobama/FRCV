@@ -13,24 +13,24 @@ using namespace std;
 
 class ISink {
 public:
-    ISink(Logger* logger);
+    ISink(Logger* p_Logger);
     ~ISink() = default;
-    string getCurrentResults();
-    bool bindSource(ISource* source);
-	bool unbindSource();
-    virtual string getStatus();
-    void changeThreadStatus(bool threadWantedAlive);
+    string GetCurrentResults();
+    bool BindSource(ISource* p_Source);
+	bool UnbindSource();
+    virtual string GetStatus();
+    void ChangeThreadStatus(bool threadWantedAlive);
 protected:
-    string results;
-	ISource* source;
-    Logger* logger;
-    string currentResults;
-    virtual void processFrame() = 0;
+    string m_Results;
+	ISource* m_Source;
+    Logger* m_Logger;
+    string m_CurrentResults;
+    virtual void ProcessFrame() = 0;
 private:
-    static void* sinkThreadStart(void* pReference);
-    void sinkThreadProc();
-    mutex lock;
-    pthread_t thread;
-    bool shouldTerminate;
+    static void* SinkThreadStart(void* p_Reference);
+    void SinkThreadProc();
+    mutex m_Lock;
+    pthread_t m_Thread;
+    bool m_ShouldTerminate;
 };
 

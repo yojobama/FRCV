@@ -18,7 +18,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FRCVLib\FRCVLib.vcxproj" />
+    <ProjectReference Include="..\FRCVLib\FRCVLib.vcxproj">
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">

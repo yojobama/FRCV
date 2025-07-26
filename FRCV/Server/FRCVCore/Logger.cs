@@ -63,26 +63,26 @@ public class Logger : global::System.IDisposable {
     if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
-  public void enterLog(string message) {
-    libFRCVLibPINVOKE.Logger_enterLog__SWIG_0(swigCPtr, message);
+  public void EnterLog(string message) {
+    libFRCVLibPINVOKE.Logger_EnterLog__SWIG_0(swigCPtr, message);
     if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
-  public void enterLog(LogLevel logLevel, string message) {
-    libFRCVLibPINVOKE.Logger_enterLog__SWIG_1(swigCPtr, (int)logLevel, message);
+  public void EnterLog(LogLevel logLevel, string message) {
+    libFRCVLibPINVOKE.Logger_EnterLog__SWIG_1(swigCPtr, (int)logLevel, message);
     if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
   }
 
-  public void enterLog(Log log) {
-    libFRCVLibPINVOKE.Logger_enterLog__SWIG_2(swigCPtr, Log.getCPtr(log));
+  public void EnterLog(Log p_Log) {
+    libFRCVLibPINVOKE.Logger_EnterLog__SWIG_2(swigCPtr, Log.getCPtr(p_Log));
   }
 
-  public void clearAllLogs() {
-    libFRCVLibPINVOKE.Logger_clearAllLogs(swigCPtr);
+  public void ClearAllLogs() {
+    libFRCVLibPINVOKE.Logger_ClearAllLogs(swigCPtr);
   }
 
-  public void flushLogs() {
-    libFRCVLibPINVOKE.Logger_flushLogs(swigCPtr);
+  public void FlushLogs() {
+    libFRCVLibPINVOKE.Logger_FlushLogs(swigCPtr);
   }
 
 }

@@ -46,7 +46,7 @@ namespace Server
             {
                 // Logic to disable the source
                 // This could involve setting its state to stopped and releasing any resources it holds.
-                ManagerWrapper.Instance.stopSourceById(source.Id); // Assuming Source has an isEnabled property
+                ManagerWrapper.Instance.StopSourceById(source.Id); // Assuming Source has an isEnabled property
             }
             // Logic to stop all sources
             // This could involve iterating through a list of sources and stopping each one.
@@ -57,7 +57,7 @@ namespace Server
             {
                 // Logic to enable the source
                 // This could involve setting its state to running and initializing any necessary resources.
-                ManagerWrapper.Instance.startSourceById(source.Id); // Assuming Source has an isEnabled property
+                ManagerWrapper.Instance.StartSourceById(source.Id); // Assuming Source has an isEnabled property
             }
             // Logic to start all sources
             // This could involve iterating through a list of sources and starting each one.
@@ -71,7 +71,7 @@ namespace Server
                 {
                     // Logic to disable the source
                     // This could involve setting its state to stopped and releasing any resources it holds.
-                    ManagerWrapper.Instance.stopSourceById(source.Id); // Assuming Source has an isEnabled property
+                    ManagerWrapper.Instance.StopSourceById(source.Id); // Assuming Source has an isEnabled property
                     return;
                 }
             }
@@ -86,7 +86,7 @@ namespace Server
                 {
                     // Logic to enable the source
                     // This could involve setting its state to running and initializing any necessary resources.
-                    if (!ManagerWrapper.Instance.startSourceById(source.Id)) throw new Exception("unable to start source"); // Assuming Source has an isEnabled property
+                    if (!ManagerWrapper.Instance.StartSourceById(source.Id)) throw new Exception("unable to start source"); // Assuming Source has an isEnabled property
                     return;
                 }
             }
@@ -111,9 +111,9 @@ namespace Server
             int sourceId = -1;
 
             if (id.HasValue)
-                sourceId = ManagerWrapper.Instance.createCameraSource(cameraHardwareInfo, id.Value);
+                sourceId = ManagerWrapper.Instance.CreateCameraSource(cameraHardwareInfo, id.Value);
             else
-                sourceId = ManagerWrapper.Instance.createCameraSource(cameraHardwareInfo);
+                sourceId = ManagerWrapper.Instance.CreateCameraSource(cameraHardwareInfo);
 
             sources.Add(new Source(sourceId, name, SourceType.Camera, cameraHardwareInfo: cameraHardwareInfo));
             DB.Instance.Save(); // Save changes to the database
@@ -125,9 +125,9 @@ namespace Server
             int sourceId = -1;
 
             if (id.HasValue)
-                sourceId = ManagerWrapper.Instance.createVideoFileSource(filePath, fps, id.Value);
+                sourceId = ManagerWrapper.Instance.CreateVideoFileSource(filePath, fps, id.Value);
             else
-                sourceId = ManagerWrapper.Instance.createVideoFileSource(filePath, fps);
+                sourceId = ManagerWrapper.Instance.CreateVideoFileSource(filePath, fps);
             
             sources.Add(new Source(sourceId, name, SourceType.VideoFile, filePath, fps));
             DB.Instance.Save(); // Save changes to the database
@@ -139,9 +139,9 @@ namespace Server
             int sourceId = -1;
             
             if (id.HasValue)
-                sourceId = ManagerWrapper.Instance.createImageFileSource(filePath, id.Value);
+                sourceId = ManagerWrapper.Instance.CreateImageFileSource(filePath, id.Value);
             else
-                sourceId = ManagerWrapper.Instance.createImageFileSource(filePath);
+                sourceId = ManagerWrapper.Instance.CreateImageFileSource(filePath);
             
             sources.Add(new Source(sourceId, name, SourceType.ImageFile, filePath));
             DB.Instance.Save(); // Save changes to the database
