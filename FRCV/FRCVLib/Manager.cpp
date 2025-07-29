@@ -19,8 +19,6 @@
 #include "CameraCalibrationSink.h"
 #include <opencv2/opencv.hpp>
 
-#include "LinuxSystemUsage.h"
-
 Manager::Manager(string logFile)
 {
     m_Logger = new Logger(logFile);
