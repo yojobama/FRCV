@@ -31,6 +31,7 @@ typedef struct {
 class PreProcessor;
 class Frame;
 class CameraCalibrationSink;
+class SystemMonitor;
 
 class Manager
 {
@@ -92,7 +93,7 @@ public:
 	int GetMemoryUsageBytes();
 	int GetCPUUsage();
 	int GetCpuTemperature();
-	int GetDiskUsage(const string& disk);
+	int GetDiskUsage();
 
 private:
 	bool SetSinkResult(int sinkId, string result);
@@ -111,5 +112,7 @@ private:
 	Logger* m_Logger; // a logger for the entire application
 
 	vector<std::shared_ptr<Frame>> m_CalibrationImages;
+
+	SystemMonitor* m_SystemMonitor; // system monitor for CPU, memory and disk usage
 };
 

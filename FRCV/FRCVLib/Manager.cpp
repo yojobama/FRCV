@@ -5,6 +5,7 @@
 #include "RecordSink.h"
 #include "CameraSource.h"
 #include "Frame.h"
+#include "SystemMonitor.h"
 
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
@@ -26,6 +27,8 @@ Manager::Manager(string logFile)
     m_FramePool = new FramePool(m_Logger);
     m_Logger->EnterLog("Manager constructed");
     m_PreProcessor = new PreProcessor(m_FramePool);
+	m_SystemMonitor = new SystemMonitor(1000); // 1 second interval
+	m_SystemMonitor->StartMonitoring();
 }
 
 Manager::Manager()
@@ -34,13 +37,28 @@ Manager::Manager()
     m_FramePool = new FramePool(m_Logger);
     m_Logger->EnterLog("Manager constructed");
     m_PreProcessor = new PreProcessor(m_FramePool);
+	m_SystemMonitor = new SystemMonitor(1000); // 1 second interval
+    m_SystemMonitor->StartMonitoring();
 }
 
 Manager::~Manager()
 {
+	m_SystemMonitor->StopMonitoring();
     m_Logger->EnterLog("Manager destructed");
     delete m_FramePool;
     delete m_Logger;
+	delete m_PreProcessor;
+    delete m_SystemMonitor;
+    // Clean up sources
+    for (auto& source : m_Sources) {
+        delete source.second;
+    }
+    m_Sources.clear();
+    // Clean up sinks
+    for (auto& sink : m_Sinks) {
+        delete sink.second;
+    }
+	m_Sinks.clear();
 }
 
 vector<int> Manager::GetAllSinks()
@@ -520,7 +538,7 @@ CameraCalibrationResult Manager::GetCameraCalibrationResults(int sinkId)
 int Manager::GetMemoryUsageBytes()
 {
 	// TODO: implement a function to get memory usage
-    return 0;
+    return m_SystemMonitor->GetRAMUsage();
 }
 
 /*
@@ -529,7 +547,7 @@ int Manager::GetMemoryUsageBytes()
 int Manager::GetCPUUsage()
 {
 	// TODO: implement a function to get CPU usage
-    return 0;
+    return m_SystemMonitor->GetCPUUsage();
 }
 
 /*
@@ -539,13 +557,13 @@ int Manager::GetCPUUsage()
 int Manager::GetCpuTemperature()
 {
 	// TODO: implement a function to get CPU temperature
-    return 0;
+    return m_SystemMonitor->GetCPUTemperature();
 }
 
 /*
    returns the disk usage in percents
 */
-int Manager::GetDiskUsage(const string& disk)
+int Manager::GetDiskUsage()
 {
-    return (100.0f * get_disk_usage(disk));
+    return m_SystemMonitor->GetDiskUsage();
 }

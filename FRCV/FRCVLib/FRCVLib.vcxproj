@@ -96,7 +96,6 @@
     <ClInclude Include="ISource.h" />
     <ClInclude Include="ImageFileSource.h" />
     <ClInclude Include="ISink.h" />
-    <ClInclude Include="LinuxSystemUsage.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Manager.h" />
     <ClInclude Include="object_detection_utils.h" />

@@ -52,11 +52,22 @@ struct MEMORY_STATS {
 class SystemMonitor
 {
 public:
-	SystemMonitor();
+	SystemMonitor(int timeout);
 	~SystemMonitor();
+
+	void StartMonitoring();
+	void StopMonitoring();
+
+	float GetCPUUsage();
+	float GetDiskUsage();
+	int GetRAMUsage();
+	int GetCPUTemperature();
 private:
+    int m_TimeoutMilliseconds;
+
 	// thread management
-    pthread_t monitorThread; 
+	bool m_ThreadWantedAlive;
+    pthread_t m_MonitorThread; 
 	static void* s_StartMonitorThread(void* arg);
 	void m_MonitorThreadLoop();
 
@@ -67,6 +78,7 @@ private:
 	float m_GetDiskUsage(const std::string& disk);
 	int m_FindThermalZoneIndex();
 	int m_GetThermalZoneTemperature(int index);
+	MEMORY_STATS m_ReadMemoryData();
     
 	// variables to store system data
     float m_cpuUsage;
@@ -75,8 +87,9 @@ private:
     int m_cpu_Temperature;
 
 	// mutex for thread safety
+	std::mutex m_CPUTemperatureMutex;
 	std::mutex m_CPUUsageMutex;
 	std::mutex m_DiskMutex;
-	std::mutex m_CPUTemperatureMutex;
+	std::mutex m_RAMUsageMutex;
 };
 
