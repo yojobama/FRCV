@@ -271,7 +271,7 @@ int Manager::CreateApriltagSink()
     m_Logger->EnterLog("CreateApriltagSink called");
     int id = GenerateUUID();
 
-    ApriltagSink* p_Sink = new ApriltagSink(m_Logger, m_PreProcessor);
+    ApriltagSink* p_Sink = new ApriltagSink(m_Logger, m_PreProcessor, m_FramePool);
 
     m_Sinks.emplace(id, p_Sink);
 
@@ -283,7 +283,7 @@ int Manager::CreateApriltagSink(int id)
 {
     m_Logger->EnterLog("CreateApriltagSink called");
 
-    ApriltagSink* p_Sink = new ApriltagSink(m_Logger, m_PreProcessor);
+    ApriltagSink* p_Sink = new ApriltagSink(m_Logger, m_PreProcessor, m_FramePool);
 
     m_Sinks.emplace(id, p_Sink);
 
@@ -564,4 +564,47 @@ int Manager::GetCpuTemperature()
 int Manager::GetDiskUsage()
 {
     return m_SystemMonitor->GetDiskUsage();
+}
+
+bool Manager::EnableSinkPreview(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    
+    if (sink == m_Sinks.end()) throw "There is not sink with that id";
+
+    if (sink->second->GetPreviewStatus()) throw "preview is already enabled for this sink";
+
+    sink->second->EnablePreview();
+
+    return true;
+}
+
+bool Manager::DisableSinkPreview(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    
+    if (sink == m_Sinks.end()) throw "There is not sink with that id";
+
+    if (!sink->second->GetPreviewStatus()) throw "preview is already dissabled for this sink";
+
+    sink->second->DissablePreview();
+
+    return true;
+}
+
+Image8U Manager::GetPreviewImage(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    
+    if (sink == m_Sinks.end()) throw "There is not sink with that id";
+    if (!sink->second->GetPreviewStatus()) throw "Preview is not activated in this sink";
+
+    shared_ptr<Frame> frame = sink->second->GetPreviewFrame();
+
+    return Image8U{
+        .width = frame.get()->cols,
+        .height = frame.get()->rows,
+        .stride = frame.get()->cols,
+        .buf = frame.get()->data,
+    };
 }

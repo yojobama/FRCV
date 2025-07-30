@@ -11,8 +11,8 @@ public:
 	~ApriltagDetection() = default;
 	std::string ToString();
 
-	const apriltag_family_t* m_pFamily;
-	const apriltag_detection_t* m_pDetection;
-	const apriltag_pose_t m_Pose;
+	apriltag_family_t* m_pFamily;
+	apriltag_detection_t* m_pDetection;
+	apriltag_pose_t m_Pose;
 };
 

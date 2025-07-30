@@ -21,6 +21,13 @@ typedef struct {
 	string path;
 } CameraHardwareInfo;
 
+typedef struct {
+	int width;
+	int height;
+	int stride;
+	uint8_t* buf;
+} Image8U;
+
 //enum Platform {
 //	ORANGE_PI,
 //	JETSON,
@@ -95,6 +102,9 @@ public:
 	int GetCpuTemperature();
 	int GetDiskUsage();
 
+	bool EnableSinkPreview(int sinkId);
+	bool DisableSinkPreview(int sinkId);
+	Image8U GetPreviewImage(int sinkId);
 private:
 	bool SetSinkResult(int sinkId, string result);
 
