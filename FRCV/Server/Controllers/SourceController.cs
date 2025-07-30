@@ -53,7 +53,7 @@ public class SourceController : WebApiController
     
     // upload a new video file (client to server)
     [Route(HttpVerbs.Post, "/source/createVideoFileSource")]
-    public Task CreateVideoFileSourceAsync([QueryField] int fps)
+    public Task<int> CreateVideoFileSourceAsync([QueryField] int fps)
     {
         // Logic to handle video file upload
         var parser = MultipartFormDataParser.Parse(HttpContext.OpenRequestStream());
