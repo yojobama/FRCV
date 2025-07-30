@@ -29,11 +29,38 @@ void ISink::ChangeThreadStatus(bool threadWantedAlive)
     }
 }
 
+void ISink::EnablePreview()
+{
+    m_PreviewEnabled = true;
+}
+
+void ISink::DissablePreview()
+{
+    m_PreviewEnabled = false;
+}
+
+bool ISink::GetPreviewStatus()
+{
+    return m_PreviewEnabled;
+}
+
+// TODO: implement
+std::shared_ptr<Frame> ISink::GetPreviewFrame()
+{
+    if (m_PreviewEnabled) {
+        return m_PreviewFrame;
+    }
+    else throw "Preview Not Enabled";
+}
+
 void ISink::SinkThreadProc()
 {
     while (!m_ShouldTerminate) {
         // do stuff
         ProcessFrame();
+        if (m_PreviewEnabled) {
+            CreatePreview();
+        }
     }
     m_ShouldTerminate = false;
 	pthread_exit(NULL);
