@@ -227,7 +227,7 @@ public class SinkController : WebApiController
             {
                 candidate = request.Candidate.Candidate,
                 sdpMid = request.Candidate.SdpMid,
-                sdpMLineIndex = request.Candidate.SdpMLineIndex
+                sdpMLineIndex = request.Candidate.SdpMLineIndex ?? 0
             };
 
             await WebRTCStreamingService.Instance.HandleIceCandidateAsync(request.SinkId, request.ConnectionId, candidate);

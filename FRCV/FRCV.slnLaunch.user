@@ -6,6 +6,11 @@
         "Path": "Server\\Server.csproj",
         "Action": "Start",
         "DebugTarget": "WSL"
+      },
+      {
+        "Path": "FRCVLib\\FRCVLib.vcxproj",
+        "Action": "Start",
+        "DebugTarget": "GDB Debugger"
       }
     ]
   },

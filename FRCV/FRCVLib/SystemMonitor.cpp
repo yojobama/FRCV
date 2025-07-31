@@ -153,7 +153,8 @@ int SystemMonitor::m_FindThermalZoneIndex()
 int SystemMonitor::m_GetThermalZoneTemperature(int index)
 {
     int result = -1;
-    std::ifstream thermal_file("/sys/class/thermal/thermal_zone" + std::to_string(index) + "/temp");
+    // TODO: fix
+    /*std::ifstream thermal_file("/sys/class/thermal/thermal_zone" + std::to_string(index) + "/temp");
 
     if (thermal_file.good())
     {
@@ -167,7 +168,7 @@ int SystemMonitor::m_GetThermalZoneTemperature(int index)
         throw std::invalid_argument(std::to_string(index) + " doesn't refer to a valid thermal zone.");
     }
 
-    thermal_file.close();
+    thermal_file.close();*/
 
     return result;
 }

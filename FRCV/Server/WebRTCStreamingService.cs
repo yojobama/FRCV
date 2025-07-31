@@ -39,7 +39,7 @@ public class WebRTCVideoStreamer : IDisposable
     {
         if (_connections.TryGetValue(connectionId, out var pc))
         {
-            await pc.setRemoteDescription(answer);
+            pc.setRemoteDescription(answer);
         }
     }
 
@@ -344,8 +344,9 @@ public class WebRTCVideoStreamer : IDisposable
     {
         try
         {
-            var videoSender = pc.getSenders().FirstOrDefault(s => s.track?.kind == "video");
-            if (videoSender != null && h264Frame.Length > 0)
+            var videoTrack = pc.VideoLocalTrack;
+            //var videoSender = pc.getSenders().FirstOrDefault(s => s.track?.kind == "video");
+            if (videoTrack != null && h264Frame.Length > 0)
             {
                 Console.WriteLine($"Sending H.264 frame of {h264Frame.Length} bytes");
                 // In production: fragment into RTP packets and send via RTCRtpSender

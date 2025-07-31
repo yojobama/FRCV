@@ -39,7 +39,7 @@ public class WebRTCVideoStreamer : IDisposable
     {
         if (_connections.TryGetValue(connectionId, out var pc))
         {
-            await pc.setRemoteDescription(answer);
+            pc.setRemoteDescription(answer);
         }
     }
 
@@ -348,8 +348,7 @@ public class WebRTCVideoStreamer : IDisposable
     {
         try
         {
-            var videoSender = pc.getSenders().FirstOrDefault(s => s.track?.kind == "video");
-            if (videoSender != null && h264Frame.Length > 0)
+            if (pc.connectionState == RTCPeerConnectionState.connected && h264Frame.Length > 0)
             {
                 // In a real implementation, you would:
                 // 1. Fragment the H.264 frame into RTP packets
