@@ -1,0 +1,26 @@
+{
+  "Sinks": [
+    {
+      "Type": 0,
+      "Id": 1062224321,
+      "Name": "hello",
+      "Source": null
+    },
+    {
+      "Type": 0,
+      "Id": 1216826105,
+      "Name": "hello",
+      "Source": null
+    }
+  ],
+  "Sources": [
+    {
+      "CameraHardwareInfo": null,
+      "Fps": null,
+      "FilePath": "images/apriltag.png",
+      "Type": 1,
+      "Id": 1138078737,
+      "Name": "apriltag"
+    }
+  ]
+}

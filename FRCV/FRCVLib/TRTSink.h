@@ -1,14 +1,10 @@
 #pragma once
-#include "ISink.h"
+#ifdef TRT
 
-enum ModelType {
-	YOLOV5,
-	YOLOV8,
-	YOLOV11,
-};
 
 class TRTSink
 {
 
 };
 
+#endif

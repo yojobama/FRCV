@@ -1042,6 +1042,112 @@ SWIGEXPORT void SWIGSTDCALL CSharp_delete_CameraHardwareInfo(void * jarg1) {
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_Image8U_width_set(void * jarg1, int jarg2) {
+  Image8U *arg1 = (Image8U *) 0 ;
+  int arg2 ;
+  
+  arg1 = (Image8U *)jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->width = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Image8U_width_get(void * jarg1) {
+  int jresult ;
+  Image8U *arg1 = (Image8U *) 0 ;
+  int result;
+  
+  arg1 = (Image8U *)jarg1; 
+  result = (int) ((arg1)->width);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_Image8U_height_set(void * jarg1, int jarg2) {
+  Image8U *arg1 = (Image8U *) 0 ;
+  int arg2 ;
+  
+  arg1 = (Image8U *)jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->height = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Image8U_height_get(void * jarg1) {
+  int jresult ;
+  Image8U *arg1 = (Image8U *) 0 ;
+  int result;
+  
+  arg1 = (Image8U *)jarg1; 
+  result = (int) ((arg1)->height);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_Image8U_stride_set(void * jarg1, int jarg2) {
+  Image8U *arg1 = (Image8U *) 0 ;
+  int arg2 ;
+  
+  arg1 = (Image8U *)jarg1; 
+  arg2 = (int)jarg2; 
+  if (arg1) (arg1)->stride = arg2;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Image8U_stride_get(void * jarg1) {
+  int jresult ;
+  Image8U *arg1 = (Image8U *) 0 ;
+  int result;
+  
+  arg1 = (Image8U *)jarg1; 
+  result = (int) ((arg1)->stride);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_Image8U_buf_set(void * jarg1, void * jarg2) {
+  Image8U *arg1 = (Image8U *) 0 ;
+  uint8_t *arg2 = (uint8_t *) 0 ;
+  
+  arg1 = (Image8U *)jarg1; 
+  arg2 = (uint8_t *)jarg2; 
+  if (arg1) (arg1)->buf = arg2;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_Image8U_buf_get(void * jarg1) {
+  void * jresult ;
+  Image8U *arg1 = (Image8U *) 0 ;
+  uint8_t *result = 0 ;
+  
+  arg1 = (Image8U *)jarg1; 
+  result = (uint8_t *) ((arg1)->buf);
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_Image8U() {
+  void * jresult ;
+  Image8U *result = 0 ;
+  
+  result = (Image8U *)new Image8U();
+  jresult = (void *)result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void SWIGSTDCALL CSharp_delete_Image8U(void * jarg1) {
+  Image8U *arg1 = (Image8U *) 0 ;
+  
+  arg1 = (Image8U *)jarg1; 
+  delete arg1;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_new_Manager__SWIG_0(const char * jarg1) {
   void * jresult ;
   std::string arg1 ;
@@ -1564,6 +1670,48 @@ SWIGEXPORT int SWIGSTDCALL CSharp_Manager_GetDiskUsage(void * jarg1) {
   arg1 = (Manager *)jarg1; 
   result = (int)(arg1)->GetDiskUsage();
   jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_Manager_EnableSinkPreview(void * jarg1, int jarg2) {
+  unsigned int jresult ;
+  Manager *arg1 = (Manager *) 0 ;
+  int arg2 ;
+  bool result;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (bool)(arg1)->EnableSinkPreview(arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_Manager_DisableSinkPreview(void * jarg1, int jarg2) {
+  unsigned int jresult ;
+  Manager *arg1 = (Manager *) 0 ;
+  int arg2 ;
+  bool result;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (bool)(arg1)->DisableSinkPreview(arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_Manager_GetPreviewImage(void * jarg1, int jarg2) {
+  void * jresult ;
+  Manager *arg1 = (Manager *) 0 ;
+  int arg2 ;
+  Image8U result;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (arg1)->GetPreviewImage(arg2);
+  jresult = new Image8U(result); 
   return jresult;
 }
 

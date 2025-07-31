@@ -238,9 +238,23 @@ public class Manager : global::System.IDisposable {
     return ret;
   }
 
-  public int GetDiskUsage(string disk) {
-    int ret = libFRCVLibPINVOKE.Manager_GetDiskUsage(swigCPtr, disk);
-    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
+  public int GetDiskUsage() {
+    int ret = libFRCVLibPINVOKE.Manager_GetDiskUsage(swigCPtr);
+    return ret;
+  }
+
+  public bool EnableSinkPreview(int sinkId) {
+    bool ret = libFRCVLibPINVOKE.Manager_EnableSinkPreview(swigCPtr, sinkId);
+    return ret;
+  }
+
+  public bool DisableSinkPreview(int sinkId) {
+    bool ret = libFRCVLibPINVOKE.Manager_DisableSinkPreview(swigCPtr, sinkId);
+    return ret;
+  }
+
+  public Image8U GetPreviewImage(int sinkId) {
+    Image8U ret = new Image8U(libFRCVLibPINVOKE.Manager_GetPreviewImage(swigCPtr, sinkId), true);
     return ret;
   }
 

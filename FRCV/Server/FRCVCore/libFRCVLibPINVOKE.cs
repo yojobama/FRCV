@@ -242,6 +242,36 @@ class libFRCVLibPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_delete_CameraHardwareInfo")]
   public static extern void delete_CameraHardwareInfo(global::System.Runtime.InteropServices.HandleRef jarg1);
 
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Image8U_width_set")]
+  public static extern void Image8U_width_set(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Image8U_width_get")]
+  public static extern int Image8U_width_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Image8U_height_set")]
+  public static extern void Image8U_height_set(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Image8U_height_get")]
+  public static extern int Image8U_height_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Image8U_stride_set")]
+  public static extern void Image8U_stride_set(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Image8U_stride_get")]
+  public static extern int Image8U_stride_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Image8U_buf_set")]
+  public static extern void Image8U_buf_set(global::System.Runtime.InteropServices.HandleRef jarg1, global::System.Runtime.InteropServices.HandleRef jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Image8U_buf_get")]
+  public static extern global::System.IntPtr Image8U_buf_get(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_new_Image8U")]
+  public static extern global::System.IntPtr new_Image8U();
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_delete_Image8U")]
+  public static extern void delete_Image8U(global::System.Runtime.InteropServices.HandleRef jarg1);
+
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_new_Manager__SWIG_0")]
   public static extern global::System.IntPtr new_Manager__SWIG_0(string jarg1);
 
@@ -357,7 +387,16 @@ class libFRCVLibPINVOKE {
   public static extern int Manager_GetCpuTemperature(global::System.Runtime.InteropServices.HandleRef jarg1);
 
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_GetDiskUsage")]
-  public static extern int Manager_GetDiskUsage(global::System.Runtime.InteropServices.HandleRef jarg1, string jarg2);
+  public static extern int Manager_GetDiskUsage(global::System.Runtime.InteropServices.HandleRef jarg1);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_EnableSinkPreview")]
+  public static extern bool Manager_EnableSinkPreview(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_DisableSinkPreview")]
+  public static extern bool Manager_DisableSinkPreview(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_GetPreviewImage")]
+  public static extern global::System.IntPtr Manager_GetPreviewImage(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_CameraCalibrationResult_fx_set")]
   public static extern void CameraCalibrationResult_fx_set(global::System.Runtime.InteropServices.HandleRef jarg1, double jarg2);
