@@ -1,5 +1,6 @@
 ﻿using EmbedIO;
 using EmbedIO.WebApi;
+using EmbedIO.Cors;
 using Server.Controllers;
 
 namespace Server
@@ -12,6 +13,12 @@ namespace Server
                     .WithUrlPrefix(url)
                     .WithMode(HttpListenerMode.EmbedIO))
                 .WithLocalSessionManager()
+                .WithCors(
+                    // Allow all origins during development
+                    origins: "*",
+                    headers: "*", 
+                    methods: "*"
+                )
                 .WithWebApi("/api", m =>
                 {
                     m.WithController<SourceController>();

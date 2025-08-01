@@ -21,29 +21,41 @@ public class SourceController : WebApiController
     [Route(HttpVerbs.Get, "/source/ids")]
     public Task<int[]> GetAllSourceIdsAsync()
     {
-        // Logic to retrieve all source IDs
-        return Task.FromResult(SourceManager.Instance.GetAllSourceIds());
+        // Logic to retrieve all source IDs from the C++ Manager (single source of truth)
+        return Task.FromResult(ManagerWrapper.Instance.GetAllSources().ToArray());
     }
 
     // get parsed source by id
     [Route(HttpVerbs.Get, "/source")]
     public Task<string> GetParsedSourceByIdAsync([QueryField] int sourceId)
     {
+        // First try to get from SourceManager (has rich metadata)
         Source source = SourceManager.Instance.GetSourceById(sourceId);
-        // Logic to retrieve a parsed source by its ID
-        return Task.FromResult(JsonSerializer.Serialize(source));
+        
+        // If not found in SourceManager but exists in C++ Manager, create a basic source object
+        if (source == null)
+        {
+            var allSourceIds = ManagerWrapper.Instance.GetAllSources().ToArray();
+            if (allSourceIds.Contains(sourceId))
+            {
+                // Create a basic source object with available information
+                source = new Source(sourceId, $"Source {sourceId}", SourceType.Camera);
+            }
+        }
+        
+        // Return the source object serialized, or null if not found anywhere
+        return Task.FromResult(source != null ? JsonSerializer.Serialize(source) : "null");
     }
 
     // change source name
     [Route(HttpVerbs.Put, "/source/changeName")]
     public Task ChangeSourceNameAsync([QueryField] int sourceId, [QueryField] string name)
     {
-        
         SourceManager.Instance.ChangeSourceName(sourceId, name);
         return Task.CompletedTask;
     }
 
-    // TODO: implement this function
+    // create camera source
     [Route(HttpVerbs.Post, "/source/createCameraSource")]
     public Task<int> CreateCameraSource(CameraHardwareInfo hardwareInfo)
     {
@@ -72,7 +84,6 @@ public class SourceController : WebApiController
                 fileStream.CopyTo(output);
                 return Task.FromResult(SourceManager.Instance.InitializeVideoFileSource(Path.Combine("videos", fileName), fps, Path.GetFileNameWithoutExtension(fileName)));
             }
-
         }
 
         return Task.FromResult(-1);

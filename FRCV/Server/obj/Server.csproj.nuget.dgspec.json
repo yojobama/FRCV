@@ -1,14 +1,14 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\Server\\Server.csproj": {}
+    "D:\\Projects\\FRCV\\FRCV\\Server\\Server.csproj": {}
   },
   "projects": {
-    "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj": {
+    "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj": {
       "restore": {
-        "projectUniqueName": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj",
+        "projectUniqueName": "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj",
         "projectName": "FRCVLib",
-        "projectPath": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj",
+        "projectPath": "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj",
         "UsingMicrosoftNETSdk": false,
         "frameworks": {
           "native": {
@@ -20,14 +20,14 @@
         "native": {}
       }
     },
-    "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\Server\\Server.csproj": {
+    "D:\\Projects\\FRCV\\FRCV\\Server\\Server.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\Server\\Server.csproj",
+        "projectUniqueName": "D:\\Projects\\FRCV\\FRCV\\Server\\Server.csproj",
         "projectName": "Server",
-        "projectPath": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\Server\\Server.csproj",
+        "projectPath": "D:\\Projects\\FRCV\\FRCV\\Server\\Server.csproj",
         "packagesPath": "C:\\Users\\yojob\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\Server\\obj\\",
+        "outputPath": "D:\\Projects\\FRCV\\FRCV\\Server\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -49,8 +49,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj": {
-                "projectPath": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj"
+              "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj": {
+                "projectPath": "D:\\Projects\\FRCV\\FRCV\\FRCVLib\\FRCVLib.vcxproj"
               }
             }
           }

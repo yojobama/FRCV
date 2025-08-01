@@ -453,9 +453,8 @@ string Manager::GetAllSinkResults()
     auto iterator = m_Sinks.begin();
 
     while (iterator != m_Sinks.end()) {
-        returnString += "\"" + std::to_string(iterator->first) + "\": \"";
+        returnString += "\"" + std::to_string(iterator->first) + "\": ";
         returnString += iterator->second->GetCurrentResults();
-        returnString += "\"";
 
         iterator++;
         if (iterator != m_Sinks.end()) {

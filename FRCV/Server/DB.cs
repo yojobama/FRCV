@@ -47,35 +47,41 @@ namespace Server
             if (File.Exists(jsonPath))
             {
                 string jsonData = File.ReadAllText(jsonPath);
-                var dbData = JsonSerializer.Deserialize<DBData>(jsonData);
+                try {
+                    var dbData = JsonSerializer.Deserialize<DBData>(jsonData);
 
-                if (dbData != null)
-                {
-                    sinks = dbData.Sinks ?? new List<Sink>();
-                    sources = dbData.Sources ?? new List<Source>();
-                }
-
-                foreach (var source in sources)
-                {
-                    switch(source.Type)
+                    if (dbData != null)
                     {
-                        case SourceType.ImageFile:
-                            SourceManager.Instance.initializeImageFileSource(source.FilePath, source.Name, source.Id);
-                            break;
-                        case SourceType.VideoFile:
-                            SourceManager.Instance.InitializeVideoFileSource(source.FilePath, source.Fps ?? 30, source.Name, source.Id);
-                            break;
-                        case SourceType.Camera:
-                            SourceManager.Instance.InitializeCameraSource(source.CameraHardwareInfo ,id: source.Id);
-                            break;
+                        sinks = dbData.Sinks ?? new List<Sink>();
+                        sources = dbData.Sources ?? new List<Source>();
                     }
-                }
-                foreach (var sink in sinks)
-                {
-                    SinkManager.Instance.AddSink(sink.Name, sink.Type.ToString());
-                }
 
-                logger.EnterLog("DB loaded successfully from " + jsonPath);
+                    foreach (var source in sources)
+                    {
+                        switch (source.Type)
+                        {
+                            case SourceType.ImageFile:
+                                SourceManager.Instance.initializeImageFileSource(source.FilePath, source.Name, source.Id);
+                                break;
+                            case SourceType.VideoFile:
+                                SourceManager.Instance.InitializeVideoFileSource(source.FilePath, source.Fps ?? 30, source.Name, source.Id);
+                                break;
+                            case SourceType.Camera:
+                                SourceManager.Instance.InitializeCameraSource(source.CameraHardwareInfo, id: source.Id);
+                                break;
+                        }
+                    }
+                    foreach (var sink in sinks)
+                    {
+                        SinkManager.Instance.AddSink(sink.Name, sink.Type.ToString());
+                    }
+
+                    logger.EnterLog("DB loaded successfully from " + jsonPath);
+                }
+                catch (Exception ex)
+                {
+                    logger.EnterLog("Error loading DB: " + ex.Message);
+                }
             }
             else
             {

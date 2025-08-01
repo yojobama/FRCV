@@ -11,21 +11,11 @@
         "Path": "FRCVLib\\FRCVLib.vcxproj",
         "Action": "Start",
         "DebugTarget": "GDB Debugger"
-      }
-    ]
-  },
-  {
-    "Name": "Unit Tests",
-    "Projects": [
-      {
-        "Path": "UnitTests\\UnitTests.vcxproj",
-        "Action": "Start",
-        "DebugTarget": "GDB Debugger"
       },
       {
-        "Path": "FRCVLib\\FRCVLib.vcxproj",
+        "Path": "reactproject1\\reactproject1.esproj",
         "Action": "Start",
-        "DebugTarget": "GDB Debugger"
+        "DebugTarget": "localhost (Edge)"
       }
     ]
   }

@@ -98,11 +98,11 @@ namespace Server
             {
                 switch (type)
                 {
-                    case "ApriltagSink":
+                    case "apritlag":
                         id = ManagerWrapper.Instance.CreateApriltagSink(id.Value);
                         sinks.Add(new Sink(id.Value, name, SinkType.ApriltagSink));
                         break;
-                    case "ObjectDetectionSink":
+                    case "objectdetectionsink":
                         id = ManagerWrapper.Instance.CreateObjectDetectionSink(id.Value);
                         sinks.Add(new Sink(id.Value, name, SinkType.ObjectDetectionSink));
                         break;
