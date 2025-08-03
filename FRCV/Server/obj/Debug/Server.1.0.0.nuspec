@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>Server</id>
+    <version>1.0.0</version>
+    <authors>Server</authors>
+    <description>Package Description</description>
+    <repository type="git" commit="d269daadaf65481088eda853edcd3cd871206823" />
+    <dependencies>
+      <group targetFramework="net8.0">
+        <dependency id="FRCVLib" version="1.0.0" exclude="Build,Analyzers" />
+        <dependency id="EmbedIO" version="3.5.2" exclude="Build,Analyzers" />
+        <dependency id="HttpMultipartParser" version="9.0.0" exclude="Build,Analyzers" />
+        <dependency id="System.Text.Json" version="9.0.6" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="D:\Projects\FRCV\FRCV\Server\bin\Debug\net8.0\Server.runtimeconfig.json" target="lib\net8.0\Server.runtimeconfig.json" />
+    <file src="D:\Projects\FRCV\FRCV\Server\bin\Debug\net8.0\Server.dll" target="lib\net8.0\Server.dll" />
+  </files>
+</package>

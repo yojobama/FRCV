@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FRCV Sink WebRTC Video Stream</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        input, button, select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            border: none;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .stop-btn {
+            background-color: #dc3545;
+        }
+        .stop-btn:hover {
+            background-color: #c82333;
+        }
+        .video-container {
+            text-align: center;
+            margin-top: 20px;
+        }
+        video {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background-color: #000;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>FRCV Sink WebRTC Video Stream</h1>
+        
+        <div class="controls">
+            <label for="serverUrl">Server URL:</label>
+            <input type="text" id="serverUrl" value="http://localhost:8175" placeholder="http://localhost:8175">
+            
+            <label for="sinkId">Sink ID:</label>
+            <input type="number" id="sinkId" value="1" placeholder="Enter sink ID">
+            
+            <button id="startBtn" onclick="startStream()">Start Stream</button>
+            <button id="stopBtn" class="stop-btn" onclick="stopStream()" disabled>Stop Stream</button>
+            <button onclick="checkStatus()">Check Status</button>
+        </div>
+
+        <div id="status" class="status info">Ready to start streaming</div>
+
+        <div class="video-container">
+            <video id="videoElement" controls autoplay muted>
+                Your browser does not support the video tag.
+            </video>
+        </div>
+
+        <div id="log" class="log">
+            <div>WebRTC Video Stream Log:</div>
+        </div>
+    </div>
+
+    <script>
+        let peerConnection = null;
+        let currentSinkId = null;
+        let connectionId = null;
+        let serverUrl = null;
+
+        function log(message) {
+            const logElement = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function setStatus(message, type = 'info') {
+            const statusElement = document.getElementById('status');
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+
+        function generateConnectionId() {
+            return 'conn_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        async function startStream() {
+            try {
+                serverUrl = document.getElementById('serverUrl').value;
+                currentSinkId = parseInt(document.getElementById('sinkId').value);
+                connectionId = generateConnectionId();
+
+                if (!currentSinkId) {
+                    setStatus('Please enter a valid sink ID', 'error');
+                    return;
+                }
+
+                setStatus('Starting WebRTC stream...', 'info');
+                log(`Starting stream for sink ${currentSinkId}`);
+
+                // Enable preview first
+                await enableSinkPreview(currentSinkId);
+
+                // Create peer connection
+                createPeerConnection();
+
+                // Start WebRTC stream
+                const response = await fetch(`${serverUrl}/api/sink/webrtc/start?sinkId=${currentSinkId}&connectionId=${connectionId}`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to start stream');
+                }
+
+                log('Received offer from server');
+                
+                // Set remote description (offer)
+                await peerConnection.setRemoteDescription(data.offer);
+                log('Set remote description');
+
+                // Create and send answer
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+                log('Created answer');
+
+                // Send answer to server
+                await sendAnswer(answer);
+
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                setStatus('WebRTC stream started', 'success');
+
+            } catch (error) {
+                log(`Error starting stream: ${error.message}`);
+                setStatus(`Error: ${error.message}`, 'error');
+                cleanup();
+            }
+        }
+
+        function createPeerConnection() {
+            const config = {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            };
+
+            peerConnection = new RTCPeerConnection(config);
+
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    log('Got ICE candidate');
+                    sendIceCandidate(event.candidate);
+                }
+            };
+
+            peerConnection.ontrack = (event) => {
+                log('Received remote track');
+                const videoElement = document.getElementById('videoElement');
+                if (event.streams && event.streams[0]) {
+                    videoElement.srcObject = event.streams[0];
+                }
+            };
+
+            peerConnection.onconnectionstatechange = () => {
+                log(`Connection state: ${peerConnection.connectionState}`);
+                setStatus(`Connection: ${peerConnection.connectionState}`, 
+                    peerConnection.connectionState === 'connected' ? 'success' : 'info');
+            };
+
+            peerConnection.oniceconnectionstatechange = () => {
+                log(`ICE connection state: ${peerConnection.iceConnectionState}`);
+            };
+
+            log('Created peer connection');
+        }
+
+        async function sendAnswer(answer) {
+            try {
+                const response = await fetch(`${serverUrl}/api/sink/webrtc/answer`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sinkId: currentSinkId,
+                        connectionId: connectionId,
+                        answer: {
+                            type: answer.type,
+                            sdp: answer.sdp
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to send answer');
+                }
+
+                log('Sent answer to server');
+            } catch (error) {
+                log(`Error sending answer: ${error.message}`);
+                throw error;
+            }
+        }
+
+        async function sendIceCandidate(candidate) {
+            try {
+                const response = await fetch(`${serverUrl}/api/sink/webrtc/ice`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        sinkId: currentSinkId,
+                        connectionId: connectionId,
+                        candidate: {
+                            candidate: candidate.candidate,
+                            sdpMid: candidate.sdpMid,
+                            sdpMLineIndex: candidate.sdpMLineIndex
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to send ICE candidate');
+                }
+
+                log('Sent ICE candidate to server');
+            } catch (error) {
+                log(`Error sending ICE candidate: ${error.message}`);
+            }
+        }
+
+        async function enableSinkPreview(sinkId) {
+            try {
+                const response = await fetch(`${serverUrl}/api/sink/preview/enable?sinkId=${sinkId}`, {
+                    method: 'PUT'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to enable preview');
+                }
+
+                log('Enabled sink preview');
+            } catch (error) {
+                log(`Warning: Could not enable preview: ${error.message}`);
+                // Don't throw - preview might already be enabled
+            }
+        }
+
+        async function stopStream() {
+            try {
+                setStatus('Stopping stream...', 'info');
+                log('Stopping stream');
+
+                if (currentSinkId) {
+                    const response = await fetch(`${serverUrl}/api/sink/webrtc/stop?sinkId=${currentSinkId}`, {
+                        method: 'POST'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            log('Stream stopped on server');
+                        }
+                    }
+                }
+
+                cleanup();
+                setStatus('Stream stopped', 'info');
+
+            } catch (error) {
+                log(`Error stopping stream: ${error.message}`);
+                cleanup();
+                setStatus(`Error stopping: ${error.message}`, 'error');
+            }
+        }
+
+        function cleanup() {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+                log('Closed peer connection');
+            }
+
+            const videoElement = document.getElementById('videoElement');
+            videoElement.srcObject = null;
+
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+
+            currentSinkId = null;
+            connectionId = null;
+        }
+
+        async function checkStatus() {
+            try {
+                const sinkId = parseInt(document.getElementById('sinkId').value);
+                const url = document.getElementById('serverUrl').value;
+
+                if (!sinkId) {
+                    setStatus('Please enter a valid sink ID', 'error');
+                    return;
+                }
+
+                const response = await fetch(`${url}/api/sink/webrtc/status?sinkId=${sinkId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    setStatus(`Sink ${sinkId} streaming: ${data.isStreaming}`, 'info');
+                    log(`Status check - Sink ${sinkId}: streaming=${data.isStreaming}`);
+                } else {
+                    throw new Error(data.error || 'Failed to get status');
+                }
+
+            } catch (error) {
+                log(`Error checking status: ${error.message}`);
+                setStatus(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Clean up on page unload
+        window.addEventListener('beforeunload', () => {
+            if (peerConnection) {
+                stopStream();
+            }
+        });
+
+        log('WebRTC client initialized');
+    </script>
+</body>
+</html>

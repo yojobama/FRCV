@@ -70,5 +70,5 @@ CameraCalibrationResult CameraCalibrationPipeline::getResults(vector<shared_ptr<
         cy = cameraMatrix.at<double>(1, 2);
     }
 
-    return CameraCalibrationResult(fx, fy, cx, cy);
+    return CameraCalibrationResult(fx, fy, cx, cy, frameSpec);
 }

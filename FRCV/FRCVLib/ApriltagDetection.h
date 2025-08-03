@@ -9,10 +9,10 @@ class ApriltagDetection
 public:
 	ApriltagDetection(apriltag_detection_t detection, apriltag_pose_t pose);
 	~ApriltagDetection() = default;
-	std::string toString();
-private:
-	apriltag_family_t* family;
-	apriltag_detection_t* detection;
-	apriltag_pose_t pose;
+	std::string ToString();
+
+	apriltag_family_t* m_pFamily;
+	apriltag_detection_t* m_pDetection;
+	apriltag_pose_t m_Pose;
 };
 

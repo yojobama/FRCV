@@ -6,24 +6,24 @@ ImageFileFrameSource::ImageFileFrameSource(std::string filePath, Logger* logger,
     cv::Mat img = cv::imread(filePath);
     if (!img.empty()) {
         FrameSpec spec(img.rows, img.cols, img.type());
-        frame = framePool->getFrame(spec); // Use FramePool to allocate the frame
-        img.copyTo(*frame);
+        frame = framePool->GetFrame(spec); // Use FramePool to allocate the frame
+        img.copyTo(*frame.get());
     } else {
-        frame = nullptr;
-        logger->enterLog(ERROR, "Failed to load image from file: " + filePath);
+        frame = nullptr;    
+        logger->EnterLog(LogLevel::Error, "Failed to load image from file: " + filePath);
     }
-    doNotLoadThread = true;
+    m_DoNotLoadThread = true;
 }
 
-std::shared_ptr<Frame> ImageFileFrameSource::getLatestFrame()
+std::shared_ptr<Frame> ImageFileFrameSource::GetLatestFrame()
 {
     if (!frame) {
-        logger->enterLog(ERROR, "No frame available in ImageFileFrameSource");
+        m_Logger->EnterLog(LogLevel::Error, "No frame available in ImageFileFrameSource");
     }
     return frame;
 }
 
-void ImageFileFrameSource::captureFrame()
+void ImageFileFrameSource::CaptureFrame()
 {
     // No operation needed as the image is already loaded
 }

@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Server": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": "Ubuntu-24.04"
+    }
+  }
+}

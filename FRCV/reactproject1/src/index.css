@@ -1,0 +1,358 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS variables for theme colors */
+:root {
+  /* Light theme colors */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-success: #059669;
+  --color-success-hover: #047857;
+  --color-error: #dc2626;
+  --color-error-hover: #b91c1c;
+  --color-warning: #d97706;
+  --color-warning-hover: #b45309;
+  
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --border-color: #e5e7eb;
+  --border-color-hover: #d1d5db;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* Dark theme */
+.dark {
+  --bg-primary: #111827;
+  --bg-secondary: #1f2937;
+  --bg-tertiary: #374151;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --border-color: #374151;
+  --border-color-hover: #4b5563;
+  
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+}
+
+@layer base {
+  html {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200;
+  }
+
+  /* Enhanced scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 dark:bg-gray-600 rounded;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500 dark:bg-gray-500;
+  }
+
+  /* Focus styles for accessibility */
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    @apply outline-2 outline-blue-500 outline-offset-2;
+  }
+}
+
+@layer components {
+  /* Custom button components */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600;
+  }
+
+  .btn-success {
+    @apply bg-green-600 text-white hover:bg-green-700 active:bg-green-800;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 active:bg-red-800;
+  }
+
+  .btn-warning {
+    @apply bg-yellow-600 text-white hover:bg-yellow-700 active:bg-yellow-800;
+  }
+
+  /* Card components */
+  .card {
+    @apply bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-md transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply hover:scale-105 hover:shadow-lg;
+  }
+
+  /* Status indicators */
+  .status-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .status-online {
+    @apply status-badge bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+  }
+
+  .status-offline {
+    @apply status-badge bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300;
+  }
+
+  .status-error {
+    @apply status-badge bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
+  }
+
+  .status-warning {
+    @apply status-badge bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
+  }
+
+  .status-streaming {
+    @apply status-badge bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 animate-pulse;
+  }
+
+  /* Video container styles */
+  .video-container {
+    @apply relative bg-black rounded-lg overflow-hidden;
+    aspect-ratio: 16/9;
+  }
+
+  .video-container video {
+    @apply w-full h-full object-cover;
+  }
+
+  .video-overlay {
+    @apply absolute inset-0 flex items-center justify-center bg-black/70 text-white text-sm;
+  }
+
+  /* Modal styles */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4;
+  }
+
+  .modal-content {
+    @apply bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto animate-in slide-in-from-bottom-4;
+  }
+
+  /* Toast notifications */
+  .toast {
+    @apply fixed top-4 right-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-lg z-50 max-w-sm animate-in slide-in-from-right-2;
+  }
+
+  .toast-success {
+    @apply border-l-4 border-l-green-500;
+  }
+
+  .toast-error {
+    @apply border-l-4 border-l-red-500;
+  }
+
+  .toast-warning {
+    @apply border-l-4 border-l-yellow-500;
+  }
+
+  .toast-info {
+    @apply border-l-4 border-l-blue-500;
+  }
+
+  /* Form elements */
+  .form-input {
+    @apply w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2;
+  }
+
+  /* Navigation tabs */
+  .nav-tab {
+    @apply flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors;
+  }
+
+  .nav-tab-active {
+    @apply nav-tab border-blue-500 text-blue-600 dark:text-blue-400;
+  }
+
+  .nav-tab-inactive {
+    @apply nav-tab border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300;
+  }
+
+  /* Loading skeleton */
+  .skeleton {
+    @apply bg-gray-200 dark:bg-gray-700 animate-pulse rounded;
+  }
+
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 dark:bg-black/10 dark:border-white/10;
+  }
+}
+
+@layer utilities {
+  /* Custom animations */
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 3s infinite;
+  }
+
+  .animate-bounce-subtle {
+    animation: bounceSubtle 1s infinite;
+  }
+
+  .animate-in {
+    @apply opacity-0 transition-opacity duration-300;
+  }
+
+  .slide-in-from-bottom-4 {
+    @apply translate-y-4;
+    animation: slideInFromBottom 0.3s ease-out forwards;
+  }
+
+  .slide-in-from-right-2 {
+    @apply translate-x-2;
+    animation: slideInFromRight 0.3s ease-out forwards;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom aspect ratios */
+  .aspect-video {
+    aspect-ratio: 16/9;
+  }
+
+  .aspect-square {
+    aspect-ratio: 1/1;
+  }
+
+  /* Print utilities */
+  @media print {
+    .print-hidden {
+      display: none !important;
+    }
+  }
+}
+
+/* Custom keyframe animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes bounceSubtle {
+  0%, 20%, 53%, 80%, 100% {
+    animation-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
+    transform: translate3d(0, -4px, 0);
+  }
+  70% {
+    animation-timing-function: cubic-bezier(0.755, 0.050, 0.855, 0.060);
+    transform: translate3d(0, -2px, 0);
+  }
+  90% {
+    transform: translate3d(0, -1px, 0);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(0.5rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Support for older browsers */
+@supports not (aspect-ratio: 16/9) {
+  .aspect-video {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+  }
+
+  .aspect-video > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+}

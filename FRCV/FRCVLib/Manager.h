@@ -7,20 +7,26 @@
 #include <pthread.h>
 #include <memory>
 
+#include "ISink.h"
+#include "CameraCalibrationResult.h"
+#include "Logger.h"
+#include "FramePool.h"
+#include "ISource.h"
+
 using namespace std;
-class ISink;
-class CameraCalibrationResult;
-class Log;
-class Logger;
-class FramePool;
-class ISource;
-class Frame;
 
 // TODO: temporary, rewrite this part
 typedef struct {
 	string name;
 	string path;
 } CameraHardwareInfo;
+
+typedef struct {
+	int width;
+	int height;
+	int stride;
+	uint8_t* buf;
+} Image8U;
 
 //enum Platform {
 //	ORANGE_PI,
@@ -29,75 +35,94 @@ typedef struct {
 //	CPU_DEV_X86_64
 //};
 
-class CalibrationSink;
 class PreProcessor;
+class Frame;
+class CameraCalibrationSink;
+class SystemMonitor;
 
 class Manager
 {
 public:
+	Manager(string logFile);
 	Manager();
 	~Manager();
 
 	// utill functions
-	vector<int> getAllSinks();
+	vector<int> GetAllSinks();
+	vector<int> GetAllSources();
 
-	vector<CameraHardwareInfo> enumerateAvailableCameras();
-	bool bindSourceToSink(int sourceId, int sinkId);
-	bool unbindSourceFromSink(int sinkId);
+	vector<CameraHardwareInfo> EnumerateAvailableCameras();
+	bool BindSourceToSink(int sourceId, int sinkId);
+	bool UnbindSourceFromSink(int sinkId);
 
 	// functions to create frame sources
-	int createCameraSource(CameraHardwareInfo info);
-	int createVideoFileSource(string path, int fps);
-	int createImageFileSource(string path);
+	int CreateCameraSource(CameraHardwareInfo info);
+	int CreateCameraSource(CameraHardwareInfo info, int id);
+	int CreateVideoFileSource(string path, int fps);
+	int CreateVideoFileSource(string path, int fps, int id);
+	int CreateImageFileSource(string path);
+	int CreateImageFileSource(string path, int id);
 
 	// functions to create detection sinks
-	int createApriltagSink();
-	int createObjectDetectionSink();
+	int CreateApriltagSink();
+	int CreateApriltagSink(int id);
+	int CreateObjectDetectionSink();
+	int CreateObjectDetectionSink(int id);
 
-	int createRecordingSink(int sourceId);
+	int CreateRecordingSink(int sourceId);
 
-	void startAllSources();
-	void stopAllSources();
-	bool stopSourceById(int sourceId);
-	bool startSourceById(int sourceId);
+	void StartAllSources();
+	void StopAllSources();
+	bool StopSourceById(int sourceId);
+	bool StartSourceById(int sourceId);
 
-	void startAllSinks();
-	void stopAllSinks();
-	bool startSinkById(int sinkId);
-	bool stopSinkById(int sinkId);
+	void StartAllSinks();
+	void StopAllSinks();
+	bool StartSinkById(int sinkId);
+	bool StopSinkById(int sinkId);
 
-	string getAllSinkStatus();
+	string GetAllSinkStatus();
 
-	string getSinkStatusById(int sinkId);
+	string GetSinkStatusById(int sinkId);
 
-	string getSinkResult(int sinkId);
-	string getAllSinkResults();
+	string GetSinkResult(int sinkId);
+	string GetAllSinkResults();
 
-	//vector<string> getRecording(int recorderId); // TODO: implement a recording mechanisem
+	//vector<string> GetRecording(int recorderId); // TODO: implement a recording mechanisem
 
-	vector<Log*> *getAllLogs();
+	int CreateCameraCalibrationSink(int height, int width);
+	void BindSourceToCalibrationSink(int sourceId);
+	void CameraCalibrationSinkGrabFrame(int sinkId);
 
-	void clearAllLogs();
+	CameraCalibrationResult GetCameraCalibrationResults(int sinkId);
+	
+	// functions to check system status
+	int GetMemoryUsageBytes();
+	int GetCPUUsage();
+	int GetCpuTemperature();
+	int GetDiskUsage();
 
-	bool takeCalibrationImage(int cameraId);
-	CameraCalibrationResult conculdeCalibration();
+	bool EnableSinkPreview(int sinkId);
+	bool DisableSinkPreview(int sinkId);
+	Image8U GetPreviewImage(int sinkId);
 private:
-	bool setSinkResult(int sinkId, string result);
+	bool SetSinkResult(int sinkId, string result);
 
-	int generateUUID();
+	int GenerateUUID();
 
 	// maps for storing results, sources and sinks
-	map<int, ISource*> sources;
-	map<int, ISink*> sinks;
+	map<int, ISource*> m_Sources;
+	map<int, ISink*> m_Sinks;
+	map<int, CameraCalibrationSink*> m_CameraCalibrationSinks; // camera calibration sinks
 
-	FramePool *framePool;
+	FramePool* m_FramePool;
 
-	PreProcessor* preProcessor;
+	PreProcessor* m_PreProcessor;
 
-	Logger* logger; // a logger for the entire application
+	Logger* m_Logger; // a logger for the entire application
 
-	vector<std::shared_ptr<Frame>> calibrationImages;
+	vector<std::shared_ptr<Frame>> m_CalibrationImages;
 
-	CalibrationSink* calibrationSink;
+	SystemMonitor* m_SystemMonitor; // system monitor for CPU, memory and disk usage
 };
 

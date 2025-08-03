@@ -1,20 +1,21 @@
 [
   {
-    "Name": "New Profile",
+    "Name": "Server",
     "Projects": [
       {
-        "Path": "ConsoleApp1\\ConsoleApp1.csproj",
-        "Action": "Start"
-      }
-    ]
-  },
-  {
-    "Name": "New Profile (1)",
-    "Projects": [
+        "Path": "Server\\Server.csproj",
+        "Action": "Start",
+        "DebugTarget": "WSL"
+      },
       {
-        "Path": "UnitTests\\UnitTests.vcxproj",
-        "Action": "StartWithoutDebugging",
+        "Path": "FRCVLib\\FRCVLib.vcxproj",
+        "Action": "Start",
         "DebugTarget": "GDB Debugger"
+      },
+      {
+        "Path": "reactproject1\\reactproject1.esproj",
+        "Action": "Start",
+        "DebugTarget": "localhost (Edge)"
       }
     ]
   }

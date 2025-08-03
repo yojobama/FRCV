@@ -1,0 +1,13 @@
+#version 450
+layout(local_size_x=64) in;
+
+layout(binding=0, r32ui) readonly uniform uimage2D imgLabel;
+layout(binding=1, std430) writeonly buffer Quads {
+    float coords[];
+};
+
+void main() {
+    // For demo: just write an empty list
+    uint idx = gl_GlobalInvocationID.x;
+    // coords[ idx*8 + k ] = 0.0;
+}

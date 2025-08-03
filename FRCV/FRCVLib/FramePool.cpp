@@ -2,57 +2,57 @@
 #include "Frame.h"
 
 // initializing the frame pool
-FramePool::FramePool(Logger* logger) : logger(logger) {
-    if (logger) logger->enterLog("FramePool constructed");
+FramePool::FramePool(Logger* p_Logger) : m_Logger(p_Logger) {
+    if (m_Logger) m_Logger->EnterLog("FramePool constructed");
 }
 
 FramePool::~FramePool() {
-    if (logger) logger->enterLog("FramePool destructed");
+    if (m_Logger) m_Logger->EnterLog("FramePool destructed");
 }
 
-int FramePool::getCachedFrameCount() {
-    if (logger) logger->enterLog("FramePool::getCachedFrameCount called");
-    std::lock_guard<std::mutex> guard(lock);
-    return frameVector.size();
+int FramePool::GetCachedFrameCount() {
+    if (m_Logger) m_Logger->EnterLog("FramePool::GetCachedFrameCount called");
+    std::lock_guard<std::mutex> guard(m_Lock);
+    return m_FrameVector.size();
 }
 
-std::shared_ptr<Frame> FramePool::getFrame(FrameSpec frameSpec) {
-    if (logger) logger->enterLog("FramePool::getFrame called");
+std::shared_ptr<Frame> FramePool::GetFrame(FrameSpec frameSpec) {
+    if (m_Logger) m_Logger->EnterLog("FramePool::GetFrame called");
     {
-        std::lock_guard<std::mutex> guard(lock);
-        for (auto it = frameVector.begin(); it != frameVector.end(); ++it) {
-            if ((*it)->isIdentical(frameSpec)) {
-                logger->enterLog(INFO, "retrieving an existing cached frame from the pool");
-                std::shared_ptr<Frame> frame = *it;
-                frameVector.erase(it); // Remove the frame from the pool
-                return frame;
+        std::lock_guard<std::mutex> guard(m_Lock);
+        for (auto it = m_FrameVector.begin(); it != m_FrameVector.end(); ++it) {
+            if ((*it)->IsIdentical(frameSpec)) {
+                m_Logger->EnterLog(LogLevel::Info, "retrieving an existing cached frame from the pool");
+                std::shared_ptr<Frame> p_Frame = *it;
+                m_FrameVector.erase(it); // Remove the frame from the pool
+                return p_Frame;
             }
         }
     }
-    return allocateFrame(frameSpec);
+    return AllocateFrame(frameSpec);
 }
 
 // allocation new frames upon request
-std::shared_ptr<Frame> FramePool::allocateFrame(FrameSpec frameSpec) {
-    if (logger) logger->enterLog("FramePool::allocateFrame called");
-    logger->enterLog(INFO, "allocating a new frame");
-    std::shared_ptr<Frame> frame = std::make_shared<Frame>(frameSpec);
+std::shared_ptr<Frame> FramePool::AllocateFrame(FrameSpec frameSpec) {
+    if (m_Logger) m_Logger->EnterLog("FramePool::AllocateFrame called");
+    m_Logger->EnterLog(LogLevel::Info, "allocating a new frame");
+    std::shared_ptr<Frame> p_Frame = std::make_shared<Frame>(frameSpec);
     {
-        std::lock_guard<std::mutex> guard(lock);
-        frameVector.push_back(frame);
+        std::lock_guard<std::mutex> guard(m_Lock);
+        m_FrameVector.push_back(p_Frame);
     }
-    return frame;
+    return p_Frame;
 }
 
-void FramePool::returnFrame(std::shared_ptr<Frame> frame) {
-    if (logger) logger->enterLog("FramePool::returnFrame called");
-    logger->enterLog(INFO, "adding an existing frame to the pool");
+void FramePool::ReturnFrame(std::shared_ptr<Frame> p_Frame) {
+    if (m_Logger) m_Logger->EnterLog("FramePool::ReturnFrame called");
+    m_Logger->EnterLog(LogLevel::Info, "adding an existing frame to the pool");
     {
-        std::lock_guard<std::mutex> guard(lock);
-        if (std::find(frameVector.begin(), frameVector.end(), frame) == frameVector.end()) {
-            frameVector.push_back(frame);
+        std::lock_guard<std::mutex> guard(m_Lock);
+        if (std::find(m_FrameVector.begin(), m_FrameVector.end(), p_Frame) == m_FrameVector.end()) {
+            m_FrameVector.push_back(p_Frame);
         } else {
-            logger->enterLog(INFO, "Frame is already in the pool, skipping");
+            m_Logger->EnterLog(LogLevel::Info, "Frame is already in the pool, skipping");
         }
     }
 }
