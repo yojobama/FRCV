@@ -31,19 +31,6 @@ public class SourceController : WebApiController
     {
         // First try to get from SourceManager (has rich metadata)
         Source source = SourceManager.Instance.GetSourceById(sourceId);
-        
-        // If not found in SourceManager but exists in C++ Manager, create a basic source object
-        if (source == null)
-        {
-            var allSourceIds = ManagerWrapper.Instance.GetAllSources().ToArray();
-            if (allSourceIds.Contains(sourceId))
-            {
-                // Create a basic source object with available information
-                source = new Source(sourceId, $"Source {sourceId}", SourceType.Camera);
-            }
-        }
-        
-        // Return the source object serialized, or null if not found anywhere
         return Task.FromResult(source != null ? JsonSerializer.Serialize(source) : "null");
     }
 
@@ -56,8 +43,9 @@ public class SourceController : WebApiController
     }
 
     // create camera source
+    // TODO: fix me, CameraHardwareInfo is null
     [Route(HttpVerbs.Post, "/source/createCameraSource")]
-    public Task<int> CreateCameraSource(CameraHardwareInfo hardwareInfo)
+    public Task<int> CreateCameraSource([JsonData] CameraHardwareInfo hardwareInfo)
     {
         int sourceId = SourceManager.Instance.InitializeCameraSource(hardwareInfo);
         return Task.FromResult(sourceId);
@@ -120,7 +108,7 @@ public class SourceController : WebApiController
     {
         // Logic to retrieve all camera hardware infos
         return Task.FromResult(ManagerWrapper.Instance.EnumerateAvailableCameras().ToArray());
-    }
+    }   
     
     // delete source
     [Route(HttpVerbs.Delete, "/source/delete")]

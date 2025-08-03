@@ -12,17 +12,12 @@ namespace Server
             var server = new WebServer(o => o
                     .WithUrlPrefix(url)
                     .WithMode(HttpListenerMode.EmbedIO))
-                .WithLocalSessionManager()
-                .WithCors(
-                    // Allow all origins during development
-                    origins: "*",
-                    headers: "*", 
-                    methods: "*"
-                )
+                .WithCors("*", "*", "*")
                 .WithWebApi("/api", m =>
                 {
                     m.WithController<SourceController>();
                     m.WithController<SinkController>();
+                    m.WithController<DeviceController>();
                 });
 
             // Optional: Listen for state changes
