@@ -147,5 +147,24 @@ namespace Server
             DB.Instance.Save(); // Save changes to the database
             return sourceId;
         }
+
+        // NEW: delete a source and unbind it from any sinks referencing it
+        public void DeleteSource(int sourceId)
+        {
+            // Remove source from list
+            sources.RemoveAll(s => s.Id == sourceId);
+
+            // Unbind from any sinks that referenced it
+            foreach (var sinkId in SinkManager.Instance.getAllSinkIds())
+            {
+                var sink = SinkManager.Instance.GetSinkById(sinkId);
+                if (sink != null && sink.Source != null && sink.Source.Id == sourceId)
+                {
+                    sink.Source = null;
+                }
+            }
+
+            DB.Instance.Save();
+        }
     }
 }

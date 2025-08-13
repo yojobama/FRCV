@@ -118,7 +118,7 @@ public class SourceController : WebApiController
     [Route(HttpVerbs.Delete, "/source/delete")]
     public Task DeleteSourceAsync([QueryField] int sourceId)
     {
-        // Logic to delete a source by its ID
+        SourceManager.Instance.DeleteSource(sourceId);
         return Task.CompletedTask;
     }
 }

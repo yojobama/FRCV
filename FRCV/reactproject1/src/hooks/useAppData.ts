@@ -176,6 +176,72 @@ export const useAppData = () => {
     }
   };
 
+  // NEW: rename source
+  const handleRenameSource = async (id: number, name: string) => {
+    try {
+      await api.changeSourceName(id, name);
+      showToast('Source renamed', 'success');
+      loadData();
+    } catch (e) {
+      showToast('Failed to rename source', 'error');
+    }
+  };
+
+  // NEW: delete source
+  const handleDeleteSource = async (id: number) => {
+    try {
+      await api.deleteSource(id);
+      showToast('Source deleted', 'info');
+      loadData();
+    } catch {
+      showToast('Failed to delete source', 'error');
+    }
+  };
+
+  // NEW: rename sink
+  const handleRenameSink = async (id: number, name: string) => {
+    try {
+      await api.changeSinkName(id, name);
+      showToast('Sink renamed', 'success');
+      loadData();
+    } catch {
+      showToast('Failed to rename sink', 'error');
+    }
+  };
+
+  // NEW: delete sink
+  const handleDeleteSink = async (id: number) => {
+    try {
+      await api.deleteSink(id);
+      showToast('Sink deleted', 'info');
+      loadData();
+    } catch {
+      showToast('Failed to delete sink', 'error');
+    }
+  };
+
+  // NEW: bind sink to source
+  const handleBindSink = async (sinkId: number, sourceId: number) => {
+    try {
+      await api.bindSinkToSource(sinkId, sourceId);
+      showToast('Sink bound to source', 'success');
+      loadData();
+    } catch {
+      showToast('Failed to bind sink', 'error');
+    }
+  };
+
+  // NEW: unbind sink from source
+  const handleUnbindSink = async (sinkId: number, sourceId: number) => {
+    try {
+      await api.unbindSinkFromSource(sinkId, sourceId);
+      showToast('Sink unbound from source', 'info');
+      loadData();
+    } catch {
+      showToast('Failed to unbind sink', 'error');
+    }
+  };
+
   return {
     sources,
     sinks,
@@ -191,6 +257,12 @@ export const useAppData = () => {
     showToast,
     handleAddSource,
     handleAddSink,
+    handleRenameSource,
+    handleDeleteSource,
+    handleRenameSink,
+    handleDeleteSink,
+    handleBindSink,
+    handleUnbindSink,
     setStreamingSinks,
     setError,
     setToast

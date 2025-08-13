@@ -55,6 +55,16 @@ export class ApiService {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
+  async changeSinkName(id: number, name: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/sink/changeName?sinkId=${id}&name=${encodeURIComponent(name)}`, { method: 'PUT' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  async changeSourceName(id: number, name: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/source/changeName?sourceId=${id}&name=${encodeURIComponent(name)}`, { method: 'PUT' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
   // Source creation methods
   async createCameraSource(hardwareInfo: CameraHardwareInfo): Promise<number> {
     const response = await fetch(`${this.baseUrl}/source/createCameraSource`, {
@@ -97,6 +107,11 @@ export class ApiService {
 
   async bindSinkToSource(sinkId: number, sourceId: number): Promise<void> {
     const response = await fetch(`${this.baseUrl}/sink/bind?sinkId=${sinkId}&sourceId=${sourceId}`, { method: 'PUT' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  async unbindSinkFromSource(sinkId: number, sourceId: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/sink/unbind?sinkId=${sinkId}&sourceId=${sourceId}`, { method: 'PUT' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
