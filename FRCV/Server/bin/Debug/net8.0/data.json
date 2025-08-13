@@ -1,5 +1,12 @@
 {
-  "Sinks": [],
+  "Sinks": [
+    {
+      "Type": 0,
+      "Id": 1345939204,
+      "Name": "TestApriltagSink",
+      "Source": null
+    }
+  ],
   "Sources": [
     {
       "CameraHardwareInfo": null,
@@ -24,17 +31,6 @@
       "Type": 1,
       "Id": 459272857,
       "Name": "apriltag"
-    },
-    {
-      "CameraHardwareInfo": {
-        "name": "IntegratedWebcamHD_Integrate",
-        "path": "/dev/video0"
-      },
-      "Fps": null,
-      "FilePath": null,
-      "Type": 0,
-      "Id": 158921127,
-      "Name": "default"
     }
   ]
 }

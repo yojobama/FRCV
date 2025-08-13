@@ -35,8 +35,8 @@ export const useAppData = () => {
             const source = await api.getSource(id);
             return {
               id,
-              name: source?.name || `Source ${id}`,
-              type: source?.type || 'Unknown',
+              name: source?.Name || `Source ${id}`,
+              type: source?.Type || 'Unknown',
               status: 'active' as const,
               lastUpdate: new Date()
             };

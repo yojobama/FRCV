@@ -113,7 +113,7 @@ namespace Server
             {
                 switch (type)
                 {
-                    case "ApriltagSink":
+                    case "apriltag":
                         id = ManagerWrapper.Instance.CreateApriltagSink();
                         sinks.Add(new Sink(id.Value, name, SinkType.ApriltagSink));
                         break;

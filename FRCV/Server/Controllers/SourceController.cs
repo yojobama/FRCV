@@ -27,11 +27,15 @@ public class SourceController : WebApiController
 
     // get parsed source by id
     [Route(HttpVerbs.Get, "/source")]
-    public Task<string> GetParsedSourceByIdAsync([QueryField] int sourceId)
+    public Task<Source?> GetParsedSourceByIdAsync([QueryField] int sourceId)
     {
-        // First try to get from SourceManager (has rich metadata)
-        Source source = SourceManager.Instance.GetSourceById(sourceId);
-        return Task.FromResult(source != null ? JsonSerializer.Serialize(source) : "null");
+        // Return the object directly so EmbedIO serializes it as JSON (avoid double-serializing to string)
+        var source = SourceManager.Instance.GetSourceById(sourceId);
+        if (source == null)
+        {
+            HttpContext.Response.StatusCode = 404;
+        }
+        return Task.FromResult(source);
     }
 
     // change source name
