@@ -1,9 +1,9 @@
 #include "RecordSink.h"
 #include <opencv2/videoio.hpp>
 #include "Frame.h"
+#include "ISink.h"
 
-
-RecordSink::RecordSink(Logger* logger, string dstPath)/* : ISink(logger)*/
+RecordSink::RecordSink(Logger* logger, string dstPath) : ISink(logger)
 {
 	this->dstPath = dstPath;
 }
@@ -14,12 +14,17 @@ RecordSink::~RecordSink()
 	delete videoWriter;
 }
 
-void RecordSink::writeFrame()
-{
-	//videoWriter->write(*source->getFrame());
-}
-
 string RecordSink::getVideoPath()
 {
 	return dstPath;
+}
+
+void RecordSink::ProcessFrame()
+{
+	videoWriter->write(*m_Source->GetLatestFrame());
+}
+
+void RecordSink::CreatePreview()
+{
+	m_PreviewFrame = m_Source->GetLatestFrame();
 }

@@ -57,6 +57,8 @@ void ISink::SinkThreadProc()
 {
     while (!m_ShouldTerminate) {
         // do stuff
+        if (m_LastFrameCount) while (m_Source->GetCurrentFrameCount() == m_LastFrameCount);
+        m_LastFrameCount = m_Source->GetCurrentFrameCount();
         ProcessFrame();
         if (m_PreviewEnabled) {
             CreatePreview();

@@ -40,7 +40,7 @@ private:
     mutex m_Lock;
     pthread_t m_Thread;
     bool m_ShouldTerminate;
-
+    uint64_t m_LastFrameCount;
     bool m_PreviewEnabled;
 };
 
