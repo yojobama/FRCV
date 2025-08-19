@@ -1,6 +1,7 @@
 #pragma once
 #include "Logger.h"
 #include <string>
+#include "ISink.h"
 
 class Frame;
 

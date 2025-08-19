@@ -1,7 +1,6 @@
 #include "RecordSink.h"
 #include <opencv2/videoio.hpp>
 #include "Frame.h"
-#include "ISink.h"
 
 RecordSink::RecordSink(Logger* logger, string dstPath) : ISink(logger)
 {
