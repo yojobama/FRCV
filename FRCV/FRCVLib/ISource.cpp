@@ -70,6 +70,11 @@ void ISource::ChangeThreadStatus(bool threadWantedAlive)
 	}
 }
 
+uint64_t ISource::GetCurrentFrameCount()
+{
+	return m_FrameCount;
+}
+
 void* ISource::SourceThreadStart(void* p_Reference)
 {
 	((ISource*)p_Reference)->SourceThreadProc();

@@ -23,6 +23,8 @@ void VideoFileFrameSource::CaptureFrame()
         m_Capture->grab();
         std::this_thread::sleep_for(std::chrono::milliseconds(1000 / m_Fps));
         if (m_Capture->read(*frame.get())) {
+            m_FrameCount++;
+            frame.get()->SetFrameNumber(m_FrameCount);
             m_Frames.push(frame);
         } else {
             m_Logger->EnterLog(LogLevel::Error, "Failed to read frame from video file");

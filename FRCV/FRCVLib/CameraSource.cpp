@@ -45,6 +45,8 @@ void CameraFrameSource::CaptureFrame()
         m_Logger->EnterLog(LogLevel::Info, "camera is open, grabbing frame and returning it");
         std::shared_ptr<Frame> frame = m_FramePool->GetFrame(m_FrameSpec);
         capture->read(*frame);
+        m_FrameCount++;
+        frame.get()->SetFrameNumber(m_FrameCount);
         m_Frames.push(frame);
     }
     m_Logger->EnterLog(LogLevel::Error, "camera is closed, returning a null pointer");

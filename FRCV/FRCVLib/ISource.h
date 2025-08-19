@@ -16,7 +16,9 @@ public:
 	virtual std::shared_ptr<Frame> GetLatestFrame();
 	virtual std::shared_ptr<Frame> GetLatestFrame(bool forceNewFrame);
 	void ChangeThreadStatus(bool threadWantedAlive);
+	uint64_t GetCurrentFrameCount();
 protected:
+	uint64_t m_FrameCount = 0;
 	virtual void CaptureFrame() = 0;
 	FramePool* m_FramePool;
 	Logger* m_Logger;

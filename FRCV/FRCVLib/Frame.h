@@ -14,6 +14,10 @@ public:
 
 	bool IsIdentical(FrameSpec frameSpec);
 	FrameSpec GetSpec();
+
+	uint64_t GetFrameNumber();
+	void SetFrameNumber(uint64_t frameNumber);
 private:
 	FrameSpec m_Spec;
+	uint64_t m_FrameNumber;
 };

@@ -17,3 +17,13 @@ FrameSpec Frame::GetSpec()
 {
     return FrameSpec(cols, rows, type());
 }
+
+uint64_t Frame::GetFrameNumber()
+{
+    return m_FrameNumber;
+}
+
+void Frame::SetFrameNumber(uint64_t frameNumber)
+{
+    m_FrameNumber = frameNumber;
+}
