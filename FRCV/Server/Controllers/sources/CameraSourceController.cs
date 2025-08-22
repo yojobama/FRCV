@@ -21,23 +21,30 @@ namespace Server.Controllers.sources
 
         // POST: Create a camera source from a specified camera;
         [Route(EmbedIO.HttpVerbs.Post, "/create")]
-        public Task Create([QueryData] CameraHardwareInfo hardwareInfo)
+        public Task Create([JsonData] CameraHardwareInfo hardwareInfo)
         {
-            // TODO: Implement;
-            return Task.CompletedTask;
+            int sourceId = SourceManager.Instance.InitializeCameraSource(hardwareInfo);
+            return Task.FromResult(sourceId);
         }
 
         // GET: All connected cameras;
         [Route(HttpVerbs.Get, "/getRegistered")]
-        public Task<Sink> GetAllConnected()
+        public Task<Source[]> GetRegistered()
         {
-            // TODO: Implement;
-            return null;
+            List<Source> sources = new List<Source>();
+
+            foreach (var item in SourceManager.Instance.GetAllSourceIds())
+            {
+                Source source = SourceManager.Instance.GetSourceById(item);
+                if (source.Type == SourceType.Camera)
+                    sources.Add(source);
+            }
+            return Task.FromResult(sources.ToArray());
         }
 
         // GET: All available camers that have not yet been turns into a source;
         [Route(HttpVerbs.Get, "/getNotRegistered")]
-        public Task<CameraHardwareInfo> GetNotRegistered()
+        public Task<CameraHardwareInfo[]> GetNotRegistered()
         {
             // TODO: Implement;
             return null;

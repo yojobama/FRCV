@@ -14,15 +14,19 @@ namespace Server.Controllers.sources
         [Route(EmbedIO.HttpVerbs.Get, "/getAll")]
         public Task<Source[]> GetAllSources()
         {
-            // TODO: Implement;
-            return null;
+            List<Source> sources = new List<Source>();
+            
+            foreach (var item in SourceManager.Instance.GetAllSourceIds())
+                sources.Add(SourceManager.Instance.GetSourceById(item));
+            
+            return Task.FromResult(sources.ToArray());
         }
 
         // PATCH: Rename am ImageFile source;
         [Route(EmbedIO.HttpVerbs.Patch, "/rename")]
         public Task Rename([QueryField] int SinkID, [QueryField] string newName)
         {
-            // TODO: Implement;
+            SourceManager.Instance.ChangeSourceName(SinkID, newName);
             return Task.CompletedTask;
         }
 
@@ -30,6 +34,7 @@ namespace Server.Controllers.sources
         [Route(EmbedIO.HttpVerbs.Delete, "/delete")]
         public Task Delete([QueryField] int SourceID)
         {
+            SourceManager.Instance.DeleteSource(SourceID);
             return Task.CompletedTask;
         }
     }

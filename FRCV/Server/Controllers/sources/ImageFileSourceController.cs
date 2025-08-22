@@ -12,10 +12,17 @@ namespace Server.Controllers.sources
     {
         // GET: All ImageFile sources;
         [Route(EmbedIO.HttpVerbs.Get, "/get")]
-        public Task<Source> GetAll()
+        public Task<Source[]> GetAll()
         {
-            // TODO: Implement;
-            return null;
+            List<Source> sources = new List<Source>();
+
+            foreach (var item in SourceManager.Instance.GetAllSourceIds())
+            {
+                Source source = SourceManager.Instance.GetSourceById(item);
+                if (source.Type == SourceType.ImageFile)
+                    sources.Add(source);
+            }
+            return Task.FromResult(sources.ToArray());
         }
 
         // POST: Create ImageFile Sources from provided files;
