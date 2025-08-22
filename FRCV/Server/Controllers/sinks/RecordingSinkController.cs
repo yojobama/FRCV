@@ -9,7 +9,8 @@ namespace Server.Controllers.sinks
 {
     internal class RecordingSinkController : WebApiController
     {
-        public RecordingSinkController() { }
+        // POST: Create a recording sink;
 
+        // DELETE: a video of the field;
     }
 }

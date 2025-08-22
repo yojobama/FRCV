@@ -8,5 +8,6 @@ namespace Server.Controllers.sinks
 {
     internal class ObjectDetectionSinkController
     {
+        // POST: create an object detection sink
     }
 }
