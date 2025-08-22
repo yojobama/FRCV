@@ -10,6 +10,8 @@ namespace Server
     {
         ApriltagSink,
         ObjectDetectionSink,
+        RecordingSink,
+        CameraCalibrationSink,
     }
 
     public class Sink
