@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EmbedIO.WebApi;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +7,8 @@ using System.Threading.Tasks;
 
 namespace Server.Controllers.sinks
 {
-    internal class CameraCalibrationSinkController
+    internal class CameraCalibrationSinkController : WebApiController
     {
+        // TODO
     }
 }

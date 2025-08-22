@@ -11,6 +11,12 @@ namespace Server.Controllers.sinks
     {
         // POST: Create a recording sink;
 
-        // DELETE: a video of the field;
+        // DELETE: remove a certain video;
+
+        // ---------------------------------------
+        // add a way to get the video;
+        // also wanted is a way to transfer the video to be a source without manually downloading it;
+        // plus a way to record a preview from a certain sink;
+        // ---------------------------------------
     }
 }

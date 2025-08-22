@@ -1,4 +1,5 @@
-﻿using EmbedIO.Routing;
+﻿using EmbedIO;
+using EmbedIO.Routing;
 using EmbedIO.WebApi;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,12 @@ namespace Server.Controllers.sinks
     internal class ApriltagSinkController : WebApiController
     {
         // POST: Create an Apriltag sink
+        [Route(HttpVerbs.Post, "/create")]
+        public Task Create()
+        {
+            // TODO: Implement;
+            return Task.CompletedTask;
+        }
 
         // --?-- GET: Acceletation type (cpu, vulkan);
 
