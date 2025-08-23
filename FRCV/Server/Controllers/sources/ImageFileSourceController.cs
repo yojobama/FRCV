@@ -1,5 +1,7 @@
-﻿using EmbedIO.Routing;
+﻿using EmbedIO;
+using EmbedIO.Routing;
 using EmbedIO.WebApi;
+using HttpMultipartParser;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,10 +29,29 @@ namespace Server.Controllers.sources
 
         // POST: Create ImageFile Sources from provided files;
         [Route(EmbedIO.HttpVerbs.Post, "/create")]
-        public Task Create()
+        public Task<int[]> Create()
         {
-            // TODO: Implement;
-            return Task.CompletedTask;
+            // Logic to handle video file upload
+            var parser = MultipartFormDataParser.Parse(HttpContext.OpenRequestStream());
+            List<int> created = new List<int>();
+
+            foreach (var file in parser.Files)
+            {
+                if (file != null)
+                {
+                    string fileName = file.FileName;
+                    Stream fileStream = file.Data;
+
+                    Directory.CreateDirectory("videos");
+
+                    using (var output = File.Create(Path.Combine("videos", fileName)))
+                    {
+                        fileStream.CopyTo(output);
+                        created.Add(SourceManager.Instance.InitializeVideoFileSource(Path.Combine("videos", fileName), 30, Path.GetFileNameWithoutExtension(fileName)));
+                    }
+                }
+            }
+            return Task.FromResult(created.ToArray());
         }
         
         
@@ -38,6 +59,5 @@ namespace Server.Controllers.sources
         // add all sorts of things like exposure and stuff that may matter to some people
         // (look at photonvision for examples, they more or less mastered this craft)
         // ---------------------------------------
-
     }
 }

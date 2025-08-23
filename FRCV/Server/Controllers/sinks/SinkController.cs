@@ -15,7 +15,8 @@ namespace Server.Controllers.sinks
         [Route(HttpVerbs.Patch, "/bind")]
         public Task Bind([QueryField] int SinkID, [QueryField] int SourceID)
         {
-            // TODO: Implement;
+            SinkManager.Instance.BindSourceToSink(SinkID, SourceID);
+            DB.Instance.Save(); // Save changes to the database
             return Task.CompletedTask;
         }
 
@@ -24,7 +25,8 @@ namespace Server.Controllers.sinks
         [Route(HttpVerbs.Patch, "/unbind")]
         public Task Unbind([QueryField] int SinkID, [QueryField] int? SourceID = null)
         {
-            // TODO: Implement;
+            SinkManager.Instance.UnbindSourceFromSink(SinkID, SourceID);
+            DB.Instance.Save(); // Save changes to the database
             return Task.CompletedTask;
         }
 
@@ -32,7 +34,15 @@ namespace Server.Controllers.sinks
         [Route(HttpVerbs.Delete, "/delete")]
         public Task Delete([QueryField] int SinkID)
         {
-            // TODO: Implement;
+            try
+            {
+                SinkManager.Instance.DeleteSink(SinkID);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                return Task.FromException(ex);
+            }
             return Task.CompletedTask;
         }
     }

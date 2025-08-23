@@ -13,10 +13,11 @@ namespace Server.Controllers.sinks
     {
         // POST: Create an Apriltag sink
         [Route(HttpVerbs.Post, "/create")]
-        public Task Create()
+        public Task<int> Create([QueryField] string name, [QueryField] string type)
         {
-            // TODO: Implement;
-            return Task.CompletedTask;
+            int SinkID = SinkManager.Instance.AddSink(name, type);
+            DB.Instance.Save();
+            return Task.FromResult(SinkID);
         }
 
         // --?-- GET: Acceletation type (cpu, vulkan);
