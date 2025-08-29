@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Server.Controllers.sinks
 {
-    internal class SinkController
+    internal class SinkController : WebApiController
     {
         // PATCH: Bind a sink to a source;
         [Route(HttpVerbs.Patch, "/bind")]

@@ -2,6 +2,8 @@
 using EmbedIO.WebApi;
 using EmbedIO.Cors;
 using Server.Controllers;
+using Server.Controllers.sources;
+using Server.Controllers.sinks;
 
 namespace Server
 {
@@ -15,8 +17,17 @@ namespace Server
                 .WithCors("*", "*", "*")
                 .WithWebApi("/api", m =>
                 {
-                    m.WithController<SourceController>();
+                    // sinks
+                    // TODO: Implement the other sinks and add them here
                     m.WithController<SinkController>();
+                    m.WithController<ApriltagSinkController>();
+                    // sources
+                    m.WithController<SourceController>();
+                    m.WithController<ImageFileSourceController>();
+                    m.WithController<VideoFileSourceController>();
+                    m.WithController<CameraSourceController>();
+                    // others
+                    m.WithController<UDPController>();
                     m.WithController<DeviceController>();
                 });
 

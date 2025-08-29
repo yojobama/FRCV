@@ -15,7 +15,22 @@ namespace Server.Controllers.sources
         [Route(EmbedIO.HttpVerbs.Post, "/createAll")]
         public Task CreateAll()
         {
-            // TODO: Implement;
+            CameraHardwareInfo[] cameraHardwareInfoArray = ManagerWrapper.Instance.EnumerateAvailableCameras().ToArray();
+
+            foreach (var item in SourceManager.Instance.GetAllSourceIds())
+            {
+                Source source = SourceManager.Instance.GetSourceById(item);
+                if (source.Type == SourceType.Camera)
+                {
+                    cameraHardwareInfoArray = cameraHardwareInfoArray.Where(hardwareInfo => hardwareInfo.path != source.CameraHardwareInfo.path).ToArray();
+                }
+            }
+
+            cameraHardwareInfoArray.ToList().ForEach(hardwareInfo => 
+            {
+                int sourceId = SourceManager.Instance.InitializeCameraSource(hardwareInfo);
+            });
+
             return Task.CompletedTask;
         }
 
@@ -46,8 +61,18 @@ namespace Server.Controllers.sources
         [Route(HttpVerbs.Get, "/getNotRegistered")]
         public Task<CameraHardwareInfo[]> GetNotRegistered()
         {
-            // TODO: Implement;
-            return null;
+            CameraHardwareInfo[] cameraHardwareInfoArray = ManagerWrapper.Instance.EnumerateAvailableCameras().ToArray();
+            
+            foreach (var item in SourceManager.Instance.GetAllSourceIds())
+            {
+                Source source = SourceManager.Instance.GetSourceById(item);
+                if (source.Type == SourceType.Camera)
+                {
+                    cameraHardwareInfoArray = cameraHardwareInfoArray.Where(hardwareInfo => hardwareInfo.path != source.CameraHardwareInfo.path).ToArray();
+                }
+            }
+
+            return Task.FromResult(cameraHardwareInfoArray);
         }
 
         // ---------------------------------------
