@@ -236,7 +236,7 @@ namespace Server
             }
         }
 
-        public void UnbindSourceFromSink(int sinkId, int sourceId)
+        public void UnbindSourceFromSink(int sinkId, int? sourceId = null)
         {
             foreach (var sink in sinks)
             {

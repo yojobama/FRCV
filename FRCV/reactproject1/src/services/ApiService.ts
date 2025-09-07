@@ -3,71 +3,39 @@ import type { CameraHardwareInfo } from '../types';
 export class ApiService {
   private baseUrl = 'http://localhost:8175/api';
 
-  async getSources(): Promise<number[]> {
-    const response = await fetch(`${this.baseUrl}/source/ids`);
+  // Source Controller routes
+  async getSources(): Promise<any[]> {
+    const response = await fetch(`${this.baseUrl}/getAll`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }
 
-  async getSinks(): Promise<number[]> {
-    const response = await fetch(`${this.baseUrl}/sink/ids`);
+  async deleteSource(id: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/delete?SourceID=${id}`, { method: 'DELETE' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
   }
 
-  async getSink(id: number): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/sink/getSinkById?sinkId=${id}`);
+  async renameSource(id: number, name: string): Promise<void> {
+    // Note: The route parameter name in SourceController appears to be SinkID (might be a copy-paste error)
+    const response = await fetch(`${this.baseUrl}/rename?SinkID=${id}&newName=${encodeURIComponent(name)}`, { method: 'PATCH' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
   }
 
-  async getSource(id: number): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/source?sourceId=${id}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const text = await response.text();
-    return text ? JSON.parse(text) : null;
-  }
-
+  // Camera Source Controller routes (/api/cameraSource/*)
   async getCameraHardware(): Promise<CameraHardwareInfo[]> {
-    const response = await fetch(`${this.baseUrl}/source/camera/hardwareInfos`);
+    const response = await fetch(`${this.baseUrl}/cameraSource/getNotRegistered`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }
 
-  async enableSink(id: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/sink/enable?sinkId=${id}`, { method: 'PUT' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  }
-
-  async disableSink(id: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/sink/disable?sinkId=${id}`, { method: 'PUT' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  }
-
-  async addSink(name: string, type: string): Promise<number> {
-    const response = await fetch(`${this.baseUrl}/sink/add?name=${encodeURIComponent(name)}&type=${encodeURIComponent(type)}`, { method: 'POST' });
+  async getRegisteredCameraSources(): Promise<any[]> {
+    const response = await fetch(`${this.baseUrl}/cameraSource/getRegistered`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }
 
-  async deleteSink(id: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/sink/delete?sinkId=${id}`, { method: 'DELETE' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  }
-
-  async changeSinkName(id: number, name: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/sink/changeName?sinkId=${id}&name=${encodeURIComponent(name)}`, { method: 'PUT' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  }
-
-  async changeSourceName(id: number, name: string): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/source/changeName?sourceId=${id}&name=${encodeURIComponent(name)}`, { method: 'PUT' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  }
-
-  // Source creation methods
   async createCameraSource(hardwareInfo: CameraHardwareInfo): Promise<number> {
-    const response = await fetch(`${this.baseUrl}/source/createCameraSource`, {
+    const response = await fetch(`${this.baseUrl}/cameraSource/create`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(hardwareInfo)
@@ -76,11 +44,25 @@ export class ApiService {
     return response.json();
   }
 
-  async createVideoFileSource(file: File, fps: number = 30): Promise<number> {
+  async createAllCameraSources(): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/cameraSource/createAll`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  // Video File Source Controller routes (/api/videoFileSource/*)
+  async getAllVideoFileSources(): Promise<any[]> {
+    const response = await fetch(`${this.baseUrl}/videoFileSource/getAll`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async createVideoFileSource(files: FileList, fps: number = 30): Promise<number[]> {
     const formData = new FormData();
-    formData.append('file', file);
+    Array.from(files).forEach(file => {
+      formData.append('files', file);
+    });
     
-    const response = await fetch(`${this.baseUrl}/source/createVideoFileSource?fps=${fps}`, {
+    const response = await fetch(`${this.baseUrl}/videoFileSource/create`, {
       method: 'POST',
       body: formData
     });
@@ -88,11 +70,25 @@ export class ApiService {
     return response.json();
   }
 
-  async createImageFileSource(file: File): Promise<number> {
+  async changeVideoFileFPS(fps: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/videoFileSource/changeFPS?fps=${fps}`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  // Image File Source Controller routes (/api/imageFileSource/*)
+  async getAllImageFileSources(): Promise<any[]> {
+    const response = await fetch(`${this.baseUrl}/imageFileSource/get`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async createImageFileSource(files: FileList): Promise<number[]> {
     const formData = new FormData();
-    formData.append('file', file);
+    Array.from(files).forEach(file => {
+      formData.append('files', file);
+    });
     
-    const response = await fetch(`${this.baseUrl}/source/createImageFileSource`, {
+    const response = await fetch(`${this.baseUrl}/imageFileSource/create`, {
       method: 'POST',
       body: formData
     });
@@ -100,49 +96,252 @@ export class ApiService {
     return response.json();
   }
 
-  async deleteSource(id: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/source/delete?sourceId=${id}`, { method: 'DELETE' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  }
-
+  // Sink Controller routes
   async bindSinkToSource(sinkId: number, sourceId: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/sink/bind?sinkId=${sinkId}&sourceId=${sourceId}`, { method: 'PUT' });
+    const response = await fetch(`${this.baseUrl}/bind?SinkID=${sinkId}&SourceID=${sourceId}`, { method: 'PATCH' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
-  async unbindSinkFromSource(sinkId: number, sourceId: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/sink/unbind?sinkId=${sinkId}&sourceId=${sourceId}`, { method: 'PUT' });
+  async unbindSinkFromSource(sinkId: number, sourceId?: number): Promise<void> {
+    const url = sourceId 
+      ? `${this.baseUrl}/unbind?SinkID=${sinkId}&SourceID=${sourceId}`
+      : `${this.baseUrl}/unbind?SinkID=${sinkId}`;
+    const response = await fetch(url, { method: 'PATCH' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
-  async startWebRTCStream(sinkId: number): Promise<any> {
-    const connectionId = `conn_${Math.random().toString(36).substr(2, 9)}`;
-    const response = await fetch(`${this.baseUrl}/sink/webrtc/start?sinkId=${sinkId}&connectionId=${connectionId}`, { method: 'POST' });
+  async deleteSink(id: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/delete?SinkID=${id}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  // AprilTag Sink Controller routes
+  async createApriltagSink(name: string, type: string): Promise<number> {
+    const response = await fetch(`${this.baseUrl}/create?name=${encodeURIComponent(name)}&type=${encodeURIComponent(type)}`, { method: 'POST' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
+  }
+
+  // Device Controller routes
+  async getDeviceCPUUsage(): Promise<number> {
+    const response = await fetch(`${this.baseUrl}/device/cpuUsage`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async getDeviceRAMUsage(): Promise<number> {
+    const response = await fetch(`${this.baseUrl}/device/ramUsage`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async getDeviceDiskUsage(): Promise<number> {
+    const response = await fetch(`${this.baseUrl}/device/diskUsage`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // UDP Controller routes
+  async startUDPTransmission(): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/udp/start`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  async stopUDPTransmission(): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/udp/stop`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  // Enhanced utility methods for better data aggregation
+  async getAllSources(): Promise<any[]> {
+    try {
+      // Get sources from all specific endpoints
+      const [mainSources, cameras, videos, images] = await Promise.allSettled([
+        this.getSources(),
+        this.getRegisteredCameraSources(),
+        this.getAllVideoFileSources(),
+        this.getAllImageFileSources()
+      ]);
+      
+      let allSources: any[] = [];
+      
+      // Add main sources if available
+      if (mainSources.status === 'fulfilled') {
+        allSources = [...allSources, ...mainSources.value];
+      }
+      
+      // Add camera sources
+      if (cameras.status === 'fulfilled') {
+        allSources = [...allSources, ...cameras.value];
+      }
+      
+      // Add video file sources
+      if (videos.status === 'fulfilled') {
+        allSources = [...allSources, ...videos.value];
+      }
+      
+      // Add image file sources
+      if (images.status === 'fulfilled') {
+        allSources = [...allSources, ...images.value];
+      }
+      
+      // Remove duplicates based on ID
+      const uniqueSources = allSources.filter((source, index, self) => 
+        index === self.findIndex(s => (s.Id || s.id) === (source.Id || source.id))
+      );
+      
+      return uniqueSources;
+    } catch (error) {
+      console.error('Failed to load sources:', error);
+      return [];
+    }
+  }
+
+  async getAllSinks(): Promise<any[]> {
+    // Since there's no general getSinks endpoint, return empty array
+    // Individual sinks would need to be tracked by their creation responses
+    return [];
+  }
+
+  // Improved file upload methods with better handling
+  async uploadVideoFiles(files: FileList, fps: number = 30): Promise<{
+    success: boolean;
+    sourceIds: number[];
+    message: string;
+  }> {
+    try {
+      const sourceIds = await this.createVideoFileSource(files, fps);
+      return {
+        success: true,
+        sourceIds,
+        message: `Successfully uploaded ${files.length} video file(s) with IDs: ${sourceIds.join(', ')}`
+      };
+    } catch (error) {
+      return {
+        success: false,
+        sourceIds: [],
+        message: `Failed to upload video files: ${error}`
+      };
+    }
+  }
+
+  async uploadImageFiles(files: FileList): Promise<{
+    success: boolean;
+    sourceIds: number[];
+    message: string;
+  }> {
+    try {
+      const sourceIds = await this.createImageFileSource(files);
+      return {
+        success: true,
+        sourceIds,
+        message: `Successfully uploaded ${files.length} image file(s) with IDs: ${sourceIds.join(', ')}`
+      };
+    } catch (error) {
+      return {
+        success: false,
+        sourceIds: [],
+        message: `Failed to upload image files: ${error}`
+      };
+    }
+  }
+
+  // Enhanced file validation
+  validateVideoFile(file: File): { valid: boolean; message: string } {
+    const validVideoTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/mkv', 'video/webm'];
+    const maxSize = 500 * 1024 * 1024; // 500MB
+    
+    if (!validVideoTypes.includes(file.type)) {
+      return {
+        valid: false,
+        message: `Invalid video format. Supported formats: ${validVideoTypes.join(', ')}`
+      };
+    }
+    
+    if (file.size > maxSize) {
+      return {
+        valid: false,
+        message: `File too large. Maximum size: ${maxSize / 1024 / 1024}MB`
+      };
+    }
+    
+    return { valid: true, message: 'Valid video file' };
+  }
+
+  validateImageFile(file: File): { valid: boolean; message: string } {
+    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/bmp', 'image/gif', 'image/webp'];
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    
+    if (!validImageTypes.includes(file.type)) {
+      return {
+        valid: false,
+        message: `Invalid image format. Supported formats: ${validImageTypes.join(', ')}`
+      };
+    }
+    
+    if (file.size > maxSize) {
+      return {
+        valid: false,
+        message: `File too large. Maximum size: ${maxSize / 1024 / 1024}MB`
+      };
+    }
+    
+    return { valid: true, message: 'Valid image file' };
+  }
+
+  // Legacy compatibility methods
+  async getSource(id: number): Promise<any> {
+    const sources = await this.getAllSources();
+    return sources.find(s => (s.Id || s.id) === id) || null;
+  }
+
+  async getSinks(): Promise<any[]> {
+    return this.getAllSinks();
+  }
+
+  async getSink(id: number): Promise<any> {
+    const sinks = await this.getAllSinks();
+    return sinks.find(s => (s.Id || s.id) === id) || null;
+  }
+
+  async addSink(name: string, type: string): Promise<number> {
+    return this.createApriltagSink(name, type);
+  }
+
+  async changeSourceName(id: number, name: string): Promise<void> {
+    return this.renameSource(id, name);
+  }
+
+  async changeSinkName(id: number, name: string): Promise<void> {
+    throw new Error('Sink name changing not implemented in current API');
+  }
+
+  async enableSink(id: number): Promise<void> {
+    throw new Error('Sink enable/disable not implemented in current API');
+  }
+
+  async disableSink(id: number): Promise<void> {
+    throw new Error('Sink enable/disable not implemented in current API');
+  }
+
+  // WebRTC methods - not implemented in current API
+  async startWebRTCStream(sinkId: number): Promise<any> {
+    throw new Error('WebRTC streaming not implemented in current API');
   }
 
   async stopWebRTCStream(sinkId: number): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/sink/webrtc/stop?sinkId=${sinkId}`, { method: 'POST' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+    throw new Error('WebRTC streaming not implemented in current API');
   }
 
   async getWebRTCStatus(sinkId: number): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/sink/webrtc/status?sinkId=${sinkId}`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+    throw new Error('WebRTC status not implemented in current API');
   }
 
   async enablePreview(sinkId: number): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/sink/preview/enable?sinkId=${sinkId}`, { method: 'PUT' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+    throw new Error('Preview functionality not implemented in current API');
   }
 
   async disablePreview(sinkId: number): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/sink/preview/disable?sinkId=${sinkId}`, { method: 'PUT' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+    throw new Error('Preview functionality not implemented in current API');
   }
 }

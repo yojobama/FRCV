@@ -16,10 +16,10 @@ AVFrame* convertToYUV420(const cv::Mat& bgr, SwsContext* sws, AVFrame* frame) {
     return frame;
 }
 
-SterioSink::SterioSink(ISource* sourceLeft, ISource* sourceRight, double baseline)
-    : sourceLeft(sourceLeft), sourceRight(sourceRight), baseline(baseline) {
+SterioSink::SterioSink(ISource* sourceLeft, ISource* sourceRight, double baseline, string EncoderName)
+    : sourceLeft(sourceLeft), sourceRight(sourceRight), baseline(baseline), m_EncoderName(EncoderName) {
 
-    encoder = avcodec_find_encoder_by_name("libx264");
+    encoder = avcodec_find_encoder_by_name(EncoderName.c_str());
     encoderCtx = avcodec_alloc_context3(encoder);
     encoderCtx->width = WIDTH;
     encoderCtx->height = HEIGHT;
@@ -116,6 +116,7 @@ void SterioSink::decodeAndExtractDepth(EncodedPacket* packet, const double fx, c
                     int y = std::clamp((int)mv.dst_y, 0, HEIGHT - 1);
                     depth.at<uchar>(y, x) = std::min(255.0, z * 10.0); // naive scaling
                 }
+				// TODO: Use depth map as needed
             }
         }
     }

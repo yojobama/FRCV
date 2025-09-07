@@ -13,7 +13,7 @@ namespace Server.Controllers.sources
     internal class VideoFileSourceController : WebApiController
     {
         // GET: All VideoFile sources;
-        [Route(HttpVerbs.Get, "/getAll")]
+        [Route(HttpVerbs.Get, "/videoFileSource/getAll")]
         public Task<Source[]> GetAll()
         {
             List<Source> sources = new List<Source>();
@@ -28,7 +28,7 @@ namespace Server.Controllers.sources
         }
 
         // POST: Create VideoFile Sources from all provided files with a default FPS of 30;
-        [Route(HttpVerbs.Post, "/create")]
+        [Route(HttpVerbs.Post, "/videoFileSource/create")]
         public Task<int[]> Create()
         {
             // Logic to handle video file upload
@@ -55,7 +55,7 @@ namespace Server.Controllers.sources
         }
 
         // PATCH: Change VideoFile FPS;
-        [Route(HttpVerbs.Patch, "changeFPS")]
+        [Route(HttpVerbs.Patch, "/videoFileSource/changeFPS")]
         public Task ChangeFPS([QueryField] int fps)
         {
             // TODO: Implement;

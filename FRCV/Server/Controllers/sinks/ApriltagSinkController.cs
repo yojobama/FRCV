@@ -12,13 +12,13 @@ namespace Server.Controllers.sinks
     internal class ApriltagSinkController : WebApiController
     {
         // POST: Create an Apriltag sink
-        [Route(HttpVerbs.Post, "/create")]
+        [Route(HttpVerbs.Post, "/apriltagSink/create")]
         public Task<int> Create([QueryField] string name, [QueryField] string type)
         {
             int SinkID = SinkManager.Instance.AddSink(name, type);
             DB.Instance.Save();
             return Task.FromResult(SinkID);
-        }
+        }   
 
         // --?-- GET: Acceletation type (cpu, vulkan);
 

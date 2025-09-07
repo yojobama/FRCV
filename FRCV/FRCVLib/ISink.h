@@ -9,10 +9,12 @@
 #include <memory>
 
 class Frame;
+class StereoSink;
 
 using namespace std;
 
-class ISink {
+class ISink 
+{
 public:
     ISink(Logger* p_Logger);
     ~ISink() = default;
@@ -42,5 +44,6 @@ private:
     bool m_ShouldTerminate;
     uint64_t m_LastFrameCount;
     bool m_PreviewEnabled;
+	StereoSink* m_StereoSink;
 };
 

@@ -12,7 +12,7 @@ namespace Server.Controllers.sinks
     internal class SinkController : WebApiController
     {
         // PATCH: Bind a sink to a source;
-        [Route(HttpVerbs.Patch, "/bind")]
+        [Route(HttpVerbs.Patch, "/sink/bind")]
         public Task Bind([QueryField] int SinkID, [QueryField] int SourceID)
         {
             SinkManager.Instance.BindSourceToSink(SinkID, SourceID);
@@ -22,7 +22,7 @@ namespace Server.Controllers.sinks
 
         // does not have to recieve a sourceId, only for multi source sinks (which do not exist in this version)
         // PATCH: Unbind a sink from a source;
-        [Route(HttpVerbs.Patch, "/unbind")]
+        [Route(HttpVerbs.Patch, "/sink/unbind")]
         public Task Unbind([QueryField] int SinkID, [QueryField] int? SourceID = null)
         {
             SinkManager.Instance.UnbindSourceFromSink(SinkID, SourceID);
@@ -31,7 +31,7 @@ namespace Server.Controllers.sinks
         }
 
         // DELETE: delete a certain sink;
-        [Route(HttpVerbs.Delete, "/delete")]
+        [Route(HttpVerbs.Delete, "/sink/delete")]
         public Task Delete([QueryField] int SinkID)
         {
             try

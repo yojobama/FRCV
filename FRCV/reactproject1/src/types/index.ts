@@ -6,6 +6,8 @@ export interface Source {
   status: 'active' | 'inactive' | 'error';
   lastUpdate?: Date;
   filePath?: string; // For video/image file sources
+  fps?: number; // For video file sources
+  cameraHardwareInfo?: CameraHardwareInfo; // For camera sources
 }
 
 export interface Sink {
@@ -29,6 +31,9 @@ export interface SystemStats {
   activeStreams: number;
   uptime: string;
   serverStatus: 'online' | 'offline' | 'error';
+  cpuUsage?: number;
+  ramUsage?: number;
+  diskUsage?: number;
 }
 
 export interface Settings {
@@ -70,4 +75,11 @@ export interface ToastProps {
   message: string;
   type: 'success' | 'error' | 'info';
   onClose: () => void;
+}
+
+// New types for device monitoring
+export interface DeviceStats {
+  cpuUsage: number;
+  ramUsage: number;
+  diskUsage: number;
 }

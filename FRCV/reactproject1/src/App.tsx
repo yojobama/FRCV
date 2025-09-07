@@ -38,6 +38,7 @@ import type {
 
 import { WebRTCStream } from './components/WebRTCStream';
 import { AddSourceModal } from './components/AddSourceModal';
+import { BulkUploadComponent } from './components/BulkUploadComponent';
 import { useAppData } from './hooks/useAppData';
 
 /***************************
@@ -310,7 +311,7 @@ const ConfigureSinkModal: React.FC<{ isOpen:boolean; onClose:()=>void; sink: Sin
 /*********************
  * System Status Card
  *********************/
-const SystemStatus: React.FC<{ systemStats: SystemStats }> = ({ systemStats }) => (
+const SystemStatus: React.FC<{ systemStats: SystemStats; deviceStats: any }> = ({ systemStats, deviceStats }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-all hover:shadow-lg">
       <div className="flex items-center justify-between">
@@ -333,10 +334,10 @@ const SystemStatus: React.FC<{ systemStats: SystemStats }> = ({ systemStats }) =
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-all hover:shadow-lg">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Live Streams</h3>
-          <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{systemStats.activeStreams}</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">CPU Usage</h3>
+          <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{deviceStats.cpuUsage}%</p>
         </div>
-        <MonitorSpeaker className="w-10 h-10 text-purple-600" />
+        <Activity className="w-10 h-10 text-purple-600" />
       </div>
     </div>
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-all hover:shadow-lg">
@@ -439,6 +440,7 @@ const Navigation: React.FC<{ currentTab: string; onTabChange: (tab: string) => v
  *****************/
 const DashboardPage: React.FC<{
   systemStats: SystemStats;
+  deviceStats: any;
   streamingSinks: Set<number>;
   sources: Source[];
   sinks: Sink[];
@@ -448,9 +450,46 @@ const DashboardPage: React.FC<{
   onStartStream: (id: number) => void;
   onGoToSinks: () => void;
   onGoToSources: () => void;
-}> = ({ systemStats, streamingSinks, sources, sinks, onStopAllStreams, onStopStream, onStreamError, onStartStream, onGoToSinks, onGoToSources }) => (
+  onStartUDP: () => void;
+  onStopUDP: () => void;
+}> = ({ systemStats, deviceStats, streamingSinks, sources, sinks, onStopAllStreams, onStopStream, onStreamError, onStartStream, onGoToSinks, onGoToSources, onStartUDP, onStopUDP }) => (
   <div className="space-y-6">
-    <SystemStatus systemStats={systemStats} />
+    <SystemStatus systemStats={systemStats} deviceStats={deviceStats} />
+    
+    {/* Device Stats Row */}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">RAM Usage</h3>
+            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{(deviceStats.ramUsage / 1024 / 1024).toFixed(0)} MB</p>
+          </div>
+          <BarChart3 className="w-8 h-8 text-orange-600" />
+        </div>
+      </div>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Disk Usage</h3>
+            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{deviceStats.diskUsage}%</p>
+          </div>
+          <BarChart3 className="w-8 h-8 text-red-600" />
+        </div>
+      </div>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">UDP Control</h3>
+            <div className="flex gap-2 mt-2">
+              <button onClick={onStartUDP} className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">Start</button>
+              <button onClick={onStopUDP} className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">Stop</button>
+            </div>
+          </div>
+          <Wifi className="w-8 h-8 text-blue-600" />
+        </div>
+      </div>
+    </div>
+
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Sources Widget */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
@@ -537,10 +576,8 @@ const DashboardPage: React.FC<{
           <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Activity className="w-5 h-5" />Live Streams</h2>
           <button onClick={onStopAllStreams} className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 flex items-center gap-1" title="Stop all streams"><StopCircle className="w-4 h-4" />Stop All Streams</button>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {Array.from(streamingSinks).map(sinkId => (
-            <WebRTCStream key={sinkId} sinkId={sinkId} onStop={()=>onStopStream(sinkId)} onError={(err)=>onStreamError(sinkId, err)} className="transition-all hover:scale-105" />
-          ))}
+        <div className="text-center py-8">
+          <p className="text-gray-600 dark:text-gray-400">WebRTC streaming functionality is not yet implemented in the current API.</p>
         </div>
       </div>
     )}
@@ -548,7 +585,7 @@ const DashboardPage: React.FC<{
       <div className="text-center py-12">
         <MonitorSpeaker className="w-16 h-16 mx-auto mb-4 text-gray-400" />
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Active Streams</h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">Start streaming from the Sinks tab to see live video feeds here.</p>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">WebRTC streaming will be available when implemented in the API.</p>
         <button onClick={onGoToSinks} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2 mx-auto"><Target className="w-4 h-4" />Go to Sinks</button>
       </div>
     )}
@@ -558,7 +595,15 @@ const DashboardPage: React.FC<{
 /****************
  * Sources Page
  ****************/
-const SourcesPage: React.FC<{ sources: Source[]; loading: boolean; onAddSource: () => void; onConfigure:(s:Source)=>void; onDelete:(id:number)=>void; }> = ({ sources, loading, onAddSource, onConfigure, onDelete }) => (
+const SourcesPage: React.FC<{ 
+  sources: Source[]; 
+  loading: boolean; 
+  onAddSource: () => void; 
+  onConfigure:(s:Source)=>void; 
+  onDelete:(id:number)=>void;
+  onBulkVideoUpload: (files: FileList, fps?: number) => Promise<{ success: boolean; sourceIds: number[]; message: string }>;
+  onBulkImageUpload: (files: FileList) => Promise<{ success: boolean; sourceIds: number[]; message: string }>;
+}> = ({ sources, loading, onAddSource, onConfigure, onDelete, onBulkVideoUpload, onBulkImageUpload }) => (
   <div className="space-y-6">
     <div className="flex justify-between items-center">
       <div>
@@ -567,6 +612,14 @@ const SourcesPage: React.FC<{ sources: Source[]; loading: boolean; onAddSource: 
       </div>
       <button onClick={onAddSource} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"><Plus className="w-4 h-4" />Add Source</button>
     </div>
+    
+    {/* Bulk Upload Component */}
+    <BulkUploadComponent 
+      onVideoUpload={onBulkVideoUpload}
+      onImageUpload={onBulkImageUpload}
+      className="mb-6"
+    />
+
     {sources.length === 0 && !loading ? (
       <div className="text-center py-12">
         <Camera className="w-16 h-16 mx-auto mb-4 text-gray-400" />
@@ -590,6 +643,12 @@ const SourcesPage: React.FC<{ sources: Source[]; loading: boolean; onAddSource: 
             </div>
             <p className="text-gray-600 dark:text-gray-400 mb-2">Type: {source.type}</p>
             <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">ID: {source.id}</p>
+            {source.filePath && (
+              <p className="text-xs text-gray-400 mb-2 truncate" title={source.filePath}>Path: {source.filePath}</p>
+            )}
+            {source.fps && (
+              <p className="text-xs text-gray-400 mb-2">FPS: {source.fps}</p>
+            )}
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-400">Updated: {source.lastUpdate?.toLocaleTimeString()}</span>
             </div>
@@ -674,6 +733,7 @@ function App() {
     loading,
     error,
     systemStats,
+    deviceStats,
     toast,
     loadData,
     startStream,
@@ -688,6 +748,10 @@ function App() {
     handleDeleteSink,
     handleBindSink,
     handleUnbindSink,
+    handleBulkVideoUpload,
+    handleBulkImageUpload,
+    startUDPTransmission,
+    stopUDPTransmission,
     setStreamingSinks,
     setError,
     setToast
@@ -738,10 +802,32 @@ function App() {
 
         <main className="p-6">
           {currentTab === 'dashboard' && (
-            <DashboardPage systemStats={systemStats} streamingSinks={streamingSinks} sources={sources} sinks={sinks} onStopAllStreams={()=>setStreamingSinks(new Set())} onStopStream={stopStream} onStreamError={handleStreamError} onStartStream={startStream} onGoToSinks={()=>setCurrentTab('sinks')} onGoToSources={()=>setCurrentTab('sources')} />
+            <DashboardPage 
+              systemStats={systemStats} 
+              deviceStats={deviceStats}
+              streamingSinks={streamingSinks} 
+              sources={sources} 
+              sinks={sinks} 
+              onStopAllStreams={()=>setStreamingSinks(new Set())} 
+              onStopStream={stopStream} 
+              onStreamError={handleStreamError} 
+              onStartStream={startStream} 
+              onGoToSinks={()=>setCurrentTab('sinks')} 
+              onGoToSources={()=>setCurrentTab('sources')}
+              onStartUDP={startUDPTransmission}
+              onStopUDP={stopUDPTransmission}
+            />
           )}
           {currentTab === 'sources' && (
-            <SourcesPage sources={sources} loading={loading} onAddSource={()=>setShowAddSource(true)} onConfigure={s=>setCfgSource(s)} onDelete={id=>handleDeleteSource(id)} />
+            <SourcesPage 
+              sources={sources} 
+              loading={loading} 
+              onAddSource={()=>setShowAddSource(true)} 
+              onConfigure={s=>setCfgSource(s)} 
+              onDelete={id=>handleDeleteSource(id)}
+              onBulkVideoUpload={handleBulkVideoUpload}
+              onBulkImageUpload={handleBulkImageUpload}
+            />
           )}
           {currentTab === 'sinks' && (
             <SinksPage sinks={sinks} loading={loading} streamingSinks={streamingSinks} onAddSink={()=>setShowAddSink(true)} onStartStream={startStream} onStopStream={stopStream} onConfigure={s=>setCfgSink(s)} onDelete={id=>handleDeleteSink(id)} />

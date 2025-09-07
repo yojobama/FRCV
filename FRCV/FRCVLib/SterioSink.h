@@ -28,7 +28,7 @@ constexpr int WIDTH = 640, HEIGHT = 480;
 class SterioSink
 {
 public:
-	SterioSink(ISource* sourceLeft, ISource* sourceRight, double baseline);
+	SterioSink(ISource* sourceLeft, ISource* sourceRight, double baseline, string EncoderName);
 	~SterioSink();
 	shared_ptr<Frame> getCurrentDepth();
 private:
@@ -44,5 +44,6 @@ private:
 	void decodeAndExtractDepth(EncodedPacket* packet, const double fx, const double baseline);
 	ISource* sourceLeft;
 	ISource* sourceRight;
+	string m_EncoderName;
 };
 

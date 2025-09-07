@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Source, Sink, SystemStats, Toast } from '../types';
+import type { Source, Sink, SystemStats, Toast, DeviceStats } from '../types';
 import { ApiService } from '../services/ApiService';
 
 export const useAppData = () => {
@@ -8,6 +8,11 @@ export const useAppData = () => {
   const [streamingSinks, setStreamingSinks] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deviceStats, setDeviceStats] = useState<DeviceStats>({
+    cpuUsage: 0,
+    ramUsage: 0,
+    diskUsage: 0
+  });
   const [systemStats, setSystemStats] = useState<SystemStats>({
     sources: 0,
     sinks: 0,
@@ -19,77 +24,64 @@ export const useAppData = () => {
   
   const api = new ApiService();
 
+  // Load device stats
+  const loadDeviceStats = useCallback(async () => {
+    try {
+      const [cpuUsage, ramUsage, diskUsage] = await Promise.all([
+        api.getDeviceCPUUsage().catch(() => 0),
+        api.getDeviceRAMUsage().catch(() => 0),
+        api.getDeviceDiskUsage().catch(() => 0)
+      ]);
+      
+      setDeviceStats({ cpuUsage, ramUsage, diskUsage });
+      return { cpuUsage, ramUsage, diskUsage };
+    } catch (error) {
+      console.warn('Failed to load device stats:', error);
+      return { cpuUsage: 0, ramUsage: 0, diskUsage: 0 };
+    }
+  }, []);
+
   // Load data with error handling
   const loadData = useCallback(async () => {
     try {
       setError(null);
-      const [sourceIds, sinkIds] = await Promise.all([
-        api.getSources().catch(() => []),
-        api.getSinks().catch(() => [])
-      ]);
+      
+      // Load all sources using the enhanced utility method
+      const allSources = await api.getAllSources();
+      
+      // Convert to our Source type format
+      const formattedSources: Source[] = allSources.map(source => ({
+        id: source.Id || source.id,
+        name: source.Name || source.name || `Source ${source.Id || source.id}`,
+        type: source.Type || source.type || 'Unknown',
+        status: 'active' as const,
+        lastUpdate: new Date(),
+        filePath: source.FilePath || source.filePath,
+        fps: source.Fps || source.fps,
+        cameraHardwareInfo: source.CameraHardwareInfo || source.cameraHardwareInfo
+      }));
 
-      // Load source details
-      const sourceDetails = await Promise.all(
-        sourceIds.map(async (id) => {
-          try {
-            const source = await api.getSource(id);
-            return {
-              id,
-              name: source?.Name || `Source ${id}`,
-              type: source?.Type || 'Unknown',
-              status: 'active' as const,
-              lastUpdate: new Date()
-            };
-          } catch {
-            return {
-              id,
-              name: `Source ${id}`,
-              type: 'Unknown',
-              status: 'error' as const,
-              lastUpdate: new Date()
-            };
-          }
-        })
-      );
+      // Load sinks (currently limited since there's no general endpoint)
+      const sinkDetails: Sink[] = [];
+      // Since we can't get all sinks, we start with an empty array
+      // Sinks will be populated as they are created through the UI
+      
+      // Load device stats
+      const currentDeviceStats = await loadDeviceStats();
 
-      // Load sink details
-      const sinkDetails = await Promise.all(
-        sinkIds.map(async (id) => {
-          try {
-            const sink = await api.getSink(id);
-            const streamStatus = await api.getWebRTCStatus(id);
-            return {
-              id,
-              name: sink?.name || `Sink ${id}`,
-              type: sink?.type || 'Unknown',
-              status: 'active' as const,
-              isStreaming: streamStatus?.isStreaming || false,
-              lastUpdate: new Date(),
-              sourceId: sink?.sourceId
-            };
-          } catch {
-            return {
-              id,
-              name: `Sink ${id}`,
-              type: 'Unknown',
-              status: 'error' as const,
-              isStreaming: false,
-              lastUpdate: new Date()
-            };
-          }
-        })
-      );
-
-      setSources(sourceDetails);
+      setSources(formattedSources);
       setSinks(sinkDetails);
       
-      // Update system stats
+      // Update system stats with device stats
       setSystemStats({
-        sources: sourceDetails.length,
+        sources: formattedSources.length,
         sinks: sinkDetails.length,
         activeStreams: streamingSinks.size,
         uptime: new Date().toLocaleTimeString(),
-        serverStatus: 'online'
+        serverStatus: 'online',
+        cpuUsage: currentDeviceStats.cpuUsage,
+        ramUsage: currentDeviceStats.ramUsage,
+        diskUsage: currentDeviceStats.diskUsage
       });
       
       setLoading(false);
@@ -99,11 +91,11 @@ export const useAppData = () => {
       setSystemStats(prev => ({ ...prev, serverStatus: 'error' }));
       setLoading(false);
     }
-  }, [streamingSinks.size]);
+  }, [streamingSinks.size, loadDeviceStats]);
 
   const startStream = (sinkId: number) => {
-    setStreamingSinks(prev => new Set([...prev, sinkId]));
-    showToast(`Started streaming for Sink ${sinkId}`, 'success');
+    // Note: WebRTC streaming is not implemented in current API
+    showToast(`WebRTC streaming not yet implemented for Sink ${sinkId}`, 'info');
   };
 
   const stopStream = (sinkId: number) => {
@@ -124,43 +116,33 @@ export const useAppData = () => {
     setToast({ message, type });
   };
 
-  const handleAddSource = async (name: string, type: string, file?: File, fps?: number, hardwareInfo?: any) => {
+  const handleAddSource = async (name: string, type: string, files?: FileList, fps?: number, hardwareInfo?: any) => {
     try {
-      let sourceId: number;
-      
       if (type === 'camera' && hardwareInfo) {
-        sourceId = await api.createCameraSource(hardwareInfo);
-      } else if (type === 'video' && file) {
-        sourceId = await api.createVideoFileSource(file, fps || 30);
-      } else if (type === 'image' && file) {
-        sourceId = await api.createImageFileSource(file);
+        const sourceId = await api.createCameraSource(hardwareInfo);
+        showToast(`Camera source "${name}" added successfully with ID ${sourceId}`, 'success');
+      } else if (type === 'video' && files && files.length > 0) {
+        const result = await api.uploadVideoFiles(files, fps || 30);
+        if (result.success) {
+          showToast(result.message, 'success');
+        } else {
+          showToast(result.message, 'error');
+          return;
+        }
+      } else if (type === 'image' && files && files.length > 0) {
+        const result = await api.uploadImageFiles(files);
+        if (result.success) {
+          showToast(result.message, 'success');
+        } else {
+          showToast(result.message, 'error');
+          return;
+        }
       } else {
         throw new Error('Invalid source configuration');
       }
       
-      // Wait for the source to be created and start streaming
-      await new Promise<void>((resolve, reject) => {
-        const interval = setInterval(async () => {
-          try {
-            const source = await api.getSource(sourceId);
-            if (source?.status === 'active') {
-              clearInterval(interval);
-              resolve();
-            }
-          } catch (error) {
-            clearInterval(interval);
-            reject(error);
-          }
-        }, 1000);
-        
-        // Timeout after 10 seconds
-        setTimeout(() => {
-          reject(new Error('Source creation timed out'));
-        }, 10000);
-      });
-      
-      showToast(`Source "${name}" added and started streaming successfully with ID ${sourceId}`, 'success');
-      loadData(); // Refresh data
+      // Refresh data to show the new sources
+      setTimeout(() => loadData(), 1000);
     } catch (error) {
       showToast(`Failed to add source: ${error}`, 'error');
     }
@@ -168,15 +150,30 @@ export const useAppData = () => {
 
   const handleAddSink = async (name: string, type: string) => {
     try {
-      await api.addSink(name, type);
-      showToast(`Sink "${name}" added successfully`, 'success');
-      loadData(); // Refresh data
+      // Currently only AprilTag sinks are implemented
+      if (type !== 'apriltag') {
+        showToast(`Sink type "${type}" is not yet implemented. Only AprilTag sinks are available.`, 'error');
+        return;
+      }
+      
+      const sinkId = await api.createApriltagSink(name, type);
+      
+      // Since we can't reload all sinks, we'll add the new sink to our local state
+      const newSink: Sink = {
+        id: sinkId,
+        name: name,
+        type: type,
+        status: 'active',
+        lastUpdate: new Date()
+      };
+      
+      setSinks(prev => [...prev, newSink]);
+      showToast(`Sink "${name}" added successfully with ID ${sinkId}`, 'success');
     } catch (error) {
       showToast(`Failed to add sink: ${error}`, 'error');
     }
   };
 
-  // NEW: rename source
   const handleRenameSource = async (id: number, name: string) => {
     try {
       await api.changeSourceName(id, name);
@@ -187,7 +184,6 @@ export const useAppData = () => {
     }
   };
 
-  // NEW: delete source
   const handleDeleteSource = async (id: number) => {
     try {
       await api.deleteSource(id);
@@ -198,47 +194,107 @@ export const useAppData = () => {
     }
   };
 
-  // NEW: rename sink
   const handleRenameSink = async (id: number, name: string) => {
     try {
       await api.changeSinkName(id, name);
       showToast('Sink renamed', 'success');
       loadData();
     } catch {
-      showToast('Failed to rename sink', 'error');
+      showToast('Sink name changing not implemented yet', 'error');
     }
   };
 
-  // NEW: delete sink
   const handleDeleteSink = async (id: number) => {
     try {
       await api.deleteSink(id);
+      
+      // Remove from local state since we can't reload all sinks
+      setSinks(prev => prev.filter(sink => sink.id !== id));
       showToast('Sink deleted', 'info');
-      loadData();
     } catch {
       showToast('Failed to delete sink', 'error');
     }
   };
 
-  // NEW: bind sink to source
   const handleBindSink = async (sinkId: number, sourceId: number) => {
     try {
       await api.bindSinkToSource(sinkId, sourceId);
+      
+      // Update local state
+      setSinks(prev => prev.map(sink => 
+        sink.id === sinkId ? { ...sink, sourceId } : sink
+      ));
       showToast('Sink bound to source', 'success');
-      loadData();
     } catch {
       showToast('Failed to bind sink', 'error');
     }
   };
 
-  // NEW: unbind sink from source
   const handleUnbindSink = async (sinkId: number, sourceId: number) => {
     try {
       await api.unbindSinkFromSource(sinkId, sourceId);
+      
+      // Update local state
+      setSinks(prev => prev.map(sink => 
+        sink.id === sinkId ? { ...sink, sourceId: undefined } : sink
+      ));
       showToast('Sink unbound from source', 'info');
-      loadData();
     } catch {
       showToast('Failed to unbind sink', 'error');
+    }
+  };
+
+  // Enhanced bulk operations for multiple files
+  const handleBulkVideoUpload = async (files: FileList, fps: number = 30) => {
+    try {
+      const result = await api.uploadVideoFiles(files, fps);
+      if (result.success) {
+        showToast(result.message, 'success');
+        setTimeout(() => loadData(), 1000);
+      } else {
+        showToast(result.message, 'error');
+      }
+      return result;
+    } catch (error) {
+      const message = `Failed to upload video files: ${error}`;
+      showToast(message, 'error');
+      return { success: false, sourceIds: [], message };
+    }
+  };
+
+  const handleBulkImageUpload = async (files: FileList) => {
+    try {
+      const result = await api.uploadImageFiles(files);
+      if (result.success) {
+        showToast(result.message, 'success');
+        setTimeout(() => loadData(), 1000);
+      } else {
+        showToast(result.message, 'error');
+      }
+      return result;
+    } catch (error) {
+      const message = `Failed to upload image files: ${error}`;
+      showToast(message, 'error');
+      return { success: false, sourceIds: [], message };
+    }
+  };
+
+  // UDP transmission controls
+  const startUDPTransmission = async () => {
+    try {
+      await api.startUDPTransmission();
+      showToast('UDP transmission started', 'success');
+    } catch (error) {
+      showToast(`Failed to start UDP transmission: ${error}`, 'error');
+    }
+  };
+
+  const stopUDPTransmission = async () => {
+    try {
+      await api.stopUDPTransmission();
+      showToast('UDP transmission stopped', 'info');
+    } catch (error) {
+      showToast(`Failed to stop UDP transmission: ${error}`, 'error');
     }
   };
 
@@ -249,8 +305,10 @@ export const useAppData = () => {
     loading,
     error,
     systemStats,
+    deviceStats,
     toast,
     loadData,
+    loadDeviceStats,
     startStream,
     stopStream,
     handleStreamError,
@@ -263,6 +321,10 @@ export const useAppData = () => {
     handleDeleteSink,
     handleBindSink,
     handleUnbindSink,
+    handleBulkVideoUpload,
+    handleBulkImageUpload,
+    startUDPTransmission,
+    stopUDPTransmission,
     setStreamingSinks,
     setError,
     setToast

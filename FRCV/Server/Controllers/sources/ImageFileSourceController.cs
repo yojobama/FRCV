@@ -13,7 +13,7 @@ namespace Server.Controllers.sources
     internal class ImageFileSourceController : WebApiController 
     {
         // GET: All ImageFile sources;
-        [Route(EmbedIO.HttpVerbs.Get, "/get")]
+        [Route(EmbedIO.HttpVerbs.Get, "/imageFileSource/get")]
         public Task<Source[]> GetAll()
         {
             List<Source> sources = new List<Source>();
@@ -28,7 +28,7 @@ namespace Server.Controllers.sources
         }
 
         // POST: Create ImageFile Sources from provided files;
-        [Route(EmbedIO.HttpVerbs.Post, "/create")]
+        [Route(EmbedIO.HttpVerbs.Post, "/imageFileSource/create")]
         public Task<int[]> Create()
         {
             // Logic to handle video file upload

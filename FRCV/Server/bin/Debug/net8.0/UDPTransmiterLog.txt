@@ -1,3 +1,6 @@
 [INFO]: Logger constructed with file path: UDPTransmiterLog.txt
 [INFO]: UDPTransmiter Enable called
 [INFO]: UDPTransmiter thread started
+[INFO]: Logger constructed with file path: UDPTransmiterLog.txt
+[INFO]: UDPTransmiter Enable called
+[INFO]: UDPTransmiter thread started

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Upload, Camera, Video, Image } from 'lucide-react';
+import { Plus, X, Upload, Camera, Video, Image, AlertCircle, CheckCircle } from 'lucide-react';
 import { CameraHardwareInfo } from '../types';
+import { ApiService } from '../services/ApiService';
 
 interface AddSourceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (name: string, type: string, file?: File, fps?: number, hardwareInfo?: CameraHardwareInfo) => void;
+  onAdd: (name: string, type: string, files?: FileList, fps?: number, hardwareInfo?: CameraHardwareInfo) => void;
 }
 
 export const AddSourceModal: React.FC<AddSourceModalProps> = ({ 
@@ -15,11 +16,15 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [type, setType] = useState('camera');
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<FileList | null>(null);
   const [fps, setFps] = useState(30);
   const [selectedCamera, setSelectedCamera] = useState<CameraHardwareInfo | null>(null);
   const [cameras, setCameras] = useState<CameraHardwareInfo[]>([]);
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [previewFiles, setPreviewFiles] = useState<File[]>([]);
+
+  const api = new ApiService();
 
   useEffect(() => {
     if (isOpen && type === 'camera') {
@@ -27,21 +32,115 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
     }
   }, [isOpen, type]);
 
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      resetForm();
+    }
+  }, [isOpen]);
+
+  const resetForm = () => {
+    setName('');
+    setType('camera');
+    setFiles(null);
+    setFps(30);
+    setSelectedCamera(null);
+    setValidationErrors([]);
+    setPreviewFiles([]);
+  };
+
   const loadCameras = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:8175/api/source/camera/hardwareInfos');
-      if (response.ok) {
-        const cameraList = await response.json();
-        setCameras(cameraList);
-        if (cameraList.length > 0) {
-          setSelectedCamera(cameraList[0]);
-        }
+      const cameraList = await api.getCameraHardware();
+      setCameras(cameraList);
+      if (cameraList.length > 0) {
+        setSelectedCamera(cameraList[0]);
       }
     } catch (error) {
       console.error('Failed to load cameras:', error);
+      setCameras([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const validateFiles = (fileList: FileList): string[] => {
+    const errors: string[] = [];
+    const fileArray = Array.from(fileList);
+    
+    if (fileArray.length === 0) {
+      errors.push('No files selected');
+      return errors;
+    }
+    
+    if (fileArray.length > 10) {
+      errors.push('Maximum 10 files allowed per upload');
+      return errors;
+    }
+
+    fileArray.forEach((file, index) => {
+      if (type === 'video') {
+        const validation = api.validateVideoFile(file);
+        if (!validation.valid) {
+          errors.push(`File ${index + 1} (${file.name}): ${validation.message}`);
+        }
+      } else if (type === 'image') {
+        const validation = api.validateImageFile(file);
+        if (!validation.valid) {
+          errors.push(`File ${index + 1} (${file.name}): ${validation.message}`);
+        }
+      }
+    });
+
+    return errors;
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files;
+    if (selectedFiles && selectedFiles.length > 0) {
+      const errors = validateFiles(selectedFiles);
+      setValidationErrors(errors);
+      
+      if (errors.length === 0) {
+        setFiles(selectedFiles);
+        setPreviewFiles(Array.from(selectedFiles));
+        
+        // Auto-generate name if not set
+        if (!name) {
+          if (selectedFiles.length === 1) {
+            const fileName = selectedFiles[0].name.split('.')[0];
+            setName(fileName);
+          } else {
+            setName(`${type} Upload (${selectedFiles.length} files)`);
+          }
+        }
+      } else {
+        setFiles(null);
+        setPreviewFiles([]);
+      }
+    }
+  };
+
+  const removeFile = (indexToRemove: number) => {
+    if (files) {
+      const dt = new DataTransfer();
+      Array.from(files).forEach((file, index) => {
+        if (index !== indexToRemove) {
+          dt.items.add(file);
+        }
+      });
+      
+      const newFiles = dt.files;
+      setFiles(newFiles);
+      setPreviewFiles(Array.from(newFiles));
+      
+      if (newFiles.length === 0) {
+        setValidationErrors([]);
+      } else {
+        const errors = validateFiles(newFiles);
+        setValidationErrors(errors);
+      }
     }
   };
 
@@ -50,31 +149,18 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    
+    if (validationErrors.length > 0) {
+      return;
+    }
 
     if (type === 'camera' && selectedCamera) {
       onAdd(name.trim(), type, undefined, undefined, selectedCamera);
-    } else if ((type === 'video' || type === 'image') && file) {
-      onAdd(name.trim(), type, file, type === 'video' ? fps : undefined);
+    } else if ((type === 'video' || type === 'image') && files && files.length > 0) {
+      onAdd(name.trim(), type, files, type === 'video' ? fps : undefined);
     }
     
-    // Reset form
-    setName('');
-    setType('camera');
-    setFile(null);
-    setFps(30);
-    setSelectedCamera(null);
     onClose();
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      if (!name) {
-        const fileName = selectedFile.name.split('.')[0];
-        setName(fileName);
-      }
-    }
   };
 
   const getTypeIcon = () => {
@@ -88,19 +174,28 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
 
   const canSubmit = () => {
     if (!name.trim()) return false;
+    if (validationErrors.length > 0) return false;
     
     if (type === 'camera') {
       return selectedCamera !== null;
     } else if (type === 'video' || type === 'image') {
-      return file !== null;
+      return files !== null && files.length > 0;
     }
     
     return false;
   };
 
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             {getTypeIcon()}
@@ -136,8 +231,8 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="camera">Camera</option>
-              <option value="video">Video File</option>
-              <option value="image">Image File</option>
+              <option value="video">Video Files</option>
+              <option value="image">Image Files</option>
             </select>
           </div>
 
@@ -148,7 +243,7 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
                 Camera Device
               </label>
               {loading ? (
-                <div className="text-sm text-gray-500 dark:text-gray-400">Loading cameras...</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Loading available cameras...</div>
               ) : cameras.length > 0 ? (
                 <select
                   value={selectedCamera?.path || ''}
@@ -166,8 +261,13 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
                   ))}
                 </select>
               ) : (
-                <div className="text-sm text-red-500 dark:text-red-400">No cameras found</div>
+                <div className="text-sm text-red-500 dark:text-red-400">
+                  No unregistered cameras found. All available cameras may already be in use.
+                </div>
               )}
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Only shows cameras not yet registered as sources
+              </div>
             </div>
           )}
 
@@ -175,30 +275,87 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
           {(type === 'video' || type === 'image') && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {type === 'video' ? 'Video File' : 'Image File'}
+                {type === 'video' ? 'Video Files' : 'Image Files'}
               </label>
               <div className="relative">
                 <input
                   type="file"
                   onChange={handleFileChange}
                   accept={type === 'video' ? 'video/*' : 'image/*'}
+                  multiple
                   className="hidden"
                   id="file-upload"
                   required
                 />
                 <label
                   htmlFor="file-upload"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white cursor-pointer flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  className={`w-full px-3 py-2 border rounded-md cursor-pointer flex items-center gap-2 transition-colors ${
+                    validationErrors.length > 0 
+                      ? 'border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20' 
+                      : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
+                  } dark:bg-gray-700 dark:text-white`}
                 >
                   <Upload className="w-4 h-4" />
-                  {file ? file.name : `Choose ${type} file...`}
+                  {files && files.length > 0 
+                    ? `${files.length} file(s) selected`
+                    : `Choose ${type} files...`
+                  }
                 </label>
               </div>
-              {file && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+
+              {/* Validation Errors */}
+              {validationErrors.length > 0 && (
+                <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm">
+                      <div className="font-medium text-red-800 dark:text-red-200 mb-1">File Validation Errors:</div>
+                      <ul className="text-red-700 dark:text-red-300 space-y-1">
+                        {validationErrors.map((error, index) => (
+                          <li key={index}>• {error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               )}
+
+              {/* File Preview */}
+              {previewFiles.length > 0 && validationErrors.length === 0 && (
+                <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                  <div className="flex items-start gap-2 mb-2">
+                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm font-medium text-green-800 dark:text-green-200">
+                      Ready to upload {previewFiles.length} file(s)
+                    </div>
+                  </div>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {previewFiles.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between text-xs text-green-700 dark:text-green-300 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded">
+                        <span className="truncate flex-1">{file.name}</span>
+                        <div className="flex items-center gap-2">
+                          <span>{formatFileSize(file.size)}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeFile(index)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                {type === 'video' 
+                  ? 'Supported formats: MP4, AVI, MOV, WMV, MKV, WebM (max 500MB each)'
+                  : 'Supported formats: JPEG, PNG, BMP, GIF, WebP (max 50MB each)'}
+                <br />
+                Multiple files can be uploaded simultaneously (max 10 files)
+              </div>
             </div>
           )}
 
@@ -217,7 +374,7 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Recommended: 30 FPS for most videos
+                Recommended: 30 FPS for most videos. This applies to all uploaded videos.
               </div>
             </div>
           )}
@@ -236,7 +393,7 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              Add Source
+              Add Source{files && files.length > 1 ? 's' : ''}
             </button>
           </div>
         </form>

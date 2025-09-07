@@ -11,7 +11,7 @@ namespace Server.Controllers.sources
     internal class SourceController : WebApiController
     {
         // GET: All registered sources;
-        [Route(EmbedIO.HttpVerbs.Get, "/getAll")]
+        [Route(EmbedIO.HttpVerbs.Get, "/source/getAll")]
         public Task<Source[]> GetAllSources()
         {
             List<Source> sources = new List<Source>();
@@ -23,7 +23,7 @@ namespace Server.Controllers.sources
         }
 
         // PATCH: Rename am ImageFile source;
-        [Route(EmbedIO.HttpVerbs.Patch, "/rename")]
+        [Route(EmbedIO.HttpVerbs.Patch, "/source/rename")]
         public Task Rename([QueryField] int SinkID, [QueryField] string newName)
         {
             SourceManager.Instance.ChangeSourceName(SinkID, newName);
@@ -31,7 +31,7 @@ namespace Server.Controllers.sources
         }
 
         // DELETE: delete a source;
-        [Route(EmbedIO.HttpVerbs.Delete, "/delete")]
+        [Route(EmbedIO.HttpVerbs.Delete, "/source/delete")]
         public Task Delete([QueryField] int SourceID)
         {
             SourceManager.Instance.DeleteSource(SourceID);

@@ -12,7 +12,7 @@ namespace Server.Controllers.sources
     internal class CameraSourceController : WebApiController
     {
         // POST: create camera sources from all connected cameras;
-        [Route(EmbedIO.HttpVerbs.Post, "/createAll")]
+        [Route(EmbedIO.HttpVerbs.Post, "/cameraSource/createAll")]
         public Task CreateAll()
         {
             CameraHardwareInfo[] cameraHardwareInfoArray = ManagerWrapper.Instance.EnumerateAvailableCameras().ToArray();
@@ -35,7 +35,7 @@ namespace Server.Controllers.sources
         }
 
         // POST: Create a camera source from a specified camera;
-        [Route(EmbedIO.HttpVerbs.Post, "/create")]
+        [Route(EmbedIO.HttpVerbs.Post, "/cameraSource/create")]
         public Task Create([JsonData] CameraHardwareInfo hardwareInfo)
         {
             int sourceId = SourceManager.Instance.InitializeCameraSource(hardwareInfo);
@@ -43,7 +43,7 @@ namespace Server.Controllers.sources
         }
 
         // GET: All connected cameras;
-        [Route(HttpVerbs.Get, "/getRegistered")]
+        [Route(HttpVerbs.Get, "/cameraSource/getRegistered")]
         public Task<Source[]> GetRegistered()
         {
             List<Source> sources = new List<Source>();
@@ -58,7 +58,7 @@ namespace Server.Controllers.sources
         }
 
         // GET: All available camers that have not yet been turns into a source;
-        [Route(HttpVerbs.Get, "/getNotRegistered")]
+        [Route(HttpVerbs.Get, "/cameraSource/getNotRegistered")]
         public Task<CameraHardwareInfo[]> GetNotRegistered()
         {
             CameraHardwareInfo[] cameraHardwareInfoArray = ManagerWrapper.Instance.EnumerateAvailableCameras().ToArray();
