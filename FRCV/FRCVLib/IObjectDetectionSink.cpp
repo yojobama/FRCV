@@ -1,6 +1,6 @@
 #include "IObjectDetectionSink.h"
 
-IObjectDetectionSink::IObjectDetectionSink(Logger* logger, PreProcessor* preProcessor, FramePool* framePool)
+IObjectDetectionSink::IObjectDetectionSink(Logger* logger, PreProcessor* preProcessor, FramePool* framePool) : ISink(logger)
 {
 }
 
