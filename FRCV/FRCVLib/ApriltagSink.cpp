@@ -126,13 +126,13 @@ void ApriltagSink::CreatePreview()
     std::shared_ptr<Frame> latestFrame = m_Source->GetLatestFrame();
     if (!latestFrame) return;
 
-    // Create color copy for visualization
-    FrameSpec colorSpec = latestFrame->GetSpec();
-    colorSpec.SetType(CV_8UC3);
-    std::shared_ptr<Frame> colorFrame = m_FramePool->GetFrame(colorSpec);
-    cv::cvtColor(*latestFrame, *colorFrame, cv::COLOR_GRAY2BGR);
+    // Create colour copy for visualization
+    FrameSpec colourSpec = latestFrame->GetSpec();
+    colourSpec.SetType(CV_8UC3);
+    std::shared_ptr<Frame> colourFrame = m_FramePool->GetFrame(colourSpec);
+    cv::cvtColor(*latestFrame, *colourFrame, cv::COLOR_GRAY2BGR);
 
-    // Colors for visualization
+    // colours for visualization
     const cv::Scalar RED(0, 0, 255);
     const cv::Scalar GREEN(0, 255, 0);
     const cv::Scalar BLUE(255, 0, 0);
@@ -142,13 +142,13 @@ void ApriltagSink::CreatePreview()
         for (int i = 0; i < 4; i++) {
             cv::Point p1(detection.m_pDetection->p[i][0], detection.m_pDetection->p[i][1]);
             cv::Point p2(detection.m_pDetection->p[(i+1)%4][0], detection.m_pDetection->p[(i+1)%4][1]);
-            cv::line(*colorFrame, p1, p2, GREEN, 2);
+            cv::line(*colourFrame, p1, p2, GREEN, 2);
         }
 
         // Draw tag center and ID
         cv::Point center(detection.m_pDetection->c[0], detection.m_pDetection->c[1]);
-        cv::circle(*colorFrame, center, 3, RED, 2);
-        cv::putText(*colorFrame, 
+        cv::circle(*colourFrame, center, 3, RED, 2);
+        cv::putText(*colourFrame, 
                     std::to_string(detection.m_pDetection->id),
                     cv::Point(center.x + 10, center.y),
                     cv::FONT_HERSHEY_SIMPLEX,
@@ -159,9 +159,9 @@ void ApriltagSink::CreatePreview()
         // Draw tag corners
         for (int i = 0; i < 4; i++) {
             cv::Point corner(detection.m_pDetection->p[i][0], detection.m_pDetection->p[i][1]);
-            cv::circle(*colorFrame, corner, 4, RED, -1);
+            cv::circle(*colourFrame, corner, 4, RED, -1);
         }
     }
 
-    m_PreviewFrame = colorFrame;
+    m_PreviewFrame = colourFrame;
 }

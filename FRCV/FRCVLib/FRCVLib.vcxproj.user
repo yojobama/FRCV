@@ -2,7 +2,7 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <RemoteTarget>939420187;192.168.55.138 (username=, port=22, authentication=Password)</RemoteTarget>
-    <RemoteDebuggingTarget>-530215962;192.168.55.137 (username=, port=22, authentication=Password)</RemoteDebuggingTarget>
+    <RemoteDebuggingTarget>WSL</RemoteDebuggingTarget>
     <DebuggerFlavor>LinuxWSLDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

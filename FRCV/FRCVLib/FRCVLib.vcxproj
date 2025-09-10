@@ -80,6 +80,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <WSLPath>Ubuntu-24.04</WSLPath>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <WSLPath>Ubuntu-24.04</WSLPath>
@@ -93,11 +94,13 @@
     <ClInclude Include="Frame.h" />
     <ClInclude Include="FramePool.h" />
     <ClInclude Include="FrameSpec.h" />
+    <ClInclude Include="IObjectDetectionSink.h" />
     <ClInclude Include="ISource.h" />
     <ClInclude Include="ImageFileSource.h" />
     <ClInclude Include="ISink.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Manager.h" />
+    <ClInclude Include="ObjectDetection.h" />
     <ClInclude Include="object_detection_utils.h" />
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="RecordSink.h" />
@@ -116,11 +119,13 @@
     <ClCompile Include="Frame.cpp" />
     <ClCompile Include="FramePool.cpp" />
     <ClCompile Include="FrameSpec.cpp" />
+    <ClCompile Include="IObjectDetectionSink.cpp" />
     <ClCompile Include="ISource.cpp" />
     <ClCompile Include="ImageFileSource.cpp" />
     <ClCompile Include="ISink.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Manager.cpp" />
+    <ClCompile Include="ObjectDetection.cpp" />
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="RecordSink.cpp" />
     <ClCompile Include="RknnSink.cpp" />
