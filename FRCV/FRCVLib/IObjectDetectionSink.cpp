@@ -12,6 +12,16 @@ IObjectDetectionSink::~IObjectDetectionSink()
 void IObjectDetectionSink::CreatePreview()
 {
 	if (!GetPreviewStatus() || m_Source == nullptr) return;
+	// Example implementation (to be replaced with actual logic)
+	m_PreviewFrame = m_Source->GetLatestFrame();
+}
 
+void IObjectDetectionSink::ProcessFrame()
+{
+	// Pure virtual, must be implemented by derived classes
+}
 
+std::string IObjectDetectionSink::GetStatus()
+{
+	return "Object Detection Sink operational.";
 }

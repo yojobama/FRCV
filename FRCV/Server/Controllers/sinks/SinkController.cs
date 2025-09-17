@@ -11,6 +11,25 @@ namespace Server.Controllers.sinks
 {
     internal class SinkController : WebApiController
     {
+        // PATCH: Enable/Disable a sink;
+        [Route(HttpVerbs.Patch, "/sink/toggle")]
+        public Task Toggle([QueryField] int SinkID, [QueryField] bool Enabled)
+        {
+            if (!Enabled) SinkManager.Instance.DisableSinkById(SinkID);
+            else SinkManager.Instance.EnableSinkById(SinkID);
+            DB.Instance.Save(); // Save changes to the database
+            return Task.CompletedTask;
+        }
+
+        // PATCH: Change the name of a sink;
+        [Route(HttpVerbs.Patch, "/sink/rename")]
+        public Task Rename([QueryField] int SinkID, [QueryField] string NewName)
+        {
+            SinkManager.Instance.SetSinkName(SinkID, NewName);
+            DB.Instance.Save(); // Save changes to the database
+            return Task.CompletedTask;
+        }
+
         // PATCH: Bind a sink to a source;
         [Route(HttpVerbs.Patch, "/sink/bind")]
         public Task Bind([QueryField] int SinkID, [QueryField] int SourceID)
@@ -44,6 +63,18 @@ namespace Server.Controllers.sinks
                 return Task.FromException(ex);
             }
             return Task.CompletedTask;
+        }
+
+        // GET: get all sinks;
+        [Route(HttpVerbs.Get, "/sink/getAll")]
+        public Task<List<Sink>> GetAll()
+        {
+            List<Sink> sinks = new List<Sink>();
+            foreach (var sink in SinkManager.Instance.getAllSinkIds())
+            {
+                sinks.Add(SinkManager.Instance.GetSinkById(sink));
+            }
+            return Task.FromResult(sinks);
         }
     }
 }

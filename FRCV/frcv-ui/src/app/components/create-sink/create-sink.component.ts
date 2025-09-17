@@ -59,7 +59,7 @@ import { ApiService, CameraHardwareInfo } from '../../services/api.service';
     h2 {
       text-align: center;
       margin-bottom: 2rem;
-      color: #333;
+      colour: #333;
     }
 
     .form-group {
@@ -70,7 +70,7 @@ import { ApiService, CameraHardwareInfo } from '../../services/api.service';
       display: block;
       margin-bottom: 0.5rem;
       font-weight: bold;
-      color: #555;
+      colour: #555;
     }
 
     .form-control {
@@ -83,7 +83,7 @@ import { ApiService, CameraHardwareInfo } from '../../services/api.service';
 
     .form-control:focus {
       outline: none;
-      border-color: #007bff;
+      border-colour: #007bff;
       box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
     }
 
@@ -94,25 +94,25 @@ import { ApiService, CameraHardwareInfo } from '../../services/api.service';
       font-size: 1rem;
       cursor: pointer;
       width: 100%;
-      transition: background-color 0.3s;
+      transition: background-colour 0.3s;
     }
 
     .btn-primary {
-      background-color: #007bff;
-      color: white;
+      background-colour: #007bff;
+      colour: white;
     }
 
     .btn-primary:hover:not(:disabled) {
-      background-color: #0056b3;
+      background-colour: #0056b3;
     }
 
     .btn:disabled {
-      background-color: #6c757d;
+      background-colour: #6c757d;
       cursor: not-allowed;
     }
 
     .error-message {
-      color: #dc3545;
+      colour: #dc3545;
       font-size: 0.875rem;
       margin-top: 0.25rem;
     }
@@ -125,14 +125,14 @@ import { ApiService, CameraHardwareInfo } from '../../services/api.service';
     }
 
     .message.success {
-      background-color: #d4edda;
-      color: #155724;
+      background-colour: #d4edda;
+      colour: #155724;
       border: 1px solid #c3e6cb;
     }
 
     .message.error {
-      background-color: #f8d7da;
-      color: #721c24;
+      background-colour: #f8d7da;
+      colour: #721c24;
       border: 1px solid #f5c6cb;
     }
   `]

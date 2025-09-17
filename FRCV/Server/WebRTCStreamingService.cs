@@ -206,7 +206,7 @@
 //                    int index = (y * image8U.width + x) * 3;
 //                    if (index + 2 < totalBytes)
 //                    {
-//                        // Create a colorful gradient pattern
+//                        // Create a colourful gradient pattern
 //                        imageData[index] = (byte)(x % 256);     // R
 //                        imageData[index + 1] = (byte)(y % 256); // G
 //                        imageData[index + 2] = (byte)((x + y) % 256); // B

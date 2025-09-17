@@ -1,5 +1,18 @@
 {
-  "Sinks": [],
+  "Sinks": [
+    {
+      "Type": 0,
+      "Id": 1940206197,
+      "Name": "ApriltagTest",
+      "Source": null
+    },
+    {
+      "Type": 0,
+      "Id": 261705887,
+      "Name": "ApriltagTest",
+      "Source": null
+    }
+  ],
   "Sources": [
     {
       "CameraHardwareInfo": null,

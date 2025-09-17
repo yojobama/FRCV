@@ -158,7 +158,7 @@ export const BulkUploadComponent: React.FC<BulkUploadComponentProps> = ({
     <div className={`space-y-4 ${className}`}>
       {/* Drop Zone */}
       <div
-        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-8 text-center transition-colours ${
           isDragOver
             ? 'border-blue-400 bg-blue-50 dark:bg-blue-900/20'
             : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
@@ -197,7 +197,7 @@ export const BulkUploadComponent: React.FC<BulkUploadComponentProps> = ({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colours"
           >
             {isUploading ? 'Uploading...' : 'Select Files'}
           </button>

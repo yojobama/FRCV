@@ -145,7 +145,7 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  const getStatusColor = (state: string) => {
+  const getStatuscolour = (state: string) => {
     switch (state) {
       case 'connected': return 'bg-green-600';
       case 'connecting': return 'bg-yellow-600';
@@ -169,7 +169,7 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
         <div className="flex items-center space-x-3">
           <Video className="w-5 h-5 text-white" />
           <span className="text-white font-medium">Sink {sinkId} Stream</span>
-          <span className={`px-2 py-1 rounded text-xs text-white ${getStatusColor(connectionState)} animate-pulse-slow flex items-center gap-1`}>
+          <span className={`px-2 py-1 rounded text-xs text-white ${getStatuscolour(connectionState)} animate-pulse-slow flex items-center gap-1`}>
             <Activity className="w-3 h-3" />
             {getStatusText(connectionState)}
           </span>
@@ -178,14 +178,14 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={toggleFullscreen}
-            className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors flex items-center gap-1"
+            className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colours flex items-center gap-1"
             title="Toggle fullscreen"
           >
             {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
           </button>
           <button
             onClick={stopStream}
-            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors flex items-center gap-1"
+            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colours flex items-center gap-1"
             title="Stop stream"
           >
             <Square className="w-3 h-3" />

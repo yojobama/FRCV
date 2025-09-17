@@ -5,7 +5,7 @@ export class ApiService {
 
   // Source Controller routes
   async getSources(): Promise<any[]> {
-    const response = await fetch(`${this.baseUrl}/getAll`);
+    const response = await fetch(`${this.baseUrl}/sink/getAll`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }
@@ -17,7 +17,7 @@ export class ApiService {
 
   async renameSource(id: number, name: string): Promise<void> {
     // Note: The route parameter name in SourceController appears to be SinkID (might be a copy-paste error)
-    const response = await fetch(`${this.baseUrl}/rename?SinkID=${id}&newName=${encodeURIComponent(name)}`, { method: 'PATCH' });
+    const response = await fetch(`${this.baseUrl}/sink/rename?SinkID=${id}&newName=${encodeURIComponent(name)}`, { method: 'PATCH' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
@@ -98,26 +98,26 @@ export class ApiService {
 
   // Sink Controller routes
   async bindSinkToSource(sinkId: number, sourceId: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/bind?SinkID=${sinkId}&SourceID=${sourceId}`, { method: 'PATCH' });
+      const response = await fetch(`${this.baseUrl}/sink/bind?SinkID=${sinkId}&SourceID=${sourceId}`, { method: 'PATCH' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
   async unbindSinkFromSource(sinkId: number, sourceId?: number): Promise<void> {
     const url = sourceId 
-      ? `${this.baseUrl}/unbind?SinkID=${sinkId}&SourceID=${sourceId}`
-      : `${this.baseUrl}/unbind?SinkID=${sinkId}`;
+      ? `${this.baseUrl}/sink/unbind?SinkID=${sinkId}&SourceID=${sourceId}`
+        : `${this.baseUrl}/sink/unbind?SinkID=${sinkId}`;
     const response = await fetch(url, { method: 'PATCH' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
   async deleteSink(id: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/delete?SinkID=${id}`, { method: 'DELETE' });
+    const response = await fetch(`${this.baseUrl}/sink/delete?SinkID=${id}`, { method: 'DELETE' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
   // AprilTag Sink Controller routes
   async createApriltagSink(name: string, type: string): Promise<number> {
-    const response = await fetch(`${this.baseUrl}/create?name=${encodeURIComponent(name)}&type=${encodeURIComponent(type)}`, { method: 'POST' });
+      const response = await fetch(`${this.baseUrl}/apriltagSink/create?name=${encodeURIComponent(name)}&type=${encodeURIComponent(type)}`, { method: 'POST' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }
@@ -198,9 +198,9 @@ export class ApiService {
   }
 
   async getAllSinks(): Promise<any[]> {
-    // Since there's no general getSinks endpoint, return empty array
-    // Individual sinks would need to be tracked by their creation responses
-    return [];
+      const response = await fetch(`${this.baseUrl}/sink/getAll`, { method: 'GET' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
   }
 
   // Improved file upload methods with better handling
@@ -312,16 +312,19 @@ export class ApiService {
     return this.renameSource(id, name);
   }
 
-  async changeSinkName(id: number, name: string): Promise<void> {
-    throw new Error('Sink name changing not implemented in current API');
+    async changeSinkName(id: number, name: string): Promise<void> {
+        const response = await fetch(`${this.baseUrl}/sink/rename?name=${encodeURIComponent(name)}&SinkID=${encodeURIComponent(id)}`, { method: 'PATCH' });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
   async enableSink(id: number): Promise<void> {
-    throw new Error('Sink enable/disable not implemented in current API');
+      const response = await fetch(`${this.baseUrl}/sink/toggle?SinkID=${encodeURIComponent(id)}&Enabled=${true}`, { method: 'PATCH' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
   async disableSink(id: number): Promise<void> {
-    throw new Error('Sink enable/disable not implemented in current API');
+      const response = await fetch(`${this.baseUrl}/sink/toggle?SinkID=${encodeURIComponent(false)}&SinkID=${encodeURIComponent(id)}`, { method: 'PATCH' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
   // WebRTC methods - not implemented in current API

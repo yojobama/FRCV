@@ -8,7 +8,7 @@ export const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  const getToastColor = () => {
+  const getToastcolour = () => {
     switch (type) {
       case 'success': return 'bg-green-600';
       case 'error': return 'bg-red-600';
@@ -27,7 +27,7 @@ export const Toast: React.FC<ToastProps> = ({ message, type, onClose }) => {
   };
 
   return (
-    <div className={`fixed top-4 right-4 ${getToastColor()} text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slide-up`}>
+    <div className={`fixed top-4 right-4 ${getToastcolour()} text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slide-up`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {getToastIcon()}

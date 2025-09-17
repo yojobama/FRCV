@@ -88,7 +88,7 @@ interface CameraHardwareInfo {
     h3 {
       text-align: center;
       margin-bottom: 1.5rem;
-      color: #333;
+      colour: #333;
     }
 
     .form-group {
@@ -99,7 +99,7 @@ interface CameraHardwareInfo {
       display: block;
       margin-bottom: 0.5rem;
       font-weight: bold;
-      color: #555;
+      colour: #555;
     }
 
     .form-control {
@@ -112,7 +112,7 @@ interface CameraHardwareInfo {
 
     .form-control:focus {
       outline: none;
-      border-color: #007bff;
+      border-colour: #007bff;
       box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
     }
 
@@ -127,26 +127,26 @@ interface CameraHardwareInfo {
     }
 
     .btn-primary {
-      background-color: #007bff;
-      color: white;
+      background-colour: #007bff;
+      colour: white;
       width: 100%;
     }
 
     .btn-primary:hover:not(:disabled) {
-      background-color: #0056b3;
+      background-colour: #0056b3;
     }
 
     .btn-secondary {
-      background-color: #6c757d;
-      color: white;
+      background-colour: #6c757d;
+      colour: white;
     }
 
     .btn-secondary:hover {
-      background-color: #545b62;
+      background-colour: #545b62;
     }
 
     .btn:disabled {
-      background-color: #6c757d;
+      background-colour: #6c757d;
       cursor: not-allowed;
     }
 
@@ -157,14 +157,14 @@ interface CameraHardwareInfo {
     }
 
     .alert-success {
-      background-color: #d4edda;
-      color: #155724;
+      background-colour: #d4edda;
+      colour: #155724;
       border: 1px solid #c3e6cb;
     }
 
     .alert-danger {
-      background-color: #f8d7da;
-      color: #721c24;
+      background-colour: #f8d7da;
+      colour: #721c24;
       border: 1px solid #f5c6cb;
     }
   `]

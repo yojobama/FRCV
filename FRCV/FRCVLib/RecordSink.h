@@ -18,6 +18,7 @@ public:
 	RecordSink(Logger* logger, string dstPath);
 	~RecordSink();
 	string getVideoPath();
+
 private:
 	void ProcessFrame() override;
 	void CreatePreview() override;

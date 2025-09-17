@@ -9,7 +9,7 @@ public:
 	IObjectDetectionSink(Logger* logger, PreProcessor* preProcessor, FramePool* framePool);
 	~IObjectDetectionSink();
 	std::string GetStatus() override;
+	virtual void CreatePreview();
 private:
 	virtual void ProcessFrame() override = 0;
-	void CreatePreview() override;
 };

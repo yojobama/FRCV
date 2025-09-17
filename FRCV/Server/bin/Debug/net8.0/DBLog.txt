@@ -2343,3 +2343,66 @@
 [INFO]: DB Save called
 [INFO]: DB saved successfully to data.json
 [INFO]: DB loaded successfully from data.json
+[INFO]: Logger constructed with file path: DBLog.txt
+[INFO]: DB Load called
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB loaded successfully from data.json
+[INFO]: Logger constructed with file path: DBLog.txt
+[INFO]: DB Load called
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB loaded successfully from data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: Logger constructed with file path: DBLog.txt
+[INFO]: DB Load called
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: Logger constructed with file path: DBLog.txt
+[INFO]: DB Load called
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB loaded successfully from data.json
+[INFO]: Logger constructed with file path: DBLog.txt
+[INFO]: DB Load called
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB loaded successfully from data.json
+[INFO]: Logger constructed with file path: DBLog.txt
+[INFO]: DB Load called
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB loaded successfully from data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json
+[INFO]: DB Save called
+[INFO]: DB saved successfully to data.json

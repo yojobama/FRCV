@@ -2,17 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom CSS variables for theme colors */
+/* Custom CSS variables for theme colours */
 :root {
-  /* Light theme colors */
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
-  --color-success: #059669;
-  --color-success-hover: #047857;
-  --color-error: #dc2626;
-  --color-error-hover: #b91c1c;
-  --color-warning: #d97706;
-  --color-warning-hover: #b45309;
+  /* Light theme colours */
+  --colour-primary: #2563eb;
+  --colour-primary-hover: #1d4ed8;
+  --colour-success: #059669;
+  --colour-success-hover: #047857;
+  --colour-error: #dc2626;
+  --colour-error-hover: #b91c1c;
+  --colour-warning: #d97706;
+  --colour-warning-hover: #b45309;
   
   --bg-primary: #ffffff;
   --bg-secondary: #f9fafb;
@@ -20,8 +20,8 @@
   --text-primary: #111827;
   --text-secondary: #6b7280;
   --text-tertiary: #9ca3af;
-  --border-color: #e5e7eb;
-  --border-color-hover: #d1d5db;
+  --border-colour: #e5e7eb;
+  --border-colour-hover: #d1d5db;
   
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
@@ -36,8 +36,8 @@
   --text-primary: #f9fafb;
   --text-secondary: #d1d5db;
   --text-tertiary: #9ca3af;
-  --border-color: #374151;
-  --border-color-hover: #4b5563;
+  --border-colour: #374151;
+  --border-colour-hover: #4b5563;
   
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);

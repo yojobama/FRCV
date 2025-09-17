@@ -289,7 +289,7 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
                 />
                 <label
                   htmlFor="file-upload"
-                  className={`w-full px-3 py-2 border rounded-md cursor-pointer flex items-center gap-2 transition-colors ${
+                  className={`w-full px-3 py-2 border rounded-md cursor-pointer flex items-center gap-2 transition-colours ${
                     validationErrors.length > 0 
                       ? 'border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20' 
                       : 'border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
@@ -383,14 +383,14 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colours"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!canSubmit()}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2 transition-colours"
             >
               <Plus className="w-4 h-4" />
               Add Source{files && files.length > 1 ? 's' : ''}

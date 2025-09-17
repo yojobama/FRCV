@@ -75,7 +75,7 @@ const Toast: React.FC<{
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  const getToastColor = () => {
+  const getToastcolour = () => {
     switch (type) {
       case 'success': return 'bg-green-600';
       case 'error': return 'bg-red-600';
@@ -94,7 +94,7 @@ const Toast: React.FC<{
   };
 
   return (
-    <div className={`fixed top-4 right-4 ${getToastColor()} text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slide-up`}>
+    <div className={`fixed top-4 right-4 ${getToastcolour()} text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slide-up`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {getToastIcon()}
@@ -422,7 +422,7 @@ const Navigation: React.FC<{ currentTab: string; onTabChange: (tab: string) => v
     <div className="px-6">
       <div className="flex space-x-8">
         {[{ id: 'dashboard', label: 'Dashboard', icon: BarChart3 },{ id: 'sources', label: 'Sources', icon: Camera },{ id: 'sinks', label: 'Sinks', icon: Target }].map(tab => (
-          <button key={tab.id} onClick={()=>onTabChange(tab.id)} className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${currentTab===tab.id ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}`}>
+          <button key={tab.id} onClick={()=>onTabChange(tab.id)} className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colours ${currentTab===tab.id ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}`}>
             <tab.icon className="w-4 h-4" />
             <span>{tab.label}</span>
             {tab.id === 'dashboard' && streamingCount > 0 && (
@@ -703,7 +703,7 @@ const SinksPage: React.FC<{ sinks: Sink[]; loading: boolean; streamingSinks: Set
               ) : (
                 <button onClick={()=>onStartStream(sink.id)} className="flex-1 px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 flex items-center gap-1 justify-center" disabled={sink.status==='error'}><PlayCircle className="w-4 h-4" />Start Stream</button>
               )}
-              <button onClick={()=>onConfigure(sink)} className="px-3 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colors" title="Configure"><Cog className="w-4 h-4" /></button>
+              <button onClick={()=>onConfigure(sink)} className="px-3 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colours" title="Configure"><Cog className="w-4 h-4" /></button>
             </div>
             <div className="text-xs text-gray-400">Updated: {sink.lastUpdate?.toLocaleTimeString()}</div>
           </div>
@@ -783,7 +783,7 @@ function App() {
   }
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen transition-colours duration-200 ${darkMode ? 'dark' : ''}`}>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Header systemStats={systemStats} darkMode={darkMode} onToggleDarkMode={toggleDarkMode} onShowSettings={()=>setShowSettings(true)} onRefresh={loadData} />
         <Navigation currentTab={currentTab} onTabChange={setCurrentTab} streamingCount={streamingSinks.size} />
