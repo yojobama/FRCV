@@ -5,7 +5,7 @@ export class ApiService {
 
   // Source Controller routes
   async getSources(): Promise<any[]> {
-    const response = await fetch(`${this.baseUrl}/sink/getAll`);
+    const response = await fetch(`${this.baseUrl}/source/getAll`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }
@@ -323,7 +323,7 @@ export class ApiService {
   }
 
   async disableSink(id: number): Promise<void> {
-      const response = await fetch(`${this.baseUrl}/sink/toggle?SinkID=${encodeURIComponent(false)}&SinkID=${encodeURIComponent(id)}`, { method: 'PATCH' });
+      const response = await fetch(`${this.baseUrl}/sink/toggle?SinkID=${encodeURIComponent(id)}&Enabled=${false}`, { method: 'PATCH' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 

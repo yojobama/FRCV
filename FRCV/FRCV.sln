@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36121.58
+# Visual Studio Version 18
+VisualStudioVersion = 18.0.11012.119 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTests", "UnitTests\UnitTests.vcxproj", "{C6C32180-9378-4A32-B6DD-A0C0DDB08475}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -21,6 +21,11 @@ Global
 		Debug|ARM64 = Debug|ARM64
 		Debug|x64 = Debug|x64
 		Debug|x86 = Debug|x86
+		LocalCheck|Any CPU = LocalCheck|Any CPU
+		LocalCheck|ARM = LocalCheck|ARM
+		LocalCheck|ARM64 = LocalCheck|ARM64
+		LocalCheck|x64 = LocalCheck|x64
+		LocalCheck|x86 = LocalCheck|x86
 		Release|Any CPU = Release|Any CPU
 		Release|ARM = Release|ARM
 		Release|ARM64 = Release|ARM64
@@ -43,6 +48,19 @@ Global
 		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.Debug|x86.ActiveCfg = Debug|x86
 		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.Debug|x86.Build.0 = Debug|x86
 		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.Debug|x86.Deploy.0 = Debug|x86
+		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.LocalCheck|Any CPU.ActiveCfg = LocalCheck|x64
+		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.LocalCheck|Any CPU.Build.0 = LocalCheck|x64
+		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.LocalCheck|Any CPU.Deploy.0 = LocalCheck|x64
+		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.LocalCheck|ARM.ActiveCfg = LocalCheck|ARM
+		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.LocalCheck|ARM.Build.0 = LocalCheck|ARM
+		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.LocalCheck|ARM.Deploy.0 = LocalCheck|ARM
+		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.LocalCheck|ARM64.ActiveCfg = LocalCheck|ARM64
+		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.LocalCheck|ARM64.Build.0 = LocalCheck|ARM64
+		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.LocalCheck|ARM64.Deploy.0 = LocalCheck|ARM64
+		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.LocalCheck|x64.ActiveCfg = LocalCheck|x64
+		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.LocalCheck|x86.ActiveCfg = LocalCheck|x86
+		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.LocalCheck|x86.Build.0 = LocalCheck|x86
+		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.LocalCheck|x86.Deploy.0 = LocalCheck|x86
 		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.Release|Any CPU.ActiveCfg = Release|x64
 		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.Release|Any CPU.Build.0 = Release|x64
 		{C6C32180-9378-4A32-B6DD-A0C0DDB08475}.Release|Any CPU.Deploy.0 = Release|x64
@@ -73,6 +91,19 @@ Global
 		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.Debug|x86.ActiveCfg = Debug|x86
 		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.Debug|x86.Build.0 = Debug|x86
 		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.Debug|x86.Deploy.0 = Debug|x86
+		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.LocalCheck|Any CPU.ActiveCfg = LocalCheck|x64
+		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.LocalCheck|Any CPU.Build.0 = LocalCheck|x64
+		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.LocalCheck|Any CPU.Deploy.0 = LocalCheck|x64
+		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.LocalCheck|ARM.ActiveCfg = LocalCheck|ARM
+		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.LocalCheck|ARM.Build.0 = LocalCheck|ARM
+		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.LocalCheck|ARM.Deploy.0 = LocalCheck|ARM
+		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.LocalCheck|ARM64.ActiveCfg = LocalCheck|ARM64
+		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.LocalCheck|ARM64.Build.0 = LocalCheck|ARM64
+		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.LocalCheck|ARM64.Deploy.0 = LocalCheck|ARM64
+		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.LocalCheck|x64.ActiveCfg = LocalCheck|x64
+		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.LocalCheck|x86.ActiveCfg = LocalCheck|x86
+		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.LocalCheck|x86.Build.0 = LocalCheck|x86
+		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.LocalCheck|x86.Deploy.0 = LocalCheck|x86
 		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.Release|Any CPU.ActiveCfg = Release|x64
 		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.Release|Any CPU.Build.0 = Release|x64
 		{2E3F446D-3DAB-4584-9BA8-C4EEDDFE0279}.Release|Any CPU.Deploy.0 = Release|x64
@@ -98,6 +129,16 @@ Global
 		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.Debug|x64.Build.0 = Debug|Any CPU
 		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.Debug|x86.Build.0 = Debug|Any CPU
+		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.LocalCheck|Any CPU.ActiveCfg = LocalCheck|Any CPU
+		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.LocalCheck|Any CPU.Build.0 = LocalCheck|Any CPU
+		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.LocalCheck|ARM.ActiveCfg = LocalCheck|Any CPU
+		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.LocalCheck|ARM.Build.0 = LocalCheck|Any CPU
+		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.LocalCheck|ARM64.ActiveCfg = LocalCheck|Any CPU
+		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.LocalCheck|ARM64.Build.0 = LocalCheck|Any CPU
+		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.LocalCheck|x64.ActiveCfg = LocalCheck|Any CPU
+		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.LocalCheck|x64.Build.0 = LocalCheck|Any CPU
+		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.LocalCheck|x86.ActiveCfg = LocalCheck|Any CPU
+		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.LocalCheck|x86.Build.0 = LocalCheck|Any CPU
 		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D8143212-ADA7-4DD4-B99A-684035CDD95F}.Release|ARM.ActiveCfg = Release|Any CPU
@@ -123,6 +164,21 @@ Global
 		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.Debug|x86.Build.0 = Debug|Any CPU
 		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.Debug|x86.Deploy.0 = Debug|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|Any CPU.ActiveCfg = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|Any CPU.Build.0 = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|Any CPU.Deploy.0 = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|ARM.ActiveCfg = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|ARM.Build.0 = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|ARM.Deploy.0 = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|ARM64.ActiveCfg = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|ARM64.Build.0 = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|ARM64.Deploy.0 = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|x64.ActiveCfg = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|x64.Build.0 = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|x64.Deploy.0 = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|x86.ActiveCfg = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|x86.Build.0 = LocalCheck|Any CPU
+		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.LocalCheck|x86.Deploy.0 = LocalCheck|Any CPU
 		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CEC6E8C3-C1F6-C646-E98F-4C172527373D}.Release|Any CPU.Deploy.0 = Release|Any CPU

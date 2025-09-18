@@ -73,6 +73,11 @@ namespace Server
             return ids.ToArray();
         }
 
+        public List<Sink> GetAllSinks()
+        {
+            return sinks;
+        }
+
         public void SetSinkName(int sinkId, string dstName)
         {
             foreach (var sink in sinks)
@@ -94,11 +99,15 @@ namespace Server
 
         public int AddSink(string name, string type, int? id = null)
         {
+            // Normalize type to avoid case / typo issues
+            type = (type ?? string.Empty).Trim().ToLowerInvariant();
+
             if (id.HasValue)
             {
                 switch (type)
                 {
-                    case "apritlag":
+                    case "apriltag":
+                    case "apritlag": // backward-compatibility for misspelling
                         id = ManagerWrapper.Instance.CreateApriltagSink(id.Value);
                         sinks.Add(new Sink(id.Value, name, SinkType.ApriltagSink));
                         break;
@@ -117,7 +126,7 @@ namespace Server
                         id = ManagerWrapper.Instance.CreateApriltagSink();
                         sinks.Add(new Sink(id.Value, name, SinkType.ApriltagSink));
                         break;
-                    case "ObjectDetectionSink":
+                    case "objectdetectionsink":
                         id = ManagerWrapper.Instance.CreateObjectDetectionSink();
                         sinks.Add(new Sink(id.Value, name, SinkType.ObjectDetectionSink));
                         break;
@@ -152,6 +161,7 @@ namespace Server
             if (!isRunning)
             {
                 isRunning = true;
+                thread = new Thread(ThreadProc); // Recreate the thread if it has been stopped
                 thread.Start();
             }
         }

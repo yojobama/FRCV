@@ -41,6 +41,18 @@ export const useAppData = () => {
     }
   }, []);
 
+  // helper to map server sink type enum to string label
+  const mapSinkType = (type: any): string => {
+    if (typeof type === 'string') return type;
+    switch (type) {
+      case 0: return 'apriltag';
+      case 1: return 'object';
+      case 2: return 'record';
+      case 3: return 'calibration';
+      default: return 'unknown';
+    }
+  };
+
   // Load data with error handling
   const loadData = useCallback(async () => {
     try {
@@ -61,21 +73,27 @@ export const useAppData = () => {
         cameraHardwareInfo: source.CameraHardwareInfo || source.cameraHardwareInfo
       }));
 
-      // Load sinks (currently limited since there's no general endpoint)
-      const sinkDetails: Sink[] = [];
-      // Since we can't get all sinks, we start with an empty array
-      // Sinks will be populated as they are created through the UI
+      // Load sinks from backend and map to UI type
+      const serverSinks = await api.getAllSinks().catch(() => [] as any[]);
+      const mappedSinks: Sink[] = serverSinks.map(s => ({
+        id: s.Id || s.id,
+        name: s.Name || s.name || `Sink ${s.Id || s.id}`,
+        type: mapSinkType(s.Type ?? s.type),
+        status: 'active',
+        lastUpdate: new Date(),
+        sourceId: (s.Source && (s.Source.Id || s.Source.id)) || (s.source && (s.source.Id || s.source.id))
+      }));
       
       // Load device stats
       const currentDeviceStats = await loadDeviceStats();
 
       setSources(formattedSources);
-      setSinks(sinkDetails);
+      setSinks(mappedSinks);
       
       // Update system stats with device stats
       setSystemStats({
         sources: formattedSources.length,
-        sinks: sinkDetails.length,
+        sinks: mappedSinks.length,
         activeStreams: streamingSinks.size,
         uptime: new Date().toLocaleTimeString(),
         serverStatus: 'online',
@@ -158,16 +176,9 @@ export const useAppData = () => {
       
       const sinkId = await api.createApriltagSink(name, type);
       
-      // Since we can't reload all sinks, we'll add the new sink to our local state
-      const newSink: Sink = {
-        id: sinkId,
-        name: name,
-        type: type,
-        status: 'active',
-        lastUpdate: new Date()
-      };
+      // Refresh sinks from backend to keep UI consistent across reloads
+      await loadData();
       
-      setSinks(prev => [...prev, newSink]);
       showToast(`Sink "${name}" added successfully with ID ${sinkId}`, 'success');
     } catch (error) {
       showToast(`Failed to add sink: ${error}`, 'error');
@@ -208,8 +219,8 @@ export const useAppData = () => {
     try {
       await api.deleteSink(id);
       
-      // Remove from local state since we can't reload all sinks
-      setSinks(prev => prev.filter(sink => sink.id !== id));
+      // Reload from backend to reflect deletion consistently
+      await loadData();
       showToast('Sink deleted', 'info');
     } catch {
       showToast('Failed to delete sink', 'error');
@@ -220,10 +231,8 @@ export const useAppData = () => {
     try {
       await api.bindSinkToSource(sinkId, sourceId);
       
-      // Update local state
-      setSinks(prev => prev.map(sink => 
-        sink.id === sinkId ? { ...sink, sourceId } : sink
-      ));
+      // Update from backend
+      await loadData();
       showToast('Sink bound to source', 'success');
     } catch {
       showToast('Failed to bind sink', 'error');
@@ -234,10 +243,8 @@ export const useAppData = () => {
     try {
       await api.unbindSinkFromSource(sinkId, sourceId);
       
-      // Update local state
-      setSinks(prev => prev.map(sink => 
-        sink.id === sinkId ? { ...sink, sourceId: undefined } : sink
-      ));
+      // Update from backend
+      await loadData();
       showToast('Sink unbound from source', 'info');
     } catch {
       showToast('Failed to unbind sink', 'error');
