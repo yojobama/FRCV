@@ -101,9 +101,19 @@ int SystemMonitor::m_GetVal(const std::string& target, const std::string& conten
 
 float SystemMonitor::m_GetCPUUsage(const CPU_STATS& first, const CPU_STATS& second)
 {
-    const float active_time = static_cast<float>(second.get_total_active() - first.get_total_active());
-    const float idle_time = static_cast<float>(second.get_total_idle() - first.get_total_idle());
+    const int active_diff = second.get_total_active() - first.get_total_active();
+    const int idle_diff = second.get_total_idle() - first.get_total_idle();
+
+    // Ensure non-negative differences
+    const float active_time = static_cast<float>(std::max(active_diff, 0));
+    const float idle_time = static_cast<float>(std::max(idle_diff, 0));
     const float total_time = active_time + idle_time;
+
+    // Avoid division by zero
+    if (total_time == 0.0f) {
+        return 0.0f; // Return 0% usage if no time has passed
+    }
+
     return active_time / total_time;
 }
 

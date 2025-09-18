@@ -119,6 +119,7 @@
     <ClInclude Include="CameraCalibrationResult.h" />
     <ClInclude Include="CameraCalibrationSink.h" />
     <ClInclude Include="CameraSource.h" />
+    <ClInclude Include="FFMPEGEncoder.h" />
     <ClInclude Include="Frame.h" />
     <ClInclude Include="FramePool.h" />
     <ClInclude Include="FrameSpec.h" />
@@ -144,6 +145,7 @@
     <ClCompile Include="CameraCalibrationResult.cpp" />
     <ClCompile Include="CameraCalibrationSink.cpp" />
     <ClCompile Include="CameraSource.cpp" />
+    <ClCompile Include="FFMPEGEncoder.cpp" />
     <ClCompile Include="Frame.cpp" />
     <ClCompile Include="FramePool.cpp" />
     <ClCompile Include="FrameSpec.cpp" />
