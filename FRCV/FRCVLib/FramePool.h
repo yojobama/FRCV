@@ -10,15 +10,15 @@ class Frame;
 class FramePool
 {
 public:
-	FramePool(Logger* logger);
+	FramePool(Logger* p_Logger);
 	~FramePool();
-	int getCachedFrameCount();
-	std::shared_ptr<Frame> getFrame(FrameSpec frameSpec);
-	void returnFrame(std::shared_ptr<Frame> frame);
+	int GetCachedFrameCount();
+	std::shared_ptr<Frame> GetFrame(FrameSpec frameSpec);
+	void ReturnFrame(std::shared_ptr<Frame> p_Frame);
 private:
-	std::shared_ptr<Frame> allocateFrame(FrameSpec frameSpec);
-	std::vector<std::shared_ptr<Frame>> frameVector;
-	Logger* logger;
-	std::mutex lock;
+	std::shared_ptr<Frame> AllocateFrame(FrameSpec frameSpec);
+	std::vector<std::shared_ptr<Frame>> m_FrameVector;
+	Logger* m_Logger;
+	std::mutex m_Lock;
 };
 

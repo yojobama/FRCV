@@ -1,0 +1,15 @@
+#version 450
+layout(local_size_x=16, local_size_y=16) in;
+
+layout(binding=0, rgba8) readonly uniform image2D imgIn;
+layout(binding=1, r8)    writeonly uniform image2D imgOut;
+
+layout(push_constant) uniform Push { int dec; } pc;
+
+void main() {
+    ivec2 outXY = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 inXY  = outXY * pc.dec;
+    vec4 rgba = imageLoad(imgIn, inXY);
+    float gray = dot(rgba.rgb, vec3(0.299,0.587,0.114));
+    imageStore(imgOut, outXY, vec4(gray,0.0,0.0,1.0));
+}

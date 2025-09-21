@@ -1,6 +1,7 @@
 #pragma once
 #include "Logger.h"
 #include <string>
+#include "ISink.h"
 
 class Frame;
 
@@ -11,14 +12,17 @@ namespace cv {
 };
 
 // todo: implement inheritence from ISink
-class RecordSink
+class RecordSink : public ISink
 {
 public:
 	RecordSink(Logger* logger, string dstPath);
 	~RecordSink();
-	void writeFrame();
 	string getVideoPath();
+
 private:
+	void ProcessFrame() override;
+	void CreatePreview() override;
+
 	cv::VideoWriter* videoWriter;
 	string dstPath;
 };

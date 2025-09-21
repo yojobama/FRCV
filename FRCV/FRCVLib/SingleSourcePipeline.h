@@ -1,3 +1,4 @@
+#include "CameraCalibrationSink.h"
 #pragma once
 #include "IPipeline.h"
 #include "IFrameSource.h"
@@ -25,7 +26,6 @@ inline SingleSourcePipeline<Result>::~SingleSourcePipeline()
 {
 	logger->enterLog(INFO, "deleting a single source pipeline");
 }
-
 
 template<class Result>
 inline std::vector<Result>* SingleSourcePipeline<Result>::getResults()

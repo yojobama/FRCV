@@ -2,9 +2,10 @@
 #include "ImageFileSource.h"
 #include "VideoFileSource.h"
 #include "ApriltagSink.h"
-#include "CameraCalibrationResult.h"
 #include "RecordSink.h"
 #include "CameraSource.h"
+#include "Frame.h"
+#include "SystemMonitor.h"
 
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
@@ -15,31 +16,57 @@
 #include <dirent.h>
 #include "PreProcessor.h"
 #include "ISink.h"
-#include "CameraCalibrationResult.h"
+#include "CameraCalibrationSink.h"
+#include <opencv2/opencv.hpp>
+
+Manager::Manager(string logFile)
+{
+    m_Logger = new Logger(logFile);
+    m_FramePool = new FramePool(m_Logger);
+    m_Logger->EnterLog("Manager constructed");
+    m_PreProcessor = new PreProcessor(m_FramePool);
+	m_SystemMonitor = new SystemMonitor(1000); // 1 second interval
+	m_SystemMonitor->StartMonitoring();
+}
 
 Manager::Manager()
 {
-    logger = new Logger();
-    framePool = new FramePool(logger);
-    logger->enterLog("Manager constructed");
-    preProcessor = new PreProcessor(framePool);
+    m_Logger = new Logger("FRCVLog.txt");
+    m_FramePool = new FramePool(m_Logger);
+    m_Logger->EnterLog("Manager constructed");
+    m_PreProcessor = new PreProcessor(m_FramePool);
+	m_SystemMonitor = new SystemMonitor(1000); // 1 second interval
+    m_SystemMonitor->StartMonitoring();
 }
 
 Manager::~Manager()
 {
-    logger->enterLog("Manager destructed");
-    delete framePool;
-    delete logger;
+	m_SystemMonitor->StopMonitoring();
+    m_Logger->EnterLog("Manager destructed");
+    delete m_FramePool;
+    delete m_Logger;
+	delete m_PreProcessor;
+    delete m_SystemMonitor;
+    // Clean up sources
+    for (auto& source : m_Sources) {
+        delete source.second;
+    }
+    m_Sources.clear();
+    // Clean up sinks
+    for (auto& sink : m_Sinks) {
+        delete sink.second;
+    }
+	m_Sinks.clear();
 }
 
-vector<int> Manager::getAllSinks()
+vector<int> Manager::GetAllSinks()
 {
-    logger->enterLog("getAllSinks called");
+    m_Logger->EnterLog("GetAllSinks called");
     vector<int> returnVector;
 
-    auto iterator = sinks.begin();
+    auto iterator = m_Sinks.begin();
 
-    while (iterator != sinks.end())
+    while (iterator != m_Sinks.end())
     {
         returnVector.push_back(iterator->first);
         iterator++;
@@ -48,30 +75,44 @@ vector<int> Manager::getAllSinks()
     return returnVector;
 }
 
-vector<CameraHardwareInfo> Manager::enumerateAvailableCameras()
+vector<int> Manager::GetAllSources()
 {
-    logger->enterLog("enumerateAvailableCameras called");
+	vector<int> sourceIds;
+
+	auto iterator = m_Sources.begin();
+
+    while (iterator != m_Sources.end()) {
+		sourceIds.push_back(iterator->first);
+        iterator++;
+    }
+
+    return sourceIds;
+}
+
+vector<CameraHardwareInfo> Manager::EnumerateAvailableCameras()
+{
+    m_Logger->EnterLog("EnumerateAvailableCameras called");
     vector<CameraHardwareInfo> cameras;
-    const char* video_dir = "/dev/";
-    DIR* dir = opendir(video_dir);
-    if (!dir) {
-        logger->enterLog("Failed to open /dev/ directory");
+    const char* p_VideoDir = "/dev/";
+    DIR* p_Dir = opendir(p_VideoDir);
+    if (!p_Dir) {
+        m_Logger->EnterLog("Failed to open /dev/ directory");
         return cameras;
     }
 
-    struct dirent* entry;
-    while ((entry = readdir(dir)) != nullptr) {
+    struct dirent* p_Entry;
+    while ((p_Entry = readdir(p_Dir)) != nullptr) {
         // Check if name starts with "video"
-        if (strncmp(entry->d_name, "video", 5) == 0) {
+        if (strncmp(p_Entry->d_name, "video", 5) == 0) {
             // Check if the rest is an even number
-            const char* numPart = entry->d_name + 5;
-            char* endptr;
-            long num = strtol(numPart, &endptr, 10);
-            if (*numPart != '\0' && *endptr == '\0' && num % 2 == 0) {
-                std::string devicePath = std::string(video_dir) + entry->d_name;
+            const char* p_NumPart = p_Entry->d_name + 5;
+            char* p_EndPtr;
+            long num = strtol(p_NumPart, &p_EndPtr, 10);
+            if (*p_NumPart != '\0' && *p_EndPtr == '\0' && num % 2 == 0) {
+                std::string devicePath = std::string(p_VideoDir) + p_Entry->d_name;
                 int fd = open(devicePath.c_str(), O_RDONLY);
                 if (fd < 0) {
-                    logger->enterLog("Failed to open device: " + devicePath);
+                    m_Logger->EnterLog("Failed to open device: " + devicePath);
                     continue;
                 }
                 struct v4l2_capability cap;
@@ -102,317 +143,467 @@ vector<CameraHardwareInfo> Manager::enumerateAvailableCameras()
                         .path = devicePath
                     }
                 );
-                logger->enterLog("Camera found: " + deviceName + " at " + devicePath);
+                m_Logger->EnterLog("Camera found: " + deviceName + " at " + devicePath);
             }
         }
     }
-    closedir(dir);
+    closedir(p_Dir);
     return cameras;
 }
 
-bool Manager::bindSourceToSink(int sourceId, int sinkId) {
-    logger->enterLog("bindSourceToSink called with sourceId=" + std::to_string(sourceId) + ", sinkId=" + std::to_string(sinkId));
-    ISource* source;
-    ISink* sink;
+bool Manager::BindSourceToSink(int sourceId, int sinkId) {
+    m_Logger->EnterLog("BindSourceToSink called with sourceId=" + std::to_string(sourceId) + ", sinkId=" + std::to_string(sinkId));
+    ISource* p_Source;
+    ISink* p_Sink;
 
-    if (sources.find(sourceId) == sources.end()) {
-        logger->enterLog("Source not found: " + std::to_string(sourceId));
+    if (m_Sources.find(sourceId) == m_Sources.end()) {
+        m_Logger->EnterLog("Source not found: " + std::to_string(sourceId));
         return false;
     }
-    source = sources.find(sourceId)->second;
+    p_Source = m_Sources.find(sourceId)->second;
 
-    if (sinks.find(sinkId) == sinks.end()) {
-        logger->enterLog("Sink not found: " + std::to_string(sinkId));
+    if (m_Sinks.find(sinkId) == m_Sinks.end()) {
+        m_Logger->EnterLog("Sink not found: " + std::to_string(sinkId));
         return false;
     }
-    sink = sinks.find(sinkId)->second;
+    p_Sink = m_Sinks.find(sinkId)->second;
 
-    bool result = sink->bindSource(source);
-    logger->enterLog("bindSourceToSink result: " + std::to_string(result));
+    bool result = p_Sink->BindSource(p_Source);
+    m_Logger->EnterLog("BindSourceToSink result: " + std::to_string(result));
     return result;
 }
 
-bool Manager::unbindSourceFromSink(int sinkId) {
-    logger->enterLog("unbindSourceFromSink called with sinkId=" + std::to_string(sinkId));
-    ISink* sink;
+bool Manager::UnbindSourceFromSink(int sinkId) {
+    m_Logger->EnterLog("UnbindSourceFromSink called with sinkId=" + std::to_string(sinkId));
+    ISink* p_Sink;
 
-    if (sinks.find(sinkId) != sinks.end()) {
-        logger->enterLog("Sink not found: " + std::to_string(sinkId));
+    if (m_Sinks.find(sinkId) == m_Sinks.end()) {
+        m_Logger->EnterLog("Sink not found: " + std::to_string(sinkId));
         return false;
     }
-    sink = sinks.find(sinkId)->second;
+    p_Sink = m_Sinks.find(sinkId)->second;
 
-    bool result = sink->unbindSource();
-    logger->enterLog("unbindSourceFromSink result: " + std::to_string(result));
+    bool result = p_Sink->UnbindSource();
+    m_Logger->EnterLog("UnbindSourceFromSink result: " + std::to_string(result));
     return result;
 }
 
-int Manager::createCameraSource(CameraHardwareInfo info)
+int Manager::CreateCameraSource(CameraHardwareInfo info)
 {
-    logger->enterLog("createCameraSource called with name=" + info.name + ", path=" + info.path);
+    m_Logger->EnterLog("CreateCameraSource called with name=" + info.name + ", path=" + info.path);
     
-    int id = generateUUID();
+    int id = GenerateUUID();
 
-    CameraFrameSource* source = new CameraFrameSource(info.path, logger, framePool);
+    CameraFrameSource* p_Source = new CameraFrameSource(info.path, m_Logger, m_FramePool);
 
-    sources.emplace(id, source);
+    m_Sources.emplace(id, p_Source);
 
-    logger->enterLog("CameraFrameSource created with id=" + std::to_string(id));
+    m_Logger->EnterLog("CameraFrameSource created with id=" + std::to_string(id));
     
     return id;
 }
 
-int Manager::createVideoFileSource(string path, int fps)
+int Manager::CreateCameraSource(CameraHardwareInfo info, int id)
 {
-    logger->enterLog("createVideoFileSource called with path=" + path);
-    int id = generateUUID();
+    m_Logger->EnterLog("CreateCameraSource called with name=" + info.name + ", path=" + info.path);
 
-    VideoFileFrameSource* source = new VideoFileFrameSource(logger, path, framePool, fps);
+    CameraFrameSource* p_Source = new CameraFrameSource(info.path, m_Logger, m_FramePool);
 
-    sources.emplace(id, source);
+    m_Sources.emplace(id, p_Source);
 
-    logger->enterLog("VideoFileFrameSource created with id=" + std::to_string(id));
+    m_Logger->EnterLog("CameraFrameSource created with id=" + std::to_string(id));
+
     return id;
 }
 
-int Manager::createImageFileSource(string path)
+int Manager::CreateVideoFileSource(string path, int fps)
 {
-    logger->enterLog("createImageFileSource called with path=" + path);
-    int id = generateUUID();
+    m_Logger->EnterLog("CreateVideoFileSource called with path=" + path);
+    int id = GenerateUUID();
 
-    ImageFileFrameSource* source = new ImageFileFrameSource(path, logger, framePool);
+    VideoFileFrameSource* p_Source = new VideoFileFrameSource(m_Logger, path, m_FramePool, fps);
 
-    sources.emplace(id, source);
+    m_Sources.emplace(id, p_Source);
 
-    logger->enterLog("ImageFileFrameSource created with id=" + std::to_string(id));
+    m_Logger->EnterLog("VideoFileFrameSource created with id=" + std::to_string(id));
     return id;
 }
 
-int Manager::createApriltagSink()
+int Manager::CreateVideoFileSource(string path, int fps, int id)
 {
-    logger->enterLog("createApriltagSink called");
-    int id = generateUUID();
+    m_Logger->EnterLog("CreateVideoFileSource called with path=" + path);
 
-    ApriltagSink* sink = new ApriltagSink(logger, preProcessor);
+    VideoFileFrameSource* p_Source = new VideoFileFrameSource(m_Logger, path, m_FramePool, fps);
 
-    sinks.emplace(id, sink);
+    m_Sources.emplace(id, p_Source);
 
-    logger->enterLog("ApriltagSink created with id=" + std::to_string(id));
+    m_Logger->EnterLog("VideoFileFrameSource created with id=" + std::to_string(id));
     return id;
 }
 
-int Manager::createObjectDetectionSink()
+int Manager::CreateImageFileSource(string path)
 {
-    logger->enterLog("createObjectDetectionSink called");
+    m_Logger->EnterLog("CreateImageFileSource called with path=" + path);
+    int id = GenerateUUID();
+
+    ImageFileFrameSource* p_Source = new ImageFileFrameSource(path, m_Logger, m_FramePool);
+
+    m_Sources.emplace(id, p_Source);
+
+    m_Logger->EnterLog("ImageFileFrameSource created with id=" + std::to_string(id));
+    return id;
+}
+
+int Manager::CreateImageFileSource(string path, int id)
+{
+    m_Logger->EnterLog("CreateImageFileSource called with path=" + path);
+
+    ImageFileFrameSource* p_Source = new ImageFileFrameSource(path, m_Logger, m_FramePool);
+
+    m_Sources.emplace(id, p_Source);
+
+    m_Logger->EnterLog("ImageFileFrameSource created with id=" + std::to_string(id));
+    return id;
+}
+
+int Manager::CreateApriltagSink()
+{
+    m_Logger->EnterLog("CreateApriltagSink called");
+    int id = GenerateUUID();
+
+    ApriltagSink* p_Sink = new ApriltagSink(m_Logger, m_PreProcessor, m_FramePool);
+
+    m_Sinks.emplace(id, p_Sink);
+
+    m_Logger->EnterLog("ApriltagSink created with id=" + std::to_string(id));
+    return id;
+}
+
+int Manager::CreateApriltagSink(int id)
+{
+    m_Logger->EnterLog("CreateApriltagSink called");
+
+    ApriltagSink* p_Sink = new ApriltagSink(m_Logger, m_PreProcessor, m_FramePool);
+
+    m_Sinks.emplace(id, p_Sink);
+
+    m_Logger->EnterLog("ApriltagSink created with id=" + std::to_string(id));
+    return id;
+}
+
+int Manager::CreateObjectDetectionSink()
+{
+    m_Logger->EnterLog("CreateObjectDetectionSink called");
     return 0;
 }
 
-int Manager::createRecordingSink(int sourceId)
+int Manager::CreateObjectDetectionSink(int id)
 {
-    int id = generateUUID();
+    m_Logger->EnterLog("CreateObjectDetectionSink called");
+    return 0;
+}
+
+int Manager::CreateRecordingSink(int sourceId)
+{
+    int id = GenerateUUID();
 
     // TODO: generate the path to the video file, an empty string will couse a faliure
 
-    /*RecordSink* recordSink = new RecordSink(logger, "");
+    /*RecordSink* p_RecordSink = new RecordSink(m_Logger, "");
 
-    sinks.emplace(id, recordSink);*/
+    m_Sinks.emplace(id, p_RecordSink);*/
 
     return id;
 }
 
-void Manager::startAllSources()
+void Manager::StartAllSources()
 {
-    auto iterator = sources.begin();
+    auto iterator = m_Sources.begin();
 
-    while (iterator != sources.end()) {
-        iterator->second->changeThreadStatus(true);
+    while (iterator != m_Sources.end()) {
+        iterator->second->ChangeThreadStatus(true);
         iterator++;
     }
 }
 
-void Manager::stopAllSources()
+void Manager::StopAllSources()
 {
-    auto iterator = sources.begin();
+    auto iterator = m_Sources.begin();
 
-    while (iterator != sources.end()) {
-        iterator->second->changeThreadStatus(false);
+    while (iterator != m_Sources.end()) {
+        iterator->second->ChangeThreadStatus(false);
         iterator++;
     }
 }
 
-bool Manager::stopSourceById(int sourceId)
+bool Manager::StopSourceById(int sourceId)
 {
-    auto source = sources.find(sourceId);
-    if (source == sources.end()) {
+    auto source = m_Sources.find(sourceId);
+    if (source == m_Sources.end()) {
         return false;
     }
-    source->second->changeThreadStatus(false);
+    source->second->ChangeThreadStatus(false);
     return true;
 }
 
-bool Manager::startSourceById(int sourceId)
+bool Manager::StartSourceById(int sourceId)
 {
-    auto source = sources.find(sourceId);
-    if (source == sources.end()) {
+    auto source = m_Sources.find(sourceId);
+    if (source == m_Sources.end()) {
         return false;
     }
-    source->second->changeThreadStatus(true);
+    source->second->ChangeThreadStatus(true);
     return true;
 }
 
-void Manager::startAllSinks() {
-    auto iterator = sinks.begin();
+void Manager::StartAllSinks() {
+    if (!m_Sinks.empty()) {
+        auto iterator = m_Sinks.begin();
 
-    while (iterator != sinks.end()) {
-        iterator->second->changeThreadStatus(true);
+        while (iterator != m_Sinks.end()) {
+            iterator->second->ChangeThreadStatus(true);
+            iterator++;
+        }
+    }
+}
+
+void Manager::StopAllSinks() {
+    auto iterator = m_Sinks.begin();
+
+    while (iterator != m_Sinks.end()) {
+        iterator->second->ChangeThreadStatus(false);
         iterator++;
     }
 }
 
-void Manager::stopAllSinks() {
-    auto iterator = sinks.begin();
-
-    while (iterator != sinks.end()) {
-        iterator->second->changeThreadStatus(false);
-        iterator++;
-    }
-}
-
-bool Manager::stopSinkById(int sinkId) {
-    auto sink = sinks.find(sinkId);
-    if (sink == sinks.end()) {
+bool Manager::StopSinkById(int sinkId) {
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) {
         return false;
     }
-    sink->second->changeThreadStatus(false);
+    sink->second->ChangeThreadStatus(false);
     return true;
 }
 
-bool Manager::startSinkById(int sinkId) {
-    auto sink = sinks.find(sinkId);
-    if (sink == sinks.end()) {
+bool Manager::StartSinkById(int sinkId) {
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) {
         return false;
     }
-    sink->second->changeThreadStatus(true);
+    sink->second->ChangeThreadStatus(true);
     return true;
 }
 
-string Manager::getAllSinkStatus()
+string Manager::GetAllSinkStatus()
 {
-    logger->enterLog("getAllSinkStatus called");
-    string returnString;
-    returnString += "{[";
+    m_Logger->EnterLog("GetAllSinkStatus called");
+    string returnString = "{";
 
-    auto iterator = sinks.begin();
+    auto iterator = m_Sinks.begin();
 
-    while (iterator != sinks.end()) {
+    while (iterator != m_Sinks.end()) {
+        returnString += "\"" + std::to_string(iterator->first) + "\": \"";
+        returnString += iterator->second->GetStatus();
         returnString += "\"";
-        returnString += iterator->second->getStatus();
-        returnString += "\",";
+
         iterator++;
+        if (iterator != m_Sinks.end()) {
+            returnString += ", ";
+        }
     }
 
-    returnString += "]}";
+    returnString += "}";
 
     return returnString;
 }
 
-string Manager::getSinkStatusById(int sinkId)
+string Manager::GetSinkStatusById(int sinkId)
 {
-    logger->enterLog("getSinkStatusById called with sinkId=" + std::to_string(sinkId));
-    ISink* sink;
+    m_Logger->EnterLog("GetSinkStatusById called with sinkId=" + std::to_string(sinkId));
+    ISink* p_Sink;
 
-    if (sinks.find(sinkId) != sinks.end()) {
-        logger->enterLog("Sink not found: " + std::to_string(sinkId));
+    if (m_Sinks.find(sinkId) == m_Sinks.end()) {
+        m_Logger->EnterLog("Sink not found: " + std::to_string(sinkId));
         return "";
     }
-    sink = sinks.find(sinkId)->second;
+    p_Sink = m_Sinks.find(sinkId)->second;
 
-    string status = sink->getStatus();
-    logger->enterLog("getSinkStatusById result: " + status);
+    string status = p_Sink->GetStatus();
+    m_Logger->EnterLog("GetSinkStatusById result: " + status);
     return status;
 }
 
-string Manager::getSinkResult(int sinkId)
+string Manager::GetSinkResult(int sinkId)
 {
-    logger->enterLog("getSinkResult called with sinkId=" + std::to_string(sinkId));
-    if (sinks.find(sinkId) == sinks.end()) {
-        logger->enterLog("Result not found for sinkId: " + std::to_string(sinkId));
+    m_Logger->EnterLog("GetSinkResult called with sinkId=" + std::to_string(sinkId));
+    if (m_Sinks.find(sinkId) == m_Sinks.end()) {
+        m_Logger->EnterLog("Result not found for sinkId: " + std::to_string(sinkId));
         return "";
     }
-    string result = sinks.find(sinkId)->second->getCurrentResults();
-    logger->enterLog("getSinkResult result: " + result);
+    string result = m_Sinks.find(sinkId)->second->GetCurrentResults();
+    m_Logger->EnterLog("GetSinkResult result: " + result);
     return result;
 }
 
-string Manager::getAllSinkResults()
+string Manager::GetAllSinkResults()
 {
-    logger->enterLog("getAllSinkResults called");
-    string returnString;
-    returnString += "{[";
-    auto iterator = sinks.begin();
+    m_Logger->EnterLog("GetAllSinkResults called");
+    string returnString = "{";
 
-    while (iterator != sinks.end()) {
-        returnString += "{";
-        returnString += iterator->second->getCurrentResults();
-        returnString += "},";
+    auto iterator = m_Sinks.begin();
+
+    while (iterator != m_Sinks.end()) {
+        returnString += "\"" + std::to_string(iterator->first) + "\": ";
+        returnString += iterator->second->GetCurrentResults();
+
         iterator++;
+        if (iterator != m_Sinks.end()) {
+            returnString += ", ";
+        }
     }
 
-
-    returnString += "]}";
+    returnString += "}";
 
     return returnString;
 }
 
-vector<Log*> *Manager::getAllLogs()
+bool Manager::SetSinkResult(int sinkId, string result)
 {
-    logger->enterLog("getAllLogs called");
-    return logger->GetAllLogs();
-}
-
-bool Manager::setSinkResult(int sinkId, string result)
-{
-    logger->enterLog("setSinkResult called with sinkId=" + std::to_string(sinkId) + ", result=" + result);
-    if (sinks.find(sinkId) == sinks.end()) {
-        logger->enterLog("Result entry not found for sinkId: " + std::to_string(sinkId));
+    m_Logger->EnterLog("SetSinkResult called with sinkId=" + std::to_string(sinkId) + ", result=" + result);
+    if (m_Sinks.find(sinkId) == m_Sinks.end()) {
+        m_Logger->EnterLog("Result entry not found for sinkId: " + std::to_string(sinkId));
         return false;
     }
     else {
-        sinks.find(sinkId)->second->getCurrentResults() = result;
-        logger->enterLog("Result set for sinkId: " + std::to_string(sinkId));
+        m_Sinks.find(sinkId)->second->GetCurrentResults() = result;
+        m_Logger->EnterLog("Result set for sinkId: " + std::to_string(sinkId));
         return true;
     }
 }
 
-int Manager::generateUUID()
+int Manager::GenerateUUID()
 {
-    logger->enterLog("generateUUID called");
+    m_Logger->EnterLog("GenerateUUID called");
     std::mt19937 engine(std::chrono::high_resolution_clock::now().time_since_epoch().count());
 
-    std::uniform_int_distribution<int> dist(-2147483648, 2147483647);
+    std::uniform_int_distribution<int> dist(0, 2147483647);
 
     int randomNumber = dist(engine);
-    logger->enterLog("Generated UUID: " + std::to_string(randomNumber));
+    m_Logger->EnterLog("Generated UUID: " + std::to_string(randomNumber));
     return randomNumber;
 }
 
-bool Manager::takeCalibrationImage(int cameraId)
+int Manager::CreateCameraCalibrationSink(int width, int height)
 {
-    if (sources.find(cameraId) == sources.end()) {
-        return false;
-    }
-    calibrationImages.push_back(sources.find(cameraId)->second->getLatestFrame());
-    return true;
+	int id = GenerateUUID();
+
+	CameraCalibrationSink* p_Sink = new CameraCalibrationSink(m_Logger, m_PreProcessor, FrameSpec(height, width, CV_8UC3));
+
+	m_CameraCalibrationSinks.emplace(id, p_Sink);
+
+    return 0;
 }
 
-CameraCalibrationResult Manager::conculdeCalibration()
+void Manager::BindSourceToCalibrationSink(int sourceId)
 {
-    calibrationImages.clear();
+	auto sink = m_CameraCalibrationSinks.find(sourceId);
+    if (sink != m_CameraCalibrationSinks.end() && m_Sources.find(sourceId) != m_Sources.end()) {
+		sink->second->BindSource(m_Sources.find(sourceId)->second);
+    }
+}
+
+void Manager::CameraCalibrationSinkGrabFrame(int sinkId)
+{
+    auto sink = m_CameraCalibrationSinks.find(sinkId);
+    if (sink != m_CameraCalibrationSinks.end()) {
+        sink->second->GrabAndProcessFrame();
+    } else {
+        m_Logger->EnterLog("CameraCalibrationSink not found with id: " + std::to_string(sinkId));
+	}
+}
+
+CameraCalibrationResult Manager::GetCameraCalibrationResults(int sinkId)
+{
+	auto sink = m_CameraCalibrationSinks.find(sinkId);
+    if (sink != m_CameraCalibrationSinks.end()) {
+		return sink->second->GetResults();
+    }
+    // Return empty result if not found
     return CameraCalibrationResult();
 }
 
-void Manager::clearAllLogs()
+int Manager::GetMemoryUsageBytes()
 {
-    logger->enterLog("clearAllLogs called");
-    logger->clearAllLogs();
+	// TODO: implement a function to get memory usage
+    return m_SystemMonitor->GetRAMUsage();
+}
+
+/*
+	returns the CPU usage in percents
+*/
+int Manager::GetCPUUsage()
+{
+	// TODO: implement a function to get CPU usage
+    return m_SystemMonitor->GetCPUUsage();
+}
+
+/*
+	returns the CPU temperature in degrees Celsius 
+    if you are an american, deal with it :)
+*/
+int Manager::GetCpuTemperature()
+{
+	// TODO: implement a function to get CPU temperature
+    return m_SystemMonitor->GetCPUTemperature();
+}
+
+/*
+   returns the disk usage in percents
+*/
+int Manager::GetDiskUsage()
+{
+    return m_SystemMonitor->GetDiskUsage();
+}
+
+bool Manager::EnableSinkPreview(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    
+    if (sink == m_Sinks.end()) throw "There is not sink with that id";
+
+    if (sink->second->GetPreviewStatus()) throw "preview is already enabled for this sink";
+
+    sink->second->EnablePreview();
+
+    return true;
+}
+
+bool Manager::DisableSinkPreview(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    
+    if (sink == m_Sinks.end()) throw "There is not sink with that id";
+
+    if (!sink->second->GetPreviewStatus()) throw "preview is already dissabled for this sink";
+
+    sink->second->DissablePreview();
+
+    return true;
+}
+
+Image8U Manager::GetPreviewImage(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    
+    if (sink == m_Sinks.end()) throw "There is not sink with that id";
+    if (!sink->second->GetPreviewStatus()) throw "Preview is not activated in this sink";
+
+    shared_ptr<Frame> frame = sink->second->GetPreviewFrame();
+
+    return Image8U{
+        .width = frame.get()->cols,
+        .height = frame.get()->rows,
+        .stride = frame.get()->cols,
+        .buf = frame.get()->data,
+    };
 }

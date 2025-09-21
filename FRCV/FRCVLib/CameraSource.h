@@ -26,8 +26,9 @@ public:
 	void changeDeviceName(std::string newName);
 
 private:
-	void captureFrame() override;
+	void CaptureFrame() override;
 	cv::VideoCapture* capture;
-	std::string devicePath;
-	std::string deviceName;
+	std::string m_DevicePath;
+	std::string m_DeviceName;
+	Logger* m_Logger;
 };

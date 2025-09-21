@@ -1,0 +1,16 @@
+#version 450
+layout(local_size_x=16, local_size_y=16) in;
+
+layout(binding=0, r8) readonly uniform image2D imgBin;
+layout(binding=1, r32ui) writeonly uniform uimage2D imgLabel;
+
+shared uint labelTile[18][18];
+
+void main() {
+    ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
+    uint label = 0;
+    if (imageLoad(imgBin, uv).r > 0.5) {
+        label = uint(uv.x + uv.y * gl_NumWorkGroups.x * gl_WorkGroupSize.x) + 1u;
+    }
+    imageStore(imgLabel, uv, uvec4(label));
+}

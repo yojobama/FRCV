@@ -1,14 +1,40 @@
 #pragma once
-#include "ISink.h"
-#include <opencv2/calib3d.hpp>
-#include <apriltag_pose.h>
+#include <vector>
+#include <memory>
+#include "FrameSpec.h"
+#include <opencv2/opencv.hpp>
+
+using namespace std;
+
+class ISource;
+class Frame;
+class CameraCalibrationResult;
+class Logger;
+class PreProcessor;
+class FrameSpec;
 
 
-class CameraCalibrationSink : ISink<CameraCalibrationResult>
+class CameraCalibrationSink
 {
 public:
-	CameraCalibrationSink(Logger* logger) : ISink<CameraCalibrationResult>(logger) {}
+	CameraCalibrationSink(Logger* logger, PreProcessor* preProcessor, FrameSpec frameSpec);
 	~CameraCalibrationSink();
-	std::vector<CameraCalibrationResult> getResults(Frame* frame);
+
+	void BindSource(ISource* source);
+	void GrabAndProcessFrame();
+	CameraCalibrationResult GetResults();
+private:
+	FrameSpec m_FrameSpec;
+	ISource* m_Source;
+	int CHECKERBOARD[2] = { 6, 9 }; // Number of inner corners per a chessboard row and column
+
+	std::vector<std::vector<cv::Point3f> > m_Objpoints;
+	// Creating vector to store vectors of 2D points for each checkerboard image
+	std::vector<std::vector<cv::Point2f> > m_Imgpoints;
+	std::vector<cv::Point3f> m_Objp;
+	std::vector<cv::Point2f> M_CornerPts;
+
+	Logger* logger;
+	PreProcessor* preProcessor;
 };
 

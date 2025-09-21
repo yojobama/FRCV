@@ -1,0 +1,2 @@
+D:\Projects\FRCV\FRCV\reactproject1\obj\Debug\reactproject1.esproj.CoreCompileInputs.cache
+C:\Users\yojob\Projects\FRCV\FRCV\reactproject1\obj\Debug\reactproject1.esproj.CoreCompileInputs.cache

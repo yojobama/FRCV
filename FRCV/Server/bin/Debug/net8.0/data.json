@@ -1,0 +1,43 @@
+{
+  "Sinks": [
+    {
+      "Type": 0,
+      "Id": 1656413620,
+      "Name": null,
+      "Source": {
+        "CameraHardwareInfo": null,
+        "Fps": null,
+        "FilePath": "images/apriltag.png",
+        "Type": 1,
+        "Id": 459272857,
+        "Name": "apriltag"
+      }
+    }
+  ],
+  "Sources": [
+    {
+      "CameraHardwareInfo": null,
+      "Fps": null,
+      "FilePath": "images/WhatsApp Image 2025-05-09 at 18.24.59.jpeg",
+      "Type": 1,
+      "Id": 1960091743,
+      "Name": "WhatsApp Image 2025-05-09 at 18.24.59"
+    },
+    {
+      "CameraHardwareInfo": null,
+      "Fps": null,
+      "FilePath": "images/WhatsApp Image 2025-05-09 at 18.24.59.jpeg",
+      "Type": 1,
+      "Id": 2081610621,
+      "Name": "WhatsApp Image 2025-05-09 at 18.24.59"
+    },
+    {
+      "CameraHardwareInfo": null,
+      "Fps": null,
+      "FilePath": "images/apriltag.png",
+      "Type": 1,
+      "Id": 459272857,
+      "Name": "apriltag"
+    }
+  ]
+}

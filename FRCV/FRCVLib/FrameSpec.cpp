@@ -2,7 +2,7 @@
 
 FrameSpec::FrameSpec(int height, int width, int type)
 {
-	this->height = height;
-	this->width = width;
-	this->type = type;
+	this->m_Height = height;
+	this->m_Width = width;
+	this->m_Type = type;
 }
