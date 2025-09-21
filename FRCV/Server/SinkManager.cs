@@ -262,9 +262,9 @@ namespace Server
 
         public void BindSourceToSink(int sinkId, int sourceId)
         {
-            foreach(var sink in sinks)
+            foreach (var sink in sinks)
             {
-                if(sink.Id == sinkId)
+                if (sink.Id == sinkId)
                 {
                     sink.Source = SourceManager.Instance.GetSourceById(sourceId);
                     ManagerWrapper.Instance.BindSourceToSink(sourceId, sinkId);

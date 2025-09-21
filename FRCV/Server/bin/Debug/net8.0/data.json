@@ -2,15 +2,16 @@
   "Sinks": [
     {
       "Type": 0,
-      "Id": 1940206197,
-      "Name": "ApriltagTest",
-      "Source": null
-    },
-    {
-      "Type": 0,
-      "Id": 261705887,
-      "Name": "ApriltagTest",
-      "Source": null
+      "Id": 1656413620,
+      "Name": null,
+      "Source": {
+        "CameraHardwareInfo": null,
+        "Fps": null,
+        "FilePath": "images/apriltag.png",
+        "Type": 1,
+        "Id": 459272857,
+        "Name": "apriltag"
+      }
     }
   ],
   "Sources": [
