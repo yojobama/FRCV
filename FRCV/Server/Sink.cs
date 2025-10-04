@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,9 +9,13 @@ namespace Server
 {
     public enum SinkType
     {
+        [Description("ApriltagSink")]
         ApriltagSink,
+        [Description("ObjectDetectionSink")]
         ObjectDetectionSink,
+        [Description("RecordingSink")]
         RecordingSink,
+        [Description("CameraCalibrationSink")]
         CameraCalibrationSink,
     }
 

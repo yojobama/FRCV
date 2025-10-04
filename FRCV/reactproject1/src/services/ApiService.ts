@@ -11,13 +11,13 @@ export class ApiService {
   }
 
   async deleteSource(id: number): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/delete?SourceID=${id}`, { method: 'DELETE' });
+    const response = await fetch(`${this.baseUrl}/source/delete?SourceID=${id}`, { method: 'DELETE' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
   async renameSource(id: number, name: string): Promise<void> {
     // Note: The route parameter name in SourceController appears to be SinkID (might be a copy-paste error)
-    const response = await fetch(`${this.baseUrl}/sink/rename?SinkID=${id}&newName=${encodeURIComponent(name)}`, { method: 'PATCH' });
+    const response = await fetch(`${this.baseUrl}/source/rename?SourceID=${id}&newName=${encodeURIComponent(name)}`, { method: 'PATCH' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
@@ -312,7 +312,7 @@ export class ApiService {
     return this.renameSource(id, name);
   }
 
-    async changeSinkName(id: number, name: string): Promise<void> {
+  async renameSink(id: number, name: string): Promise<void> {
         const response = await fetch(`${this.baseUrl}/sink/rename?name=${encodeURIComponent(name)}&SinkID=${encodeURIComponent(id)}`, { method: 'PATCH' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }

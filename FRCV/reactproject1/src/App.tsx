@@ -142,14 +142,14 @@ const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; chi
  ****************/
 const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd: (name: string, type: string) => void; }> = ({ isOpen, onClose, onAdd }) => {
   const [name, setName] = useState('');
-  const [type, setType] = useState('apriltag');
+  const [type, setType] = useState('ApriltagSink');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
       onAdd(name.trim(), type);
       setName('');
-      setType('apriltag');
+      setType('ApriltagSink');
       onClose();
     }
   };
@@ -179,7 +179,7 @@ const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd: (nam
             onChange={(e) => setType(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
           >
-            <option value="apriltag">AprilTag Detection</option>
+            <option value="ApriltagSink">AprilTag Detection</option>
             <option value="record">Recording</option>
             <option value="stereo">Stereo Vision</option>
             <option value="calibration">Camera Calibration</option>

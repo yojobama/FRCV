@@ -73,7 +73,7 @@ namespace Server
                     }
                     foreach (var sink in sinks)
                     {
-                        SinkManager.Instance.AddSink(sink.Name, sink.Type.ToString());
+                        SinkManager.Instance.AddSink(sink.Name, sink.Type.ToString(), sink.Id);
                     }
 
                     logger.EnterLog("DB loaded successfully from " + jsonPath);

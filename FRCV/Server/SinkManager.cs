@@ -106,12 +106,14 @@ namespace Server
             {
                 switch (type)
                 {
+                    case "ApriltagSink":
                     case "apriltag":
                     case "apritlag": // backward-compatibility for misspelling
                         id = ManagerWrapper.Instance.CreateApriltagSink(id.Value);
                         sinks.Add(new Sink(id.Value, name, SinkType.ApriltagSink));
                         break;
                     case "objectdetectionsink":
+                    case "ObjectDetectionSink":
                         id = ManagerWrapper.Instance.CreateObjectDetectionSink(id.Value);
                         sinks.Add(new Sink(id.Value, name, SinkType.ObjectDetectionSink));
                         break;

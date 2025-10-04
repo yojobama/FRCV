@@ -169,7 +169,7 @@ export const useAppData = () => {
   const handleAddSink = async (name: string, type: string) => {
     try {
       // Currently only AprilTag sinks are implemented
-      if (type !== 'apriltag') {
+      if (type !== 'ApriltagSink') {
         showToast(`Sink type "${type}" is not yet implemented. Only AprilTag sinks are available.`, 'error');
         return;
       }
@@ -207,7 +207,7 @@ export const useAppData = () => {
 
   const handleRenameSink = async (id: number, name: string) => {
     try {
-      await api.changeSinkName(id, name);
+      await api.renameSink(id, name);
       showToast('Sink renamed', 'success');
       loadData();
     } catch {

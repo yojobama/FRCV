@@ -109,6 +109,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <WSLPath>Ubuntu-24.04</WSLPath>
     <EnableASAN>true</EnableASAN>
+    <MultiProcNumber>12</MultiProcNumber>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <WSLPath>Ubuntu-24.04</WSLPath>

@@ -24,9 +24,9 @@ namespace Server.Controllers.sources
 
         // PATCH: Rename am ImageFile source;
         [Route(EmbedIO.HttpVerbs.Patch, "/source/rename")]
-        public Task Rename([QueryField] int SinkID, [QueryField] string newName)
+        public Task Rename([QueryField] int SourceID, [QueryField] string newName)
         {
-            SourceManager.Instance.ChangeSourceName(SinkID, newName);
+            SourceManager.Instance.ChangeSourceName(SourceID, newName);
             return Task.CompletedTask;
         }
 
