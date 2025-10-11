@@ -117,7 +117,7 @@ export class ApiService {
 
   // AprilTag Sink Controller routes
   async createApriltagSink(name: string, type: string): Promise<number> {
-      const response = await fetch(`${this.baseUrl}/apriltagSink/create?name=${encodeURIComponent(name)}&type=${encodeURIComponent(type)}`, { method: 'POST' });
+      const response = await fetch(`${this.baseUrl}/apriltagSink/create?name=${encodeURIComponent(name)}&type=apriltag`, { method: 'POST' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }
@@ -313,7 +313,7 @@ export class ApiService {
   }
 
   async renameSink(id: number, name: string): Promise<void> {
-        const response = await fetch(`${this.baseUrl}/sink/rename?name=${encodeURIComponent(name)}&SinkID=${encodeURIComponent(id)}`, { method: 'PATCH' });
+        const response = await fetch(`${this.baseUrl}/sink/rename?NewName=${encodeURIComponent(name)}&SinkID=${encodeURIComponent(id)}`, { method: 'PATCH' });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 

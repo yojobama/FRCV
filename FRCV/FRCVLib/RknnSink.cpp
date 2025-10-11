@@ -15,6 +15,8 @@ RknnSink::~RknnSink() {
     if (logger) logger->enterLog("RknnSink destructed");
 }
 
+// TODO: Inplement the actual inference logic, this is just another bloody place holder
+
 void RknnSink::initializeModel() {
     if (logger) logger->enterLog("Initializing RKNN model");
     int ret = rknn_init(&context, const_cast<char*>(modelPath.c_str()), 0, 0, nullptr); // Fix const void* to void*
