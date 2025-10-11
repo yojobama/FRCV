@@ -356,6 +356,16 @@ bool Manager::StartSourceById(int sourceId)
     return true;
 }
 
+bool Manager::IsSourceActive(int sourceId)
+{
+	// TODO: implement this function
+	auto source = m_Sources.find(sourceId);
+    if (source != m_Sources.end()) {
+        return false;
+    }
+    return source->second->GetActivationStatus();
+}
+
 void Manager::StartAllSinks() {
     if (!m_Sinks.empty()) {
         auto iterator = m_Sinks.begin();
@@ -383,6 +393,15 @@ bool Manager::StopSinkById(int sinkId) {
     }
     sink->second->ChangeThreadStatus(false);
     return true;
+}
+
+bool Manager::IsSinkActive(int sinkId)
+{
+	auto sink = m_Sinks.find(sinkId);
+	if (sink != m_Sinks.end()) {
+		return false;
+	}
+    return sink->second->GetActivationStatus();
 }
 
 bool Manager::StartSinkById(int sinkId) {

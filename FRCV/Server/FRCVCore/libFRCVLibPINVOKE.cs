@@ -341,6 +341,9 @@ class libFRCVLibPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_StartSourceById")]
   public static extern bool Manager_StartSourceById(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_IsSourceActive")]
+  public static extern bool Manager_IsSourceActive(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_StartAllSinks")]
   public static extern void Manager_StartAllSinks(global::System.Runtime.InteropServices.HandleRef jarg1);
 
@@ -352,6 +355,9 @@ class libFRCVLibPINVOKE {
 
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_StopSinkById")]
   public static extern bool Manager_StopSinkById(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_IsSinkActive")]
+  public static extern bool Manager_IsSinkActive(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_GetAllSinkStatus")]
   public static extern string Manager_GetAllSinkStatus(global::System.Runtime.InteropServices.HandleRef jarg1);

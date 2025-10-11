@@ -20,13 +20,20 @@ void ISink::ChangeThreadStatus(bool threadWantedAlive)
     if (threadWantedAlive) {
         m_ShouldTerminate = false;
         pthread_create(&m_Thread, NULL, SinkThreadStart, this);
+		m_Activated = true;
     }
     else {
         if (m_Thread) {
             m_ShouldTerminate = true;
             pthread_join(m_Thread, NULL);
+			m_Activated = false;
         }
     }
+}
+
+bool ISink::GetActivationStatus()
+{
+    return m_Activated;
 }
 
 void ISink::EnablePreview()

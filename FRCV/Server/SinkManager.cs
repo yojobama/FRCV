@@ -276,5 +276,10 @@ namespace Server
                 }
             }
         }
+
+        public bool IsSinkRunning(int id)
+        {
+            return ManagerWrapper.Instance.IsSinkActive(id);
+        }
     }
 }

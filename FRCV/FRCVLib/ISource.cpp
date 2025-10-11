@@ -62,10 +62,12 @@ void ISource::ChangeThreadStatus(bool threadWantedAlive)
 	if (threadWantedAlive && !m_DoNotLoadThread) {
 		m_ShouldTerminate = false;
 		pthread_create(&m_Thread, NULL, SourceThreadStart, this);
+		m_Activated = true;
 	} else if (!m_DoNotLoadThread) {
 		if (m_Thread) {
 			m_ShouldTerminate = true;
 			pthread_join(m_Thread, NULL); // Wait for the thread to terminate
+			m_Activated = false;
 		}
 	}
 }
@@ -73,6 +75,11 @@ void ISource::ChangeThreadStatus(bool threadWantedAlive)
 uint64_t ISource::GetCurrentFrameCount()
 {
 	return m_FrameCount;
+}
+
+bool ISource::GetActivationStatus()
+{
+	return m_Activated;
 }
 
 void* ISource::SourceThreadStart(void* p_Reference)

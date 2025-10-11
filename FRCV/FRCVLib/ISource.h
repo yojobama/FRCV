@@ -17,6 +17,7 @@ public:
 	virtual std::shared_ptr<Frame> GetLatestFrame(bool forceNewFrame);
 	void ChangeThreadStatus(bool threadWantedAlive);
 	uint64_t GetCurrentFrameCount();
+	bool GetActivationStatus();
 protected:
 	uint64_t m_FrameCount = 0;
 	virtual void CaptureFrame() = 0;
@@ -31,5 +32,6 @@ private:
 	std::mutex m_Lock;
 	pthread_t m_Thread;
 	bool m_ShouldTerminate;
+	bool m_Activated = false;
 };
 

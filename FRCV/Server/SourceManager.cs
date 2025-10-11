@@ -166,5 +166,10 @@ namespace Server
 
             DB.Instance.Save();
         }
+
+        public bool IsSourceActive(int sourceId)
+        {
+            return ManagerWrapper.Instance.IsSourceActive(sourceId);
+        }
     }
 }

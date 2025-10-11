@@ -11,6 +11,14 @@ namespace Server.Controllers.sinks
 {
     internal class SinkController : WebApiController
     {
+        // GET: Get a sink's active status by id;
+        [Route(HttpVerbs.Get, "/sink/getStatus")]
+        public Task<bool> GetStatus([QueryField] int SinkID)
+        {
+            bool status = SinkManager.Instance.IsSinkRunning(SinkID);
+            return Task.FromResult(false);
+        }
+
         // PATCH: Enable/Disable a sink;
         [Route(HttpVerbs.Patch, "/sink/toggle")]
         public Task Toggle([QueryField] int SinkID, [QueryField] bool Enabled)

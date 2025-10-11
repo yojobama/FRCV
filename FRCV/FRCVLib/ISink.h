@@ -24,6 +24,8 @@ public:
     virtual string GetStatus();
     void ChangeThreadStatus(bool threadWantedAlive);
 
+	bool GetActivationStatus();
+
     void EnablePreview();
     void DissablePreview();
     bool GetPreviewStatus();
@@ -45,5 +47,6 @@ private:
     uint64_t m_LastFrameCount;
     bool m_PreviewEnabled;
 	StereoSink* m_StereoSink;
+    bool m_Activated = false;
 };
 

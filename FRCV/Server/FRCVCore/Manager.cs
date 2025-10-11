@@ -167,6 +167,11 @@ public class Manager : global::System.IDisposable {
     return ret;
   }
 
+  public bool IsSourceActive(int sourceId) {
+    bool ret = libFRCVLibPINVOKE.Manager_IsSourceActive(swigCPtr, sourceId);
+    return ret;
+  }
+
   public void StartAllSinks() {
     libFRCVLibPINVOKE.Manager_StartAllSinks(swigCPtr);
   }
@@ -182,6 +187,11 @@ public class Manager : global::System.IDisposable {
 
   public bool StopSinkById(int sinkId) {
     bool ret = libFRCVLibPINVOKE.Manager_StopSinkById(swigCPtr, sinkId);
+    return ret;
+  }
+
+  public bool IsSinkActive(int sinkId) {
+    bool ret = libFRCVLibPINVOKE.Manager_IsSinkActive(swigCPtr, sinkId);
     return ret;
   }
 

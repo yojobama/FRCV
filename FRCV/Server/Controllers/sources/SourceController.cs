@@ -10,6 +10,14 @@ namespace Server.Controllers.sources
 {
     internal class SourceController : WebApiController
     {
+        // GET: Source activation status
+        [Route(EmbedIO.HttpVerbs.Get, "/source/isActive")]
+        public Task<bool> IsActive([QueryField] int SourceID)
+        {
+            bool status = SourceManager.Instance.IsSourceActive(SourceID);
+            return Task.FromResult(status);
+        }
+
         // GET: All registered sources;
         [Route(EmbedIO.HttpVerbs.Get, "/source/getAll")]
         public Task<Source[]> GetAllSources()

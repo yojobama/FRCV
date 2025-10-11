@@ -75,11 +75,13 @@ public:
 	void StopAllSources();
 	bool StopSourceById(int sourceId);
 	bool StartSourceById(int sourceId);
+	bool IsSourceActive(int sourceId);
 
 	void StartAllSinks();
 	void StopAllSinks();
 	bool StartSinkById(int sinkId);
 	bool StopSinkById(int sinkId);
+	bool IsSinkActive(int sinkId);
 
 	string GetAllSinkStatus();
 

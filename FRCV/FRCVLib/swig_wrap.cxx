@@ -1480,6 +1480,20 @@ SWIGEXPORT unsigned int SWIGSTDCALL CSharp_Manager_StartSourceById(void * jarg1,
 }
 
 
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_Manager_IsSourceActive(void * jarg1, int jarg2) {
+  unsigned int jresult ;
+  Manager *arg1 = (Manager *) 0 ;
+  int arg2 ;
+  bool result;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (bool)(arg1)->IsSourceActive(arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_Manager_StartAllSinks(void * jarg1) {
   Manager *arg1 = (Manager *) 0 ;
   
@@ -1519,6 +1533,20 @@ SWIGEXPORT unsigned int SWIGSTDCALL CSharp_Manager_StopSinkById(void * jarg1, in
   arg1 = (Manager *)jarg1; 
   arg2 = (int)jarg2; 
   result = (bool)(arg1)->StopSinkById(arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_Manager_IsSinkActive(void * jarg1, int jarg2) {
+  unsigned int jresult ;
+  Manager *arg1 = (Manager *) 0 ;
+  int arg2 ;
+  bool result;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (bool)(arg1)->IsSinkActive(arg2);
   jresult = result; 
   return jresult;
 }
