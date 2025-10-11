@@ -14,19 +14,19 @@ namespace Server.Controllers
         [Route(HttpVerbs.Get, "/device/cpuUsage")]
         public Task<int> GetDeviceCPUUsage() 
         { 
-            return Task.FromResult(ManagerWrapper.Instance.GetCPUUsage()); 
+            return Task.FromResult((int)LinuxResourceMonitor.Instance.GetLatestResourceInfo().CpuUsagePercent); 
         }
 
         [Route(HttpVerbs.Get, "/device/ramUsage")]
         public Task<int> GetDeviceRamUsage()
         {
-            return Task.FromResult(ManagerWrapper.Instance.GetMemoryUsageBytes());
+            return Task.FromResult((int)LinuxResourceMonitor.Instance.GetLatestResourceInfo().UsedMemoryMB);
         }
 
         [Route(HttpVerbs.Get, "/device/diskUsage")]
         public Task<int> GetDeviceDiskUsage()
         {
-            return Task.FromResult(ManagerWrapper.Instance.GetDiskUsage());
+            return Task.FromResult((int)LinuxResourceMonitor.Instance.GetLatestResourceInfo().RootDiskUsage.UsedPercent);
         }
     }
 }

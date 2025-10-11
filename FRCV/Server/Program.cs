@@ -40,10 +40,16 @@ namespace Server
 
         static void Main(string[] args)
         {
+            // initializing the resource monitor
+            LinuxResourceMonitor.Instance.StartMonitoring();
+            Thread.Sleep(3000); // giving the monitor time to stabilize
+            
+            // initializing the computer vision system (I know, a very specific description)
             Console.WriteLine("Loading database...");
             DB.Instance.Load();
             DB.Instance.Verify();
 
+            // initializing the web server
             Console.WriteLine("Starting HTTP server...");
             var server = CreateWebServer("http://localhost:8175");
             server.Start();
