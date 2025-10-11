@@ -108,6 +108,7 @@ void ApriltagSink::ProcessFrame()
 				returnString += ",";
 			}
 		}
+        m_FramePool->ReturnFrame(gray);
 	}
 	else {
 		m_Logger->EnterLog(LogLevel::Error, "ApriltagSink::getResults: Frame is null");
