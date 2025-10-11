@@ -75,13 +75,24 @@ export const useAppData = () => {
 
       // Load sinks from backend and map to UI type
       const serverSinks = await api.getAllSinks().catch(() => [] as any[]);
-      const mappedSinks: Sink[] = serverSinks.map(s => ({
-        id: s.Id || s.id,
-        name: s.Name || s.name || `Sink ${s.Id || s.id}`,
-        type: mapSinkType(s.Type ?? s.type),
-        status: 'active',
-        lastUpdate: new Date(),
-        sourceId: (s.Source && (s.Source.Id || s.Source.id)) || (s.source && (s.source.Id || s.source.id))
+      const mappedSinks: Sink[] = await Promise.all(serverSinks.map(async s => {
+        // Load sink status for each sink
+        let isEnabled = false;
+        try {
+          isEnabled = await api.getSinkStatus(s.Id || s.id);
+        } catch (error) {
+          console.warn(`Failed to get status for sink ${s.Id || s.id}:`, error);
+        }
+        
+        return {
+          id: s.Id || s.id,
+          name: s.Name || s.name || `Sink ${s.Id || s.id}`,
+          type: mapSinkType(s.Type ?? s.type),
+          status: 'active',
+          lastUpdate: new Date(),
+          sourceId: (s.Source && (s.Source.Id || s.Source.id)) || (s.source && (s.source.Id || s.source.id)),
+          isEnabled
+        };
       }));
       
       // Load device stats
@@ -305,6 +316,27 @@ export const useAppData = () => {
     }
   };
 
+  const handleToggleSink = async (sinkId: number, enabled: boolean) => {
+    try {
+      await api.toggleSink(sinkId, enabled);
+      
+      // Update local state immediately for better UX
+      setSinks(prevSinks => 
+        prevSinks.map(sink => 
+          sink.id === sinkId 
+            ? { ...sink, isEnabled: enabled }
+            : sink
+        )
+      );
+      
+      showToast(`Sink ${enabled ? 'enabled' : 'disabled'}`, 'success');
+    } catch (error) {
+      showToast(`Failed to toggle sink: ${error}`, 'error');
+      // Reload data to revert to actual server state
+      loadData();
+    }
+  };
+
   return {
     sources,
     sinks,
@@ -332,6 +364,7 @@ export const useAppData = () => {
     handleBulkImageUpload,
     startUDPTransmission,
     stopUDPTransmission,
+    handleToggleSink,
     setStreamingSinks,
     setError,
     setToast

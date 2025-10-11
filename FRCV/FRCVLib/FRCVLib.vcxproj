@@ -108,7 +108,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <WSLPath>Ubuntu-24.04</WSLPath>
-    <EnableASAN>true</EnableASAN>
+    <EnableASAN>false</EnableASAN>
     <MultiProcNumber>12</MultiProcNumber>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">

@@ -53,6 +53,8 @@ namespace Server
 
         private void ThreadProc()
         {
+            const int MAX_UDP_SIZE = 1400; // Safe size below MTU
+            
             try
             {
                 byte[] testMsg = Encoding.UTF8.GetBytes("starting udp transmissions");
@@ -63,11 +65,36 @@ namespace Server
                     if (channel.Reader.TryRead(out string? message))
                     {
                         byte[] msg = Encoding.UTF8.GetBytes(message);
-                        udpClient.Send(msg, msg.Length, remoteEP);
+                        
+                        // Fragment large messages
+                        if (msg.Length > MAX_UDP_SIZE)
+                        {
+                            int totalChunks = (msg.Length + MAX_UDP_SIZE - 1) / MAX_UDP_SIZE;
+                            for (int i = 0; i < totalChunks; i++)
+                            {
+                                int offset = i * MAX_UDP_SIZE;
+                                int chunkSize = Math.Min(MAX_UDP_SIZE, msg.Length - offset);
+                                
+                                // Add header: [chunkIndex/totalChunks]
+                                string header = $"[{i}/{totalChunks}]";
+                                byte[] headerBytes = Encoding.UTF8.GetBytes(header);
+                                byte[] chunk = new byte[headerBytes.Length + chunkSize];
+                                
+                                Array.Copy(headerBytes, 0, chunk, 0, headerBytes.Length);
+                                Array.Copy(msg, offset, chunk, headerBytes.Length, chunkSize);
+                                
+                                udpClient.Send(chunk, chunk.Length, remoteEP);
+                                Thread.Sleep(1); // Small delay between fragments
+                            }
+                        }
+                        else
+                        {
+                            udpClient.Send(msg, msg.Length, remoteEP);
+                        }
                     }
                     else
                     {
-                        Thread.Sleep(10); // Prevent tight loop if nothing to read
+                        Thread.Sleep(10);
                     }
                 }
             }

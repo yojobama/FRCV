@@ -18,6 +18,7 @@ export interface Sink {
   isStreaming?: boolean;
   lastUpdate?: Date;
   sourceId?: number;
+  isEnabled?: boolean; // Track whether sink is enabled/disabled
 }
 
 export interface CameraHardwareInfo {

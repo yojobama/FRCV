@@ -152,9 +152,16 @@ namespace Server
         private void updateResults()
         {
             string[] results = getAllSinkIds().Select(id => ManagerWrapper.Instance.GetSinkResult(id)).ToArray();
-            currentResults = JsonSerializer.Serialize(results);
-            // Logic to update results in sinks
-            // This could involve iterating through sinks and updating their state based on the data received.
+            
+            // Manually construct JSON array without re-serializing the JSON strings
+            if (results.Length == 0)
+            {
+                currentResults = "[]";
+            }
+            else
+            {
+                currentResults = "[" + string.Join(",", results) + "]";
+            }
         }
 
         // start the sink manager thread

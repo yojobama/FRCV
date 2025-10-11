@@ -317,6 +317,17 @@ export class ApiService {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
+  async getSinkStatus(sinkId: number): Promise<boolean> {
+    const response = await fetch(`${this.baseUrl}/sink/getStatus?SinkID=${sinkId}`, { method: 'GET' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async toggleSink(sinkId: number, enabled: boolean): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/sink/toggle?SinkID=${sinkId}&Enabled=${enabled}`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
   async enableSink(id: number): Promise<void> {
       const response = await fetch(`${this.baseUrl}/sink/toggle?SinkID=${encodeURIComponent(id)}&Enabled=${true}`, { method: 'PATCH' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);

@@ -25,7 +25,9 @@ import {
   ExternalLink,
   Trash2,
   Link2,
-  Unlink
+  Unlink,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 import './App.css';
 
@@ -61,6 +63,36 @@ const useDarkMode = () => {
 
   return [darkMode, setDarkMode] as const;
 }
+
+/*****************
+ * Toggle Switch Component
+ *****************/
+const ToggleSwitch: React.FC<{ 
+  enabled: boolean; 
+  onChange: (enabled: boolean) => void;
+  disabled?: boolean;
+}> = ({ enabled, onChange, disabled = false }) => {
+  return (
+    <button
+      onClick={() => !disabled && onChange(!enabled)}
+      disabled={disabled}
+      className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+      } ${
+        enabled 
+          ? 'bg-green-600 dark:bg-green-500' 
+          : 'bg-gray-300 dark:bg-gray-600'
+      }`}
+      title={enabled ? 'Enabled - Click to disable' : 'Disabled - Click to enable'}
+    >
+      <span
+        className={`inline-block w-4 h-4 transform transition-transform bg-white rounded-full ${
+          enabled ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  );
+};
 
 /*****************
  * Toast Component
@@ -270,7 +302,8 @@ const ConfigureSourceModal: React.FC<{ isOpen:boolean; onClose:()=>void; source:
 const ConfigureSinkModal: React.FC<{ isOpen:boolean; onClose:()=>void; sink: Sink|null; sources: Source[]; onRename:(name:string)=>void; onDelete:()=>void; onBind:(sourceId:number)=>void; onUnbind:(sourceId:number)=>void; }> = ({ isOpen, onClose, sink, sources, onRename, onDelete, onBind, onUnbind }) => {
   const [name, setName] = useState(sink?.name || '');
   const [selected, setSelected] = useState<number | ''>(sink?.sourceId ?? '');
-  useEffect(()=> { setName(sink?.name || ''); setSelected(sink?.sourceId ?? ''); }, [sink]);
+  const [enabled, setEnabled] = useState(sink?.enabled ?? false);
+  useEffect(()=> { setName(sink?.name || ''); setSelected(sink?.sourceId ?? ''); setEnabled(sink?.enabled ?? false); }, [sink]);
   if(!isOpen || !sink) return null;
   const bound = sink.sourceId != null;
   return (
@@ -293,6 +326,10 @@ const ConfigureSinkModal: React.FC<{ isOpen:boolean; onClose:()=>void; sink: Sin
               <button disabled={selected===''} onClick={()=> { if(selected!==''){ onBind(Number(selected)); } }} className="px-3 py-2 bg-green-600 disabled:opacity-50 text-white rounded hover:bg-green-700 flex items-center gap-1"><Link2 className="w-4 h-4" />Bind</button>
             )}
           </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Enabled</label>
+          <ToggleSwitch enabled={enabled} onChange={setEnabled} />
         </div>
       </div>
       <div className="flex justify-between mt-6">
@@ -452,7 +489,8 @@ const DashboardPage: React.FC<{
   onGoToSources: () => void;
   onStartUDP: () => void;
   onStopUDP: () => void;
-}> = ({ systemStats, deviceStats, streamingSinks, sources, sinks, onStopAllStreams, onStopStream, onStreamError, onStartStream, onGoToSinks, onGoToSources, onStartUDP, onStopUDP }) => (
+  onToggleSink: (id: number, enabled: boolean) => void;
+}> = ({ systemStats, deviceStats, streamingSinks, sources, sinks, onStopAllStreams, onStopStream, onStreamError, onStartStream, onGoToSinks, onGoToSources, onStartUDP, onStopUDP, onToggleSink }) => (
   <div className="space-y-6">
     <SystemStatus systemStats={systemStats} deviceStats={deviceStats} />
     
@@ -549,6 +587,10 @@ const DashboardPage: React.FC<{
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  <ToggleSwitch 
+                    enabled={sink.isEnabled ?? false} 
+                    onChange={(enabled) => onToggleSink(sink.id, enabled)}
+                  />
                   {streamingSinks.has(sink.id) ? (
                     <>
                       <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded text-xs font-medium">LIVE</span>
@@ -662,7 +704,17 @@ const SourcesPage: React.FC<{
 /***************
  * Sinks Page
  ***************/
-const SinksPage: React.FC<{ sinks: Sink[]; loading: boolean; streamingSinks: Set<number>; onAddSink:()=>void; onStartStream:(id:number)=>void; onStopStream:(id:number)=>void; onConfigure:(s:Sink)=>void; onDelete:(id:number)=>void; }> = ({ sinks, loading, streamingSinks, onAddSink, onStartStream, onStopStream, onConfigure, onDelete }) => (
+const SinksPage: React.FC<{ 
+  sinks: Sink[]; 
+  loading: boolean; 
+  streamingSinks: Set<number>; 
+  onAddSink:()=>void; 
+  onStartStream:(id:number)=>void; 
+  onStopStream:(id:number)=>void; 
+  onConfigure:(s:Sink)=>void; 
+  onDelete:(id:number)=>void;
+  onToggleSink:(id:number, enabled:boolean)=>void;
+}> = ({ sinks, loading, streamingSinks, onAddSink, onStartStream, onStopStream, onConfigure, onDelete, onToggleSink }) => (
   <div className="space-y-6">
     <div className="flex justify-between items-center">
       <div>
@@ -697,6 +749,18 @@ const SinksPage: React.FC<{ sinks: Sink[]; loading: boolean; streamingSinks: Set
             {sink.sourceId && (
               <p className="text-xs text-blue-600 dark:text-blue-400 mb-3 flex items-center gap-1"><ExternalLink className="w-3 h-3" />Bound to Source {sink.sourceId}</p>
             )}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-700 dark:text-gray-300">Status:</span>
+                <ToggleSwitch 
+                  enabled={sink.isEnabled ?? false} 
+                  onChange={(enabled) => onToggleSink(sink.id, enabled)}
+                />
+                <span className={`text-sm font-medium ${sink.isEnabled ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                  {sink.isEnabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+            </div>
             <div className="flex gap-2 mb-4">
               {streamingSinks.has(sink.id) ? (
                 <button onClick={()=>onStopStream(sink.id)} className="flex-1 px-3 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 flex items-center gap-1 justify-center"><StopCircle className="w-4 h-4" />Stop Stream</button>
@@ -752,6 +816,7 @@ function App() {
     handleBulkImageUpload,
     startUDPTransmission,
     stopUDPTransmission,
+    handleToggleSink,
     setStreamingSinks,
     setError,
     setToast
@@ -816,6 +881,7 @@ function App() {
               onGoToSources={()=>setCurrentTab('sources')}
               onStartUDP={startUDPTransmission}
               onStopUDP={stopUDPTransmission}
+              onToggleSink={handleToggleSink}
             />
           )}
           {currentTab === 'sources' && (
@@ -830,7 +896,17 @@ function App() {
             />
           )}
           {currentTab === 'sinks' && (
-            <SinksPage sinks={sinks} loading={loading} streamingSinks={streamingSinks} onAddSink={()=>setShowAddSink(true)} onStartStream={startStream} onStopStream={stopStream} onConfigure={s=>setCfgSink(s)} onDelete={id=>handleDeleteSink(id)} />
+            <SinksPage 
+              sinks={sinks} 
+              loading={loading} 
+              streamingSinks={streamingSinks} 
+              onAddSink={()=>setShowAddSink(true)} 
+              onStartStream={startStream} 
+              onStopStream={stopStream} 
+              onConfigure={s=>setCfgSink(s)} 
+              onDelete={id=>handleDeleteSink(id)}
+              onToggleSink={handleToggleSink}
+            />
           )}
         </main>
 
