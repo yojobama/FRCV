@@ -1,5 +1,6 @@
 #pragma once
 #include "IObjectDetectionSink.h"
+#include "ONNX_YOLO11.hpp"
 
 class ONNXSink : public IObjectDetectionSink
 {
@@ -13,5 +14,6 @@ public:
 private:
 	std::string m_ONNXREP;
 	void ProcessFrame() override;
+	YOLO11Detector* m_Detector;
 };
 

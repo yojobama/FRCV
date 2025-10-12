@@ -302,8 +302,8 @@ const ConfigureSourceModal: React.FC<{ isOpen:boolean; onClose:()=>void; source:
 const ConfigureSinkModal: React.FC<{ isOpen:boolean; onClose:()=>void; sink: Sink|null; sources: Source[]; onRename:(name:string)=>void; onDelete:()=>void; onBind:(sourceId:number)=>void; onUnbind:(sourceId:number)=>void; }> = ({ isOpen, onClose, sink, sources, onRename, onDelete, onBind, onUnbind }) => {
   const [name, setName] = useState(sink?.name || '');
   const [selected, setSelected] = useState<number | ''>(sink?.sourceId ?? '');
-  const [enabled, setEnabled] = useState(sink?.enabled ?? false);
-  useEffect(()=> { setName(sink?.name || ''); setSelected(sink?.sourceId ?? ''); setEnabled(sink?.enabled ?? false); }, [sink]);
+  const [enabled, setEnabled] = useState(sink?.isEnabled ?? false);
+    useEffect(() => { setName(sink?.name || ''); setSelected(sink?.sourceId ?? ''); setEnabled(sink?.isEnabled ?? false); }, [sink]);
   if(!isOpen || !sink) return null;
   const bound = sink.sourceId != null;
   return (

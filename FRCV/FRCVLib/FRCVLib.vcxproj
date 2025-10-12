@@ -134,6 +134,7 @@
     <ClInclude Include="ObjectDetectionModelParameters.h" />
     <ClInclude Include="object_detection_utils.h" />
     <ClInclude Include="ONNXSink.h" />
+    <ClInclude Include="ONNX_YOLO11.hpp" />
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="RecordSink.h" />
     <ClInclude Include="RknnSink.h" />
@@ -181,7 +182,7 @@
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>/local/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;avcodec;avformat;avutil;swscale</LibraryDependencies>
+      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;avcodec;avformat;avutil;swscale;onnxruntime</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">

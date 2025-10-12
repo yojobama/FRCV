@@ -122,6 +122,9 @@
     <ClInclude Include="ObjectDetectionModelParameters.h">
       <Filter>Sink\ObjectDetection</Filter>
     </ClInclude>
+    <ClInclude Include="ONNX_YOLO11.hpp">
+      <Filter>Sink\ObjectDetection</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />

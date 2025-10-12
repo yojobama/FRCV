@@ -8,6 +8,7 @@ public:
 		~ObjectDetectionModelParameters() = default;
 		std::string modelPath;
 		std::string modelType; // e.g., "YOLOv5", "SSD", etc.
+		std::string labelsPath;
 		float confidenceThreshold = 0.5f; // Default confidence threshold
 		float nmsThreshold = 0.4f; // Default Non-Maximum Suppression threshold
 		int inputWidth = 640; // Default input width
