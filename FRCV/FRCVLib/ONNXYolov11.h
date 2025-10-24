@@ -7,15 +7,21 @@
 
 #include "ObjectDetectionHelpers.h"
 
+class Logger;
 class Frame;
+class PreProcessor;
 
 class ONNXYolov11
 {
 public:
-	ONNXYolov11(std::string modelPath, std::string labelsPath, std::string onnxREP = "");
+	ONNXYolov11(Logger* logger, PreProcessor* preProcessor, std::string modelPath, std::string labelsPath, std::string onnxREP = "");
 	~ONNXYolov11();
 
-	std::vector<Detection> detect(std::shared_ptr<Frame> frame);
+	std::vector<std::string> GetAvailableREPs();
+
+	std::vector<Detection> Detect(std::shared_ptr<Frame> frame);
+
+	cv::Size GetExpectedInputSize();
 
 	void setONNXREP(std::string onnxREP);
 	void setConfThreshold(float confThreshold);
@@ -24,16 +30,18 @@ public:
 	float getConfThreshold();
 	float getIouThreshold();
 private:
+	PreProcessor* m_PreProcessor;
+	Logger* m_Logger;
+
 	bool m_UsingREP;
 	std::string m_ONNXREP;
 	float m_ConfThreshold = 0.4f;
 	float m_IouThreshold = 0.45f;
 
 	// ONNX stuff
-
-	Ort::Env m_Env;
-	Ort::SessionOptions m_SessionOptions;
-	Ort::Session m_Session;
+	Ort::Env m_Env { nullptr };
+	Ort::SessionOptions m_SessionOptions { nullptr };
+	Ort::Session m_Session { nullptr };
 	bool m_IsDynamicInputShape;
 	cv::Size m_InputSize; // expected input shape for the model
 
