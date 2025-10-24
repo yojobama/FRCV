@@ -28,6 +28,12 @@ typedef struct {
 	uint8_t* buf;
 } Image8U;
 
+enum ObjectDetectionProvider
+{
+	RKNN,
+	ONNX
+};
+
 //enum Platform {
 //	ORANGE_PI,
 //	JETSON,
@@ -66,8 +72,8 @@ public:
 	// functions to create detection sinks
 	int CreateApriltagSink();
 	int CreateApriltagSink(int id);
-	int CreateObjectDetectionSink();
-	int CreateObjectDetectionSink(int id);
+	int CreateObjectDetectionSink(ObjectDetectionProvider provider);
+	int CreateObjectDetectionSink(ObjectDetectionProvider provider, int id);
 
 	int CreateRecordingSink(int sourceId);
 

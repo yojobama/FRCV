@@ -1396,27 +1396,31 @@ SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateApriltagSink__SWIG_1(void * jarg
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateObjectDetectionSink__SWIG_0(void * jarg1) {
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateObjectDetectionSink__SWIG_0(void * jarg1, int jarg2) {
   int jresult ;
   Manager *arg1 = (Manager *) 0 ;
+  ObjectDetectionProvider arg2 ;
   int result;
   
   arg1 = (Manager *)jarg1; 
-  result = (int)(arg1)->CreateObjectDetectionSink();
+  arg2 = (ObjectDetectionProvider)jarg2; 
+  result = (int)(arg1)->CreateObjectDetectionSink(arg2);
   jresult = result; 
   return jresult;
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateObjectDetectionSink__SWIG_1(void * jarg1, int jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateObjectDetectionSink__SWIG_1(void * jarg1, int jarg2, int jarg3) {
   int jresult ;
   Manager *arg1 = (Manager *) 0 ;
-  int arg2 ;
+  ObjectDetectionProvider arg2 ;
+  int arg3 ;
   int result;
   
   arg1 = (Manager *)jarg1; 
-  arg2 = (int)jarg2; 
-  result = (int)(arg1)->CreateObjectDetectionSink(arg2);
+  arg2 = (ObjectDetectionProvider)jarg2; 
+  arg3 = (int)jarg3; 
+  result = (int)(arg1)->CreateObjectDetectionSink(arg2,arg3);
   jresult = result; 
   return jresult;
 }

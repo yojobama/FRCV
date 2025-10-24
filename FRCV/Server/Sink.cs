@@ -41,7 +41,7 @@ namespace Server
                         id = ManagerWrapper.Instance.CreateApriltagSink();
                         break;
                     case SinkType.ObjectDetectionSink:
-                        id = ManagerWrapper.Instance.CreateObjectDetectionSink();
+                        id = ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX); // TODO: Add logic for selecting acceleration type (ONNX with REP, or Rknn)
                         break;
                 }
                 type = value;
@@ -80,7 +80,7 @@ namespace Server
                     id = ManagerWrapper.Instance.CreateApriltagSink();
                     break;
                 case SinkType.ObjectDetectionSink:
-                    id = ManagerWrapper.Instance.CreateObjectDetectionSink();
+                    id = ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX);
                     break;
             }
         }

@@ -134,13 +134,13 @@ public class Manager : global::System.IDisposable {
     return ret;
   }
 
-  public int CreateObjectDetectionSink() {
-    int ret = libFRCVLibPINVOKE.Manager_CreateObjectDetectionSink__SWIG_0(swigCPtr);
+  public int CreateObjectDetectionSink(ObjectDetectionProvider provider) {
+    int ret = libFRCVLibPINVOKE.Manager_CreateObjectDetectionSink__SWIG_0(swigCPtr, (int)provider);
     return ret;
   }
 
-  public int CreateObjectDetectionSink(int id) {
-    int ret = libFRCVLibPINVOKE.Manager_CreateObjectDetectionSink__SWIG_1(swigCPtr, id);
+  public int CreateObjectDetectionSink(ObjectDetectionProvider provider, int id) {
+    int ret = libFRCVLibPINVOKE.Manager_CreateObjectDetectionSink__SWIG_1(swigCPtr, (int)provider, id);
     return ret;
   }
 

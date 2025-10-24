@@ -114,7 +114,7 @@ namespace Server
                         break;
                     case "objectdetectionsink":
                     case "ObjectDetectionSink":
-                        id = ManagerWrapper.Instance.CreateObjectDetectionSink(id.Value);
+                        id = ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX, id.Value);// TODO: Add logic for selecting acceleration type (ONNX with REP, or Rknn)
                         sinks.Add(new Sink(id.Value, name, SinkType.ObjectDetectionSink));
                         break;
                 }
@@ -129,7 +129,7 @@ namespace Server
                         sinks.Add(new Sink(id.Value, name, SinkType.ApriltagSink));
                         break;
                     case "objectdetectionsink":
-                        id = ManagerWrapper.Instance.CreateObjectDetectionSink();
+                        id = ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX);
                         sinks.Add(new Sink(id.Value, name, SinkType.ObjectDetectionSink));
                         break;
                 }

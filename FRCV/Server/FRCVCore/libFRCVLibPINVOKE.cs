@@ -321,10 +321,10 @@ class libFRCVLibPINVOKE {
   public static extern int Manager_CreateApriltagSink__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_CreateObjectDetectionSink__SWIG_0")]
-  public static extern int Manager_CreateObjectDetectionSink__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1);
+  public static extern int Manager_CreateObjectDetectionSink__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_CreateObjectDetectionSink__SWIG_1")]
-  public static extern int Manager_CreateObjectDetectionSink__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+  public static extern int Manager_CreateObjectDetectionSink__SWIG_1(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, int jarg3);
 
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_CreateRecordingSink")]
   public static extern int Manager_CreateRecordingSink(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);

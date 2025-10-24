@@ -18,9 +18,6 @@
     <ClCompile Include="ISink.cpp">
       <Filter>Sink</Filter>
     </ClCompile>
-    <ClCompile Include="TRTSink.cpp">
-      <Filter>Sink</Filter>
-    </ClCompile>
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="FramePool.cpp" />
     <ClCompile Include="FrameSpec.cpp" />
@@ -47,7 +44,6 @@
     <ClCompile Include="CameraCalibrationSink.cpp">
       <Filter>Sink</Filter>
     </ClCompile>
-    <ClCompile Include="swig_wrap.cxx" />
     <ClCompile Include="SterioSink.cpp">
       <Filter>Sink</Filter>
     </ClCompile>
@@ -66,15 +62,18 @@
     <ClCompile Include="ObjectDetectionModelParameters.cpp">
       <Filter>Sink\ObjectDetection</Filter>
     </ClCompile>
+    <ClCompile Include="ObjectDetectionHelpers.cpp">
+      <Filter>Sink\ObjectDetection</Filter>
+    </ClCompile>
+    <ClCompile Include="ONNXYolov11.cpp">
+      <Filter>Sink\ObjectDetection</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">
       <Filter>Sink</Filter>
     </ClInclude>
     <ClInclude Include="ISink.h">
-      <Filter>Sink</Filter>
-    </ClInclude>
-    <ClInclude Include="TRTSink.h">
       <Filter>Sink</Filter>
     </ClInclude>
     <ClInclude Include="Logger.h" />
@@ -123,6 +122,12 @@
       <Filter>Sink\ObjectDetection</Filter>
     </ClInclude>
     <ClInclude Include="ONNX_YOLO11.hpp">
+      <Filter>Sink\ObjectDetection</Filter>
+    </ClInclude>
+    <ClInclude Include="ONNXYolov11.h">
+      <Filter>Sink\ObjectDetection</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectDetectionHelpers.h">
       <Filter>Sink\ObjectDetection</Filter>
     </ClInclude>
   </ItemGroup>

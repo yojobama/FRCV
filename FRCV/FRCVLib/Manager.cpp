@@ -6,6 +6,10 @@
 #include "CameraSource.h"
 #include "Frame.h"
 #include "SystemMonitor.h"
+#include "ISink.h"
+#include "PreProcessor.h"
+#include "CameraCalibrationSink.h"
+#include "ONNXSink.h"
 
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
@@ -14,9 +18,6 @@
 #include <cstring>
 #include <iostream>
 #include <dirent.h>
-#include "PreProcessor.h"
-#include "ISink.h"
-#include "CameraCalibrationSink.h"
 #include <opencv2/opencv.hpp>
 
 Manager::Manager(string logFile)
@@ -291,13 +292,19 @@ int Manager::CreateApriltagSink(int id)
     return id;
 }
 
-int Manager::CreateObjectDetectionSink()
+int Manager::CreateObjectDetectionSink(ObjectDetectionProvider provider)
 {
+	int id = GenerateUUID();
+    if (provider == ONNX)
+    {
+		ObjectDetectionModelParameters modelParameters;
+		ONNXSink* p_Sink = new ONNXSink("some REP (Implement)", ObjectDetectionModelParameters(), m_Logger, m_PreProcessor, m_FramePool);
+    }
     m_Logger->EnterLog("CreateObjectDetectionSink called");
     return 0;
 }
 
-int Manager::CreateObjectDetectionSink(int id)
+int Manager::CreateObjectDetectionSink(ObjectDetectionProvider provider, int id)
 {
     m_Logger->EnterLog("CreateObjectDetectionSink called");
     return 0;
