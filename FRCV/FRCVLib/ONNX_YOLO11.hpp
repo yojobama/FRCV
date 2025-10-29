@@ -20,7 +20,7 @@
  */
 
  // Include necessary ONNX Runtime and OpenCV headers
-#include <onnxruntime/core/session/onnxruntime_cxx_api.h>
+#include <onnxruntime_cxx_api.h>
 #include <opencv2/opencv.hpp>
 
 #include <algorithm>

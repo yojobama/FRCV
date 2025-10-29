@@ -143,6 +143,7 @@
     <ClInclude Include="SterioSink.h" />
     <ClInclude Include="SystemMonitor.h" />
     <ClInclude Include="VideoFileSource.h" />
+    <ClInclude Include="WebRTCSink.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApriltagDetection.cpp" />
@@ -171,6 +172,7 @@
     <ClCompile Include="SterioSink.cpp" />
     <ClCompile Include="SystemMonitor.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />
+    <ClCompile Include="WebRTCSink.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />

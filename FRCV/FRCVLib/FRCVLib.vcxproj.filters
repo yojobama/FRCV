@@ -68,6 +68,7 @@
     <ClCompile Include="ONNXYolov11.cpp">
       <Filter>Sink\ObjectDetection</Filter>
     </ClCompile>
+    <ClCompile Include="WebRTCSink.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">
@@ -130,6 +131,7 @@
     <ClInclude Include="ObjectDetectionHelpers.h">
       <Filter>Sink\ObjectDetection</Filter>
     </ClInclude>
+    <ClInclude Include="WebRTCSink.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />

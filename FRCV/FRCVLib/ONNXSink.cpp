@@ -1,5 +1,4 @@
 #include "ONNXSink.h"
-#include "ONNX_YOLO11.hpp"
 #include "Frame.h"
 
 ONNXSink::ONNXSink(std::string onnxREP, ObjectDetectionModelParameters modelParameters, Logger* logger, PreProcessor* preProcessor, FramePool* framePool)
