@@ -2,7 +2,10 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 #include <opencv2/opencv.hpp>
+
+class Frame;
 
 struct BoundingBox
 {

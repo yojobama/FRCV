@@ -100,29 +100,44 @@ cv::Size ONNXYolov11::GetExpectedInputSize()
 
 void ONNXYolov11::setONNXREP(std::string onnxREP)
 {
+	m_ONNXREP = onnxREP;
 }
 
 void ONNXYolov11::setConfThreshold(float confThreshold)
 {
+	m_ConfThreshold = confThreshold;
 }
 
 void ONNXYolov11::setIouThreshold(float iouThreshold)
 {
+	m_IouThreshold = iouThreshold;
 }
 
 float ONNXYolov11::getConfThreshold()
 {
-	return 0.0f;
+	return m_ConfThreshold;
 }
 
 float ONNXYolov11::getIouThreshold()
 {
-	return 0.0f;
+	return m_IouThreshold;
 }
 
 std::shared_ptr<Frame> ONNXYolov11::preprocess(std::shared_ptr<Frame> frame, float* blob, std::vector<long> inputTensorShape)
 {
-	return std::shared_ptr<Frame>();
+	std::shared_ptr<Frame> resizedFrame = std::make_shared<Frame>();
+	
+	// Get cv::Mat from Frame
+	cv::Mat& inputMat = *frame.get(); // Assuming Frame has a public cv::Mat member named 'mat'
+	cv::Mat& outputMat = *resizedFrame.get(); // Assuming Frame has a public cv::Mat member named 'mat'
+
+	// Use cv::Mat references for LetterBox
+	ObjectDetectionHelpers::LetterBox(inputMat, outputMat, m_InputSize, cv::Scalar(114, 114, 114), m_IsDynamicInputShape, false, false, true);
+
+	// convert BGR to RGB (YOLOv11 expects RGB input)
+	// cv::cvtColor(outputMat, outputMat, cv::COLOR_BGR2RGB);
+
+	return resizedFrame;
 }
 
 std::vector<Detection> ONNXYolov11::postprocess(cv::Size originalImageSize, cv::Size resizedImageShape, std::vector<Ort::Value> outputTensors, float confThreshold, float iouThreshold)

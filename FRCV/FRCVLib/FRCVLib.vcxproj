@@ -116,11 +116,15 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagDetection.h" />
+    <ClInclude Include="ApriltagFilter.h" />
     <ClInclude Include="ApriltagSink.h" />
     <ClInclude Include="CameraCalibrationResult.h" />
     <ClInclude Include="CameraCalibrationSink.h" />
     <ClInclude Include="CameraSource.h" />
+    <ClInclude Include="EndpointBase.h" />
     <ClInclude Include="FFMPEGEncoder.h" />
+    <ClInclude Include="FilterAnalysis.h" />
+    <ClInclude Include="FilterBase.h" />
     <ClInclude Include="Frame.h" />
     <ClInclude Include="FramePool.h" />
     <ClInclude Include="FrameSpec.h" />
@@ -139,19 +143,25 @@
     <ClInclude Include="ONNX_YOLO11.hpp" />
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="RecordSink.h" />
+    <ClInclude Include="Renderer.h" />
     <ClInclude Include="RknnSink.h" />
     <ClInclude Include="SterioSink.h" />
     <ClInclude Include="SystemMonitor.h" />
     <ClInclude Include="VideoFileSource.h" />
+    <ClInclude Include="WebRTCEndpoint.h" />
     <ClInclude Include="WebRTCSink.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApriltagDetection.cpp" />
+    <ClCompile Include="ApriltagFilter.cpp" />
     <ClCompile Include="ApriltagSink.cpp" />
     <ClCompile Include="CameraCalibrationResult.cpp" />
     <ClCompile Include="CameraCalibrationSink.cpp" />
     <ClCompile Include="CameraSource.cpp" />
+    <ClCompile Include="EndpointBase.cpp" />
     <ClCompile Include="FFMPEGEncoder.cpp" />
+    <ClCompile Include="FilterAnalysis.cpp" />
+    <ClCompile Include="FilterBase.cpp" />
     <ClCompile Include="Frame.cpp" />
     <ClCompile Include="FramePool.cpp" />
     <ClCompile Include="FrameSpec.cpp" />
@@ -166,12 +176,15 @@
     <ClCompile Include="ObjectDetectionModelParameters.cpp" />
     <ClCompile Include="ONNXSink.cpp" />
     <ClCompile Include="ONNXYolov11.cpp" />
+    <ClCompile Include="ONNX_YOLO11.cpp" />
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="RecordSink.cpp" />
+    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="RknnSink.cpp" />
     <ClCompile Include="SterioSink.cpp" />
     <ClCompile Include="SystemMonitor.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />
+    <ClCompile Include="WebRTCEndpoint.cpp" />
     <ClCompile Include="WebRTCSink.cpp" />
   </ItemGroup>
   <ItemGroup>

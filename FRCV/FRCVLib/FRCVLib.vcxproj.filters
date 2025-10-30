@@ -10,6 +10,12 @@
     <Filter Include="Sink\ObjectDetection">
       <UniqueIdentifier>{15013ea4-893f-49b0-a29d-ba01a65ecfce}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Filter">
+      <UniqueIdentifier>{81d4940d-68fe-4181-86a2-60cfeadd9fde}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Endpoint">
+      <UniqueIdentifier>{71996921-6c88-4d26-9a9c-93878967f7e8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApriltagSink.cpp">
@@ -69,6 +75,21 @@
       <Filter>Sink\ObjectDetection</Filter>
     </ClCompile>
     <ClCompile Include="WebRTCSink.cpp" />
+    <ClCompile Include="ONNX_YOLO11.cpp" />
+    <ClCompile Include="ApriltagFilter.cpp">
+      <Filter>Filter</Filter>
+    </ClCompile>
+    <ClCompile Include="FilterBase.cpp">
+      <Filter>Filter</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="WebRTCEndpoint.cpp">
+      <Filter>Endpoint</Filter>
+    </ClCompile>
+    <ClCompile Include="EndpointBase.cpp">
+      <Filter>Endpoint</Filter>
+    </ClCompile>
+    <ClCompile Include="FilterAnalysis.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">
@@ -132,6 +153,20 @@
       <Filter>Sink\ObjectDetection</Filter>
     </ClInclude>
     <ClInclude Include="WebRTCSink.h" />
+    <ClInclude Include="ApriltagFilter.h">
+      <Filter>Filter</Filter>
+    </ClInclude>
+    <ClInclude Include="FilterBase.h">
+      <Filter>Filter</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="WebRTCEndpoint.h">
+      <Filter>Endpoint</Filter>
+    </ClInclude>
+    <ClInclude Include="EndpointBase.h">
+      <Filter>Endpoint</Filter>
+    </ClInclude>
+    <ClInclude Include="FilterAnalysis.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />
