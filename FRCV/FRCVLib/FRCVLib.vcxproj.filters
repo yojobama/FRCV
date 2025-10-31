@@ -89,7 +89,10 @@
     <ClCompile Include="EndpointBase.cpp">
       <Filter>Endpoint</Filter>
     </ClCompile>
-    <ClCompile Include="FilterAnalysis.cpp" />
+    <ClCompile Include="FilterAnalysis.cpp">
+      <Filter>Filter</Filter>
+    </ClCompile>
+    <ClCompile Include="DrawCommands.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">
@@ -166,7 +169,10 @@
     <ClInclude Include="EndpointBase.h">
       <Filter>Endpoint</Filter>
     </ClInclude>
-    <ClInclude Include="FilterAnalysis.h" />
+    <ClInclude Include="FilterAnalysis.h">
+      <Filter>Filter</Filter>
+    </ClInclude>
+    <ClInclude Include="DrawCommands.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />

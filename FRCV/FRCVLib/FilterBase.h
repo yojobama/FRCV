@@ -13,10 +13,12 @@ class Logger;
 class FilterBase
 {
 public:
-	FilterBase(Logger* logger, int maxSources);
+	FilterBase(std::shared_ptr<Logger> logger, int maxSources);
 	virtual ~FilterBase(); // TODO: consider what to do with the wee lad
 
 	void ToggleDrawCommands(bool drawCommandsRequired);
+	bool GetThreadRunning();
+
 	void AddSource(std::shared_ptr<SourceBase> source);
 
 	std::shared_ptr<FilterAnalysis> GetAnalysis();
@@ -25,14 +27,17 @@ protected:
 	virtual FilterAnalysis Process() = 0;
 	virtual std::vector<DrawCommand> CreateDrawCommands(std::shared_ptr<FilterAnalysis> analysis) = 0;
 private:
+	std::shared_ptr<FilterAnalysis> m_LatestAnalysis;
+	std::shared_ptr<Logger> m_Logger;
 	int m_MaxSources;
 	bool m_DrawCommandsRequired;
 	// threading
 	static void* ThreadEntry(void* context);
-	void ThreadFunc();
+	void ThreadProcess();
 	pthread_t m_Thread;
 	bool m_ThreadShouldRun;
 	bool m_ThreadRunning;
-	std::mutex m_Mutex;
+	std::mutex m_SourcesMutex;
+	std::mutex m_LatestAnalysisMutex;
 };
 
