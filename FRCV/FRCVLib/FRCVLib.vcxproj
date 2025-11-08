@@ -124,6 +124,7 @@
     <ClInclude Include="DrawCommands.h" />
     <ClInclude Include="EndpointBase.h" />
     <ClInclude Include="FFMPEGEncoder.h" />
+    <ClInclude Include="FFmpegUtils.h" />
     <ClInclude Include="FilterAnalysis.h" />
     <ClInclude Include="FilterBase.h" />
     <ClInclude Include="Frame.h" />
@@ -162,6 +163,7 @@
     <ClCompile Include="DrawCommands.cpp" />
     <ClCompile Include="EndpointBase.cpp" />
     <ClCompile Include="FFMPEGEncoder.cpp" />
+    <ClCompile Include="FFmpegUtils.cpp" />
     <ClCompile Include="FilterAnalysis.cpp" />
     <ClCompile Include="FilterBase.cpp" />
     <ClCompile Include="Frame.cpp" />

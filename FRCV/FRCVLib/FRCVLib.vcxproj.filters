@@ -93,6 +93,7 @@
       <Filter>Filter</Filter>
     </ClCompile>
     <ClCompile Include="DrawCommands.cpp" />
+    <ClCompile Include="FFmpegUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">
@@ -173,6 +174,7 @@
       <Filter>Filter</Filter>
     </ClInclude>
     <ClInclude Include="DrawCommands.h" />
+    <ClInclude Include="FFmpegUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />
