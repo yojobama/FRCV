@@ -118,6 +118,7 @@
     <ClInclude Include="ApriltagDetection.h" />
     <ClInclude Include="ApriltagFilter.h" />
     <ClInclude Include="ApriltagSink.h" />
+    <ClInclude Include="CameraCalibrationFilter.h" />
     <ClInclude Include="CameraCalibrationResult.h" />
     <ClInclude Include="CameraCalibrationSink.h" />
     <ClInclude Include="CameraSource.h" />
@@ -157,6 +158,7 @@
     <ClCompile Include="ApriltagDetection.cpp" />
     <ClCompile Include="ApriltagFilter.cpp" />
     <ClCompile Include="ApriltagSink.cpp" />
+    <ClCompile Include="CameraCalibrationFilter.cpp" />
     <ClCompile Include="CameraCalibrationResult.cpp" />
     <ClCompile Include="CameraCalibrationSink.cpp" />
     <ClCompile Include="CameraSource.cpp" />

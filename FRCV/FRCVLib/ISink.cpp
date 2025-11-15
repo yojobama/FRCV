@@ -80,7 +80,7 @@ string ISink::GetCurrentResults()
     return m_Results;
 }
 
-bool ISink::BindSource(ISource* p_Source) {
+bool ISink::BindSource(SourceBase* p_Source) {
     if (m_Logger) m_Logger->EnterLog("ISink::BindSource called");
     if (p_Source == nullptr) {
         m_Logger->EnterLog(LogLevel::Error, "ISink::BindSource: Source is null");

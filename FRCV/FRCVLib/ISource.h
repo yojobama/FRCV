@@ -8,11 +8,11 @@
 
 class Frame;
 
-class ISource
+class SourceBase
 {
 public:
-	ISource(FramePool* p_FramePool, Logger* p_Logger);
-	virtual ~ISource();
+	SourceBase(FramePool* p_FramePool, Logger* p_Logger);
+	virtual ~SourceBase();
 	virtual std::shared_ptr<Frame> GetLatestFrame();
 	virtual std::shared_ptr<Frame> GetLatestFrame(bool forceNewFrame);
 	void ChangeThreadStatus(bool threadWantedAlive);

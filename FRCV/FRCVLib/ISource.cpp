@@ -1,18 +1,18 @@
 #include "ISource.h"
 #include "Frame.h"
 
-ISource::ISource(FramePool* p_FramePool, Logger* p_Logger)
+SourceBase::SourceBase(FramePool* p_FramePool, Logger* p_Logger)
 	: m_FrameSpec(0, 0, 0), m_Lock() // Initialize m_FrameSpec with default values
 {
 	this->m_FramePool = p_FramePool;
 	this->m_Logger = p_Logger;
 }
 
-ISource::~ISource()
+SourceBase::~SourceBase()
 {
 }
 
-std::shared_ptr<Frame> ISource::GetLatestFrame(bool forceNewFrame)
+std::shared_ptr<Frame> SourceBase::GetLatestFrame(bool forceNewFrame)
 {
 	std::lock_guard<std::mutex> guard(m_Lock); // Use RAII for mutex locking
 
@@ -36,7 +36,7 @@ std::shared_ptr<Frame> ISource::GetLatestFrame(bool forceNewFrame)
 	return nullptr;
 }
 
-std::shared_ptr<Frame> ISource::GetLatestFrame()
+std::shared_ptr<Frame> SourceBase::GetLatestFrame()
 {
 	std::lock_guard<std::mutex> guard(m_Lock); // Use RAII for mutex locking
 
@@ -57,7 +57,7 @@ std::shared_ptr<Frame> ISource::GetLatestFrame()
 	return nullptr;
 }
 
-void ISource::ChangeThreadStatus(bool threadWantedAlive)
+void SourceBase::ChangeThreadStatus(bool threadWantedAlive)
 {
 	if (threadWantedAlive && !m_DoNotLoadThread) {
 		m_ShouldTerminate = false;
@@ -72,23 +72,23 @@ void ISource::ChangeThreadStatus(bool threadWantedAlive)
 	}
 }
 
-uint64_t ISource::GetCurrentFrameCount()
+uint64_t SourceBase::GetCurrentFrameCount()
 {
 	return m_FrameCount;
 }
 
-bool ISource::GetActivationStatus()
+bool SourceBase::GetActivationStatus()
 {
 	return m_Activated;
 }
 
-void* ISource::SourceThreadStart(void* p_Reference)
+void* SourceBase::SourceThreadStart(void* p_Reference)
 {
-	((ISource*)p_Reference)->SourceThreadProc();
+	((SourceBase*)p_Reference)->SourceThreadProc();
 	return NULL;
 }
 
-void ISource::SourceThreadProc()
+void SourceBase::SourceThreadProc()
 {
 	while (!m_ShouldTerminate) {
 		CaptureFrame();

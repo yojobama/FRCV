@@ -94,6 +94,9 @@
     </ClCompile>
     <ClCompile Include="DrawCommands.cpp" />
     <ClCompile Include="FFmpegUtils.cpp" />
+    <ClCompile Include="CameraCalibrationFilter.cpp">
+      <Filter>Filter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">
@@ -175,6 +178,9 @@
     </ClInclude>
     <ClInclude Include="DrawCommands.h" />
     <ClInclude Include="FFmpegUtils.h" />
+    <ClInclude Include="CameraCalibrationFilter.h">
+      <Filter>Filter</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />

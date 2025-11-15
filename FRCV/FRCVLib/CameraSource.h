@@ -13,7 +13,7 @@ namespace cv {
 	class VideoCapture;
 };
 
-class CameraFrameSource : public ISource 
+class CameraFrameSource : public SourceBase 
 {
 public:
 	CameraFrameSource(std::string devicePath, Logger* logger, FramePool* framePool);

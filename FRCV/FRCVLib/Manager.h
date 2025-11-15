@@ -13,6 +13,8 @@
 #include "FramePool.h"
 #include "ISource.h"
 
+#include "FFmpegUtils.h"
+
 using namespace std;
 
 // TODO: temporary, rewrite this part
@@ -56,6 +58,8 @@ public:
 	// utill functions
 	vector<int> GetAllSinks();
 	vector<int> GetAllSources();
+
+	std::vector<std::string> GetAvailableVideoEncoders();
 
 	vector<CameraHardwareInfo> EnumerateAvailableCameras();
 	bool BindSourceToSink(int sourceId, int sinkId);
@@ -119,7 +123,7 @@ private:
 	int GenerateUUID();
 
 	// maps for storing results, sources and sinks
-	map<int, ISource*> m_Sources;
+	map<int, SourceBase*> m_Sources;
 	map<int, ISink*> m_Sinks;
 	map<int, CameraCalibrationSink*> m_CameraCalibrationSinks; // camera calibration sinks
 

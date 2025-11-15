@@ -11,7 +11,7 @@ extern "C" {
 #include <algorithm>
 #include <vector>
 
-class ISource;
+class SourceBase;
 class Frame;
 class FramePool;
 class CameraCalibrationResult;
@@ -28,7 +28,7 @@ constexpr int WIDTH = 640, HEIGHT = 480;
 class SterioSink
 {
 public:
-	SterioSink(ISource* sourceLeft, ISource* sourceRight, double baseline, string EncoderName);
+	SterioSink(SourceBase* sourceLeft, SourceBase* sourceRight, double baseline, string EncoderName);
 	~SterioSink();
 	shared_ptr<Frame> getCurrentDepth();
 private:
@@ -42,8 +42,8 @@ private:
 	AVCodecContext* decoderCtx;
 	void encodeFrames(shared_ptr<Frame> firstFrame, shared_ptr<Frame> secondFrame, EncodedPacket* output);
 	void decodeAndExtractDepth(EncodedPacket* packet, const double fx, const double baseline);
-	ISource* sourceLeft;
-	ISource* sourceRight;
+	SourceBase* sourceLeft;
+	SourceBase* sourceRight;
 	string m_EncoderName;
 };
 

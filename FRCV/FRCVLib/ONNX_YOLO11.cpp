@@ -1,4 +1,5 @@
 #include "ONNX_YOLO11.hpp"
+#include "DrawCommands.h"
 
 #include <onnxruntime/core/session/onnxruntime_cxx_api.h>
 #include <opencv2/opencv.hpp>
@@ -72,10 +73,10 @@ BoundingBox scaleCoords(const cv::Size& imageShape, BoundingBox coords, const cv
  result.width = static_cast<int>(std::round(coords.width / gain));
  result.height = static_cast<int>(std::round(coords.height / gain));
  if (p_Clip) {
- result.x = utils::clamp(result.x,0, imageOriginalShape.width);
- result.y = utils::clamp(result.y,0, imageOriginalShape.height);
- result.width = utils::clamp(result.width,0, imageOriginalShape.width - result.x);
- result.height = utils::clamp(result.height,0, imageOriginalShape.height - result.y);
+ result.x = std::clamp(result.x,0, imageOriginalShape.width);
+ result.y = std::clamp(result.y,0, imageOriginalShape.height);
+ result.width = std::clamp(result.width,0, imageOriginalShape.width - result.x);
+ result.height = std::clamp(result.height,0, imageOriginalShape.height - result.y);
  }
  return result;
 }

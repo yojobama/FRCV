@@ -5,7 +5,7 @@
 #include <thread>
 #include <pthread.h>
 
-VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool, int fps) : ISource(framePool, logger)
+VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool, int fps) : SourceBase(framePool, logger)
 {
 	this->m_Logger = logger;
 	if (logger) logger->EnterLog("VideoFileFrameSource constructed with filePath: " + filePath);

@@ -5,8 +5,12 @@
 #include <memory>
 #include <mutex>
 
+namespace DrawCommands
+{
+	class DrawCommandBase;
+}
+
 class SourceBase;
-class DrawCommand;
 class FilterAnalysis;
 class Logger;
 
@@ -25,7 +29,7 @@ public:
 protected:
 	std::vector<std::shared_ptr<SourceBase>> m_Sources;
 	virtual FilterAnalysis Process() = 0;
-	virtual std::vector<DrawCommand> CreateDrawCommands(std::shared_ptr<FilterAnalysis> analysis) = 0;
+	virtual std::vector<std::shared_ptr<DrawCommands::DrawCommandBase>> CreateDrawCommands(std::shared_ptr<FilterAnalysis> analysis) = 0;
 private:
 	std::shared_ptr<FilterAnalysis> m_LatestAnalysis;
 	std::shared_ptr<Logger> m_Logger;

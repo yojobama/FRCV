@@ -1,4 +1,5 @@
 #include "FilterAnalysis.h"
+#include "DrawCommands.h"
 
 FilterAnalysis::FilterAnalysis(std::shared_ptr<Frame> orgFrame, unsigned long analysisTimeMillis)
 {
@@ -7,7 +8,7 @@ FilterAnalysis::FilterAnalysis(std::shared_ptr<Frame> orgFrame, unsigned long an
 	m_HasDrawingCommands = false;
 }
 
-FilterAnalysis::FilterAnalysis(std::shared_ptr<Frame> orgFrame, unsigned long analysisTimeMillis, std::vector<DrawCommand> drawCommands)
+FilterAnalysis::FilterAnalysis(std::shared_ptr<Frame> orgFrame, unsigned long analysisTimeMillis, std::vector<std::shared_ptr<DrawCommands::DrawCommandBase>> drawCommands)
 {
 	FilterAnalysis(orgFrame, analysisTimeMillis);
 	m_HasDrawingCommands = true;
@@ -19,12 +20,12 @@ FilterAnalysis::~FilterAnalysis()
 {
 }
 
-void FilterAnalysis::SetDrawCommands(std::vector<DrawCommand> drawCommands)
+void FilterAnalysis::SetDrawCommands(std::vector<std::shared_ptr<DrawCommands::DrawCommandBase>> drawCommands)
 {
 	m_DrawCommands = drawCommands;
 }
 
-std::vector<DrawCommand> FilterAnalysis::GetDrawCommands() const
+std::vector<std::shared_ptr<DrawCommands::DrawCommandBase>> FilterAnalysis::GetDrawCommands() const
 {
 	return m_DrawCommands;
 }

@@ -1,6 +1,7 @@
 #include "FilterBase.h"
 #include "FilterAnalysis.h"
 #include "Logger.h"
+#include "DrawCommands.h"
 
 FilterBase::FilterBase(std::shared_ptr<Logger> logger, int maxSources)
 {

@@ -19,7 +19,7 @@ public:
     ISink(Logger* p_Logger);
     ~ISink() = default;
     string GetCurrentResults();
-    bool BindSource(ISource* p_Source);
+    bool BindSource(SourceBase* p_Source);
 	bool UnbindSource();
     virtual string GetStatus();
     void ChangeThreadStatus(bool threadWantedAlive);
@@ -32,7 +32,7 @@ public:
     std::shared_ptr<Frame> GetPreviewFrame();
 protected:
     string m_Results;
-	ISource* m_Source;
+	SourceBase* m_Source;
     Logger* m_Logger;
     string m_CurrentResults;
     virtual void ProcessFrame() = 0;

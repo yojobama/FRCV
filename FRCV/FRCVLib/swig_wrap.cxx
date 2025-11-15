@@ -1206,6 +1206,18 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_Manager_GetAllSources(void * jarg1) {
 }
 
 
+SWIGEXPORT void * SWIGSTDCALL CSharp_Manager_GetAvailableVideoEncoders(void * jarg1) {
+  void * jresult ;
+  Manager *arg1 = (Manager *) 0 ;
+  std::vector< std::string > result;
+  
+  arg1 = (Manager *)jarg1; 
+  result = (arg1)->GetAvailableVideoEncoders();
+  jresult = new std::vector< std::string >(result); 
+  return jresult;
+}
+
+
 SWIGEXPORT void * SWIGSTDCALL CSharp_Manager_EnumerateAvailableCameras(void * jarg1) {
   void * jresult ;
   Manager *arg1 = (Manager *) 0 ;

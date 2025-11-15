@@ -16,7 +16,7 @@ AVFrame* convertToYUV420(const cv::Mat& bgr, SwsContext* sws, AVFrame* frame) {
     return frame;
 }
 
-SterioSink::SterioSink(ISource* sourceLeft, ISource* sourceRight, double baseline, string EncoderName)
+SterioSink::SterioSink(SourceBase* sourceLeft, SourceBase* sourceRight, double baseline, string EncoderName)
     : sourceLeft(sourceLeft), sourceRight(sourceRight), baseline(baseline), m_EncoderName(EncoderName) {
 
     encoder = avcodec_find_encoder_by_name(EncoderName.c_str());

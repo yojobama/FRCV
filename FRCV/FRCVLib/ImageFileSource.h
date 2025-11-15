@@ -4,7 +4,7 @@
 #include <string>
 #include "FrameSpec.h"
 
-class ImageFileFrameSource : public ISource
+class ImageFileFrameSource : public SourceBase
 {
 public:
 	ImageFileFrameSource(std::string filePath, Logger* logger, FramePool* framePool);

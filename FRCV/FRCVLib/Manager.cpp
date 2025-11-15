@@ -90,6 +90,12 @@ vector<int> Manager::GetAllSources()
     return sourceIds;
 }
 
+std::vector<std::string> Manager::GetAvailableVideoEncoders()
+{
+    //return FFmpegUtils::GetAvailableVideoEncoders();
+	throw new std::runtime_error("GetAvailableVideoEncoders not implemented yet");
+}
+
 vector<CameraHardwareInfo> Manager::EnumerateAvailableCameras()
 {
     m_Logger->EnterLog("EnumerateAvailableCameras called");
@@ -154,7 +160,7 @@ vector<CameraHardwareInfo> Manager::EnumerateAvailableCameras()
 
 bool Manager::BindSourceToSink(int sourceId, int sinkId) {
     m_Logger->EnterLog("BindSourceToSink called with sourceId=" + std::to_string(sourceId) + ", sinkId=" + std::to_string(sinkId));
-    ISource* p_Source;
+    SourceBase* p_Source;
     ISink* p_Sink;
 
     if (m_Sources.find(sourceId) == m_Sources.end()) {

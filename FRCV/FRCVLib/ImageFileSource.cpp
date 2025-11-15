@@ -2,7 +2,7 @@
 #include <opencv2/opencv.hpp>
 #include "Frame.h"
 
-ImageFileFrameSource::ImageFileFrameSource(std::string filePath, Logger* logger, FramePool* framePool) : ISource(framePool, logger) {
+ImageFileFrameSource::ImageFileFrameSource(std::string filePath, Logger* logger, FramePool* framePool) : SourceBase(framePool, logger) {
     cv::Mat img = cv::imread(filePath);
     if (!img.empty()) {
         FrameSpec spec(img.rows, img.cols, img.type());

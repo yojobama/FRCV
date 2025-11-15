@@ -31,5 +31,5 @@ namespace FFmpegUtils {
 
 	std::vector<uint8_t> EncodeTwoFrames(std::shared_ptr<Frame> leftBGR, std::shared_ptr<Frame> rightBGR, AVCodec* codec);
 
-	std::vector<std::string> GetAvailableHardwareEncoders();
+	//std::vector<std::string> GetAvailableVideoEncoders();
 }
