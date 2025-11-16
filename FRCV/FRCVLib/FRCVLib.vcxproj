@@ -204,7 +204,7 @@
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>/local/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;avcodec;avformat;avutil;swscale;onnxruntime</LibraryDependencies>
+      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;avcodec;avformat;avutil;swscale;onnxruntime;datachannel</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
