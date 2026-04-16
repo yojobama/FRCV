@@ -7,7 +7,7 @@ namespace cv {
 	class VideoCapture;
 }
 
-class VideoFileFrameSource : public SourceBase
+class VideoFileFrameSource : public ISource
 {
 public:
 	VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool, int fps);

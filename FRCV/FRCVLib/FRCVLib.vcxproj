@@ -77,6 +77,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>WSL2_1_0</PlatformToolset>
+    <RemoteRootDir>/home/john/projects</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -107,7 +108,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <WSLPath>Ubuntu-24.04</WSLPath>
+    <WSLPath>Ubuntu</WSLPath>
     <EnableASAN>false</EnableASAN>
     <MultiProcNumber>12</MultiProcNumber>
   </PropertyGroup>
@@ -116,9 +117,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagDetection.h" />
-    <ClInclude Include="ApriltagFilter.h" />
+    <ClInclude Include="ApriltagDetector.h" />
     <ClInclude Include="ApriltagSink.h" />
-    <ClInclude Include="CameraCalibrationFilter.h" />
     <ClInclude Include="CameraCalibrationResult.h" />
     <ClInclude Include="CameraCalibrationSink.h" />
     <ClInclude Include="CameraSource.h" />
@@ -126,29 +126,19 @@
     <ClInclude Include="EndpointBase.h" />
     <ClInclude Include="FFMPEGEncoder.h" />
     <ClInclude Include="FFmpegUtils.h" />
-    <ClInclude Include="FilterAnalysis.h" />
-    <ClInclude Include="FilterBase.h" />
     <ClInclude Include="Frame.h" />
     <ClInclude Include="FramePool.h" />
     <ClInclude Include="FrameSpec.h" />
-    <ClInclude Include="IObjectDetectionSink.h" />
     <ClInclude Include="ISource.h" />
     <ClInclude Include="ImageFileSource.h" />
     <ClInclude Include="ISink.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="Manager.h" />
     <ClInclude Include="ObjectDetection.h" />
-    <ClInclude Include="ObjectDetectionHelpers.h" />
-    <ClInclude Include="ObjectDetectionModelParameters.h" />
     <ClInclude Include="object_detection_utils.h" />
-    <ClInclude Include="ONNXSink.h" />
-    <ClInclude Include="ONNXYolov11.h" />
-    <ClInclude Include="ONNX_YOLO11.hpp" />
     <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="RecordSink.h" />
-    <ClInclude Include="Renderer.h" />
-    <ClInclude Include="RknnSink.h" />
-    <ClInclude Include="SterioSink.h" />
+    <ClInclude Include="SourceResult.h" />
     <ClInclude Include="SystemMonitor.h" />
     <ClInclude Include="VideoFileSource.h" />
     <ClInclude Include="WebRTCEndpoint.h" />
@@ -156,9 +146,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApriltagDetection.cpp" />
-    <ClCompile Include="ApriltagFilter.cpp" />
+    <ClCompile Include="ApriltagDetector.cpp" />
     <ClCompile Include="ApriltagSink.cpp" />
-    <ClCompile Include="CameraCalibrationFilter.cpp" />
     <ClCompile Include="CameraCalibrationResult.cpp" />
     <ClCompile Include="CameraCalibrationSink.cpp" />
     <ClCompile Include="CameraSource.cpp" />
@@ -166,28 +155,18 @@
     <ClCompile Include="EndpointBase.cpp" />
     <ClCompile Include="FFMPEGEncoder.cpp" />
     <ClCompile Include="FFmpegUtils.cpp" />
-    <ClCompile Include="FilterAnalysis.cpp" />
-    <ClCompile Include="FilterBase.cpp" />
     <ClCompile Include="Frame.cpp" />
     <ClCompile Include="FramePool.cpp" />
     <ClCompile Include="FrameSpec.cpp" />
-    <ClCompile Include="IObjectDetectionSink.cpp" />
     <ClCompile Include="ISource.cpp" />
     <ClCompile Include="ImageFileSource.cpp" />
     <ClCompile Include="ISink.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Manager.cpp" />
     <ClCompile Include="ObjectDetection.cpp" />
-    <ClCompile Include="ObjectDetectionHelpers.cpp" />
-    <ClCompile Include="ObjectDetectionModelParameters.cpp" />
-    <ClCompile Include="ONNXSink.cpp" />
-    <ClCompile Include="ONNXYolov11.cpp" />
-    <ClCompile Include="ONNX_YOLO11.cpp" />
     <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="RecordSink.cpp" />
-    <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="RknnSink.cpp" />
-    <ClCompile Include="SterioSink.cpp" />
+    <ClCompile Include="SourceResult.cpp" />
     <ClCompile Include="SystemMonitor.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />
     <ClCompile Include="WebRTCEndpoint.cpp" />
@@ -198,13 +177,13 @@
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>/usr/local/include;/usr/include/opencv4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>/usr/include;/usr/include/opencv4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CppLanguageStandard>c++20</CppLanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>/local/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;avcodec;avformat;avutil;swscale;onnxruntime;datachannel</LibraryDependencies>
+      <AdditionalLibraryDirectories>/usr/local/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;avcodec;avformat;avutil;swscale</LibraryDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">

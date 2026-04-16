@@ -4,17 +4,11 @@
     <Filter Include="Sink">
       <UniqueIdentifier>{7ea306e0-746f-415c-b1a9-bf33c34e496f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="FrameSource">
-      <UniqueIdentifier>{c1957aec-e258-4164-8cec-723bca593d3f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sink\ObjectDetection">
-      <UniqueIdentifier>{15013ea4-893f-49b0-a29d-ba01a65ecfce}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Filter">
-      <UniqueIdentifier>{81d4940d-68fe-4181-86a2-60cfeadd9fde}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Endpoint">
       <UniqueIdentifier>{71996921-6c88-4d26-9a9c-93878967f7e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source">
+      <UniqueIdentifier>{c1957aec-e258-4164-8cec-723bca593d3f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -36,66 +30,35 @@
       <Filter>Sink</Filter>
     </ClCompile>
     <ClCompile Include="ImageFileSource.cpp">
-      <Filter>FrameSource</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="CameraSource.cpp">
-      <Filter>FrameSource</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="VideoFileSource.cpp">
-      <Filter>FrameSource</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="ISource.cpp">
-      <Filter>FrameSource</Filter>
+      <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="CameraCalibrationSink.cpp">
-      <Filter>Sink</Filter>
-    </ClCompile>
-    <ClCompile Include="SterioSink.cpp">
       <Filter>Sink</Filter>
     </ClCompile>
     <ClCompile Include="SystemMonitor.cpp" />
     <ClCompile Include="ObjectDetection.cpp" />
     <ClCompile Include="FFMPEGEncoder.cpp" />
-    <ClCompile Include="ONNXSink.cpp">
-      <Filter>Sink\ObjectDetection</Filter>
-    </ClCompile>
-    <ClCompile Include="RknnSink.cpp">
-      <Filter>Sink\ObjectDetection</Filter>
-    </ClCompile>
-    <ClCompile Include="IObjectDetectionSink.cpp">
-      <Filter>Sink\ObjectDetection</Filter>
-    </ClCompile>
-    <ClCompile Include="ObjectDetectionModelParameters.cpp">
-      <Filter>Sink\ObjectDetection</Filter>
-    </ClCompile>
-    <ClCompile Include="ObjectDetectionHelpers.cpp">
-      <Filter>Sink\ObjectDetection</Filter>
-    </ClCompile>
-    <ClCompile Include="ONNXYolov11.cpp">
-      <Filter>Sink\ObjectDetection</Filter>
-    </ClCompile>
     <ClCompile Include="WebRTCSink.cpp" />
-    <ClCompile Include="ONNX_YOLO11.cpp" />
-    <ClCompile Include="ApriltagFilter.cpp">
-      <Filter>Filter</Filter>
-    </ClCompile>
-    <ClCompile Include="FilterBase.cpp">
-      <Filter>Filter</Filter>
-    </ClCompile>
-    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="WebRTCEndpoint.cpp">
       <Filter>Endpoint</Filter>
     </ClCompile>
     <ClCompile Include="EndpointBase.cpp">
       <Filter>Endpoint</Filter>
     </ClCompile>
-    <ClCompile Include="FilterAnalysis.cpp">
-      <Filter>Filter</Filter>
-    </ClCompile>
     <ClCompile Include="DrawCommands.cpp" />
     <ClCompile Include="FFmpegUtils.cpp" />
-    <ClCompile Include="CameraCalibrationFilter.cpp">
-      <Filter>Filter</Filter>
+    <ClCompile Include="ApriltagDetector.cpp" />
+    <ClCompile Include="SourceResult.cpp">
+      <Filter>Source</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -117,69 +80,36 @@
       <Filter>Sink</Filter>
     </ClInclude>
     <ClInclude Include="ImageFileSource.h">
-      <Filter>FrameSource</Filter>
+      <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="CameraSource.h">
-      <Filter>FrameSource</Filter>
+      <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="VideoFileSource.h">
-      <Filter>FrameSource</Filter>
+      <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="ISource.h">
-      <Filter>FrameSource</Filter>
+      <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="CameraCalibrationSink.h">
-      <Filter>Sink</Filter>
-    </ClInclude>
-    <ClInclude Include="SterioSink.h">
       <Filter>Sink</Filter>
     </ClInclude>
     <ClInclude Include="object_detection_utils.h" />
     <ClInclude Include="SystemMonitor.h" />
     <ClInclude Include="ObjectDetection.h" />
     <ClInclude Include="FFMPEGEncoder.h" />
-    <ClInclude Include="ONNXSink.h">
-      <Filter>Sink\ObjectDetection</Filter>
-    </ClInclude>
-    <ClInclude Include="RknnSink.h">
-      <Filter>Sink\ObjectDetection</Filter>
-    </ClInclude>
-    <ClInclude Include="IObjectDetectionSink.h">
-      <Filter>Sink\ObjectDetection</Filter>
-    </ClInclude>
-    <ClInclude Include="ObjectDetectionModelParameters.h">
-      <Filter>Sink\ObjectDetection</Filter>
-    </ClInclude>
-    <ClInclude Include="ONNX_YOLO11.hpp">
-      <Filter>Sink\ObjectDetection</Filter>
-    </ClInclude>
-    <ClInclude Include="ONNXYolov11.h">
-      <Filter>Sink\ObjectDetection</Filter>
-    </ClInclude>
-    <ClInclude Include="ObjectDetectionHelpers.h">
-      <Filter>Sink\ObjectDetection</Filter>
-    </ClInclude>
     <ClInclude Include="WebRTCSink.h" />
-    <ClInclude Include="ApriltagFilter.h">
-      <Filter>Filter</Filter>
-    </ClInclude>
-    <ClInclude Include="FilterBase.h">
-      <Filter>Filter</Filter>
-    </ClInclude>
-    <ClInclude Include="Renderer.h" />
     <ClInclude Include="WebRTCEndpoint.h">
       <Filter>Endpoint</Filter>
     </ClInclude>
     <ClInclude Include="EndpointBase.h">
       <Filter>Endpoint</Filter>
     </ClInclude>
-    <ClInclude Include="FilterAnalysis.h">
-      <Filter>Filter</Filter>
-    </ClInclude>
     <ClInclude Include="DrawCommands.h" />
     <ClInclude Include="FFmpegUtils.h" />
-    <ClInclude Include="CameraCalibrationFilter.h">
-      <Filter>Filter</Filter>
+    <ClInclude Include="ApriltagDetector.h" />
+    <ClInclude Include="SourceResult.h">
+      <Filter>Source</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

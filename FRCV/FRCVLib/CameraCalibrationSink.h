@@ -6,7 +6,7 @@
 
 using namespace std;
 
-class SourceBase;
+class ISource;
 class Frame;
 class CameraCalibrationResult;
 class Logger;
@@ -20,12 +20,12 @@ public:
 	CameraCalibrationSink(Logger* logger, PreProcessor* preProcessor, FrameSpec frameSpec);
 	~CameraCalibrationSink();
 
-	void BindSource(SourceBase* source);
+	void BindSource(ISource* source);
 	void GrabAndProcessFrame();
 	CameraCalibrationResult GetResults();
 private:
 	FrameSpec m_FrameSpec;
-	SourceBase* m_Source;
+	ISource* m_Source;
 	int CHECKERBOARD[2] = { 6, 9 }; // Number of inner corners per a chessboard row and column
 
 	std::vector<std::vector<cv::Point3f> > m_Objpoints;

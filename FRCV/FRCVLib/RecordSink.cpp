@@ -18,7 +18,7 @@ string RecordSink::getVideoPath()
 	return dstPath;
 }
 
-void RecordSink::ProcessFrame()
+void RecordSink::Process()
 {
 	videoWriter->write(*m_Source->GetLatestFrame());
 }

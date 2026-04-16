@@ -9,7 +9,6 @@
 #include "ISink.h"
 #include "PreProcessor.h"
 #include "CameraCalibrationSink.h"
-#include "ONNXSink.h"
 
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
@@ -160,7 +159,7 @@ vector<CameraHardwareInfo> Manager::EnumerateAvailableCameras()
 
 bool Manager::BindSourceToSink(int sourceId, int sinkId) {
     m_Logger->EnterLog("BindSourceToSink called with sourceId=" + std::to_string(sourceId) + ", sinkId=" + std::to_string(sinkId));
-    SourceBase* p_Source;
+    ISource* p_Source;
     ISink* p_Sink;
 
     if (m_Sources.find(sourceId) == m_Sources.end()) {
@@ -301,11 +300,12 @@ int Manager::CreateApriltagSink(int id)
 int Manager::CreateObjectDetectionSink(ObjectDetectionProvider provider)
 {
 	int id = GenerateUUID();
-    if (provider == ONNX)
-    {
-		ObjectDetectionModelParameters modelParameters;
-		ONNXSink* p_Sink = new ONNXSink("some REP (Implement)", ObjectDetectionModelParameters(), m_Logger, m_PreProcessor, m_FramePool);
-    }
+  //  if (provider == ONNX)
+  //  {
+		//ObjectDetectionModelParameters modelParameters;
+		//ONNXSink* p_Sink = new ONNXSink("some REP (Implement)", ObjectDetectionModelParameters(), m_Logger, m_PreProcessor, m_FramePool);
+  //  }
+    throw "this is not enabled";
     m_Logger->EnterLog("CreateObjectDetectionSink called");
     return 0;
 }
@@ -334,7 +334,7 @@ void Manager::StartAllSources()
     auto iterator = m_Sources.begin();
 
     while (iterator != m_Sources.end()) {
-        iterator->second->ChangeThreadStatus(true);
+        iterator->second->Toggle(true);
         iterator++;
     }
 }
@@ -344,7 +344,7 @@ void Manager::StopAllSources()
     auto iterator = m_Sources.begin();
 
     while (iterator != m_Sources.end()) {
-        iterator->second->ChangeThreadStatus(false);
+        iterator->second->Toggle(false);
         iterator++;
     }
 }
@@ -355,7 +355,7 @@ bool Manager::StopSourceById(int sourceId)
     if (source == m_Sources.end()) {
         return false;
     }
-    source->second->ChangeThreadStatus(false);
+    source->second->Toggle(false);
     return true;
 }
 
@@ -365,7 +365,7 @@ bool Manager::StartSourceById(int sourceId)
     if (source == m_Sources.end()) {
         return false;
     }
-    source->second->ChangeThreadStatus(true);
+    source->second->Toggle(true);
     return true;
 }
 
@@ -376,7 +376,7 @@ bool Manager::IsSourceActive(int sourceId)
     if (source != m_Sources.end()) {
         return false;
     }
-    return source->second->GetActivationStatus();
+    return source->second->GetToggleStatus();
 }
 
 void Manager::StartAllSinks() {
@@ -384,7 +384,7 @@ void Manager::StartAllSinks() {
         auto iterator = m_Sinks.begin();
 
         while (iterator != m_Sinks.end()) {
-            iterator->second->ChangeThreadStatus(true);
+            iterator->second->Toggle(true);
             iterator++;
         }
     }
@@ -394,7 +394,7 @@ void Manager::StopAllSinks() {
     auto iterator = m_Sinks.begin();
 
     while (iterator != m_Sinks.end()) {
-        iterator->second->ChangeThreadStatus(false);
+        iterator->second->Toggle(false);
         iterator++;
     }
 }
@@ -404,7 +404,7 @@ bool Manager::StopSinkById(int sinkId) {
     if (sink == m_Sinks.end()) {
         return false;
     }
-    sink->second->ChangeThreadStatus(false);
+    sink->second->Toggle(false);
     return true;
 }
 
@@ -414,7 +414,7 @@ bool Manager::IsSinkActive(int sinkId)
 	if (sink != m_Sinks.end()) {
 		return false;
 	}
-    return sink->second->GetActivationStatus();
+    return sink->second->GetToggleStatus();
 }
 
 bool Manager::StartSinkById(int sinkId) {
@@ -422,7 +422,7 @@ bool Manager::StartSinkById(int sinkId) {
     if (sink == m_Sinks.end()) {
         return false;
     }
-    sink->second->ChangeThreadStatus(true);
+    sink->second->Toggle(true);
     return true;
 }
 

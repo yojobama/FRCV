@@ -2,7 +2,7 @@
 #include <opencv2/opencv.hpp>
 #include "Frame.h"
 
-ImageFileFrameSource::ImageFileFrameSource(std::string filePath, Logger* logger, FramePool* framePool) : SourceBase(framePool, logger) {
+ImageFileFrameSource::ImageFileFrameSource(std::string filePath, Logger* logger, FramePool* framePool) : ISource(framePool, logger) {
     cv::Mat img = cv::imread(filePath);
     if (!img.empty()) {
         FrameSpec spec(img.rows, img.cols, img.type());
@@ -13,7 +13,7 @@ ImageFileFrameSource::ImageFileFrameSource(std::string filePath, Logger* logger,
         frame = nullptr;    
         logger->EnterLog(LogLevel::Error, "Failed to load image from file: " + filePath);
     }
-    m_DoNotLoadThread = true;
+    m_DoNotLoadCaptureThread = true;
 }
 
 std::shared_ptr<Frame> ImageFileFrameSource::GetLatestFrame()

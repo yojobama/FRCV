@@ -1,101 +1,111 @@
 #include "ISink.h"
 #include "Frame.h"
 
-ISink::ISink(Logger* p_Logger) : m_Logger(p_Logger), m_Source(nullptr) {
+ISink::ISink(Logger* p_Logger, int maxSources, bool requireJson, bool requireFrame) : m_Logger(p_Logger) {
     if (m_Logger) m_Logger->EnterLog("ISink constructed");
+    m_MaxSources = maxSources;
+    m_RequireJson = requireJson;
+    m_RequireFrame = requireFrame;
 }
 
 std::string ISink::GetStatus() {
     return "";
 }
 
-void* ISink::SinkThreadStart(void* p_Reference)
+void* ISink::InvokeProcessingThread(void* p_Reference)
 {
-    ((ISink*)p_Reference)->SinkThreadProc();
+    ((ISink*)p_Reference)->ProcessingThreadLoop();
     return nullptr;
 }
 
-void ISink::ChangeThreadStatus(bool threadWantedAlive)
+void ISink::Toggle(bool toggle)
 {
-    if (threadWantedAlive) {
+    if (toggle) {
         m_ShouldTerminate = false;
-        pthread_create(&m_Thread, NULL, SinkThreadStart, this);
-		m_Activated = true;
+        pthread_create(&m_Thread, NULL, InvokeProcessingThread, this);
+		m_ToggleState = true;
     }
     else {
         if (m_Thread) {
             m_ShouldTerminate = true;
             pthread_join(m_Thread, NULL);
-			m_Activated = false;
+			m_ToggleState = false;
         }
     }
 }
 
-bool ISink::GetActivationStatus()
+bool ISink::GetToggleStatus()
 {
-    return m_Activated;
+    return m_ToggleState;
 }
 
-void ISink::EnablePreview()
-{
-    m_PreviewEnabled = true;
-}
-
-void ISink::DissablePreview()
-{
-    m_PreviewEnabled = false;
-}
-
-bool ISink::GetPreviewStatus()
-{
-    return m_PreviewEnabled;
-}
-
-// TODO: implement
-std::shared_ptr<Frame> ISink::GetPreviewFrame()
-{
-    if (m_PreviewEnabled) {
-        return m_PreviewFrame;
-    }
-    else throw "Preview Not Enabled";
-}
-
-void ISink::SinkThreadProc()
+void ISink::ProcessingThreadLoop()
 {
     while (!m_ShouldTerminate) {
         // do stuff
-        if (m_LastFrameCount) while (m_Source->GetCurrentFrameCount() == m_LastFrameCount);
-        m_LastFrameCount = m_Source->GetCurrentFrameCount();
-        ProcessFrame();
-        if (m_PreviewEnabled) {
-            CreatePreview();
+        //if (m_LastFrameCount) while (m_Source->GetCurrentFrameCount() == m_LastFrameCount);
+        //m_LastFrameCount = m_Source->GetCurrentFrameCount();
+
+        bool wasUpdated = false;
+        while (!wasUpdated) {
+            for (auto& sourcePair : m_Sources) {
+                auto& source = sourcePair.first;
+                int& lastFrameCount = sourcePair.second;
+
+                if (source->GetCurrentFrameCount() != lastFrameCount) {
+                    lastFrameCount = source->GetCurrentFrameCount();
+                    wasUpdated = true;
+                }
+            }
         }
+
+        std::vector<SourceResult> sources;
+        for (auto& sourcePair : m_Sources) {
+                        auto& source = sourcePair.first;
+            int& lastFrameCount = sourcePair.second;
+
+            if (source->GetCurrentFrameCount() != lastFrameCount) {
+                lastFrameCount = source->GetCurrentFrameCount();
+                sources.push_back(source->GetLatestResult(m_RequireFrame, m_RequireJson));
+            }
+        }
+
+        Process(sources);
+        //if (m_PreviewEnabled) {
+        //    CreatePreview();
+        //}
     }
     m_ShouldTerminate = false;
 	pthread_exit(NULL);
 }
+//
+//string ISink::GetCurrentResults()
+//{
+//    return m_Results;
+//}
 
-string ISink::GetCurrentResults()
-{
-    return m_Results;
-}
-
-bool ISink::BindSource(SourceBase* p_Source) {
+bool ISink::BindSource(std::shared_ptr<ISource> p_Source) {
     if (m_Logger) m_Logger->EnterLog("ISink::BindSource called");
-    if (p_Source == nullptr) {
-        m_Logger->EnterLog(LogLevel::Error, "ISink::BindSource: Source is null");
-        return false;
+
+    if (p_Source && m_Sources.size() < m_MaxSources) {
+        m_Sources.push_back(std::make_pair(p_Source, 0));
+        return true;
     }
-    this->m_Source = p_Source;
-    return true;
+    
+    m_Logger->EnterLog(LogLevel::Error, "ISink::BindSource: Source is null");
+
+    return false;
 }
 
-bool ISink::UnbindSource() {
+bool ISink::UnbindSource(std::string sourceID) {
     if (m_Logger) m_Logger->EnterLog("ISink::UnbindSource called");
-    if (m_Source == nullptr) {
-        m_Logger->EnterLog(LogLevel::Error, "ISink::UnbindSource: Source is already null");
-        return false;
+
+    for (int i = 0; i < m_Sources.size(); i++) {
+        if (m_Sources[i].first->GetID() == sourceID) {
+            m_Sources.erase(m_Sources.begin() + i);
+            return true;
+        }
     }
-    m_Source = nullptr;
-    return true;
+
+    return false;
 }

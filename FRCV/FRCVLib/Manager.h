@@ -123,7 +123,7 @@ private:
 	int GenerateUUID();
 
 	// maps for storing results, sources and sinks
-	map<int, SourceBase*> m_Sources;
+	map<int, ISource*> m_Sources;
 	map<int, ISink*> m_Sinks;
 	map<int, CameraCalibrationSink*> m_CameraCalibrationSinks; // camera calibration sinks
 

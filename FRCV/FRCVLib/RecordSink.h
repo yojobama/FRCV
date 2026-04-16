@@ -20,7 +20,7 @@ public:
 	string getVideoPath();
 
 private:
-	void ProcessFrame() override;
+	void Process() override;
 	void CreatePreview() override;
 
 	cv::VideoWriter* videoWriter;

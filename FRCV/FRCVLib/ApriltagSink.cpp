@@ -58,7 +58,7 @@ std::string ApriltagSink::GetStatus()
     return status;
 }
 
-void ApriltagSink::ProcessFrame()
+void ApriltagSink::Process()
 {
 	if (m_Logger) m_Logger->EnterLog("ApriltagSink::getResults called");
 	std::shared_ptr<Frame> frame = m_Source->GetLatestFrame();

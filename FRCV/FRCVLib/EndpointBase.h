@@ -18,7 +18,7 @@ public:
 	bool GetRunningState() const;
 	void AddFilter(std::shared_ptr<FilterBase> filter);
 protected:
-	virtual void ProcessFrame(std::vector<FilterAnalysis> analysisVector) = 0;
+	virtual void Process(std::vector<FilterAnalysis> analysisVector) = 0;
 private:
 	std::shared_ptr<Logger> m_Logger;
 	std::vector<std::shared_ptr<FilterBase>> m_Filters;

@@ -7,31 +7,40 @@
 #include <queue>
 
 class Frame;
+class SourceResult;
 
-class SourceBase
+class ISource
 {
 public:
-	SourceBase(FramePool* p_FramePool, Logger* p_Logger);
-	virtual ~SourceBase();
-	virtual std::shared_ptr<Frame> GetLatestFrame();
-	virtual std::shared_ptr<Frame> GetLatestFrame(bool forceNewFrame);
-	void ChangeThreadStatus(bool threadWantedAlive);
+	ISource(FramePool* p_FramePool, Logger* p_Logger, std::string m_ID);
+	virtual ~ISource();
+	//virtual std::shared_ptr<Frame> GetLatestFrame();
+	//virtual std::shared_ptr<Frame> GetLatestFrame(bool forceNewFrame);
+	SourceResult GetLatestResult(bool requireFrame, bool requireJson);
+	void SetLatestResult(SourceResult result);
+	
+	std::string GetID();
+	
+	void Toggle(bool threadWantedAlive);
 	uint64_t GetCurrentFrameCount();
-	bool GetActivationStatus();
+	bool GetToggleStatus();
 protected:
 	uint64_t m_FrameCount = 0;
 	virtual void CaptureFrame() = 0;
 	FramePool* m_FramePool;
 	Logger* m_Logger;
 	FrameSpec m_FrameSpec;
-	std::queue<std::shared_ptr<Frame>> m_Frames;
-	bool m_DoNotLoadThread = false;
+	bool m_DoNotLoadCaptureThread = false;
 private:
+	SourceResult m_LatestResult;
+
 	static void* SourceThreadStart(void* p_Reference);
 	void SourceThreadProc();
 	std::mutex m_Lock;
 	pthread_t m_Thread;
 	bool m_ShouldTerminate;
-	bool m_Activated = false;
+	bool m_ToggleState = false;
+
+	std::string m_ID;
 };
 

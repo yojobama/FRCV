@@ -60,7 +60,7 @@ CameraCalibrationResult CameraCalibrationSink::GetResults()
     return CameraCalibrationResult(fx, fy, cx, cy, m_FrameSpec);
 }
 
-void CameraCalibrationSink::BindSource(SourceBase* source)
+void CameraCalibrationSink::BindSource(ISource* source)
 {
     this->m_Source = source;
     if (logger) logger->EnterLog("CameraCalibrationSink bound to source");

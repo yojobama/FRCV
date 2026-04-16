@@ -19,7 +19,7 @@ public:
     ~ApriltagSink();
 	void addCameraInfo(CameraCalibrationResult cameraInfo);
 	std::string GetStatus() override;
-	void ProcessFrame() override;
+	void Process() override;
 	void CreatePreview() override;
 private:
 	PreProcessor* preProcessor;
