@@ -2,6 +2,7 @@
 #include "ISink.h"
 #include "ISource.h"
 #include <apriltag/apriltag.h>
+#include <apriltag/tag36h11.h>
 
 class FramePool;
 class Logger;
@@ -10,15 +11,20 @@ class PreProcessor;
 class ApriltagDetector : ISink, ISource
 {
 public:
-	ApriltagDetector(FramePool* framePool, Logger* logger, PreProcessor* preProcessor);
+	ApriltagDetector(FramePool* framePool, std::shared_ptr<Logger> logger, std::shared_ptr<PreProcessor> preProcessor, std::string id);
 	~ApriltagDetector();
 
 
 
 private:
-	apriltag_detector_t* detector;
-	apriltag_family_t* family;
+	
+	void CaptureFrame() override;
+	void Process(std::vector<SourceResult> results) override;
 
-	void CaptureFrame();
+	apriltag_detector_t* m_Detector;
+	apriltag_family_t* m_Family;
+
+	std::shared_ptr<PreProcessor> m_PreProcessor;
+	std::shared_ptr<Logger> m_Logger;
 };
 

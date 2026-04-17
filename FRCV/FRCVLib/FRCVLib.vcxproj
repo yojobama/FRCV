@@ -111,6 +111,7 @@
     <WSLPath>Ubuntu</WSLPath>
     <EnableASAN>false</EnableASAN>
     <MultiProcNumber>12</MultiProcNumber>
+    <IncludePath>/usr/include;/usr/include/opencv4</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <WSLPath>Ubuntu-24.04</WSLPath>

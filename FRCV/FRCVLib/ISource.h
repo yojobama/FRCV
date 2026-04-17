@@ -2,12 +2,12 @@
 #include "Logger.h"
 #include "FramePool.h"
 #include "FrameSpec.h"
+#include "SourceResult.h"
 #include <mutex>
 #include <pthread.h>
 #include <queue>
 
 class Frame;
-class SourceResult;
 
 class ISource
 {
