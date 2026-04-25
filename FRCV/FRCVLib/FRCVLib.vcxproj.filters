@@ -46,16 +46,12 @@
     </ClCompile>
     <ClCompile Include="SystemMonitor.cpp" />
     <ClCompile Include="ObjectDetection.cpp" />
-    <ClCompile Include="FFMPEGEncoder.cpp" />
-    <ClCompile Include="WebRTCSink.cpp" />
     <ClCompile Include="WebRTCEndpoint.cpp">
       <Filter>Endpoint</Filter>
     </ClCompile>
     <ClCompile Include="EndpointBase.cpp">
       <Filter>Endpoint</Filter>
     </ClCompile>
-    <ClCompile Include="DrawCommands.cpp" />
-    <ClCompile Include="FFmpegUtils.cpp" />
     <ClCompile Include="ApriltagDetector.cpp" />
     <ClCompile Include="SourceResult.cpp">
       <Filter>Source</Filter>
@@ -97,16 +93,12 @@
     <ClInclude Include="object_detection_utils.h" />
     <ClInclude Include="SystemMonitor.h" />
     <ClInclude Include="ObjectDetection.h" />
-    <ClInclude Include="FFMPEGEncoder.h" />
-    <ClInclude Include="WebRTCSink.h" />
     <ClInclude Include="WebRTCEndpoint.h">
       <Filter>Endpoint</Filter>
     </ClInclude>
     <ClInclude Include="EndpointBase.h">
       <Filter>Endpoint</Filter>
     </ClInclude>
-    <ClInclude Include="DrawCommands.h" />
-    <ClInclude Include="FFmpegUtils.h" />
     <ClInclude Include="ApriltagDetector.h" />
     <ClInclude Include="SourceResult.h">
       <Filter>Source</Filter>

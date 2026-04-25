@@ -59,6 +59,11 @@ ISource::~ISource()
 //	return nullptr;
 //}
 
+std::string ISource::GetID()
+{
+	return m_ID;
+}
+
 void ISource::Toggle(bool threadWantedAlive)
 {
 	if (threadWantedAlive && !m_DoNotLoadCaptureThread) {

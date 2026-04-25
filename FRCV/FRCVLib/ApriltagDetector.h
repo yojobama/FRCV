@@ -13,11 +13,7 @@ class ApriltagDetector : ISink, ISource
 public:
 	ApriltagDetector(FramePool* framePool, std::shared_ptr<Logger> logger, std::shared_ptr<PreProcessor> preProcessor, std::string id);
 	~ApriltagDetector();
-
-
-
 private:
-	
 	void CaptureFrame() override;
 	void Process(std::vector<SourceResult> results) override;
 

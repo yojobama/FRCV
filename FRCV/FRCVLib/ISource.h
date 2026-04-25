@@ -14,17 +14,14 @@ class ISource
 public:
 	ISource(FramePool* p_FramePool, Logger* p_Logger, std::string m_ID);
 	virtual ~ISource();
-	//virtual std::shared_ptr<Frame> GetLatestFrame();
-	//virtual std::shared_ptr<Frame> GetLatestFrame(bool forceNewFrame);
 	SourceResult GetLatestResult(bool requireFrame, bool requireJson);
-	void SetLatestResult(SourceResult result);
-	
 	std::string GetID();
 	
 	void Toggle(bool threadWantedAlive);
 	uint64_t GetCurrentFrameCount();
 	bool GetToggleStatus();
 protected:
+	void SetLatestResult(SourceResult result);
 	uint64_t m_FrameCount = 0;
 	virtual void CaptureFrame() = 0;
 	FramePool* m_FramePool;

@@ -1,11 +1,12 @@
 #include "ISink.h"
 #include "Frame.h"
 
-ISink::ISink(Logger* p_Logger, int maxSources, bool requireJson, bool requireFrame) : m_Logger(p_Logger) {
+ISink::ISink(Logger* p_Logger, int maxSources, bool requireJson, bool requireFrame, std::string id) : m_Logger(p_Logger) {
     if (m_Logger) m_Logger->EnterLog("ISink constructed");
     m_MaxSources = maxSources;
     m_RequireJson = requireJson;
     m_RequireFrame = requireFrame;
+    m_ID = id;
 }
 
 std::string ISink::GetStatus() {
@@ -42,10 +43,6 @@ bool ISink::GetToggleStatus()
 void ISink::ProcessingThreadLoop()
 {
     while (!m_ShouldTerminate) {
-        // do stuff
-        //if (m_LastFrameCount) while (m_Source->GetCurrentFrameCount() == m_LastFrameCount);
-        //m_LastFrameCount = m_Source->GetCurrentFrameCount();
-
         bool wasUpdated = false;
         while (!wasUpdated) {
             for (auto& sourcePair : m_Sources) {
@@ -71,18 +68,15 @@ void ISink::ProcessingThreadLoop()
         }
 
         Process(sources);
-        //if (m_PreviewEnabled) {
-        //    CreatePreview();
-        //}
     }
     m_ShouldTerminate = false;
 	pthread_exit(NULL);
 }
-//
-//string ISink::GetCurrentResults()
-//{
-//    return m_Results;
-//}
+
+std::string ISink::GetID()
+{
+    return m_ID;
+}
 
 bool ISink::BindSource(std::shared_ptr<ISource> p_Source) {
     if (m_Logger) m_Logger->EnterLog("ISink::BindSource called");

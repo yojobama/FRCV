@@ -2,7 +2,7 @@
 #include "ApriltagDetection.h"
 #include "PreProcessor.h"
 
-ApriltagDetector::ApriltagDetector(FramePool* framePool, std::shared_ptr<Logger> logger, std::shared_ptr<PreProcessor> preProcessor, std::string id) : ISource(framePool, logger.get(), id), ISink(logger.get(), 1, false, true)
+ApriltagDetector::ApriltagDetector(FramePool* framePool, std::shared_ptr<Logger> logger, std::shared_ptr<PreProcessor> preProcessor, std::string id) : ISource(framePool, logger.get(), id), ISink(logger.get(), 1, false, true, id)
 {
 	if (logger) logger->EnterLog("ApriltagSink constructed");
 	this->m_Family = tag36h11_create();
@@ -11,6 +11,8 @@ ApriltagDetector::ApriltagDetector(FramePool* framePool, std::shared_ptr<Logger>
 
 	m_PreProcessor = preProcessor;
 	m_Logger = logger;
+
+	m_DoNotLoadCaptureThread = true;
 }
 
 ApriltagDetector::~ApriltagDetector()
@@ -92,7 +94,7 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 					cv::Point(detection->p[3][0], detection->p[3][1]),
 					cv::Scalar(0xff, 0, 0), 2);
 
-				stringstream ss;
+				std::stringstream ss;
 				ss << detection->id;
 				std::string text = ss.str();
 				int fontface = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
