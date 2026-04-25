@@ -138,6 +138,7 @@
     <ClInclude Include="RecordSink.h" />
     <ClInclude Include="SourceResult.h" />
     <ClInclude Include="SystemMonitor.h" />
+    <ClInclude Include="VideoFileRecorder.h" />
     <ClInclude Include="VideoFileSource.h" />
     <ClInclude Include="WebRTCEndpoint.h" />
   </ItemGroup>
@@ -162,6 +163,7 @@
     <ClCompile Include="RecordSink.cpp" />
     <ClCompile Include="SourceResult.cpp" />
     <ClCompile Include="SystemMonitor.cpp" />
+    <ClCompile Include="VideoFileRecorder.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />
     <ClCompile Include="WebRTCEndpoint.cpp" />
   </ItemGroup>
