@@ -124,10 +124,6 @@
     <ClInclude Include="CameraCalibrationSink.h" />
     <ClInclude Include="CameraCalibrator.h" />
     <ClInclude Include="CameraSource.h" />
-    <ClInclude Include="EndpointBase.h" />
-    <ClInclude Include="Frame.h" />
-    <ClInclude Include="FramePool.h" />
-    <ClInclude Include="FrameSpec.h" />
     <ClInclude Include="ISource.h" />
     <ClInclude Include="ImageFileSource.h" />
     <ClInclude Include="ISink.h" />
@@ -135,13 +131,11 @@
     <ClInclude Include="Manager.h" />
     <ClInclude Include="ObjectDetection.h" />
     <ClInclude Include="object_detection_utils.h" />
-    <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="RecordSink.h" />
     <ClInclude Include="SourceResult.h" />
     <ClInclude Include="SystemMonitor.h" />
     <ClInclude Include="VideoFileRecorder.h" />
     <ClInclude Include="VideoFileSource.h" />
-    <ClInclude Include="WebRTCEndpoint.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApriltagDetection.cpp" />
@@ -151,23 +145,17 @@
     <ClCompile Include="CameraCalibrationSink.cpp" />
     <ClCompile Include="CameraCalibrator.cpp" />
     <ClCompile Include="CameraSource.cpp" />
-    <ClCompile Include="EndpointBase.cpp" />
-    <ClCompile Include="Frame.cpp" />
-    <ClCompile Include="FramePool.cpp" />
-    <ClCompile Include="FrameSpec.cpp" />
     <ClCompile Include="ISource.cpp" />
     <ClCompile Include="ImageFileSource.cpp" />
     <ClCompile Include="ISink.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Manager.cpp" />
     <ClCompile Include="ObjectDetection.cpp" />
-    <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="RecordSink.cpp" />
     <ClCompile Include="SourceResult.cpp" />
     <ClCompile Include="SystemMonitor.cpp" />
     <ClCompile Include="VideoFileRecorder.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />
-    <ClCompile Include="WebRTCEndpoint.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />

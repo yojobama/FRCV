@@ -4,9 +4,6 @@
     <Filter Include="Sink">
       <UniqueIdentifier>{7ea306e0-746f-415c-b1a9-bf33c34e496f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Endpoint">
-      <UniqueIdentifier>{71996921-6c88-4d26-9a9c-93878967f7e8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source">
       <UniqueIdentifier>{c1957aec-e258-4164-8cec-723bca593d3f}</UniqueIdentifier>
     </Filter>
@@ -19,11 +16,7 @@
       <Filter>Sink</Filter>
     </ClCompile>
     <ClCompile Include="Logger.cpp" />
-    <ClCompile Include="FramePool.cpp" />
-    <ClCompile Include="FrameSpec.cpp" />
-    <ClCompile Include="Frame.cpp" />
     <ClCompile Include="ApriltagDetection.cpp" />
-    <ClCompile Include="PreProcessor.cpp" />
     <ClCompile Include="CameraCalibrationResult.cpp" />
     <ClCompile Include="Manager.cpp" />
     <ClCompile Include="RecordSink.cpp">
@@ -46,12 +39,6 @@
     </ClCompile>
     <ClCompile Include="SystemMonitor.cpp" />
     <ClCompile Include="ObjectDetection.cpp" />
-    <ClCompile Include="WebRTCEndpoint.cpp">
-      <Filter>Endpoint</Filter>
-    </ClCompile>
-    <ClCompile Include="EndpointBase.cpp">
-      <Filter>Endpoint</Filter>
-    </ClCompile>
     <ClCompile Include="ApriltagDetector.cpp" />
     <ClCompile Include="SourceResult.cpp">
       <Filter>Source</Filter>
@@ -67,11 +54,7 @@
       <Filter>Sink</Filter>
     </ClInclude>
     <ClInclude Include="Logger.h" />
-    <ClInclude Include="FramePool.h" />
-    <ClInclude Include="FrameSpec.h" />
-    <ClInclude Include="Frame.h" />
     <ClInclude Include="ApriltagDetection.h" />
-    <ClInclude Include="PreProcessor.h" />
     <ClInclude Include="CameraCalibrationResult.h" />
     <ClInclude Include="Manager.h" />
     <ClInclude Include="RecordSink.h">
@@ -95,12 +78,6 @@
     <ClInclude Include="object_detection_utils.h" />
     <ClInclude Include="SystemMonitor.h" />
     <ClInclude Include="ObjectDetection.h" />
-    <ClInclude Include="WebRTCEndpoint.h">
-      <Filter>Endpoint</Filter>
-    </ClInclude>
-    <ClInclude Include="EndpointBase.h">
-      <Filter>Endpoint</Filter>
-    </ClInclude>
     <ClInclude Include="ApriltagDetector.h" />
     <ClInclude Include="SourceResult.h">
       <Filter>Source</Filter>
