@@ -19,8 +19,7 @@ public:
     ~ApriltagSink();
 	void addCameraInfo(CameraCalibrationResult cameraInfo);
 	std::string GetStatus() override;
-	void Process() override;
-	void CreatePreview() override;
+	void Process(std::vector<SourceResult> sources) override;
 private:
 	PreProcessor* preProcessor;
 	apriltag_family_t* family;

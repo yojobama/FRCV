@@ -20,8 +20,7 @@ public:
 	string getVideoPath();
 
 private:
-	void Process() override;
-	void CreatePreview() override;
+	void Process(std::vector<SourceResult> sources) override;
 
 	cv::VideoWriter* videoWriter;
 	string dstPath;

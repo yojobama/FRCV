@@ -49,7 +49,7 @@ public:
     void FlushLogs();
 private:
     std::string m_FilePath;
-    std::recursive_mutex m_Lock;
+    std::recursive_mutex m_ResultLock;
     std::vector<Log*> m_Logs;
 };
 

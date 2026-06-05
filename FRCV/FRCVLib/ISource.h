@@ -33,7 +33,7 @@ private:
 
 	static void* SourceThreadStart(void* p_Reference);
 	void SourceThreadProc();
-	std::mutex m_Lock;
+	std::mutex m_ResultLock;
 	pthread_t m_Thread;
 	bool m_ShouldTerminate;
 	bool m_ToggleState = false;

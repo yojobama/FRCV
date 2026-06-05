@@ -19,6 +19,6 @@ private:
 	std::shared_ptr<Frame> AllocateFrame(FrameSpec frameSpec);
 	std::vector<std::shared_ptr<Frame>> m_FrameVector;
 	Logger* m_Logger;
-	std::mutex m_Lock;
+	std::mutex m_ResultLock;
 };
 

@@ -3,7 +3,7 @@
 #include "SourceResult.h"
 
 ISource::ISource(FramePool* p_FramePool, Logger* p_Logger, std::string m_ID)
-	: m_FrameSpec(0, 0, 0), m_Lock() // Initialize m_FrameSpec with default values
+	: m_FrameSpec(0, 0, 0), m_ResultLock() // Initialize m_FrameSpec with default values
 {
 	this->m_FramePool = p_FramePool;
 	this->m_Logger = p_Logger;
@@ -89,9 +89,15 @@ bool ISource::GetToggleStatus()
 	return m_ToggleState;
 }
 
+void ISource::SetLatestResult(SourceResult result)
+{
+	std::lock_guard<std::mutex> guard(m_ResultLock); // Use RAII for mutex locking
+	m_LatestResult = result;
+}
+
 SourceResult ISource::GetLatestResult(bool requireFrame, bool requireJson)
 {
-	std::lock_guard<std::mutex> guard(m_Lock); // Use RAII for mutex locking
+	std::lock_guard<std::mutex> guard(m_ResultLock); // Use RAII for mutex locking
 	if ((m_LatestResult.json.has_value() == requireJson) && (m_LatestResult.frame.has_value() == requireFrame))
 		return m_LatestResult;
 	return SourceResult();

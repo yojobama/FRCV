@@ -8,7 +8,7 @@ class FramePool;
 class Logger;
 class PreProcessor;
 
-class ApriltagDetector : ISink, ISource
+class ApriltagDetector : public ISink, public ISource
 {
 public:
 	ApriltagDetector(FramePool* framePool, std::shared_ptr<Logger> logger, std::shared_ptr<PreProcessor> preProcessor, std::string id);

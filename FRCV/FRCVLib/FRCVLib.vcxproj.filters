@@ -57,6 +57,7 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="VideoFileRecorder.cpp" />
+    <ClCompile Include="CameraCalibrator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApriltagSink.h">
@@ -105,6 +106,7 @@
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="VideoFileRecorder.h" />
+    <ClInclude Include="CameraCalibrator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />
