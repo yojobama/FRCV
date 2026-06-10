@@ -23,20 +23,22 @@ CameraCalibrationSink::~CameraCalibrationSink()
 };
 
 void CameraCalibrationSink::GrabAndProcessFrame() {
-    std::shared_ptr<Frame> src = m_Source->GetLatestFrame(true);
+    cv::Mat src = m_Source->GetLatestResult(true, false).frame.value();
     
-    FrameSpec spec(src.get()->GetSpec().GetHeight(), src.get()->GetSpec().GetWidth(), CV_8UC1);
+    FrameSpec spec(src.rows, src.cols, CV_8UC1);
 
-    std::shared_ptr<Frame> gray = preProcessor->transformFrame(src, spec);
+    //std::shared_ptr<Frame> gray = preProcessor->transformFrame(src, spec);
+    cv::Mat gray;
+	cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
 
-    bool success = cv::findChessboardCorners(*gray, cv::Size(CHECKERBOARD[0], CHECKERBOARD[1]), M_CornerPts, cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_FAST_CHECK | cv::CALIB_CB_NORMALIZE_IMAGE
+    bool success = cv::findChessboardCorners(gray, cv::Size(CHECKERBOARD[0], CHECKERBOARD[1]), M_CornerPts, cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_FAST_CHECK | cv::CALIB_CB_NORMALIZE_IMAGE
     );
 
     if (success) {
         cv::TermCriteria criteria(cv::TermCriteria::EPS + cv::TermCriteria::MAX_ITER, 30, 0.001);
 
         // refining pixel coordinates for given 2d points.
-        cv::cornerSubPix(*gray, M_CornerPts, cv::Size(11, 11), cv::Size(-1, -1), criteria);
+        cv::cornerSubPix(gray, M_CornerPts, cv::Size(11, 11), cv::Size(-1, -1), criteria);
 
         m_Objpoints.push_back(m_Objp);
         m_Imgpoints.push_back(M_CornerPts);

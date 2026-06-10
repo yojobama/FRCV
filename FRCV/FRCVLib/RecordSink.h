@@ -15,7 +15,7 @@ namespace cv {
 class RecordSink : public ISink
 {
 public:
-	RecordSink(Logger* logger, string dstPath);
+	RecordSink(Logger* logger, std::string id, string dstPath);
 	~RecordSink();
 	string getVideoPath();
 

@@ -16,8 +16,8 @@ namespace cv {
 class CameraFrameSource : public ISource 
 {
 public:
-	CameraFrameSource(std::string devicePath, Logger* logger, FramePool* framePool);
-	CameraFrameSource(std::string devicePath, std::string deviceName, Logger* logger, FramePool* framePool);
+	CameraFrameSource(std::string devicePath, Logger* logger, std::string m_ID);
+	CameraFrameSource(std::string devicePath, std::string deviceName, Logger* logger, std::string m_ID);
 	
 	~CameraFrameSource();
 	
@@ -27,7 +27,7 @@ public:
 
 private:
 	void CaptureFrame() override;
-	cv::VideoCapture* capture;
+	cv::VideoCapture capture;
 	std::string m_DevicePath;
 	std::string m_DeviceName;
 	Logger* m_Logger;

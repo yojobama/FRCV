@@ -1,7 +1,7 @@
 #pragma once
+
+#include <opencv2/opencv.hpp>
 #include "Logger.h"
-#include "FramePool.h"
-#include "FrameSpec.h"
 #include "SourceResult.h"
 #include <mutex>
 #include <pthread.h>
@@ -12,7 +12,7 @@ class Frame;
 class ISource
 {
 public:
-	ISource(FramePool* p_FramePool, Logger* p_Logger, std::string m_ID);
+	ISource(Logger* p_Logger, std::string m_ID);
 	virtual ~ISource();
 	SourceResult GetLatestResult(bool requireFrame, bool requireJson);
 	std::string GetID();
@@ -24,9 +24,7 @@ protected:
 	void SetLatestResult(SourceResult result);
 	uint64_t m_FrameCount = 0;
 	virtual void CaptureFrame() = 0;
-	FramePool* m_FramePool;
 	Logger* m_Logger;
-	FrameSpec m_FrameSpec;
 	bool m_DoNotLoadCaptureThread = false;
 private:
 	SourceResult m_LatestResult;

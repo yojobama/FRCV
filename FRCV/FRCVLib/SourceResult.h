@@ -1,7 +1,7 @@
 #pragma once
 
+#include <opencv2/opencv.hpp>
 #include <nlohmann/json.hpp>
-#include "Frame.h"
 #include <optional>
 #include <memory>
 
@@ -9,8 +9,8 @@ class SourceResult
 {
 public:
 	SourceResult();
-	SourceResult(std::optional<nlohmann::json> json, std::optional<std::shared_ptr<Frame>> frame);
+	SourceResult(std::optional<nlohmann::json> json, std::optional<cv::Mat> frame);
 	std::optional<nlohmann::json> json;
-	std::optional<std::shared_ptr<Frame>> frame;
+	std::optional<cv::Mat> frame;
 };
 

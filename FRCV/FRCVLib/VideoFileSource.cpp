@@ -5,30 +5,33 @@
 #include <thread>
 #include <pthread.h>
 
-VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath, FramePool* framePool, int fps) : ISource(framePool, logger)
+VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath, int fps, std::string m_ID) : ISource(logger, m_ID)
 {
 	this->m_Logger = logger;
 	if (logger) logger->EnterLog("VideoFileFrameSource constructed with filePath: " + filePath);
 	logger->EnterLog(LogLevel::Info, "initializing a video file capture device");
-	this->m_Capture = new cv::VideoCapture(filePath);
-	if (!m_Capture->isOpened()) throw "unable to open video file: " + filePath;
+	this->m_Capture = cv::VideoCapture(filePath);
+	if (!m_Capture.isOpened()) throw "unable to open video file: " + filePath;
     this->m_Fps = fps;
 }
 
 void VideoFileFrameSource::CaptureFrame()
 {
-    if (m_Capture->isOpened()) {
+    if (m_Capture.isOpened()) {
         m_Logger->EnterLog(LogLevel::Info, "camera is open, grabbing frame and returning it");
-        std::shared_ptr<Frame> frame = m_FramePool->GetFrame(m_FrameSpec);
-        m_Capture->grab();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000 / m_Fps));
-        if (m_Capture->read(*frame.get())) {
+
+        // Use OpenCV Mat to receive frame data
+        cv::Mat mat;
+        // Grab to advance and then sleep to respect the configured FPS
+        m_Capture.grab();
+        int delayMs = (m_Fps > 0) ? (1000 / m_Fps) : 33;
+        std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+
+        if (m_Capture.read(mat) && !mat.empty()) {
             m_FrameCount++;
-            frame.get()->SetFrameNumber(m_FrameCount);
-            m_Frames.push(frame);
+            SetLatestResult(SourceResult(std::nullopt, mat));
         } else {
             m_Logger->EnterLog(LogLevel::Error, "Failed to read frame from video file");
-            m_FramePool->ReturnFrame(frame); // Return unused frame to the pool
         }
     } else {
         m_Logger->EnterLog(LogLevel::Error, "camera is closed, cannot capture frame");

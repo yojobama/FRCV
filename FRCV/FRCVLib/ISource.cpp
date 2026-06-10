@@ -2,10 +2,9 @@
 #include "Frame.h"
 #include "SourceResult.h"
 
-ISource::ISource(FramePool* p_FramePool, Logger* p_Logger, std::string m_ID)
-	: m_FrameSpec(0, 0, 0), m_ResultLock() // Initialize m_FrameSpec with default values
+ISource::ISource(Logger* p_Logger, std::string m_ID)
+	: m_ResultLock() // Initialize m_ResultLock
 {
-	this->m_FramePool = p_FramePool;
 	this->m_Logger = p_Logger;
 	this->m_ID = m_ID;
 }

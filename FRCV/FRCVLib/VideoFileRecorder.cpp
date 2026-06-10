@@ -10,6 +10,6 @@ void VideoFileRecorder::Process(std::vector<SourceResult> sources)
 {
 	SourceResult& source = sources.front();
 	if (source.frame.has_value()) {
-		m_VideoWriter << *source.frame.value();
+		m_VideoWriter << source.frame.value();
 	}
 }

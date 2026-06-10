@@ -7,10 +7,9 @@
 class ImageFileFrameSource : public ISource
 {
 public:
-	ImageFileFrameSource(std::string filePath, Logger* logger, FramePool* framePool);
-	std::shared_ptr<Frame> GetLatestFrame() override;
+	ImageFileFrameSource(std::string filePath, Logger* logger, std::string m_ID);
 private:
 	void CaptureFrame() override;
-	std::shared_ptr<Frame> frame;
+	cv::Mat mat;
 };
 

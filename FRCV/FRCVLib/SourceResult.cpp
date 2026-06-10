@@ -2,11 +2,11 @@
 
 SourceResult::SourceResult()
 {
-	frame = std::optional<std::shared_ptr<Frame>>();
+	frame = std::optional<cv::Mat>();
 	json = std::optional<nlohmann::json>();
 }
 
-SourceResult::SourceResult(std::optional<nlohmann::json> json, std::optional<std::shared_ptr<Frame>> frame)
+SourceResult::SourceResult(std::optional<nlohmann::json> json, std::optional<cv::Mat> frame)
 	: json(json), frame(frame)
 {
 }

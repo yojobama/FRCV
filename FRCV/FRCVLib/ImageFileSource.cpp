@@ -2,26 +2,15 @@
 #include <opencv2/opencv.hpp>
 #include "Frame.h"
 
-ImageFileFrameSource::ImageFileFrameSource(std::string filePath, Logger* logger, FramePool* framePool) : ISource(framePool, logger) {
+ImageFileFrameSource::ImageFileFrameSource(std::string filePath, Logger* logger, std::string m_ID) : ISource(logger, m_ID) {
     cv::Mat img = cv::imread(filePath);
     if (!img.empty()) {
-        FrameSpec spec(img.rows, img.cols, img.type());
-        frame = framePool->GetFrame(spec); // Use FramePool to allocate the frame
-        img.copyTo(*frame.get());
-        frame.get()->SetFrameNumber(m_FrameCount);
+        mat = img;
     } else {
-        frame = nullptr;    
+        mat = cv::Mat();
         logger->EnterLog(LogLevel::Error, "Failed to load image from file: " + filePath);
     }
     m_DoNotLoadCaptureThread = true;
-}
-
-std::shared_ptr<Frame> ImageFileFrameSource::GetLatestFrame()
-{
-    if (!frame) {
-        m_Logger->EnterLog(LogLevel::Error, "No frame available in ImageFileFrameSource");
-    }
-    return frame;
 }
 
 void ImageFileFrameSource::CaptureFrame()

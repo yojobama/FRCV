@@ -119,7 +119,6 @@
   <ItemGroup>
     <ClInclude Include="ApriltagDetection.h" />
     <ClInclude Include="ApriltagDetector.h" />
-    <ClInclude Include="ApriltagSink.h" />
     <ClInclude Include="CameraCalibrationResult.h" />
     <ClInclude Include="CameraCalibrationSink.h" />
     <ClInclude Include="CameraCalibrator.h" />
@@ -140,7 +139,6 @@
   <ItemGroup>
     <ClCompile Include="ApriltagDetection.cpp" />
     <ClCompile Include="ApriltagDetector.cpp" />
-    <ClCompile Include="ApriltagSink.cpp" />
     <ClCompile Include="CameraCalibrationResult.cpp" />
     <ClCompile Include="CameraCalibrationSink.cpp" />
     <ClCompile Include="CameraCalibrator.cpp" />

@@ -9,9 +9,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ApriltagSink.cpp">
-      <Filter>Sink</Filter>
-    </ClCompile>
     <ClCompile Include="ISink.cpp">
       <Filter>Sink</Filter>
     </ClCompile>
@@ -47,9 +44,6 @@
     <ClCompile Include="CameraCalibrator.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ApriltagSink.h">
-      <Filter>Sink</Filter>
-    </ClInclude>
     <ClInclude Include="ISink.h">
       <Filter>Sink</Filter>
     </ClInclude>

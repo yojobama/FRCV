@@ -2,7 +2,7 @@
 #include <opencv2/videoio.hpp>
 #include "Frame.h"
 
-RecordSink::RecordSink(Logger* logger, string dstPath) : ISink(logger)
+RecordSink::RecordSink(Logger* logger, string id, string dstPath) : ISink(logger, 1, false, true, id)
 {
 	this->dstPath = dstPath;
 }
@@ -18,12 +18,12 @@ string RecordSink::getVideoPath()
 	return dstPath;
 }
 
-void RecordSink::Process()
+void RecordSink::Process(std::vector<SourceResult> sources)
 {
-	videoWriter->write(*m_Source->GetLatestFrame());
+	videoWriter->write(sources[0].frame.value());
 }
-
-void RecordSink::CreatePreview()
-{
-	m_PreviewFrame = m_Source->GetLatestFrame();
-}
+//
+//void RecordSink::CreatePreview()
+//{
+//	m_PreviewFrame = m_Source->GetLatestFrame();
+//}
