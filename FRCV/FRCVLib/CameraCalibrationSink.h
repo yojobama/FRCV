@@ -17,7 +17,7 @@ class FrameSpec;
 class CameraCalibrationSink
 {
 public:
-	CameraCalibrationSink(Logger* logger, PreProcessor* preProcessor, FrameSpec frameSpec);
+	CameraCalibrationSink(std::shared_ptr<Logger> logger, PreProcessor* preProcessor, FrameSpec frameSpec);
 	~CameraCalibrationSink();
 
 	void BindSource(ISource* source);
@@ -34,7 +34,7 @@ private:
 	std::vector<cv::Point3f> m_Objp;
 	std::vector<cv::Point2f> M_CornerPts;
 
-	Logger* logger;
+	std::shared_ptr<Logger> logger;
 	PreProcessor* preProcessor;
 };
 

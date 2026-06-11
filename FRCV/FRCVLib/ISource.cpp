@@ -2,7 +2,7 @@
 #include "Frame.h"
 #include "SourceResult.h"
 
-ISource::ISource(Logger* p_Logger, std::string m_ID)
+ISource::ISource(std::shared_ptr<Logger> p_Logger, std::string m_ID)
 	: m_ResultLock() // Initialize m_ResultLock
 {
 	this->m_Logger = p_Logger;

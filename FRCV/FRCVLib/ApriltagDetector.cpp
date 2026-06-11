@@ -1,15 +1,13 @@
 #include "ApriltagDetector.h"
 #include "ApriltagDetection.h"
-#include "PreProcessor.h"
 
-ApriltagDetector::ApriltagDetector(FramePool* framePool, std::shared_ptr<Logger> logger, std::shared_ptr<PreProcessor> preProcessor, std::string id) : ISource(logger.get(), id), ISink(logger.get(), 1, false, true, id)
+ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string id) : ISource(logger, id), ISink(logger, 1, false, true, id)
 {
-	if (logger) logger->EnterLog("ApriltagSink constructed");
+	if (logger) logger->EnterLog("ApriltagDetector constructed");
 	this->m_Family = tag36h11_create();
 	this->m_Detector = apriltag_detector_create();
 	apriltag_detector_add_family(this->m_Detector, this->m_Family);
 
-	m_PreProcessor = preProcessor;
 	m_Logger = logger;
 
 	m_DoNotLoadCaptureThread = true;

@@ -12,7 +12,6 @@ public:
 	~PreProcessor();
 	std::shared_ptr<Frame> transformFrame(std::shared_ptr<Frame> src, FrameSpec spec);
 private:
-	Logger* logger;
 	FramePool* framePool;
 };
 

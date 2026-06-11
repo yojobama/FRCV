@@ -5,9 +5,8 @@
 #include <thread>
 #include <pthread.h>
 
-VideoFileFrameSource::VideoFileFrameSource(Logger* logger, std::string filePath, int fps, std::string m_ID) : ISource(logger, m_ID)
+VideoFileFrameSource::VideoFileFrameSource(std::shared_ptr<Logger> logger, std::string filePath, int fps, std::string m_ID) : ISource(logger, m_ID)
 {
-	this->m_Logger = logger;
 	if (logger) logger->EnterLog("VideoFileFrameSource constructed with filePath: " + filePath);
 	logger->EnterLog(LogLevel::Info, "initializing a video file capture device");
 	this->m_Capture = cv::VideoCapture(filePath);

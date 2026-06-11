@@ -2,7 +2,7 @@
 #include <opencv2/videoio.hpp>
 #include "Frame.h"
 
-RecordSink::RecordSink(Logger* logger, string id, string dstPath) : ISink(logger, 1, false, true, id)
+RecordSink::RecordSink(std::shared_ptr<Logger> logger, string id, string dstPath) : ISink(logger, 1, false, true, id)
 {
 	this->dstPath = dstPath;
 }

@@ -10,7 +10,7 @@
 class VideoFileRecorder : ISink
 {
 public:
-	VideoFileRecorder(Logger* logger, const std::string& dst, const std::string& id, int height, int width, int fps);
+	VideoFileRecorder(std::shared_ptr<Logger> logger, const std::string& dst, const std::string& id, int height, int width, int fps);
 private:
 	void Process(std::vector<SourceResult> sources) override;
 

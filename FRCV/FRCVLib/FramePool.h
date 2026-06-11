@@ -10,7 +10,7 @@ class Frame;
 class FramePool
 {
 public:
-	FramePool(Logger* p_Logger);
+	FramePool(std::shared_ptr<Logger> p_Logger);
 	~FramePool();
 	int GetCachedFrameCount();
 	std::shared_ptr<Frame> GetFrame(FrameSpec frameSpec);
@@ -18,7 +18,7 @@ public:
 private:
 	std::shared_ptr<Frame> AllocateFrame(FrameSpec frameSpec);
 	std::vector<std::shared_ptr<Frame>> m_FrameVector;
-	Logger* m_Logger;
+	std::shared_ptr<Logger> m_Logger;
 	std::mutex m_ResultLock;
 };
 

@@ -11,7 +11,7 @@ const int CHECKERBOARD_WIDTH[2] = {6, 9};
 class CameraCalibrator : public ISource, public ISink
 {
 public:
-	CameraCalibrator(Logger* logger);
+	CameraCalibrator(std::shared_ptr<Logger> logger);
 private:
 	// variables to store calibration data
 	std::vector<std::vector<cv::Point3f>> m_ObjPoints;

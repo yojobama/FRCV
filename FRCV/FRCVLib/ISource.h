@@ -12,7 +12,7 @@ class Frame;
 class ISource
 {
 public:
-	ISource(Logger* p_Logger, std::string m_ID);
+	ISource(std::shared_ptr<Logger> p_Logger, std::string m_ID);
 	virtual ~ISource();
 	SourceResult GetLatestResult(bool requireFrame, bool requireJson);
 	std::string GetID();
@@ -23,8 +23,8 @@ public:
 protected:
 	void SetLatestResult(SourceResult result);
 	uint64_t m_FrameCount = 0;
-	virtual void CaptureFrame() = 0;
-	Logger* m_Logger;
+	virtual void CaptureFrame();
+	std::shared_ptr<Logger> m_Logger;
 	bool m_DoNotLoadCaptureThread = false;
 private:
 	SourceResult m_LatestResult;

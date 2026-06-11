@@ -1,7 +1,7 @@
 #include "ISink.h"
 #include "Frame.h"
 
-ISink::ISink(Logger* p_Logger, int maxSources, bool requireJson, bool requireFrame, std::string id) : m_Logger(p_Logger) {
+ISink::ISink(std::shared_ptr<Logger> p_Logger, int maxSources, bool requireJson, bool requireFrame, std::string id) : m_Logger(p_Logger) {
     if (m_Logger) m_Logger->EnterLog("ISink constructed");
     m_MaxSources = maxSources;
     m_RequireJson = requireJson;

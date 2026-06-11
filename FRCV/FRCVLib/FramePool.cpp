@@ -2,7 +2,7 @@
 #include "Frame.h"
 
 // initializing the frame pool
-FramePool::FramePool(Logger* p_Logger) : m_Logger(p_Logger) {
+FramePool::FramePool(std::shared_ptr<Logger> p_Logger) : m_Logger(p_Logger) {
     if (m_Logger) m_Logger->EnterLog("FramePool constructed");
 }
 

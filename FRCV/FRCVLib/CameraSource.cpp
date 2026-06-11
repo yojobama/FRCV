@@ -2,7 +2,7 @@
 #include "Frame.h"
 #include <opencv2/opencv.hpp>
 
-CameraFrameSource::CameraFrameSource(std::string devicePath, Logger* logger, std::string id) : ISource(logger, id)
+CameraFrameSource::CameraFrameSource(std::string devicePath, std::shared_ptr<Logger> logger, std::string id) : ISource(logger, id)
 {
     capture = cv::VideoCapture(devicePath, cv::CAP_V4L2);
 
@@ -12,7 +12,7 @@ CameraFrameSource::CameraFrameSource(std::string devicePath, Logger* logger, std
     this->m_DeviceName = getDeviceName();
 }
 
-CameraFrameSource::CameraFrameSource(std::string devicePath, std::string deviceName, Logger* logger, std::string id) : ISource(logger, id)
+CameraFrameSource::CameraFrameSource(std::string devicePath, std::string deviceName, std::shared_ptr<Logger> logger, std::string id) : ISource(logger, id)
 {
 	capture = cv::VideoCapture(devicePath, cv::CAP_V4L2);
 	this->m_DeviceName = deviceName;

@@ -16,8 +16,8 @@ namespace cv {
 class CameraFrameSource : public ISource 
 {
 public:
-	CameraFrameSource(std::string devicePath, Logger* logger, std::string m_ID);
-	CameraFrameSource(std::string devicePath, std::string deviceName, Logger* logger, std::string m_ID);
+	CameraFrameSource(std::string devicePath, std::shared_ptr<Logger> logger, std::string m_ID);
+	CameraFrameSource(std::string devicePath, std::string deviceName, std::shared_ptr<Logger> logger, std::string m_ID);
 	
 	~CameraFrameSource();
 	
@@ -30,5 +30,4 @@ private:
 	cv::VideoCapture capture;
 	std::string m_DevicePath;
 	std::string m_DeviceName;
-	Logger* m_Logger;
 };

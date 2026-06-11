@@ -2,7 +2,7 @@
 #include <opencv2/opencv.hpp>
 #include "Frame.h"
 
-ImageFileFrameSource::ImageFileFrameSource(std::string filePath, Logger* logger, std::string m_ID) : ISource(logger, m_ID) {
+ImageFileFrameSource::ImageFileFrameSource(std::string filePath, std::shared_ptr<Logger> logger, std::string m_ID) : ISource(logger, m_ID) {
     cv::Mat img = cv::imread(filePath);
     if (!img.empty()) {
         mat = img;

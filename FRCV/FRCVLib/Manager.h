@@ -10,10 +10,7 @@
 #include "ISink.h"
 #include "CameraCalibrationResult.h"
 #include "Logger.h"
-#include "FramePool.h"
 #include "ISource.h"
-
-#include "FFmpegUtils.h"
 
 using namespace std;
 
@@ -43,7 +40,6 @@ enum ObjectDetectionProvider
 //	CPU_DEV_X86_64
 //};
 
-class PreProcessor;
 class Frame;
 class CameraCalibrationSink;
 class SystemMonitor;
@@ -74,8 +70,8 @@ public:
 	int CreateImageFileSource(string path, int id);
 
 	// functions to create detection sinks
-	int CreateApriltagSink();
-	int CreateApriltagSink(int id);
+	int CreateApriltagDetector();
+	int CreateApriltagDetector(int id);
 	int CreateObjectDetectionSink(ObjectDetectionProvider provider);
 	int CreateObjectDetectionSink(ObjectDetectionProvider provider, int id);
 
@@ -102,7 +98,7 @@ public:
 
 	//vector<string> GetRecording(int recorderId); // TODO: implement a recording mechanisem
 
-	int CreateCameraCalibrationSink(int height, int width);
+	int CreateCameraCalibrationSink(int width, int height);
 	void BindSourceToCalibrationSink(int sourceId);
 	void CameraCalibrationSinkGrabFrame(int sinkId);
 
@@ -123,15 +119,11 @@ private:
 	int GenerateUUID();
 
 	// maps for storing results, sources and sinks
-	map<int, ISource*> m_Sources;
-	map<int, ISink*> m_Sinks;
-	map<int, CameraCalibrationSink*> m_CameraCalibrationSinks; // camera calibration sinks
+	map<int, std::shared_ptr<ISource>> m_Sources;
+	map<int, std::shared_ptr<ISink>> m_Sinks;
+	map<int, std::shared_ptr<CameraCalibrationSink>> m_CameraCalibrationSinks; // camera calibration sinks
 
-	FramePool* m_FramePool;
-
-	PreProcessor* m_PreProcessor;
-
-	Logger* m_Logger; // a logger for the entire application
+	std::shared_ptr<Logger> m_Logger; // a logger for the entire application
 
 	vector<std::shared_ptr<Frame>> m_CalibrationImages;
 

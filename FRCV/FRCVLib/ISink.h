@@ -16,7 +16,7 @@ class StereoSink;
 class ISink 
 {
 public:
-    ISink(Logger* p_Logger, int maxSources, bool requireJson, bool requireFrame, std::string id);
+    ISink(std::shared_ptr<Logger> p_Logger, int maxSources, bool requireJson, bool requireFrame, std::string id);
     ~ISink() = default;
 
     std::string GetID();
@@ -29,7 +29,7 @@ public:
 
 protected:
     
-    Logger* m_Logger;
+    std::shared_ptr<Logger> m_Logger;
     virtual void Process(std::vector<SourceResult> sources) = 0;
     std::shared_ptr<Frame> m_PreviewFrame;
 private:

@@ -5,7 +5,7 @@
 #include "PreProcessor.h"
 #include "ISource.h"
 
-CameraCalibrationSink::CameraCalibrationSink(Logger* logger, PreProcessor* preProcessor, FrameSpec frameSpec) : m_FrameSpec(frameSpec)
+CameraCalibrationSink::CameraCalibrationSink(std::shared_ptr<Logger> logger, PreProcessor* preProcessor, FrameSpec frameSpec) : m_FrameSpec(frameSpec)
 {
 	this->logger = logger;
 	this->preProcessor = preProcessor;
