@@ -18,18 +18,18 @@
           }
         }
       },
-      "HttpMultipartParser/9.0.0": {
+      "HttpMultipartParser/10.0.0": {
         "type": "package",
         "dependencies": {
           "Microsoft.IO.RecyclableMemoryStream": "3.0.1"
         },
         "compile": {
-          "lib/netstandard2.1/HttpMultipartParser.dll": {
+          "lib/net8.0/HttpMultipartParser.dll": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/netstandard2.1/HttpMultipartParser.dll": {
+          "lib/net8.0/HttpMultipartParser.dll": {
             "related": ".xml"
           }
         }
@@ -47,15 +47,15 @@
           }
         }
       },
-      "System.Text.Json/9.0.6": {
+      "System.Text.Json/10.0.10": {
         "type": "package",
         "compile": {
-          "lib/net9.0/_._": {
+          "lib/net10.0/_._": {
             "related": ".xml"
           }
         },
         "runtime": {
-          "lib/net9.0/_._": {
+          "lib/net10.0/_._": {
             "related": ".xml"
           }
         },
@@ -102,20 +102,20 @@
         "lib/netstandard2.0/EmbedIO.xml"
       ]
     },
-    "HttpMultipartParser/9.0.0": {
-      "sha512": "WeGKDK62waagwo9nokRY62DrLukwVCNXOPVjrzi/qSS73D+B6zPOBkImsFqzhvRNweIobR74js9M2HTV+PTeIg==",
+    "HttpMultipartParser/10.0.0": {
+      "sha512": "/1hHkZSQs/JJuGcpNNS9aVodce6H8/iEGoHA/1ua7kJAo46XA9DbbCoI//JDB03qprvT00AaV/4VwfMFO7lcAg==",
       "type": "package",
-      "path": "httpmultipartparser/9.0.0",
+      "path": "httpmultipartparser/10.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "README.md",
-        "httpmultipartparser.9.0.0.nupkg.sha512",
+        "httpmultipartparser.10.0.0.nupkg.sha512",
         "httpmultipartparser.nuspec",
-        "lib/net48/HttpMultipartParser.dll",
-        "lib/net48/HttpMultipartParser.xml",
-        "lib/netstandard2.1/HttpMultipartParser.dll",
-        "lib/netstandard2.1/HttpMultipartParser.xml"
+        "lib/net8.0/HttpMultipartParser.dll",
+        "lib/net8.0/HttpMultipartParser.xml",
+        "lib/netstandard2.0/HttpMultipartParser.dll",
+        "lib/netstandard2.0/HttpMultipartParser.xml"
       ]
     },
     "Microsoft.IO.RecyclableMemoryStream/3.0.1": {
@@ -136,15 +136,14 @@
         "microsoft.io.recyclablememorystream.nuspec"
       ]
     },
-    "System.Text.Json/9.0.6": {
-      "sha512": "h+ZtYTyTnTh5Ju6mHCKb3FPGx4ylJZgm9W7Y2psUnkhQRPMOIxX+TCN0ZgaR/+Yea+93XHWAaMzYTar1/EHIPg==",
+    "System.Text.Json/10.0.10": {
+      "sha512": "bmsO6UdYtBdtn32zYXfsh7KlyTIzV/3V9hdT9RIb4pXKgYOsNxXR+VbWigNwBtNFVGYGm6Hwmqw5a+/IWFd36Q==",
       "type": "package",
-      "path": "system.text.json/9.0.6",
+      "path": "system.text.json/10.0.10",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "Icon.png",
-        "LICENSE.TXT",
         "PACKAGE.md",
         "THIRD-PARTY-NOTICES.TXT",
         "analyzers/dotnet/roslyn3.11/cs/System.Text.Json.SourceGeneration.dll",
@@ -194,6 +193,8 @@
         "buildTransitive/net8.0/System.Text.Json.targets",
         "buildTransitive/netcoreapp2.0/System.Text.Json.targets",
         "buildTransitive/netstandard2.0/System.Text.Json.targets",
+        "lib/net10.0/System.Text.Json.dll",
+        "lib/net10.0/System.Text.Json.xml",
         "lib/net462/System.Text.Json.dll",
         "lib/net462/System.Text.Json.xml",
         "lib/net8.0/System.Text.Json.dll",
@@ -202,7 +203,7 @@
         "lib/net9.0/System.Text.Json.xml",
         "lib/netstandard2.0/System.Text.Json.dll",
         "lib/netstandard2.0/System.Text.Json.xml",
-        "system.text.json.9.0.6.nupkg.sha512",
+        "system.text.json.10.0.10.nupkg.sha512",
         "system.text.json.nuspec",
         "useSharedDesignerContext.txt"
       ]
@@ -232,8 +233,8 @@
     "net10.0": [
       "EmbedIO >= 3.5.2",
       "FRCVLib >= 1.0.0",
-      "HttpMultipartParser >= 9.0.0",
-      "System.Text.Json >= 9.0.6"
+      "HttpMultipartParser >= 10.0.0",
+      "System.Text.Json >= 10.0.10"
     ]
   },
   "packageFolders": {
@@ -299,11 +300,11 @@
           },
           "HttpMultipartParser": {
             "target": "Package",
-            "version": "[9.0.0, )"
+            "version": "[10.0.0, )"
           },
           "System.Text.Json": {
             "target": "Package",
-            "version": "[9.0.6, )"
+            "version": "[10.0.10, )"
           }
         },
         "imports": [
