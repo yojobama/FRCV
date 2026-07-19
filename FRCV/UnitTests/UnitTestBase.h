@@ -11,7 +11,7 @@ public:
 	~UnitTestBase();
 	void doTest();
 protected:
-	Logger* logger;
+	std::shared_ptr<Logger> logger;
 private:
 	virtual bool innerTest() = 0;
 };

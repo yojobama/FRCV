@@ -41,7 +41,7 @@ enum ObjectDetectionProvider
 //};
 
 class Frame;
-class CameraCalibrationSink;
+//class CameraCalibrationSink;
 class SystemMonitor;
 
 class Manager
@@ -98,11 +98,11 @@ public:
 
 	//vector<string> GetRecording(int recorderId); // TODO: implement a recording mechanisem
 
-	int CreateCameraCalibrationSink(int width, int height);
-	void BindSourceToCalibrationSink(int sourceId);
-	void CameraCalibrationSinkGrabFrame(int sinkId);
+	//int CreateCameraCalibrationSink(int width, int height);
+	//void BindSourceToCalibrationSink(int sourceId);
+	//void CameraCalibrationSinkGrabFrame(int sinkId);
 
-	CameraCalibrationResult GetCameraCalibrationResults(int sinkId);
+	//CameraCalibrationResult GetCameraCalibrationResults(int sinkId);
 	
 	// functions to check system status
 	int GetMemoryUsageBytes();
@@ -114,14 +114,14 @@ public:
 	bool DisableSinkPreview(int sinkId);
 	Image8U GetPreviewImage(int sinkId);
 private:
-	bool SetSinkResult(int sinkId, string result);
+	//bool SetSinkResult(int sinkId, string result);
 
 	int GenerateUUID();
 
 	// maps for storing results, sources and sinks
 	map<int, std::shared_ptr<ISource>> m_Sources;
 	map<int, std::shared_ptr<ISink>> m_Sinks;
-	map<int, std::shared_ptr<CameraCalibrationSink>> m_CameraCalibrationSinks; // camera calibration sinks
+	//map<int, std::shared_ptr<CameraCalibrationSink>> m_CameraCalibrationSinks; // camera calibration sinks
 
 	std::shared_ptr<Logger> m_Logger; // a logger for the entire application
 

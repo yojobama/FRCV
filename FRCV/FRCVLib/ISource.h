@@ -23,7 +23,7 @@ public:
 protected:
 	void SetLatestResult(SourceResult result);
 	uint64_t m_FrameCount = 0;
-	virtual void CaptureFrame();
+	virtual void CaptureFrame(); // TODO: think about: should this be removed?
 	std::shared_ptr<Logger> m_Logger;
 	bool m_DoNotLoadCaptureThread = false;
 private:

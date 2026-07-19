@@ -1,12 +1,19 @@
 #include "ApriltagDetector.h"
 #include "ApriltagDetection.h"
+#include "CameraCalibrationResult.h"
 
-ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string id) : ISource(logger, id), ISink(logger, 1, false, true, id)
+ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string id, CameraCalibrationResult cameraCalibrationResult, double tagSize) : ISource(logger, id), ISink(logger, 1, false, true, id)
 {
 	if (logger) logger->EnterLog("ApriltagDetector constructed");
 	this->m_Family = tag36h11_create();
 	this->m_Detector = apriltag_detector_create();
 	apriltag_detector_add_family(this->m_Detector, this->m_Family);
+
+	m_DetectionInfo.tagsize = tagSize;
+	m_DetectionInfo.fx = cameraCalibrationResult.fx;
+	m_DetectionInfo.fy = cameraCalibrationResult.fy;
+	m_DetectionInfo.cx = cameraCalibrationResult.cx;
+	m_DetectionInfo.cy = cameraCalibrationResult.cy;
 
 	m_Logger = logger;
 
@@ -51,8 +58,9 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 				apriltag_detection_t* detection;
 				zarray_get(detections, i, &detection);
 
+				m_DetectionInfo.det = detection;
 				apriltag_pose_t pose;
-				/*double err = estimate_tag_pose(&info, &pose);*/
+				double err = estimate_tag_pose(&m_DetectionInfo, &pose);
 
 				jsonVector.push_back(nlohmann::json{
 					{"id", detection->id},
@@ -63,14 +71,14 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 						{detection->p[2][0], detection->p[2][1]},
 						{detection->p[3][0], detection->p[3][1]}
 					}},
-					//{"pose", {
-					//	{"x", pose.x},
-					//	{"y", pose.y},
-					//	{"z", pose.z},
-					//	{"yaw", pose.yaw},
-					//	{"pitch", pose.pitch},
-					//	{"roll", pose.roll}
-					//}}
+					{"pose", {
+						{"x", pose.t->data[0]},
+						{"y", pose.t->data[1]},
+						{"z", pose.t->data[2]},
+						//{"yaw", pose.R->data[0]},
+						//{"pitch", pose.R->data[1]},
+						//{"roll", pose.R->data[2]}
+					}}
 					});
 
 				returnVector.push_back(ApriltagDetection(*detection, pose));

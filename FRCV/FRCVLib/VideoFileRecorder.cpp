@@ -8,7 +8,7 @@ VideoFileRecorder::VideoFileRecorder(std::shared_ptr<Logger> logger, const std::
 
 void VideoFileRecorder::Process(std::vector<SourceResult> sources)
 {
-	SourceResult& source = sources.front();
+	const SourceResult& source = sources.front();
 	if (source.frame.has_value()) {
 		m_VideoWriter << source.frame.value();
 	}

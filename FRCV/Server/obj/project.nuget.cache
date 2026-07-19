@@ -1,19 +1,27 @@
 {
   "version": 2,
-  "dgSpecHash": "2WoxgvPDvUM=",
+  "dgSpecHash": "LDRvTMEFKHg=",
   "success": true,
-  "projectFilePath": "D:\\Projects\\FRCV\\FRCV\\Server\\Server.csproj",
+  "projectFilePath": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\Server\\Server.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\yojob\\.nuget\\packages\\embedio\\3.5.2\\embedio.3.5.2.nupkg.sha512",
     "C:\\Users\\yojob\\.nuget\\packages\\httpmultipartparser\\9.0.0\\httpmultipartparser.9.0.0.nupkg.sha512",
-    "C:\\Users\\yojob\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512",
     "C:\\Users\\yojob\\.nuget\\packages\\microsoft.io.recyclablememorystream\\3.0.1\\microsoft.io.recyclablememorystream.3.0.1.nupkg.sha512",
-    "C:\\Users\\yojob\\.nuget\\packages\\system.buffers\\4.6.0\\system.buffers.4.6.0.nupkg.sha512",
-    "C:\\Users\\yojob\\.nuget\\packages\\system.io.pipelines\\9.0.6\\system.io.pipelines.9.0.6.nupkg.sha512",
-    "C:\\Users\\yojob\\.nuget\\packages\\system.text.encodings.web\\9.0.6\\system.text.encodings.web.9.0.6.nupkg.sha512",
     "C:\\Users\\yojob\\.nuget\\packages\\system.text.json\\9.0.6\\system.text.json.9.0.6.nupkg.sha512",
-    "C:\\Users\\yojob\\.nuget\\packages\\system.valuetuple\\4.5.0\\system.valuetuple.4.5.0.nupkg.sha512",
     "C:\\Users\\yojob\\.nuget\\packages\\unosquare.swan.lite\\3.1.0\\unosquare.swan.lite.3.1.0.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1510",
+      "level": "Warning",
+      "message": "PackageReference System.Text.Json will not be pruned. This package is automatically available and does not need to be referenced explicitly. Remove the PackageReference item.",
+      "projectPath": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\Server\\Server.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\yojob\\Projects\\FRCV\\FRCV\\Server\\Server.csproj",
+      "libraryId": "System.Text.Json",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
 }

@@ -120,7 +120,6 @@
     <ClInclude Include="ApriltagDetection.h" />
     <ClInclude Include="ApriltagDetector.h" />
     <ClInclude Include="CameraCalibrationResult.h" />
-    <ClInclude Include="CameraCalibrationSink.h" />
     <ClInclude Include="CameraCalibrator.h" />
     <ClInclude Include="CameraSource.h" />
     <ClInclude Include="ISource.h" />
@@ -133,6 +132,7 @@
     <ClInclude Include="RecordSink.h" />
     <ClInclude Include="SourceResult.h" />
     <ClInclude Include="SystemMonitor.h" />
+    <ClInclude Include="UDPServer.h" />
     <ClInclude Include="VideoFileRecorder.h" />
     <ClInclude Include="VideoFileSource.h" />
   </ItemGroup>
@@ -140,7 +140,6 @@
     <ClCompile Include="ApriltagDetection.cpp" />
     <ClCompile Include="ApriltagDetector.cpp" />
     <ClCompile Include="CameraCalibrationResult.cpp" />
-    <ClCompile Include="CameraCalibrationSink.cpp" />
     <ClCompile Include="CameraCalibrator.cpp" />
     <ClCompile Include="CameraSource.cpp" />
     <ClCompile Include="ISource.cpp" />
@@ -152,6 +151,7 @@
     <ClCompile Include="RecordSink.cpp" />
     <ClCompile Include="SourceResult.cpp" />
     <ClCompile Include="SystemMonitor.cpp" />
+    <ClCompile Include="UDPServer.cpp" />
     <ClCompile Include="VideoFileRecorder.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />
   </ItemGroup>

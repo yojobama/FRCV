@@ -7,7 +7,6 @@
 #include "Frame.h"
 #include "SystemMonitor.h"
 #include "ISink.h"
-#include "CameraCalibrationSink.h"
 
 #include <cstring>
 #include <cctype>
@@ -42,7 +41,7 @@ Manager::~Manager()
 	m_SystemMonitor->StopMonitoring();
     m_Logger->EnterLog("Manager destructed");
     delete m_SystemMonitor;
-    m_CameraCalibrationSinks.clear();
+    //m_CameraCalibrationSinks.clear();
     m_Sources.clear();
 	m_Sinks.clear();
 }
@@ -266,7 +265,7 @@ int Manager::CreateApriltagDetector()
     m_Logger->EnterLog("CreateApriltagDetector called");
     int id = GenerateUUID();
 
-    auto p_Sink = std::make_shared<ApriltagDetector>(m_Logger, std::to_string(id));
+	auto p_Sink = std::make_shared<ApriltagDetector>(m_Logger, std::to_string(id)); // TODO: add calibration result and tagSize variables to the constructor
 
     m_Sinks.emplace(id, p_Sink);
 
@@ -278,7 +277,7 @@ int Manager::CreateApriltagDetector(int id)
 {
     m_Logger->EnterLog("CreateApriltagDetector called");
 
-    auto p_Sink = std::make_shared<ApriltagDetector>(m_Logger, std::to_string(id));
+    auto p_Sink = std::make_shared<ApriltagDetector>(m_Logger, std::to_string(id)); // TODO: add calibration result and tagSize variables to the constructor
 
     m_Sinks.emplace(id, p_Sink);
 
@@ -462,9 +461,10 @@ string Manager::GetSinkResult(int sinkId)
         return "";
     }
     // TODO: fix
-    string result = m_Sinks.find(sinkId)->second->GetCurrentResults();
-    m_Logger->EnterLog("GetSinkResult result: " + result);
-    return result;
+    //string result = m_Sinks.find(sinkId)->second->GetCurrentResults();
+    //m_Logger->EnterLog("GetSinkResult result: " + result);
+    //return result;
+    return nullptr; // NULL
 }
 
 string Manager::GetAllSinkResults()
@@ -490,20 +490,20 @@ string Manager::GetAllSinkResults()
     return returnString;
 }
 
-bool Manager::SetSinkResult(int sinkId, string result)
-{
-    m_Logger->EnterLog("SetSinkResult called with sinkId=" + std::to_string(sinkId) + ", result=" + result);
-    if (m_Sinks.find(sinkId) == m_Sinks.end()) {
-        m_Logger->EnterLog("Result entry not found for sinkId: " + std::to_string(sinkId));
-        return false;
-    }
-    else {
-        // TODO: fix
-        m_Sinks.find(sinkId)->second->() = result;
-    }
-        m_Logger->EnterLog("Result set for sinkId: " + std::to_string(sinkId));
-    return true;
-}
+//bool Manager::SetSinkResult(int sinkId, string result)
+//{
+//    m_Logger->EnterLog("SetSinkResult called with sinkId=" + std::to_string(sinkId) + ", result=" + result);
+//    if (m_Sinks.find(sinkId) == m_Sinks.end()) {
+//        m_Logger->EnterLog("Result entry not found for sinkId: " + std::to_string(sinkId));
+//        return false;
+//    }
+//    else {
+//        // TODO: fix
+//        m_Sinks.find(sinkId)->second->() = result;
+//    }
+//        m_Logger->EnterLog("Result set for sinkId: " + std::to_string(sinkId));
+//    return true;
+//}
 
 int Manager::GenerateUUID()
 {
@@ -517,46 +517,46 @@ int Manager::GenerateUUID()
     return randomNumber;
 }
 
-int Manager::CreateCameraCalibrationSink(int width, int height)
-{
-	int id = GenerateUUID();
+//int Manager::CreateCameraCalibrationSink(int width, int height)
+//{
+//	int id = GenerateUUID();
+//
+//    // TODO: fix
+//    auto p_Sink = std::make_shared<CameraCalibrationSink>(m_Logger, nullptr, FrameSpec(height, width, CV_8UC3));
+//
+//	m_CameraCalibrationSinks.emplace(id, p_Sink);
+//
+//
+//    return id;
+//}
 
-    // TODO: fix
-    auto p_Sink = std::make_shared<CameraCalibrationSink>(m_Logger, nullptr, FrameSpec(height, width, CV_8UC3));
-
-	m_CameraCalibrationSinks.emplace(id, p_Sink);
-
-
-    return id;
-}
-
-void Manager::BindSourceToCalibrationSink(int sourceId)
-{
-	auto sink = m_CameraCalibrationSinks.find(sourceId);
-    if (sink != m_CameraCalibrationSinks.end() && m_Sources.find(sourceId) != m_Sources.end()) {
-        sink->second->BindSource(m_Sources.find(sourceId)->second.get());
-    }
-}
-
-void Manager::CameraCalibrationSinkGrabFrame(int sinkId)
-{
-    auto sink = m_CameraCalibrationSinks.find(sinkId);
-    if (sink != m_CameraCalibrationSinks.end()) {
-        sink->second->GrabAndProcessFrame();
-    } else {
-        m_Logger->EnterLog("CameraCalibrationSink not found with id: " + std::to_string(sinkId));
-	}
-}
-
-CameraCalibrationResult Manager::GetCameraCalibrationResults(int sinkId)
-{
-	auto sink = m_CameraCalibrationSinks.find(sinkId);
-    if (sink != m_CameraCalibrationSinks.end()) {
-		return sink->second->GetResults();
-    }
-    // Return empty result if not found
-    return CameraCalibrationResult();
-}
+//void Manager::BindSourceToCalibrationSink(int sourceId)
+//{
+//	auto sink = m_CameraCalibrationSinks.find(sourceId);
+//    if (sink != m_CameraCalibrationSinks.end() && m_Sources.find(sourceId) != m_Sources.end()) {
+//        sink->second->BindSource(m_Sources.find(sourceId)->second.get());
+//    }
+//}
+//
+//void Manager::CameraCalibrationSinkGrabFrame(int sinkId)
+//{
+//    auto sink = m_CameraCalibrationSinks.find(sinkId);
+//    if (sink != m_CameraCalibrationSinks.end()) {
+//        sink->second->GrabAndProcessFrame();
+//    } else {
+//        m_Logger->EnterLog("CameraCalibrationSink not found with id: " + std::to_string(sinkId));
+//	}
+//}
+//
+//CameraCalibrationResult Manager::GetCameraCalibrationResults(int sinkId)
+//{
+//	auto sink = m_CameraCalibrationSinks.find(sinkId);
+//    if (sink != m_CameraCalibrationSinks.end()) {
+//		return sink->second->GetResults();
+//    }
+//    // Return empty result if not found
+//    return CameraCalibrationResult();
+//}
 
 int Manager::GetMemoryUsageBytes()
 {

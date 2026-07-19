@@ -29,10 +29,11 @@ public:
 
 protected:
     
-    std::shared_ptr<Logger> m_Logger;
     virtual void Process(std::vector<SourceResult> sources) = 0;
     std::shared_ptr<Frame> m_PreviewFrame;
 private:
+    std::shared_ptr<Logger> m_Logger;
+
     static void* InvokeProcessingThread(void* p_Reference);
     void ProcessingThreadLoop();
     

@@ -1627,56 +1627,6 @@ SWIGEXPORT const char * SWIGSTDCALL CSharp_Manager_GetAllSinkResults(void * jarg
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateCameraCalibrationSink(void * jarg1, int jarg2, int jarg3) {
-  int jresult ;
-  Manager *arg1 = 0 ;
-  int arg2 ;
-  int arg3 ;
-  int result;
-  
-  arg1 = (Manager *)jarg1; 
-  arg2 = (int)jarg2; 
-  arg3 = (int)jarg3; 
-  result = (int)(arg1)->CreateCameraCalibrationSink(arg2,arg3);
-  jresult = result; 
-  return jresult;
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_Manager_BindSourceToCalibrationSink(void * jarg1, int jarg2) {
-  Manager *arg1 = 0 ;
-  int arg2 ;
-  
-  arg1 = (Manager *)jarg1; 
-  arg2 = (int)jarg2; 
-  (arg1)->BindSourceToCalibrationSink(arg2);
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_Manager_CameraCalibrationSinkGrabFrame(void * jarg1, int jarg2) {
-  Manager *arg1 = 0 ;
-  int arg2 ;
-  
-  arg1 = (Manager *)jarg1; 
-  arg2 = (int)jarg2; 
-  (arg1)->CameraCalibrationSinkGrabFrame(arg2);
-}
-
-
-SWIGEXPORT void * SWIGSTDCALL CSharp_Manager_GetCameraCalibrationResults(void * jarg1, int jarg2) {
-  void * jresult ;
-  Manager *arg1 = 0 ;
-  int arg2 ;
-  CameraCalibrationResult result;
-  
-  arg1 = (Manager *)jarg1; 
-  arg2 = (int)jarg2; 
-  result = (arg1)->GetCameraCalibrationResults(arg2);
-  jresult = new CameraCalibrationResult(result); 
-  return jresult;
-}
-
-
 SWIGEXPORT int SWIGSTDCALL CSharp_Manager_GetMemoryUsageBytes(void * jarg1) {
   int jresult ;
   Manager *arg1 = 0 ;
@@ -1855,6 +1805,28 @@ SWIGEXPORT double SWIGSTDCALL CSharp_CameraCalibrationResult_cy_get(void * jarg1
 }
 
 
+SWIGEXPORT void SWIGSTDCALL CSharp_CameraCalibrationResult_rms_set(void * jarg1, double jarg2) {
+  CameraCalibrationResult *arg1 = 0 ;
+  double arg2 ;
+  
+  arg1 = (CameraCalibrationResult *)jarg1; 
+  arg2 = (double)jarg2; 
+  if (arg1) (arg1)->rms = arg2;
+}
+
+
+SWIGEXPORT double SWIGSTDCALL CSharp_CameraCalibrationResult_rms_get(void * jarg1) {
+  double jresult ;
+  CameraCalibrationResult *arg1 = 0 ;
+  double result;
+  
+  arg1 = (CameraCalibrationResult *)jarg1; 
+  result = (double) ((arg1)->rms);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT void SWIGSTDCALL CSharp_CameraCalibrationResult_frameSpec_set(void * jarg1, void * jarg2) {
   CameraCalibrationResult *arg1 = 0 ;
   FrameSpec arg2 ;
@@ -1893,27 +1865,21 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_new_CameraCalibrationResult__SWIG_0() {
 }
 
 
-SWIGEXPORT void * SWIGSTDCALL CSharp_new_CameraCalibrationResult__SWIG_1(double jarg1, double jarg2, double jarg3, double jarg4, void * jarg5) {
+SWIGEXPORT void * SWIGSTDCALL CSharp_new_CameraCalibrationResult__SWIG_1(double jarg1, double jarg2, double jarg3, double jarg4, double jarg5) {
   void * jresult ;
   double arg1 ;
   double arg2 ;
   double arg3 ;
   double arg4 ;
-  FrameSpec arg5 ;
-  FrameSpec *argp5 ;
+  double arg5 ;
   CameraCalibrationResult *result = 0 ;
   
   arg1 = (double)jarg1; 
   arg2 = (double)jarg2; 
   arg3 = (double)jarg3; 
   arg4 = (double)jarg4; 
-  argp5 = (FrameSpec *)jarg5; 
-  if (!argp5) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null FrameSpec", 0);
-    return 0;
-  }
-  arg5 = *argp5; 
-  result = (CameraCalibrationResult *)new CameraCalibrationResult(arg1,arg2,arg3,arg4,SWIG_STD_MOVE(arg5));
+  arg5 = (double)jarg5; 
+  result = (CameraCalibrationResult *)new CameraCalibrationResult(arg1,arg2,arg3,arg4,arg5);
   jresult = (void *)result; 
   return jresult;
 }
