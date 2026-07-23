@@ -344,6 +344,9 @@ class libFRCVLibPINVOKE {
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_GetCameraCalibrationResult")]
   public static extern global::System.IntPtr Manager_GetCameraCalibrationResult(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
 
+  [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_SaveCameraCalibrationBoardDetection")]
+  public static extern bool Manager_SaveCameraCalibrationBoardDetection(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2);
+
   [global::System.Runtime.InteropServices.DllImport("libFRCVLib", EntryPoint="CSharp_Manager_CreateApriltagDetectorFromCalibrator__SWIG_0")]
   public static extern int Manager_CreateApriltagDetectorFromCalibrator__SWIG_0(global::System.Runtime.InteropServices.HandleRef jarg1, int jarg2, double jarg3);
 

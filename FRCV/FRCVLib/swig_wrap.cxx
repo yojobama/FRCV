@@ -1531,6 +1531,20 @@ SWIGEXPORT void * SWIGSTDCALL CSharp_Manager_GetCameraCalibrationResult(void * j
 }
 
 
+SWIGEXPORT unsigned int SWIGSTDCALL CSharp_Manager_SaveCameraCalibrationBoardDetection(void * jarg1, int jarg2) {
+  unsigned int jresult ;
+  Manager *arg1 = 0 ;
+  int arg2 ;
+  bool result;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (bool)(arg1)->SaveCameraCalibrationBoardDetection(arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
 SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateApriltagDetectorFromCalibrator__SWIG_0(void * jarg1, int jarg2, double jarg3) {
   int jresult ;
   Manager *arg1 = 0 ;

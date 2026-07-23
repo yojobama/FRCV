@@ -343,6 +343,25 @@ CameraCalibrationResult Manager::GetCameraCalibrationResult(int calibratorId)
 	return p_Calibrator->GetCalibrationResult();
 }
 
+bool Manager::SaveCameraCalibrationBoardDetection(int calibratorId)
+{
+	m_Logger->EnterLog("SaveCameraCalibrationBoardDetection called with calibratorId=" + std::to_string(calibratorId));
+	auto sink = m_Sinks.find(calibratorId);
+	if (sink == m_Sinks.end()) {
+		m_Logger->EnterLog("Sink not found: " + std::to_string(calibratorId));
+		return false;
+	}
+
+	// dynamic_cast is used to distinguish CameraCalibrator sinks from every other sink/source type
+	CameraCalibrator* p_Calibrator = dynamic_cast<CameraCalibrator*>(sink->second.get());
+	if (p_Calibrator == nullptr) {
+		m_Logger->EnterLog("Sink " + std::to_string(calibratorId) + " is not a CameraCalibrator");
+		return false;
+	}
+
+	return p_Calibrator->SaveBoardDetection();
+}
+
 int Manager::CreateApriltagDetectorFromCalibrator(int calibratorId, double tagSize /* in METERS you filthy Americans! */)
 {
 	int id = GenerateUUID();

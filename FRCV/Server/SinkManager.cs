@@ -164,6 +164,13 @@ namespace Server
             return ManagerWrapper.Instance.GetCameraCalibrationResult(calibratorSinkId);
         }
 
+        // saves the checkerboard corners detected in a CameraCalibrationSink's latest frame, to be
+        // used later when computing the calibration result
+        public bool SaveCameraCalibrationBoardDetection(int calibratorSinkId)
+        {
+            return ManagerWrapper.Instance.SaveCameraCalibrationBoardDetection(calibratorSinkId);
+        }
+
         // creates an ApriltagSink that reuses the calibration result of an existing CameraCalibrationSink,
         // so the apriltag detections can be translated into real world tag locations
         public int AddApriltagSinkFromCalibrator(string name, int calibratorSinkId, double tagSize)

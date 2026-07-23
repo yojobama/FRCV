@@ -176,6 +176,11 @@ public class Manager : global::System.IDisposable {
     return ret;
   }
 
+  public bool SaveCameraCalibrationBoardDetection(int calibratorId) {
+    bool ret = libFRCVLibPINVOKE.Manager_SaveCameraCalibrationBoardDetection(swigCPtr, calibratorId);
+    return ret;
+  }
+
   public int CreateApriltagDetectorFromCalibrator(int calibratorId, double tagSize) {
     int ret = libFRCVLibPINVOKE.Manager_CreateApriltagDetectorFromCalibrator__SWIG_0(swigCPtr, calibratorId, tagSize);
     return ret;

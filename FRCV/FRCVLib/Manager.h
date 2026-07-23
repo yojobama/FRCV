@@ -86,6 +86,10 @@ public:
 	// retrieves the calibration result of a CameraCalibrator sink, identified via dynamic_cast
 	CameraCalibrationResult GetCameraCalibrationResult(int calibratorId);
 
+	// saves the checkerboard corners detected in the CameraCalibrator's latest frame as a calibration
+	// snapshot to be used in the calibration phase. returns false if no board was detected yet.
+	bool SaveCameraCalibrationBoardDetection(int calibratorId);
+
 	// creates an ApriltagDetector using the calibration result produced by an existing CameraCalibrator,
 	// transferring the calibration data so the detector can compute the real-world tag location
 	int CreateApriltagDetectorFromCalibrator(int calibratorId, double tagSize /* in METERS you filthy Americans! */);
