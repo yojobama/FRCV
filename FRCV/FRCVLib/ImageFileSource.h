@@ -2,7 +2,6 @@
 
 #include "ISource.h"
 #include <string>
-#include "FrameSpec.h"
 
 class ImageFileFrameSource : public ISource
 {

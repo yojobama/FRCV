@@ -1,5 +1,4 @@
 #include "ISource.h"
-#include "Frame.h"
 #include "SourceResult.h"
 
 ISource::ISource(std::shared_ptr<Logger> p_Logger, std::string m_ID)
@@ -114,4 +113,8 @@ void ISource::SourceThreadProc()
 		CaptureFrame();
 	}
 	m_ShouldTerminate = false;
+}
+
+void ISource::CaptureFrame() {
+	// this is a default implementation
 }

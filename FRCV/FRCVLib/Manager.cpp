@@ -4,7 +4,6 @@
 #include "ApriltagDetector.h"
 #include "RecordSink.h"
 #include "CameraSource.h"
-#include "Frame.h"
 #include "SystemMonitor.h"
 #include "ISink.h"
 
@@ -260,12 +259,12 @@ int Manager::CreateImageFileSource(string path, int id)
     return id;
 }
 
-int Manager::CreateApriltagDetector()
+int Manager::CreateApriltagDetector(CameraCalibrationResult calibrationResult, double tagSize /* in METERS you filthy Americans! */)
 {
     m_Logger->EnterLog("CreateApriltagDetector called");
     int id = GenerateUUID();
 
-	auto p_Sink = std::make_shared<ApriltagDetector>(m_Logger, std::to_string(id)); // TODO: add calibration result and tagSize variables to the constructor
+	auto p_Sink = std::make_shared<ApriltagDetector>(m_Logger, std::to_string(id), calibrationResult, tagSize); // TODO: add calibration result and tagSize variables to the constructor
 
     m_Sinks.emplace(id, p_Sink);
 
@@ -273,11 +272,11 @@ int Manager::CreateApriltagDetector()
     return id;
 }
 
-int Manager::CreateApriltagDetector(int id)
+int Manager::CreateApriltagDetector(int id, CameraCalibrationResult calibrationResult, double tagSize /* in METERS you filthy Americans! */)
 {
     m_Logger->EnterLog("CreateApriltagDetector called");
 
-    auto p_Sink = std::make_shared<ApriltagDetector>(m_Logger, std::to_string(id)); // TODO: add calibration result and tagSize variables to the constructor
+    auto p_Sink = std::make_shared<ApriltagDetector>(m_Logger, std::to_string(id), calibrationResult, tagSize); // TODO: add calibration result and tagSize variables to the constructor
 
     m_Sinks.emplace(id, p_Sink);
 

@@ -70,8 +70,8 @@ public:
 	int CreateImageFileSource(string path, int id);
 
 	// functions to create detection sinks
-	int CreateApriltagDetector();
-	int CreateApriltagDetector(int id);
+	int CreateApriltagDetector(CameraCalibrationResult calibrationResult, double tagSize /* in METERS you filthy Americans! */);
+	int CreateApriltagDetector(int id, CameraCalibrationResult calibrationResult, double tagSize /* in METERS you filthy Americans! */);
 	int CreateObjectDetectionSink(ObjectDetectionProvider provider);
 	int CreateObjectDetectionSink(ObjectDetectionProvider provider, int id);
 

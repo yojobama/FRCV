@@ -108,10 +108,10 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <WSLPath>Ubuntu</WSLPath>
+    <WSLPath>Ubuntu-24.04</WSLPath>
     <EnableASAN>false</EnableASAN>
     <MultiProcNumber>12</MultiProcNumber>
-    <IncludePath>/usr/include;/usr/include/opencv4</IncludePath>
+    <IncludePath>/usr/include;/usr/local/include;/usr/include/opencv4</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <WSLPath>Ubuntu-24.04</WSLPath>
@@ -160,7 +160,7 @@
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>/usr/include;/usr/include/opencv4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>/usr/include;/usr/local/include;/usr/include/opencv4;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CppLanguageStandard>c++20</CppLanguageStandard>
     </ClCompile>
     <Link>
