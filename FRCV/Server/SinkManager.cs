@@ -109,13 +109,18 @@ namespace Server
                     case "ApriltagSink":
                     case "apriltag":
                     case "apritlag": // backward-compatibility for misspelling
-                        id = ManagerWrapper.Instance.CreateApriltagSink(id.Value);
+                        id = ManagerWrapper.Instance.CreateApriltagDetector(id.Value);
                         sinks.Add(new Sink(id.Value, name, SinkType.ApriltagSink));
                         break;
                     case "objectdetectionsink":
                     case "ObjectDetectionSink":
                         id = ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX, id.Value);// TODO: Add logic for selecting acceleration type (ONNX with REP, or Rknn)
                         sinks.Add(new Sink(id.Value, name, SinkType.ObjectDetectionSink));
+                        break;
+                    case "cameracalibrationsink":
+                    case "cameracalibration":
+                        id = ManagerWrapper.Instance.CreateCameraCalibrator(id.Value);
+                        sinks.Add(new Sink(id.Value, name, SinkType.CameraCalibrationSink));
                         break;
                 }
                 return id.GetValueOrDefault(-1);
@@ -125,12 +130,17 @@ namespace Server
                 switch (type)
                 {
                     case "apriltag":
-                        id = ManagerWrapper.Instance.CreateApriltagSink();
+                        id = ManagerWrapper.Instance.CreateApriltagDetector();
                         sinks.Add(new Sink(id.Value, name, SinkType.ApriltagSink));
                         break;
                     case "objectdetectionsink":
                         id = ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX);
                         sinks.Add(new Sink(id.Value, name, SinkType.ObjectDetectionSink));
+                        break;
+                    case "cameracalibrationsink":
+                    case "cameracalibration":
+                        id = ManagerWrapper.Instance.CreateCameraCalibrator();
+                        sinks.Add(new Sink(id.Value, name, SinkType.CameraCalibrationSink));
                         break;
                 }
 
@@ -146,6 +156,22 @@ namespace Server
             channels.Add(channel);
 
             return channel;
+        }
+
+        // fetches the calibration result computed by a CameraCalibrationSink
+        public CameraCalibrationResult GetCameraCalibrationResult(int calibratorSinkId)
+        {
+            return ManagerWrapper.Instance.GetCameraCalibrationResult(calibratorSinkId);
+        }
+
+        // creates an ApriltagSink that reuses the calibration result of an existing CameraCalibrationSink,
+        // so the apriltag detections can be translated into real world tag locations
+        public int AddApriltagSinkFromCalibrator(string name, int calibratorSinkId, double tagSize)
+        {
+            int id = ManagerWrapper.Instance.CreateApriltagDetectorFromCalibrator(calibratorSinkId, tagSize);
+            sinks.Add(new Sink(id, name, SinkType.ApriltagSink));
+            DB.Instance.Save();
+            return id;
         }
 
         // update results

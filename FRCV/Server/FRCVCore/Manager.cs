@@ -129,13 +129,25 @@ public class Manager : global::System.IDisposable {
     return ret;
   }
 
+  public int CreateApriltagDetector(CameraCalibrationResult calibrationResult, double tagSize) {
+    int ret = libFRCVLibPINVOKE.Manager_CreateApriltagDetector__SWIG_0(swigCPtr, CameraCalibrationResult.getCPtr(calibrationResult), tagSize);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
+  public int CreateApriltagDetector(int id, CameraCalibrationResult calibrationResult, double tagSize) {
+    int ret = libFRCVLibPINVOKE.Manager_CreateApriltagDetector__SWIG_1(swigCPtr, id, CameraCalibrationResult.getCPtr(calibrationResult), tagSize);
+    if (libFRCVLibPINVOKE.SWIGPendingException.Pending) throw libFRCVLibPINVOKE.SWIGPendingException.Retrieve();
+    return ret;
+  }
+
   public int CreateApriltagDetector() {
-    int ret = libFRCVLibPINVOKE.Manager_CreateApriltagDetector__SWIG_0(swigCPtr);
+    int ret = libFRCVLibPINVOKE.Manager_CreateApriltagDetector__SWIG_2(swigCPtr);
     return ret;
   }
 
   public int CreateApriltagDetector(int id) {
-    int ret = libFRCVLibPINVOKE.Manager_CreateApriltagDetector__SWIG_1(swigCPtr, id);
+    int ret = libFRCVLibPINVOKE.Manager_CreateApriltagDetector__SWIG_3(swigCPtr, id);
     return ret;
   }
 
@@ -146,6 +158,31 @@ public class Manager : global::System.IDisposable {
 
   public int CreateObjectDetectionSink(ObjectDetectionProvider provider, int id) {
     int ret = libFRCVLibPINVOKE.Manager_CreateObjectDetectionSink__SWIG_1(swigCPtr, (int)provider, id);
+    return ret;
+  }
+
+  public int CreateCameraCalibrator() {
+    int ret = libFRCVLibPINVOKE.Manager_CreateCameraCalibrator__SWIG_0(swigCPtr);
+    return ret;
+  }
+
+  public int CreateCameraCalibrator(int id) {
+    int ret = libFRCVLibPINVOKE.Manager_CreateCameraCalibrator__SWIG_1(swigCPtr, id);
+    return ret;
+  }
+
+  public CameraCalibrationResult GetCameraCalibrationResult(int calibratorId) {
+    CameraCalibrationResult ret = new CameraCalibrationResult(libFRCVLibPINVOKE.Manager_GetCameraCalibrationResult(swigCPtr, calibratorId), true);
+    return ret;
+  }
+
+  public int CreateApriltagDetectorFromCalibrator(int calibratorId, double tagSize) {
+    int ret = libFRCVLibPINVOKE.Manager_CreateApriltagDetectorFromCalibrator__SWIG_0(swigCPtr, calibratorId, tagSize);
+    return ret;
+  }
+
+  public int CreateApriltagDetectorFromCalibrator(int id, int calibratorId, double tagSize) {
+    int ret = libFRCVLibPINVOKE.Manager_CreateApriltagDetectorFromCalibrator__SWIG_1(swigCPtr, id, calibratorId, tagSize);
     return ret;
   }
 

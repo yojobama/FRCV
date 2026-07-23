@@ -72,8 +72,24 @@ public:
 	// functions to create detection sinks
 	int CreateApriltagDetector(CameraCalibrationResult calibrationResult, double tagSize /* in METERS you filthy Americans! */);
 	int CreateApriltagDetector(int id, CameraCalibrationResult calibrationResult, double tagSize /* in METERS you filthy Americans! */);
+	// creates an ApriltagDetector with an empty calibration result; use BindSourceToSink + CreateApriltagDetectorFromCalibrator
+	// (or GetCameraCalibrationResult) to supply real calibration data once available
+	int CreateApriltagDetector();
+	int CreateApriltagDetector(int id);
 	int CreateObjectDetectionSink(ObjectDetectionProvider provider);
 	int CreateObjectDetectionSink(ObjectDetectionProvider provider, int id);
+
+	// functions to create/manage camera calibrators
+	int CreateCameraCalibrator();
+	int CreateCameraCalibrator(int id);
+
+	// retrieves the calibration result of a CameraCalibrator sink, identified via dynamic_cast
+	CameraCalibrationResult GetCameraCalibrationResult(int calibratorId);
+
+	// creates an ApriltagDetector using the calibration result produced by an existing CameraCalibrator,
+	// transferring the calibration data so the detector can compute the real-world tag location
+	int CreateApriltagDetectorFromCalibrator(int calibratorId, double tagSize /* in METERS you filthy Americans! */);
+	int CreateApriltagDetectorFromCalibrator(int id, int calibratorId, double tagSize /* in METERS you filthy Americans! */);
 
 	int CreateRecordingSink(int sourceId);
 

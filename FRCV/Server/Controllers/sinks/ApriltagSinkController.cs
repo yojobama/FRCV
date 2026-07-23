@@ -18,7 +18,16 @@ namespace Server.Controllers.sinks
             int SinkID = SinkManager.Instance.AddSink(name, type);
             DB.Instance.Save();
             return Task.FromResult(SinkID);
-        }   
+        }
+
+        // POST: Create an Apriltag sink that reuses the calibration result of an existing CameraCalibrationSink,
+        // transferring the calibration data so the detected tag's real world location can be computed
+        [Route(HttpVerbs.Post, "/apriltagSink/createFromCalibrator")]
+        public Task<int> CreateFromCalibrator([QueryField] string name, [QueryField] int calibratorId, [QueryField] double tagSize)
+        {
+            int sinkId = SinkManager.Instance.AddApriltagSinkFromCalibrator(name, calibratorId, tagSize);
+            return Task.FromResult(sinkId);
+        }
 
         // --?-- GET: Acceletation type (cpu, vulkan);
 

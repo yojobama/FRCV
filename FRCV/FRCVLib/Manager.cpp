@@ -2,6 +2,7 @@
 #include "ImageFileSource.h"
 #include "VideoFileSource.h"
 #include "ApriltagDetector.h"
+#include "CameraCalibrator.h"
 #include "RecordSink.h"
 #include "CameraSource.h"
 #include "SystemMonitor.h"
@@ -276,12 +277,87 @@ int Manager::CreateApriltagDetector(int id, CameraCalibrationResult calibrationR
 {
     m_Logger->EnterLog("CreateApriltagDetector called");
 
-    auto p_Sink = std::make_shared<ApriltagDetector>(m_Logger, std::to_string(id), calibrationResult, tagSize); // TODO: add calibration result and tagSize variables to the constructor
+    auto p_Detector = std::make_shared<ApriltagDetector>(m_Logger, std::to_string(id), calibrationResult, tagSize); // TODO: add calibration result and tagSize variables to the constructor
 
-    m_Sinks.emplace(id, p_Sink);
+    // ApriltagDetector is both an ISink (consumes camera frames) and an ISource (produces detections),
+    // so it must be registered in both maps to be reachable from either side
+    m_Sinks.emplace(id, p_Detector);
+    m_Sources.emplace(id, p_Detector);
 
     m_Logger->EnterLog("ApriltagDetector created with id=" + std::to_string(id));
     return id;
+}
+
+namespace {
+    constexpr double DEFAULT_APRILTAG_SIZE_METERS = 0.1651; // default FRC AprilTag size (6.5 inches), used until real calibration data is supplied
+}
+
+int Manager::CreateApriltagDetector()
+{
+    int id = GenerateUUID();
+    return CreateApriltagDetector(id);
+}
+
+int Manager::CreateApriltagDetector(int id)
+{
+    return CreateApriltagDetector(id, CameraCalibrationResult(), DEFAULT_APRILTAG_SIZE_METERS);
+}
+
+int Manager::CreateCameraCalibrator()
+{
+	int id = GenerateUUID();
+	return CreateCameraCalibrator(id);
+}
+
+int Manager::CreateCameraCalibrator(int id)
+{
+	m_Logger->EnterLog("CreateCameraCalibrator called with id=" + std::to_string(id));
+
+	auto p_Calibrator = std::make_shared<CameraCalibrator>(m_Logger, std::to_string(id));
+
+	// CameraCalibrator is both an ISink (consumes calibration frames) and an ISource (can feed calibrated
+	// frames onward), so it must be registered in both maps to be reachable from either side
+	m_Sinks.emplace(id, p_Calibrator);
+	m_Sources.emplace(id, p_Calibrator);
+
+	m_Logger->EnterLog("CameraCalibrator created with id=" + std::to_string(id));
+	return id;
+}
+
+CameraCalibrationResult Manager::GetCameraCalibrationResult(int calibratorId)
+{
+	m_Logger->EnterLog("GetCameraCalibrationResult called with calibratorId=" + std::to_string(calibratorId));
+	auto sink = m_Sinks.find(calibratorId);
+	if (sink == m_Sinks.end()) {
+		m_Logger->EnterLog("Sink not found: " + std::to_string(calibratorId));
+		return CameraCalibrationResult();
+	}
+
+	// dynamic_cast is used to distinguish CameraCalibrator sinks from every other sink/source type
+	CameraCalibrator* p_Calibrator = dynamic_cast<CameraCalibrator*>(sink->second.get());
+	if (p_Calibrator == nullptr) {
+		m_Logger->EnterLog("Sink " + std::to_string(calibratorId) + " is not a CameraCalibrator");
+		return CameraCalibrationResult();
+	}
+
+	return p_Calibrator->GetCalibrationResult();
+}
+
+int Manager::CreateApriltagDetectorFromCalibrator(int calibratorId, double tagSize /* in METERS you filthy Americans! */)
+{
+	int id = GenerateUUID();
+	return CreateApriltagDetectorFromCalibrator(id, calibratorId, tagSize);
+}
+
+int Manager::CreateApriltagDetectorFromCalibrator(int id, int calibratorId, double tagSize /* in METERS you filthy Americans! */)
+{
+	m_Logger->EnterLog("CreateApriltagDetectorFromCalibrator called with calibratorId=" + std::to_string(calibratorId));
+
+	// pull the calibration result out of the CameraCalibrator sink and hand it to the new ApriltagDetector
+	// so it can resolve the tag's real world location
+	CameraCalibrationResult calibrationResult = GetCameraCalibrationResult(calibratorId);
+
+	return CreateApriltagDetector(id, calibrationResult, tagSize);
 }
 
 int Manager::CreateObjectDetectionSink(ObjectDetectionProvider provider)

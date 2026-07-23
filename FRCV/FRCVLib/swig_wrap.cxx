@@ -1389,7 +1389,53 @@ SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateImageFileSource__SWIG_1(void * j
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateApriltagDetector__SWIG_0(void * jarg1) {
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateApriltagDetector__SWIG_0(void * jarg1, void * jarg2, double jarg3) {
+  int jresult ;
+  Manager *arg1 = 0 ;
+  CameraCalibrationResult arg2 ;
+  double arg3 ;
+  CameraCalibrationResult *argp2 ;
+  int result;
+  
+  arg1 = (Manager *)jarg1; 
+  argp2 = (CameraCalibrationResult *)jarg2; 
+  if (!argp2) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null CameraCalibrationResult", 0);
+    return 0;
+  }
+  arg2 = *argp2; 
+  arg3 = (double)jarg3; 
+  result = (int)(arg1)->CreateApriltagDetector(SWIG_STD_MOVE(arg2),arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateApriltagDetector__SWIG_1(void * jarg1, int jarg2, void * jarg3, double jarg4) {
+  int jresult ;
+  Manager *arg1 = 0 ;
+  int arg2 ;
+  CameraCalibrationResult arg3 ;
+  double arg4 ;
+  CameraCalibrationResult *argp3 ;
+  int result;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  argp3 = (CameraCalibrationResult *)jarg3; 
+  if (!argp3) {
+    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null CameraCalibrationResult", 0);
+    return 0;
+  }
+  arg3 = *argp3; 
+  arg4 = (double)jarg4; 
+  result = (int)(arg1)->CreateApriltagDetector(arg2,SWIG_STD_MOVE(arg3),arg4);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateApriltagDetector__SWIG_2(void * jarg1) {
   int jresult ;
   Manager *arg1 = 0 ;
   int result;
@@ -1401,7 +1447,7 @@ SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateApriltagDetector__SWIG_0(void * 
 }
 
 
-SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateApriltagDetector__SWIG_1(void * jarg1, int jarg2) {
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateApriltagDetector__SWIG_3(void * jarg1, int jarg2) {
   int jresult ;
   Manager *arg1 = 0 ;
   int arg2 ;
@@ -1440,6 +1486,80 @@ SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateObjectDetectionSink__SWIG_1(void
   arg2 = (ObjectDetectionProvider)jarg2; 
   arg3 = (int)jarg3; 
   result = (int)(arg1)->CreateObjectDetectionSink(arg2,arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateCameraCalibrator__SWIG_0(void * jarg1) {
+  int jresult ;
+  Manager *arg1 = 0 ;
+  int result;
+  
+  arg1 = (Manager *)jarg1; 
+  result = (int)(arg1)->CreateCameraCalibrator();
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateCameraCalibrator__SWIG_1(void * jarg1, int jarg2) {
+  int jresult ;
+  Manager *arg1 = 0 ;
+  int arg2 ;
+  int result;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (int)(arg1)->CreateCameraCalibrator(arg2);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT void * SWIGSTDCALL CSharp_Manager_GetCameraCalibrationResult(void * jarg1, int jarg2) {
+  void * jresult ;
+  Manager *arg1 = 0 ;
+  int arg2 ;
+  CameraCalibrationResult result;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  result = (arg1)->GetCameraCalibrationResult(arg2);
+  jresult = new CameraCalibrationResult(result); 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateApriltagDetectorFromCalibrator__SWIG_0(void * jarg1, int jarg2, double jarg3) {
+  int jresult ;
+  Manager *arg1 = 0 ;
+  int arg2 ;
+  double arg3 ;
+  int result;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  arg3 = (double)jarg3; 
+  result = (int)(arg1)->CreateApriltagDetectorFromCalibrator(arg2,arg3);
+  jresult = result; 
+  return jresult;
+}
+
+
+SWIGEXPORT int SWIGSTDCALL CSharp_Manager_CreateApriltagDetectorFromCalibrator__SWIG_1(void * jarg1, int jarg2, int jarg3, double jarg4) {
+  int jresult ;
+  Manager *arg1 = 0 ;
+  int arg2 ;
+  int arg3 ;
+  double arg4 ;
+  int result;
+  
+  arg1 = (Manager *)jarg1; 
+  arg2 = (int)jarg2; 
+  arg3 = (int)jarg3; 
+  arg4 = (double)jarg4; 
+  result = (int)(arg1)->CreateApriltagDetectorFromCalibrator(arg2,arg3,arg4);
   jresult = result; 
   return jresult;
 }
@@ -1823,34 +1943,6 @@ SWIGEXPORT double SWIGSTDCALL CSharp_CameraCalibrationResult_rms_get(void * jarg
   arg1 = (CameraCalibrationResult *)jarg1; 
   result = (double) ((arg1)->rms);
   jresult = result; 
-  return jresult;
-}
-
-
-SWIGEXPORT void SWIGSTDCALL CSharp_CameraCalibrationResult_frameSpec_set(void * jarg1, void * jarg2) {
-  CameraCalibrationResult *arg1 = 0 ;
-  FrameSpec arg2 ;
-  FrameSpec *argp2 ;
-  
-  arg1 = (CameraCalibrationResult *)jarg1; 
-  argp2 = (FrameSpec *)jarg2; 
-  if (!argp2) {
-    SWIG_CSharpSetPendingExceptionArgument(SWIG_CSharpArgumentNullException, "Attempt to dereference null FrameSpec", 0);
-    return ;
-  }
-  arg2 = *argp2; 
-  if (arg1) (arg1)->frameSpec = arg2;
-}
-
-
-SWIGEXPORT void * SWIGSTDCALL CSharp_CameraCalibrationResult_frameSpec_get(void * jarg1) {
-  void * jresult ;
-  CameraCalibrationResult *arg1 = 0 ;
-  FrameSpec result;
-  
-  arg1 = (CameraCalibrationResult *)jarg1; 
-  result =  ((arg1)->frameSpec);
-  jresult = new FrameSpec(result); 
   return jresult;
 }
 

@@ -108,10 +108,11 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <WSLPath>Ubuntu-24.04</WSLPath>
+    <WSLPath>Ubuntu</WSLPath>
     <EnableASAN>false</EnableASAN>
     <MultiProcNumber>12</MultiProcNumber>
     <IncludePath>/usr/include;/usr/local/include;/usr/include/opencv4</IncludePath>
+    <EnableIncrementalBuild>WithNinja</EnableIncrementalBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <WSLPath>Ubuntu-24.04</WSLPath>

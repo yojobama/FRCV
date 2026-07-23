@@ -38,10 +38,13 @@ namespace Server
                 switch (value)
                 {
                     case SinkType.ApriltagSink:
-                        id = ManagerWrapper.Instance.CreateApriltagSink();
+                        id = ManagerWrapper.Instance.CreateApriltagDetector();
                         break;
                     case SinkType.ObjectDetectionSink:
                         id = ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX); // TODO: Add logic for selecting acceleration type (ONNX with REP, or Rknn)
+                        break;
+                    case SinkType.CameraCalibrationSink:
+                        id = ManagerWrapper.Instance.CreateCameraCalibrator();
                         break;
                 }
                 type = value;
@@ -77,10 +80,13 @@ namespace Server
             switch (type)
             {
                 case SinkType.ApriltagSink:
-                    id = ManagerWrapper.Instance.CreateApriltagSink();
+                    id = ManagerWrapper.Instance.CreateApriltagDetector();
                     break;
                 case SinkType.ObjectDetectionSink:
                     id = ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX);
+                    break;
+                case SinkType.CameraCalibrationSink:
+                    id = ManagerWrapper.Instance.CreateCameraCalibrator();
                     break;
             }
         }
