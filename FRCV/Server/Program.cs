@@ -18,9 +18,17 @@ namespace Server
                 .WithWebApi("/api", m =>
                 {
                     // sinks
-                    // TODO: Implement the other sinks and add them here
                     m.WithController<SinkController>();
                     m.WithController<ApriltagSinkController>();
+                    m.WithController<CameraCalibrationSinkController>();
+                    m.WithController<NetworkTablesSinkController>();
+                    // RecordingSinkController, ObjectDetectionSinkController and
+                    // WebRTCSinkController are intentionally not registered yet: recording sink
+                    // creation is a bare `throw new NotImplementedException()`, object detection
+                    // is entirely stubbed on the native side
+                    // (Manager::CreateObjectDetectionSink), and the WebRTC controller returns
+                    // hardcoded mock responses - registering any of these would expose an
+                    // endpoint that looks like a real feature but isn't one yet.
                     // sources
                     m.WithController<SourceController>();
                     m.WithController<ImageFileSourceController>();

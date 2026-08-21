@@ -76,7 +76,9 @@ void ISink::ProcessingThreadLoop()
 
             if (source->GetCurrentFrameCount() != lastFrameCount) {
                 lastFrameCount = source->GetCurrentFrameCount();
-                sources.push_back(source->GetLatestResult(m_RequireFrame, m_RequireJson));
+                SourceResult sourceResult = source->GetLatestResult(m_RequireFrame, m_RequireJson);
+                sourceResult.sourceId = source->GetID();
+                sources.push_back(sourceResult);
             }
         }
 

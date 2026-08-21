@@ -7,6 +7,9 @@
 #include "CameraSource.h"
 #include "SystemMonitor.h"
 #include "ISink.h"
+#ifdef FRCV_WITH_NT4
+#include "NetworkTablesSink.h"
+#endif
 
 #include <cstring>
 #include <cctype>
@@ -470,6 +473,77 @@ int Manager::CreateRecordingSink(int sourceId)
 
     return id;
 }
+
+#ifdef FRCV_WITH_NT4
+int Manager::CreateNetworkTablesSinkForTeam(int teamNumber, string rootTable, string clientIdentity)
+{
+    int id = GenerateUUID();
+    return CreateNetworkTablesSinkForTeam(id, teamNumber, rootTable, clientIdentity);
+}
+
+int Manager::CreateNetworkTablesSinkForTeam(int id, int teamNumber, string rootTable, string clientIdentity)
+{
+    NetworkTablesConfig config;
+    config.teamNumber = static_cast<unsigned int>(teamNumber);
+    config.rootTable = rootTable;
+    config.clientIdentity = clientIdentity;
+
+    m_Logger->EnterLog("CreateNetworkTablesSinkForTeam called with id=" + std::to_string(id) + ", team=" + std::to_string(teamNumber));
+
+    auto p_Sink = std::make_shared<NetworkTablesSink>(m_Logger, std::to_string(id), config);
+
+    // terminal sink: it has no ISource half, so it only ever goes into m_Sinks
+    m_Sinks.emplace(id, p_Sink);
+    return id;
+}
+
+int Manager::CreateNetworkTablesSinkForServer(string serverAddress, int port, string rootTable, string clientIdentity)
+{
+    int id = GenerateUUID();
+    return CreateNetworkTablesSinkForServer(id, serverAddress, port, rootTable, clientIdentity);
+}
+
+int Manager::CreateNetworkTablesSinkForServer(int id, string serverAddress, int port, string rootTable, string clientIdentity)
+{
+    NetworkTablesConfig config;
+    config.serverAddress = serverAddress;
+    config.port = static_cast<unsigned int>(port);
+    config.rootTable = rootTable;
+    config.clientIdentity = clientIdentity;
+
+    m_Logger->EnterLog("CreateNetworkTablesSinkForServer called with id=" + std::to_string(id) + ", server=" + serverAddress);
+
+    auto p_Sink = std::make_shared<NetworkTablesSink>(m_Logger, std::to_string(id), config);
+    m_Sinks.emplace(id, p_Sink);
+    return id;
+}
+
+bool Manager::IsNetworkTablesSinkConnected(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return false;
+
+    NetworkTablesSink* p_NtSink = dynamic_cast<NetworkTablesSink*>(sink->second.get());
+    return p_NtSink != nullptr && p_NtSink->IsConnected();
+}
+
+string Manager::GetNetworkTablesSinkStatus(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) {
+        m_Logger->EnterLog("Sink not found: " + std::to_string(sinkId));
+        return "{}";
+    }
+
+    NetworkTablesSink* p_NtSink = dynamic_cast<NetworkTablesSink*>(sink->second.get());
+    if (p_NtSink == nullptr) {
+        m_Logger->EnterLog("Sink " + std::to_string(sinkId) + " is not a NetworkTablesSink");
+        return "{}";
+    }
+
+    return p_NtSink->GetConnectionStatus();
+}
+#endif
 
 void Manager::StartAllSources()
 {

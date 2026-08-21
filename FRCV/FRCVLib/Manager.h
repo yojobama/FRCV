@@ -89,6 +89,20 @@ public:
 
 	int CreateRecordingSink(int sourceId);
 
+#ifdef FRCV_WITH_NT4
+	// terminal sink: bind any JSON-producing source (ApriltagDetector, CameraCalibrator, future
+	// ObjectDetectionSink) to it and it publishes onto the configured NT4 server. Deliberately
+	// takes only primitive parameters rather than a config struct straight from
+	// NetworkTablesSink.h — that header pulls in ntcore's C++ API, which SWIG (parsing this file
+	// for the C# bindings) is not expected to handle, so it must never appear in this header.
+	int CreateNetworkTablesSinkForTeam(int teamNumber, string rootTable, string clientIdentity);
+	int CreateNetworkTablesSinkForTeam(int id, int teamNumber, string rootTable, string clientIdentity);
+	int CreateNetworkTablesSinkForServer(string serverAddress, int port, string rootTable, string clientIdentity);
+	int CreateNetworkTablesSinkForServer(int id, string serverAddress, int port, string rootTable, string clientIdentity);
+	bool IsNetworkTablesSinkConnected(int sinkId);
+	string GetNetworkTablesSinkStatus(int sinkId);
+#endif
+
 	// stops and removes a node; also unbinds it from any sink that referenced it as a source
 	bool DeleteSink(int sinkId);
 	bool DeleteSource(int sourceId);

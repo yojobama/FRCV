@@ -182,6 +182,36 @@ namespace Server
             return id;
         }
 
+        // creates a NetworkTablesSink that connects to a server via team number (e.g. 1234 ->
+        // roboRIO mDNS/static IP resolution, exactly like a real driver station)
+        public int AddNetworkTablesSinkForTeam(string name, int teamNumber, string rootTable, string clientIdentity)
+        {
+            int id = ManagerWrapper.Instance.CreateNetworkTablesSinkForTeam(teamNumber, rootTable, clientIdentity);
+            sinks.Add(new Sink(id, name, SinkType.NetworkTablesSink));
+            DB.Instance.Save();
+            return id;
+        }
+
+        // creates a NetworkTablesSink that connects to an explicit server address - useful for
+        // bench testing against a local NT4 server/Glass instance instead of a real robot
+        public int AddNetworkTablesSinkForServer(string name, string serverAddress, int port, string rootTable, string clientIdentity)
+        {
+            int id = ManagerWrapper.Instance.CreateNetworkTablesSinkForServer(serverAddress, port, rootTable, clientIdentity);
+            sinks.Add(new Sink(id, name, SinkType.NetworkTablesSink));
+            DB.Instance.Save();
+            return id;
+        }
+
+        public bool IsNetworkTablesSinkConnected(int sinkId)
+        {
+            return ManagerWrapper.Instance.IsNetworkTablesSinkConnected(sinkId);
+        }
+
+        public string GetNetworkTablesSinkStatus(int sinkId)
+        {
+            return ManagerWrapper.Instance.GetNetworkTablesSinkStatus(sinkId);
+        }
+
         // update results
         private void updateResults()
         {

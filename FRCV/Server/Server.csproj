@@ -61,7 +61,15 @@
       <_StaleSwigOutput Include="FRCVCore\*.cs" />
     </ItemGroup>
     <Delete Files="@(_StaleSwigOutput)" Condition="'$(SwigCheckExitCode)'=='0'" />
-    <Exec Command="swig -c++ -csharp -outdir .\FRCVCore ..\FRCVLib\swig.i" Condition="'$(SwigCheckExitCode)'=='0'" />
+    <!--
+      -D flags here must mirror FRCVLib.vcxproj's FrcvCommonDefines - SWIG runs its own
+      preprocessor pass over swig.i/Manager.h independent of the actual C++ compiler, so an
+      #ifdef-guarded API (e.g. the NT4 methods) needs the same defines here or SWIG silently
+      skips generating C# bindings for it even though the .so was built with it enabled. FRCV_WITH_RKNN
+      is deliberately excluded: it never appears in Manager.h's guarded surface today, and it's
+      ARM64-only, so this (host-side) swig invocation shouldn't imply it's available.
+    -->
+    <Exec Command="swig -c++ -csharp -DFRCV_WITH_ONNX -DFRCV_WITH_NT4 -DFRCV_WITH_WEBRTC -DFRCV_WITH_VULKAN_APRILTAG -outdir .\FRCVCore ..\FRCVLib\swig.i" Condition="'$(SwigCheckExitCode)'=='0'" />
     <Warning Text="swig not found on PATH; using whatever bindings already exist in FRCVCore\." Condition="'$(SwigCheckExitCode)'!='0'" />
     <ItemGroup>
       <Compile Include="FRCVCore\*.cs" Exclude="@(Compile)" />

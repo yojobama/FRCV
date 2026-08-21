@@ -404,7 +404,8 @@ fetch_ntcore() {
     local base="https://frcmaven.wpi.edu/artifactory/release/edu/wpi/first"
     local dest="$BUILD_ROOT/ntcore"
     mkdir -p "$dest"
-    for artifact in ntcore/ntcore-cpp wpiutil/wpiutil-cpp; do
+    # ntcore links against wpinet (confirmed via ldd - it's not just a wpiutil/ntcore pair)
+    for artifact in ntcore/ntcore-cpp wpinet/wpinet-cpp wpiutil/wpiutil-cpp; do
         local name="${artifact#*/}"
         for kind in headers "${classifier}"; do
             local url="${base}/${artifact}/${NTCORE_VERSION}/${name}-${NTCORE_VERSION}-${kind}.zip"
@@ -416,7 +417,10 @@ fetch_ntcore() {
         done
     done
     sudo cp -r "$dest"/*headers*/* "$PREFIX/include/" 2>/dev/null || true
-    sudo cp -r "$dest"/*"${classifier}"*/*.so* "$PREFIX/lib/" 2>/dev/null || true
+    # the shared libraries are nested (e.g. linux/x86-64/shared/libntcore.so), not at the zip
+    # root, so a shallow glob here finds nothing - search recursively instead
+    find "$dest" -path "*${classifier}*" \( -name '*.so' -o -name '*.so.*' \) -print0 | \
+        xargs -0 -r sudo cp -t "$PREFIX/lib/"
     sudo ldconfig
 }
 
@@ -460,7 +464,7 @@ fetch_onnxruntime() {
 # ---------------------------------------------------------------------------
 # librknnrt.so must match the kernel's rknpu driver version or rknn_init() fails with an opaque
 # error — check both explicitly rather than assuming a fresh checkout is compatible.
-RKNN_TOOLKIT2_REF="${RKNN_TOOLKIT2_REF:-main}"
+RKNN_TOOLKIT2_REF="${RKNN_TOOLKIT2_REF:-master}"
 
 fetch_rknn() {
     [[ "$ARCH" == "aarch64" ]] || return 0
@@ -510,10 +514,13 @@ build_opencv
 build_apriltag
 install_ffmpeg
 install_vulkan
-build_webrtc
-fetch_ntcore
+# these three are optional/best-effort integrations (WebRTC, NT4, RKNN) - a failure partway
+# through one of them (a bad ref, a flaky download) should not, under `set -e`, take down a
+# run that otherwise succeeded; ONNX Runtime stays unconditional since --with-* doesn't gate it
+build_webrtc || warn "WebRTC setup (libdatachannel) failed - see the log above; continuing"
+fetch_ntcore || warn "NT4 setup (ntcore/wpiutil/wpinet) failed - see the log above; continuing"
 fetch_onnxruntime
-fetch_rknn
+fetch_rknn || warn "RKNN setup failed - see the log above; continuing"
 
 if [[ "$CHECK_ONLY" -eq 1 ]]; then
     echo
