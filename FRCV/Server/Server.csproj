@@ -43,13 +43,29 @@
     swig isn't on PATH so a machine that only runs the published server (no dev toolchain) isn't
     forced to have it installed; the checked-in FRCVCore sources are then whatever was last
     generated on a dev machine.
+
+    Two things this needs beyond just invoking swig:
+    - FRCVCore is cleared first. SWIG only ever adds/overwrites files for types that still
+      exist; a type removed from swig.i (as happened when Frame/FrameSpec were dropped) leaves
+      its old wrapper .cs files behind as stale dead code otherwise.
+    - The generated .cs files are added to @(Compile) explicitly via an ItemGroup *inside this
+      target*. SDK-style projects capture the implicit **/*.cs glob once, at project evaluation
+      time, before any target runs — a file swig creates during this same build (e.g. the first
+      time a new %template is added) would otherwise silently not compile until a second build.
   -->
   <Target Name="RunSwig" BeforeTargets="BeforeBuild">
     <Exec Command="where swig" ContinueOnError="true" StandardOutputImportance="low" StandardErrorImportance="low">
       <Output TaskParameter="ExitCode" PropertyName="SwigCheckExitCode" />
     </Exec>
+    <ItemGroup Condition="'$(SwigCheckExitCode)'=='0'">
+      <_StaleSwigOutput Include="FRCVCore\*.cs" />
+    </ItemGroup>
+    <Delete Files="@(_StaleSwigOutput)" Condition="'$(SwigCheckExitCode)'=='0'" />
     <Exec Command="swig -c++ -csharp -outdir .\FRCVCore ..\FRCVLib\swig.i" Condition="'$(SwigCheckExitCode)'=='0'" />
     <Warning Text="swig not found on PATH; using whatever bindings already exist in FRCVCore\." Condition="'$(SwigCheckExitCode)'!='0'" />
+    <ItemGroup>
+      <Compile Include="FRCVCore\*.cs" Exclude="@(Compile)" />
+    </ItemGroup>
   </Target>
 
 </Project>

@@ -84,13 +84,13 @@
     <WSLPath Condition="'$(WSLPath)'==''">Ubuntu</WSLPath>
     <EnableASAN>false</EnableASAN>
     <MultiProcNumber>12</MultiProcNumber>
-    <IncludePath>/usr/local/include;/usr/local/include/opencv4;/usr/include</IncludePath>
+    <IncludePath>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include</IncludePath>
     <EnableIncrementalBuild>WithNinja</EnableIncrementalBuild>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <WSLPath Condition="'$(WSLPath)'==''">Ubuntu</WSLPath>
     <MultiProcNumber>12</MultiProcNumber>
-    <IncludePath>/usr/local/include;/usr/local/include/opencv4;/usr/include</IncludePath>
+    <IncludePath>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include</IncludePath>
     <EnableIncrementalBuild>WithNinja</EnableIncrementalBuild>
   </PropertyGroup>
 
@@ -136,7 +136,7 @@
 
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv4;/usr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CppLanguageStandard>c++20</CppLanguageStandard>
       <PreprocessorDefinitions>$(FrcvCommonDefines);$(FrcvPlatformDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
@@ -148,7 +148,7 @@
 
   <ItemDefinitionGroup Condition="'$(Platform)'=='ARM64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv4;/usr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CppLanguageStandard>c++20</CppLanguageStandard>
       <PreprocessorDefinitions>$(FrcvCommonDefines);$(FrcvPlatformDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>

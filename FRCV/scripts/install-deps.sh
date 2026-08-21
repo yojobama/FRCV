@@ -147,9 +147,14 @@ build_opencv() {
 
     log "OpenCV ${OPENCV_VERSION} (from source, with opencv_contrib)"
 
-    if pkg-config --exists opencv4 2>/dev/null; then
+    # OpenCV 5.0 renamed both its pkg-config module and its header install directory from
+    # opencv4 to opencv5 (confirmed by actually building it: headers land under
+    # /usr/local/include/opencv5, module is `opencv5`, NOT `opencv4`) - if this ever changes
+    # again in a later 5.x release, this is the line to update, along with FRCVLib.vcxproj's
+    # AdditionalIncludeDirectories.
+    if pkg-config --exists opencv5 2>/dev/null; then
         local installed_ver
-        installed_ver="$(pkg-config --modversion opencv4)"
+        installed_ver="$(pkg-config --modversion opencv5)"
         if [[ "$installed_ver" == "$OPENCV_VERSION"* ]]; then
             log "OpenCV ${installed_ver} already installed at the requested version, skipping build"
             return 0
@@ -159,7 +164,7 @@ build_opencv() {
     fi
 
     if [[ "$CHECK_ONLY" -eq 1 ]]; then
-        note_missing "OpenCV ${OPENCV_VERSION} (opencv4.pc not found or wrong version)"
+        note_missing "OpenCV ${OPENCV_VERSION} (opencv5.pc not found or wrong version)"
         return 0
     fi
 
@@ -168,7 +173,7 @@ build_opencv() {
     # puts /usr/local/include first specifically so a from-source install wins, but that ordering
     # is easy to regress, and apt could reinstall these as a dependency of something else later.
     # Purging removes the ambiguity entirely instead of relying on include-order discipline.
-    if dpkg -l 2>/dev/null | grep -q '^ii  libopencv-core-dev'; then
+    if dpkg -s libopencv-core-dev >/dev/null 2>&1; then
         warn "purging distro OpenCV -dev packages to avoid a stale /usr/include/opencv4 shadowing this build"
         sudo apt-get purge -y 'libopencv-*-dev' 'libopencv-*t64' || true
     fi
@@ -195,6 +200,9 @@ build_opencv() {
             -DBUILD_PERF_TESTS=OFF \
             -DBUILD_EXAMPLES=OFF \
             -DBUILD_opencv_python3=OFF \
+            -DBUILD_opencv_java=OFF \
+            -DBUILD_opencv_java_bindings_generator=OFF \
+            -DOPENCV_GENERATE_PKGCONFIG=ON \
             -DWITH_FFMPEG=ON \
             ..
         cmake --build . --parallel "$JOBS"
@@ -202,9 +210,6 @@ build_opencv() {
         sudo ldconfig
     )
     log "OpenCV ${OPENCV_VERSION} installed to ${PREFIX}"
-    # NOTE: verify the installed pkg-config module name once this actually runs — OpenCV 4.x
-    # installs as `opencv4`; confirm 5.0 keeps that name (and the /usr/local/include/opencv4
-    # header directory FRCVLib.vcxproj points at) rather than switching to `opencv5`/`opencv`.
 }
 
 # ---------------------------------------------------------------------------

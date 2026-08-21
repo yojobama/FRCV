@@ -76,6 +76,18 @@ namespace Server
                         SinkManager.Instance.AddSink(sink.Name, sink.Type.ToString(), sink.Id);
                     }
 
+                    // AddSink only recreates the native node; the source->sink binding itself
+                    // was never restored here, so every pipeline came back unbound after a
+                    // restart (the robot power-cycles - this mattered). Sources must exist
+                    // (created above) before rebinding.
+                    foreach (var sink in sinks)
+                    {
+                        if (sink.Source != null)
+                        {
+                            SinkManager.Instance.BindSourceToSink(sink.Id, sink.Source.Id);
+                        }
+                    }
+
                     logger.EnterLog("DB loaded successfully from " + jsonPath);
                 }
                 catch (Exception ex)

@@ -5,6 +5,7 @@
 #include <apriltag/apriltag_pose.h>
 #include <apriltag/tag36h11.h>
 #include <opencv2/opencv.hpp>
+#include <opencv2/calib3d.hpp> // cv::undistortPoints - not pulled in by <opencv2/opencv.hpp> alone
 
 class Logger;
 class CameraCalibrationResult;
