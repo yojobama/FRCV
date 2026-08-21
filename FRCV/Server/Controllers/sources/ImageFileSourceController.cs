@@ -42,12 +42,12 @@ namespace Server.Controllers.sources
                     string fileName = file.FileName;
                     Stream fileStream = file.Data;
 
-                    Directory.CreateDirectory("videos");
+                    Directory.CreateDirectory("images");
 
-                    using (var output = File.Create(Path.Combine("videos", fileName)))
+                    using (var output = File.Create(Path.Combine("images", fileName)))
                     {
                         fileStream.CopyTo(output);
-                        created.Add(SourceManager.Instance.InitializeVideoFileSource(Path.Combine("videos", fileName), 30, Path.GetFileNameWithoutExtension(fileName)));
+                        created.Add(SourceManager.Instance.initializeImageFileSource(Path.Combine("images", fileName), Path.GetFileNameWithoutExtension(fileName)));
                     }
                 }
             }

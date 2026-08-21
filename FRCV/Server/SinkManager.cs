@@ -29,6 +29,15 @@ namespace Server
             isRunning = false;
         }
 
+        // Direct pass-through to the native, per-sink result JSON (fixed to actually work back
+        // in phase 2 - it used to return nullptr/GetStatus()'s hardcoded ""). GetResults() below
+        // is a SEPARATE, older mechanism (a background thread + Channel<string> fan-out) that is
+        // never started anywhere in this codebase (EnableManagerThread() has no caller) and has
+        // its own busy-wait bug (ThreadProc's while(isRunning) loop has no sleep) - left alone
+        // for now rather than half-fixed, since nothing currently depends on it.
+        public string GetResult(int sinkId) => ManagerWrapper.Instance.GetSinkResult(sinkId);
+        public string GetAllResults() => ManagerWrapper.Instance.GetAllSinkResults();
+
         public string GetResults()
         {
             return currentResults;

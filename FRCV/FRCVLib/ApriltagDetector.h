@@ -37,4 +37,12 @@ private:
 	bool m_HasDistortion = false;
 	cv::Mat m_CameraMatrix;
 	cv::Mat m_DistCoeffs;
+
+	// false when constructed without a real calibration (fx/fy left at their 0.0 default, e.g.
+	// via createWithBackend before a calibration is attached). estimate_tag_pose has no way to
+	// signal "these intrinsics are degenerate" - given fx=fy=0 it still returns, but pose.R/pose.t
+	// come back as garbage/invalid pointers, and dereferencing or matd_destroy-ing them corrupts
+	// the heap (confirmed by reproducing standalone: crashes on pose.t->data[0]). Pose estimation
+	// must be skipped entirely without valid intrinsics, not merely "best-effort".
+	bool m_HasCalibration = false;
 };

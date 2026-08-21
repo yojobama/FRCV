@@ -26,7 +26,7 @@ void VideoFileFrameSource::CaptureFrame()
         std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
 
         if (m_Capture.read(mat) && !mat.empty()) {
-            m_FrameCount++;
+            // SetLatestResult() bumps m_FrameCount itself now; see ISource::SetLatestResult
             SetLatestResult(SourceResult(std::nullopt, mat));
         } else {
             m_Logger->EnterLog(LogLevel::Error, "Failed to read frame from video file");

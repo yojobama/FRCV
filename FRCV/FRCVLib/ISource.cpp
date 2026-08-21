@@ -60,6 +60,16 @@ void ISource::SetLatestResult(SourceResult result)
 	{
 		std::lock_guard<std::mutex> guard(m_ResultLock); // Use RAII for mutex locking
 		m_LatestResult = result;
+		// m_FrameCount is what ISink::ProcessingThreadLoop actually checks to decide whether a
+		// source has anything new (source->GetCurrentFrameCount() != lastFrameCount) - it needs
+		// to change on every published result, so it belongs here, not in each subclass's own
+		// CaptureFrame(). Confirmed by actually running the pipeline: VideoFileSource remembered
+		// to bump it itself, but CameraFrameSource and ImageFileFrameSource did not, so a
+		// sink bound to either of those NEVER saw a result to process - the wake-up notification
+		// below fired correctly (that part came from the busy-wait fix earlier), but
+		// ProcessingThreadLoop's own frame-count check silently filtered every source out before
+		// Process() could ever be called.
+		m_FrameCount++;
 	}
 
 	// notify bound sinks outside the result lock so a listener can safely call back

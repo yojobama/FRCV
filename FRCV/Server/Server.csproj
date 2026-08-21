@@ -54,7 +54,18 @@
       time a new %template is added) would otherwise silently not compile until a second build.
   -->
   <Target Name="RunSwig" BeforeTargets="BeforeBuild">
-    <Exec Command="where swig" ContinueOnError="true" StandardOutputImportance="low" StandardErrorImportance="low">
+    <!--
+      `where` is a Windows-only command (cmd.exe); on Linux/WSL the Exec task still runs
+      through a shell, but `where` simply doesn't exist there (exit 127) - confirmed the hard
+      way: building on Linux with swig genuinely installed still reported "swig not found",
+      because the check itself was Windows-only, not because swig was actually missing. Use
+      $(OS) (built into MSBuild; 'Windows_NT' on Windows, unset/different on Unix) to pick the
+      right probe.
+    -->
+    <Exec Command="where swig" Condition="'$(OS)'=='Windows_NT'" ContinueOnError="true" StandardOutputImportance="low" StandardErrorImportance="low">
+      <Output TaskParameter="ExitCode" PropertyName="SwigCheckExitCode" />
+    </Exec>
+    <Exec Command="command -v swig" Condition="'$(OS)'!='Windows_NT'" ContinueOnError="true" StandardOutputImportance="low" StandardErrorImportance="low">
       <Output TaskParameter="ExitCode" PropertyName="SwigCheckExitCode" />
     </Exec>
     <ItemGroup Condition="'$(SwigCheckExitCode)'=='0'">
@@ -68,8 +79,11 @@
       skips generating C# bindings for it even though the .so was built with it enabled. FRCV_WITH_RKNN
       is deliberately excluded: it never appears in Manager.h's guarded surface today, and it's
       ARM64-only, so this (host-side) swig invocation shouldn't imply it's available.
+
+      Forward slashes in the paths below, not backslashes: this Exec runs through a POSIX shell
+      on Linux, where a literal backslash is not a path separator.
     -->
-    <Exec Command="swig -c++ -csharp -DFRCV_WITH_ONNX -DFRCV_WITH_NT4 -DFRCV_WITH_WEBRTC -DFRCV_WITH_VULKAN_APRILTAG -outdir .\FRCVCore ..\FRCVLib\swig.i" Condition="'$(SwigCheckExitCode)'=='0'" />
+    <Exec Command="swig -c++ -csharp -DFRCV_WITH_ONNX -DFRCV_WITH_NT4 -DFRCV_WITH_WEBRTC -DFRCV_WITH_VULKAN_APRILTAG -outdir ./FRCVCore ../FRCVLib/swig.i" Condition="'$(SwigCheckExitCode)'=='0'" />
     <Warning Text="swig not found on PATH; using whatever bindings already exist in FRCVCore\." Condition="'$(SwigCheckExitCode)'!='0'" />
     <ItemGroup>
       <Compile Include="FRCVCore\*.cs" Exclude="@(Compile)" />

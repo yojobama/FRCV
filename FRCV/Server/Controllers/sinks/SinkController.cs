@@ -15,8 +15,23 @@ namespace Server.Controllers.sinks
         [Route(HttpVerbs.Get, "/sink/getStatus")]
         public Task<bool> GetStatus([QueryField] int SinkID)
         {
-            bool status = SinkManager.Instance.IsSinkRunning(SinkID);
-            return Task.FromResult(false);
+            return Task.FromResult(SinkManager.Instance.IsSinkRunning(SinkID));
+        }
+
+        // GET: the latest result JSON produced by a sink that is also a source (ApriltagSink,
+        // CameraCalibrationSink, ObjectDetectionSink) - "{}" for a terminal sink (NetworkTables,
+        // WebRTC, Recording) or one that hasn't produced anything yet
+        [Route(HttpVerbs.Get, "/sink/getResult")]
+        public Task<string> GetResult([QueryField] int SinkID)
+        {
+            return Task.FromResult(SinkManager.Instance.GetResult(SinkID));
+        }
+
+        // GET: every sink's latest result, keyed by sink id, as one JSON object
+        [Route(HttpVerbs.Get, "/sink/getAllResults")]
+        public Task<string> GetAllResults()
+        {
+            return Task.FromResult(SinkManager.Instance.GetAllResults());
         }
 
         // PATCH: Enable/Disable a sink;

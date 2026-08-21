@@ -37,6 +37,7 @@ ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string i
 	m_DetectionInfo.fy = cameraCalibrationResult.fy;
 	m_DetectionInfo.cx = cameraCalibrationResult.cx;
 	m_DetectionInfo.cy = cameraCalibrationResult.cy;
+	m_HasCalibration = cameraCalibrationResult.fx > 0.0 && cameraCalibrationResult.fy > 0.0;
 
 	if (cameraCalibrationResult.HasDistortion()) {
 		m_HasDistortion = true;
@@ -87,30 +88,7 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 				// worse the further a tag sits from the image center. The corners used for the
 				// JSON payload and the drawn overlay below stay untouched: those describe where
 				// the tag actually appears in this (distorted) frame.
-				apriltag_detection_t poseDetection = *detection;
-				if (m_HasDistortion) {
-					std::vector<cv::Point2d> distortedCorners = {
-						{ detection->p[0][0], detection->p[0][1] },
-						{ detection->p[1][0], detection->p[1][1] },
-						{ detection->p[2][0], detection->p[2][1] },
-						{ detection->p[3][0], detection->p[3][1] }
-					};
-					std::vector<cv::Point2d> undistortedCorners;
-					// passing m_CameraMatrix as both the "new" camera matrix (P) and the
-					// original one keeps the output in the same pixel scale as the input,
-					// just with distortion removed - exactly what estimate_tag_pose expects
-					cv::undistortPoints(distortedCorners, undistortedCorners, m_CameraMatrix, m_DistCoeffs, cv::noArray(), m_CameraMatrix);
-					for (int corner = 0; corner < 4; corner++) {
-						poseDetection.p[corner][0] = undistortedCorners[corner].x;
-						poseDetection.p[corner][1] = undistortedCorners[corner].y;
-					}
-				}
-
-				m_DetectionInfo.det = &poseDetection;
-				apriltag_pose_t pose;
-				double err = estimate_tag_pose(&m_DetectionInfo, &pose);
-
-				jsonVector.push_back(nlohmann::json{
+				nlohmann::json detectionJson = {
 					{"id", detection->id},
 					{"center", {detection->c[0], detection->c[1]}},
 					{"corners", {
@@ -118,21 +96,54 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 						{detection->p[1][0], detection->p[1][1]},
 						{detection->p[2][0], detection->p[2][1]},
 						{detection->p[3][0], detection->p[3][1]}
-					}},
-					{"pose", {
+					}}
+				};
+
+				// estimate_tag_pose has no way to report "these intrinsics are degenerate" - given
+				// fx=fy=0 (no calibration attached yet) it still returns, but pose.R/pose.t come
+				// back as garbage/invalid pointers; dereferencing or matd_destroy-ing them corrupts
+				// the heap (confirmed by reproducing standalone under gdb). Must not even attempt
+				// pose estimation without valid intrinsics.
+				if (m_HasCalibration) {
+					apriltag_detection_t poseDetection = *detection;
+					if (m_HasDistortion) {
+						std::vector<cv::Point2d> distortedCorners = {
+							{ detection->p[0][0], detection->p[0][1] },
+							{ detection->p[1][0], detection->p[1][1] },
+							{ detection->p[2][0], detection->p[2][1] },
+							{ detection->p[3][0], detection->p[3][1] }
+						};
+						std::vector<cv::Point2d> undistortedCorners;
+						// passing m_CameraMatrix as both the "new" camera matrix (P) and the
+						// original one keeps the output in the same pixel scale as the input,
+						// just with distortion removed - exactly what estimate_tag_pose expects
+						cv::undistortPoints(distortedCorners, undistortedCorners, m_CameraMatrix, m_DistCoeffs, cv::noArray(), m_CameraMatrix);
+						for (int corner = 0; corner < 4; corner++) {
+							poseDetection.p[corner][0] = undistortedCorners[corner].x;
+							poseDetection.p[corner][1] = undistortedCorners[corner].y;
+						}
+					}
+
+					m_DetectionInfo.det = &poseDetection;
+					apriltag_pose_t pose;
+					double err = estimate_tag_pose(&m_DetectionInfo, &pose);
+
+					detectionJson["pose"] = {
 						{"x", pose.t->data[0]},
 						{"y", pose.t->data[1]},
 						{"z", pose.t->data[2]},
 						//{"yaw", pose.R->data[0]},
 						//{"pitch", pose.R->data[1]},
 						//{"roll", pose.R->data[2]}
-					}}
-					});
+					};
 
-				// estimate_tag_pose allocates pose.R/pose.t and documents that freeing them is
-				// the caller's responsibility (see apriltag/common/matd.h) - this was never done
-				matd_destroy(pose.R);
-				matd_destroy(pose.t);
+					// estimate_tag_pose allocates pose.R/pose.t and documents that freeing them is
+					// the caller's responsibility (see apriltag/common/matd.h) - this was never done
+					matd_destroy(pose.R);
+					matd_destroy(pose.t);
+				}
+
+				jsonVector.push_back(detectionJson);
 
 				cv::line(colouredFrame, cv::Point(detection->p[0][0], detection->p[0][1]),
 					cv::Point(detection->p[1][0], detection->p[1][1]),
