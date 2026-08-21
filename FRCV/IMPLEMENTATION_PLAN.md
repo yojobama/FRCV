@@ -514,14 +514,32 @@ incrementally rather than waiting for all of them to land.
 
 ## Remaining risks
 
-1. **Headless Vulkan on `libmali`** *(phase 5, highest risk)* — `libmali` on a **Server** image has
-   no display server, and some blob variants are built against X11/Wayland/GBM window systems.
-   A compute-only queue should initialise regardless, but this must be proven before committing to
-   `vkapriltag`. Mitigation is in phase 5, item 0; the CPU AprilTag backend remains the fallback.
-2. **RKNN driver/runtime version skew** *(phase 4)* — `librknnrt.so` must match the kernel's
-   `rknpu` driver version, or `rknn_init` fails with an opaque error. The dependency script pins
-   and verifies both.
+1. ~~**Headless Vulkan on `libmali`**~~ — **resolved, verified on the real board** (2026-08-21).
+   `vulkaninfo` against the GBM+Vulkan ICD (`libmali-valhall-g610-g6p0-wayland-gbm-vulkan.so`,
+   auto-registered by `install-deps.sh`) reports device `Mali-LODX`, and its queue family exposes
+   `QUEUE_GRAPHICS_BIT | QUEUE_COMPUTE_BIT | QUEUE_TRANSFER_BIT` — with no display server running
+   (`DISPLAY` unset, surface enumeration skipped as expected on a headless box). `vkapriltag` is
+   clear to proceed on phase 5's original plan.
+2. **RKNN driver/runtime version skew** *(phase 4)* — confirmed the two version numbers involved
+   on the real board: kernel driver reports `RKNPU driver: v0.9.7`
+   (`/sys/kernel/debug/rknpu/version`), installed `librknnrt.so` reports
+   `librknnrt version: 2.3.2`. These are different versioning schemes (kernel ABI vs. userspace
+   SDK release), not a simple string-equality check, so having both numbers doesn't by itself
+   prove compatibility — that can only be confirmed by actually calling `rknn_init()` against a
+   real `.rknn` model, which is phase 4 work. If it fails there with an opaque error, this pairing
+   is the first thing to revisit.
 3. **Board variant** — the chosen image is the **Orange Pi 5 Plus** build, while the project brief
    says Orange Pi 5. The two boards differ in device tree, PCIe/network layout and USB topology,
-   and the images are not interchangeable. Worth confirming which board is actually on the bench
-   before the first deploy; nothing else in this plan depends on the answer.
+   and the images are not interchangeable. The bench hardware confirmed reachable at
+   192.168.55.138 identifies as `Linux ubuntu 6.1.0-1025-rockchip ... aarch64` — consistent with
+   either board; worth confirming which one physically is on the bench before the first deploy,
+   though nothing else in this plan depends on the answer.
+4. **Build verification is real, not simulated.** As of 2026-08-21, `FRCVLib` has been compiled
+   and linked — with `FRCV_WITH_ONNX`, `FRCV_WITH_NT4`, and (on the Pi) `FRCV_WITH_RKNN` all
+   enabled — against the actual installed OpenCV 5.0.0, apriltag, ntcore/wpiutil/wpinet, and ONNX
+   Runtime on both the WSL2 dev box and the Orange Pi itself, with `ldd` confirming zero missing
+   shared library dependencies on either machine. `dotnet build` of `Server.csproj` also succeeds
+   from a clean `FRCVCore/`, confirming the SWIG regeneration path (including the new NT4 methods
+   and the `distCoeffs` field) works end to end. This was direct verification via SSH against the
+   real target, not a stand-in for Visual Studio's own WSL2/Remote_GCC build — that should still
+   be exercised from Visual Studio itself before relying on it day to day.
