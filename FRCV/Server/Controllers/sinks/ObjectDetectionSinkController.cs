@@ -1,22 +1,18 @@
-﻿using EmbedIO;
+using EmbedIO;
 using EmbedIO.Routing;
 using EmbedIO.WebApi;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Server.Controllers.sinks
 {
     internal class ObjectDetectionSinkController : WebApiController
     {
-        // POST: create an object detection sink
-        [Route(HttpVerbs.Post, "api/sinks/object-detection/create")]
-        public Task CreateObjectDetectionSink()
+        // POST: create an object detection sink bound to a previously uploaded model
+        [Route(HttpVerbs.Post, "/objectDetectionSink/create")]
+        public Task<int> Create([QueryField] string name, [QueryField] int modelId)
         {
-            throw new NotImplementedException();
+            int sinkId = SinkManager.Instance.AddObjectDetectionSink(name, modelId);
+            return Task.FromResult(sinkId);
         }
-        // POST: upload a model to the sink
     }
 }

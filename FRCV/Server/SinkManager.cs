@@ -182,6 +182,21 @@ namespace Server
             return id;
         }
 
+        // creates an ObjectDetectionSink running a previously uploaded model. Provider is fixed
+        // to ONNX for now - RKNN is accepted by the native API but throws (not implemented yet).
+        public int AddObjectDetectionSink(string name, int modelId)
+        {
+            var model = ModelManager.Instance.GetModel(modelId);
+            if (model == null) throw new ArgumentException($"no model with id {modelId}");
+
+            int id = ManagerWrapper.Instance.CreateObjectDetectionSink(
+                ObjectDetectionProvider.ONNX, model.ModelPath, model.LabelsPath, model.Variant,
+                model.ConfThreshold, model.NmsThreshold, model.InputSize);
+            sinks.Add(new Sink(id, name, SinkType.ObjectDetectionSink));
+            DB.Instance.Save();
+            return id;
+        }
+
         // creates a NetworkTablesSink that connects to a server via team number (e.g. 1234 ->
         // roboRIO mDNS/static IP resolution, exactly like a real driver station)
         public int AddNetworkTablesSinkForTeam(string name, int teamNumber, string rootTable, string clientIdentity)

@@ -22,18 +22,19 @@ namespace Server
                     m.WithController<ApriltagSinkController>();
                     m.WithController<CameraCalibrationSinkController>();
                     m.WithController<NetworkTablesSinkController>();
-                    // RecordingSinkController, ObjectDetectionSinkController and
-                    // WebRTCSinkController are intentionally not registered yet: recording sink
-                    // creation is a bare `throw new NotImplementedException()`, object detection
-                    // is entirely stubbed on the native side
-                    // (Manager::CreateObjectDetectionSink), and the WebRTC controller returns
-                    // hardcoded mock responses - registering any of these would expose an
-                    // endpoint that looks like a real feature but isn't one yet.
+                    m.WithController<ObjectDetectionSinkController>();
+                    // RecordingSinkController and WebRTCSinkController are intentionally not
+                    // registered yet: recording sink creation is a bare
+                    // `throw new NotImplementedException()`, and the WebRTC controller returns
+                    // hardcoded mock responses - registering either would expose an endpoint
+                    // that looks like a real feature but isn't one yet.
                     // sources
                     m.WithController<SourceController>();
                     m.WithController<ImageFileSourceController>();
                     m.WithController<VideoFileSourceController>();
                     m.WithController<CameraSourceController>();
+                    // models
+                    m.WithController<ModelController>();
                     // others
                     m.WithController<UDPController>();
                     m.WithController<DeviceController>();

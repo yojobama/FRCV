@@ -7,6 +7,10 @@
 #include "CameraSource.h"
 #include "SystemMonitor.h"
 #include "ISink.h"
+#include "ObjectDetectionSink.h"
+#ifdef FRCV_WITH_ONNX
+#include "OnnxDetectionBackend.h"
+#endif
 #ifdef FRCV_WITH_NT4
 #include "NetworkTablesSink.h"
 #endif
@@ -444,21 +448,61 @@ int Manager::CreateApriltagDetectorFromCalibrator(int id, int calibratorId, doub
 
 int Manager::CreateObjectDetectionSink(ObjectDetectionProvider provider)
 {
-	int id = GenerateUUID();
-  //  if (provider == ONNX)
-  //  {
-		//ObjectDetectionModelParameters modelParameters;
-		//ONNXSink* p_Sink = new ONNXSink("some REP (Implement)", ObjectDetectionModelParameters(), m_Logger, m_PreProcessor, m_FramePool);
-  //  }
-    throw std::runtime_error("this is not enabled");
-    m_Logger->EnterLog("CreateObjectDetectionSink called");
-    return 0;
+    throw std::runtime_error("CreateObjectDetectionSink requires a model - use the overload that takes modelPath/labelsPath/variant/thresholds");
 }
 
 int Manager::CreateObjectDetectionSink(ObjectDetectionProvider provider, int id)
 {
-    m_Logger->EnterLog("CreateObjectDetectionSink called");
-    return 0;
+    throw std::runtime_error("CreateObjectDetectionSink requires a model - use the overload that takes modelPath/labelsPath/variant/thresholds");
+}
+
+int Manager::CreateObjectDetectionSink(ObjectDetectionProvider provider, string modelPath, string labelsPath,
+    YoloVariant variant, float confThreshold, float nmsThreshold, int inputSize)
+{
+    int id = GenerateUUID();
+    return CreateObjectDetectionSink(id, provider, modelPath, labelsPath, variant, confThreshold, nmsThreshold, inputSize);
+}
+
+int Manager::CreateObjectDetectionSink(int id, ObjectDetectionProvider provider, string modelPath, string labelsPath,
+    YoloVariant variant, float confThreshold, float nmsThreshold, int inputSize)
+{
+    m_Logger->EnterLog("CreateObjectDetectionSink called with id=" + std::to_string(id) + ", modelPath=" + modelPath);
+
+    DetectionBackendConfig config;
+    config.modelPath = modelPath;
+    config.labelsPath = labelsPath;
+    config.variant = variant;
+    config.confThreshold = confThreshold;
+    config.nmsThreshold = nmsThreshold;
+    config.inputWidth = inputSize;
+    config.inputHeight = inputSize;
+
+    std::shared_ptr<IDetectionBackend> backend;
+    switch (provider) {
+#ifdef FRCV_WITH_ONNX
+        case ONNX:
+            backend = std::make_shared<OnnxDetectionBackend>();
+            break;
+#endif
+        case RKNN:
+            throw std::runtime_error("RKNN object detection backend is not implemented yet - use ONNX");
+        default:
+            throw std::runtime_error("unknown ObjectDetectionProvider");
+    }
+
+    if (!backend || !backend->Load(config)) {
+        throw std::runtime_error("failed to load detection model: " + modelPath);
+    }
+
+    auto p_Sink = std::make_shared<ObjectDetectionSink>(m_Logger, std::to_string(id), backend);
+
+    // ObjectDetectionSink is both an ISink (consumes camera frames) and an ISource (produces
+    // detections), so it must be registered in both maps to be reachable from either side
+    m_Sinks.emplace(id, p_Sink);
+    m_Sources.emplace(id, p_Sink);
+
+    m_Logger->EnterLog("ObjectDetectionSink created with id=" + std::to_string(id) + " using backend=" + backend->Name());
+    return id;
 }
 
 int Manager::CreateRecordingSink(int sourceId)

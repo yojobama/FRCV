@@ -11,6 +11,7 @@
 #include "CameraCalibrationResult.h"
 #include "Logger.h"
 #include "ISource.h"
+#include "IDetectionBackend.h"
 
 using namespace std;
 
@@ -68,8 +69,18 @@ public:
 	// (or GetCameraCalibrationResult) to supply real calibration data once available
 	int CreateApriltagDetector();
 	int CreateApriltagDetector(int id);
+	// legacy no-model overloads: there is no way to run inference without a model, so these
+	// exist only to keep already-generated SWIG call sites compiling and throw a clear error
+	// explaining that a model must be supplied via the overload below
 	int CreateObjectDetectionSink(ObjectDetectionProvider provider);
 	int CreateObjectDetectionSink(ObjectDetectionProvider provider, int id);
+
+	// RKNN is accepted here but not yet implemented (throws) - it is the production path on the
+	// Orange Pi once written, but ONNX Runtime is the only backend actually wired up today
+	int CreateObjectDetectionSink(ObjectDetectionProvider provider, string modelPath, string labelsPath,
+		YoloVariant variant, float confThreshold, float nmsThreshold, int inputSize);
+	int CreateObjectDetectionSink(int id, ObjectDetectionProvider provider, string modelPath, string labelsPath,
+		YoloVariant variant, float confThreshold, float nmsThreshold, int inputSize);
 
 	// functions to create/manage camera calibrators
 	int CreateCameraCalibrator();

@@ -25,6 +25,7 @@
 
 # Runtime data
 /FRCV/Server/data.json
+/FRCV/Server/models/
 /FRCV/Server/*.log
 /FRCV/Server/*Log.txt
 /FRCV/**/DBLog.txt
