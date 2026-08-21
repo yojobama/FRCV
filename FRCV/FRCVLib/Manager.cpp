@@ -14,6 +14,9 @@
 #ifdef FRCV_WITH_NT4
 #include "NetworkTablesSink.h"
 #endif
+#ifdef FRCV_WITH_WEBRTC
+#include "WebRTCSink.h"
+#endif
 
 #include <cstring>
 #include <cctype>
@@ -617,6 +620,72 @@ string Manager::GetNetworkTablesSinkStatus(int sinkId)
     }
 
     return p_NtSink->GetConnectionStatus();
+}
+#endif
+
+#ifdef FRCV_WITH_WEBRTC
+int Manager::CreateWebRTCSink(int bitrateKbps, int fps, string encoderName)
+{
+    int id = GenerateUUID();
+    return CreateWebRTCSink(id, bitrateKbps, fps, encoderName);
+}
+
+int Manager::CreateWebRTCSink(int id, int bitrateKbps, int fps, string encoderName)
+{
+    WebRTCSinkConfig config;
+    config.bitrateKbps = bitrateKbps;
+    config.fps = fps;
+    config.encoderName = encoderName;
+
+    m_Logger->EnterLog("CreateWebRTCSink called with id=" + std::to_string(id) + ", encoder=" + encoderName);
+
+    auto p_Sink = std::make_shared<WebRTCSink>(m_Logger, std::to_string(id), config);
+    m_Sinks.emplace(id, p_Sink);
+    return id;
+}
+
+namespace {
+    // shared by all WebRTC accessor methods below - a WebRTCSink lookup + cast is used
+    // repeatedly, and every failure mode should behave the same way
+    std::shared_ptr<WebRTCSink> FindWebRTCSink(map<int, std::shared_ptr<ISink>>& sinks, int sinkId)
+    {
+        auto sink = sinks.find(sinkId);
+        if (sink == sinks.end()) return nullptr;
+        return std::dynamic_pointer_cast<WebRTCSink>(sink->second);
+    }
+}
+
+string Manager::WebRTCCreateOffer(int sinkId)
+{
+    auto sink = FindWebRTCSink(m_Sinks, sinkId);
+    if (!sink) throw std::runtime_error("no WebRTCSink with id " + std::to_string(sinkId));
+    return sink->CreateOffer();
+}
+
+void Manager::WebRTCSetAnswer(int sinkId, string sdp)
+{
+    auto sink = FindWebRTCSink(m_Sinks, sinkId);
+    if (!sink) throw std::runtime_error("no WebRTCSink with id " + std::to_string(sinkId));
+    sink->SetAnswer(sdp);
+}
+
+void Manager::WebRTCAddIceCandidate(int sinkId, string candidate, string mid)
+{
+    auto sink = FindWebRTCSink(m_Sinks, sinkId);
+    if (!sink) throw std::runtime_error("no WebRTCSink with id " + std::to_string(sinkId));
+    sink->AddIceCandidate(candidate, mid);
+}
+
+bool Manager::IsWebRTCSinkConnected(int sinkId)
+{
+    auto sink = FindWebRTCSink(m_Sinks, sinkId);
+    return sink != nullptr && sink->IsConnected();
+}
+
+string Manager::GetWebRTCSinkStatus(int sinkId)
+{
+    auto sink = FindWebRTCSink(m_Sinks, sinkId);
+    return sink ? sink->GetConnectionStatus() : "{}";
 }
 #endif
 

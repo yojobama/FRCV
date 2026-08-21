@@ -19,6 +19,8 @@ namespace Server
         CameraCalibrationSink,
         [Description("NetworkTablesSink")]
         NetworkTablesSink,
+        [Description("WebRTCSink")]
+        WebRTCSink,
     }
 
     public class Sink

@@ -1,143 +1,56 @@
 using EmbedIO;
 using EmbedIO.Routing;
 using EmbedIO.WebApi;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Server.Controllers.sinks
 {
+    // REST-based WebRTC signalling. WebRTCSink uses non-trickle ICE on FRCV's side (it blocks
+    // internally until its own candidate gathering completes before returning an offer), so no
+    // persistent connection is needed here beyond each request's own lifetime; the browser's own
+    // candidates (which most browsers still trickle one at a time) are added as they arrive via
+    // repeated calls to /webrtcSink/candidate.
     internal class WebRTCSinkController : WebApiController
     {
-        // POST: Start WebRTC stream for a sink
-        [Route(HttpVerbs.Post, "/webrtc/start")]
-        public Task<object> StartWebRTCStream([QueryField] int sinkId, [QueryField] string connectionId)
+        // POST: create a WebRTCSink. Bind it afterwards (PATCH /sink/bind) to the node whose
+        // frames should be streamed.
+        [Route(HttpVerbs.Post, "/webrtcSink/create")]
+        public Task<int> Create([QueryField] string name, [QueryField] int bitrateKbps = 4000,
+            [QueryField] int fps = 30, [QueryField] string encoderName = "libx264")
         {
-            try
-            {
-                // For now, return a mock response until WebRTC is fully implemented
-                var response = new
-                {
-                    success = true,
-                    sinkId = sinkId,
-                    connectionId = connectionId,
-                    streamUrl = $"webrtc://localhost:8175/sink/{sinkId}",
-                    message = "WebRTC stream started (mock implementation)"
-                };
-                
-                // TODO: Implement actual WebRTC streaming logic
-                Console.WriteLine($"Starting WebRTC stream for sink {sinkId} with connection {connectionId}");
-                
-                return Task.FromResult<object>(response);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error starting WebRTC stream: {ex.Message}");
-                throw;
-            }
+            int sinkId = SinkManager.Instance.AddWebRTCSink(name, bitrateKbps, fps, encoderName);
+            return Task.FromResult(sinkId);
         }
 
-        // POST: Stop WebRTC stream for a sink
-        [Route(HttpVerbs.Post, "/webrtc/stop")]
-        public Task<object> StopWebRTCStream([QueryField] int sinkId)
+        // POST: get an SDP offer from a WebRTCSink (blocks briefly for ICE gathering)
+        [Route(HttpVerbs.Post, "/webrtcSink/offer")]
+        public Task<string> CreateOffer([QueryField] int sinkId)
         {
-            try
-            {
-                // For now, return a mock response until WebRTC is fully implemented
-                var response = new
-                {
-                    success = true,
-                    sinkId = sinkId,
-                    message = "WebRTC stream stopped (mock implementation)"
-                };
-                
-                // TODO: Implement actual WebRTC streaming logic
-                Console.WriteLine($"Stopping WebRTC stream for sink {sinkId}");
-                
-                return Task.FromResult<object>(response);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error stopping WebRTC stream: {ex.Message}");
-                throw;
-            }
+            return Task.FromResult(SinkManager.Instance.WebRTCCreateOffer(sinkId));
         }
 
-        // GET: Get WebRTC stream status for a sink
-        [Route(HttpVerbs.Get, "/webrtc/status")]
-        public Task<object> GetWebRTCStatus([QueryField] int sinkId)
+        // POST: submit the browser's SDP answer
+        [Route(HttpVerbs.Post, "/webrtcSink/answer")]
+        public async Task SetAnswer([QueryField] int sinkId)
         {
-            try
-            {
-                // For now, return a mock response until WebRTC is fully implemented
-                var response = new
-                {
-                    sinkId = sinkId,
-                    isStreaming = false, // Mock: no streams are active yet
-                    connectionCount = 0,
-                    status = "inactive",
-                    message = "WebRTC status (mock implementation)"
-                };
-                
-                return Task.FromResult<object>(response);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error getting WebRTC status: {ex.Message}");
-                throw;
-            }
+            using var reader = new StreamReader(HttpContext.OpenRequestStream());
+            string sdp = await reader.ReadToEndAsync();
+            SinkManager.Instance.WebRTCSetAnswer(sinkId, sdp);
         }
 
-        // PUT: Enable preview for a sink
-        [Route(HttpVerbs.Put, "/preview/enable")]
-        public Task<object> EnablePreview([QueryField] int sinkId)
+        // POST: submit one of the browser's trickled ICE candidates
+        [Route(HttpVerbs.Post, "/webrtcSink/candidate")]
+        public Task AddIceCandidate([QueryField] int sinkId, [QueryField] string candidate, [QueryField] string mid)
         {
-            try
-            {
-                var response = new
-                {
-                    success = true,
-                    sinkId = sinkId,
-                    message = "Preview enabled (mock implementation)"
-                };
-                
-                // TODO: Implement actual preview logic
-                Console.WriteLine($"Enabling preview for sink {sinkId}");
-                
-                return Task.FromResult<object>(response);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error enabling preview: {ex.Message}");
-                throw;
-            }
+            SinkManager.Instance.WebRTCAddIceCandidate(sinkId, candidate, mid);
+            return Task.CompletedTask;
         }
 
-        // PUT: Disable preview for a sink
-        [Route(HttpVerbs.Put, "/preview/disable")]
-        public Task<object> DisablePreview([QueryField] int sinkId)
+        // GET: connection status ({"connected":bool,"iceState":...,"gatheringComplete":bool})
+        [Route(HttpVerbs.Get, "/webrtcSink/status")]
+        public Task<string> GetStatus([QueryField] int sinkId)
         {
-            try
-            {
-                var response = new
-                {
-                    success = true,
-                    sinkId = sinkId,
-                    message = "Preview disabled (mock implementation)"
-                };
-                
-                // TODO: Implement actual preview logic
-                Console.WriteLine($"Disabling preview for sink {sinkId}");
-                
-                return Task.FromResult<object>(response);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error disabling preview: {ex.Message}");
-                throw;
-            }
+            return Task.FromResult(SinkManager.Instance.GetWebRTCSinkStatus(sinkId));
         }
     }
 }

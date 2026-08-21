@@ -126,6 +126,22 @@ public:
 	string GetNetworkTablesSinkStatus(int sinkId);
 #endif
 
+#ifdef FRCV_WITH_WEBRTC
+	// terminal sink: bind any single frame-producing node (raw camera, or a detector's
+	// annotated output) and it encodes+streams it over WebRTC. Deliberately takes only
+	// primitive parameters - WebRTCSink.h pulls in libdatachannel's C++ API, which (like
+	// NetworkTablesSink's ntcore) must never reach swig.i.
+	int CreateWebRTCSink(int bitrateKbps, int fps, string encoderName);
+	int CreateWebRTCSink(int id, int bitrateKbps, int fps, string encoderName);
+	// non-trickle ICE: blocks until this peer's candidate gathering completes (bounded by a
+	// timeout inside WebRTCSink), then returns one complete SDP offer
+	string WebRTCCreateOffer(int sinkId);
+	void WebRTCSetAnswer(int sinkId, string sdp);
+	void WebRTCAddIceCandidate(int sinkId, string candidate, string mid);
+	bool IsWebRTCSinkConnected(int sinkId);
+	string GetWebRTCSinkStatus(int sinkId);
+#endif
+
 	// stops and removes a node; also unbinds it from any sink that referenced it as a source
 	bool DeleteSink(int sinkId);
 	bool DeleteSource(int sourceId);

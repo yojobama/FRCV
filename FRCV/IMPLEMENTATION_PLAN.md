@@ -312,7 +312,14 @@ is useful reference but assumed the old `FilterBase` pipeline — reimplement ag
 
 ---
 
-## Phase 5 — `vkapriltag` second detector (feature 3)
+## Phase 5 — `vkapriltag` second detector (feature 3) — ✅ DONE, verified on real hardware (2026-08-22)
+
+`IApriltagBackend`/`CpuApriltagBackend`/`VkApriltagBackend` implemented; the SONAME collision
+between vkapriltag's patched apriltag fetch and any other apriltag build was found, understood,
+and resolved (see git history on `develop`). Validated with vkapriltag's own
+`apriltag_vulkan_validate` tool against its sample image on the real Orange Pi Mali G610: same
+tag ID as the CPU reference, 0.58px corner RMS agreement, whole GPU pipeline (16.8ms) already
+faster than the CPU reference (21ms) at 1280x800.
 
 Repo: <https://github.com/yojobama/vkapriltag> (Vulkan-compute AprilTag detection).
 A `VkApriltagSink` previously existed in-tree (deleted at `49a3a2a`) — its Vulkan boilerplate
@@ -362,7 +369,15 @@ is reusable.
 
 ---
 
-## Phase 6 — WebRTC streaming (feature 5)
+## Phase 6 — WebRTC streaming (feature 5) — ✅ core sink done (2026-08-22), MJPEG fallback pending
+
+`WebRTCSink` implemented against libdatachannel + ffmpeg (libx264, `h264_rkmpp` on the Pi is a
+follow-up once confirmed available), non-trickle ICE, signalling wired through Manager as plain
+strings (no `rtc::` types reach swig.i) and a real REST `WebRTCSinkController`. Verified by
+compiling/linking against the real libdatachannel + ffmpeg and a clean `dotnet build` generating
+correct SWIG bindings; **not yet verified against a real browser handshake** (no browser
+available in this environment) - that check is still owed before relying on this in practice.
+MJPEG fallback sink (item 5 below) not yet implemented.
 
 **`WebRTCSink` is a terminal sink in C++** (`libdatachannel`), bound to any frame-producing node.
 This follows directly from the node model: frames never leave C++, so the previous C# design

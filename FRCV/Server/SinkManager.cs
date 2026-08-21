@@ -200,6 +200,23 @@ namespace Server
             return ManagerWrapper.Instance.GetApriltagDetectorBackendName(sinkId);
         }
 
+        // creates a WebRTCSink; bind it (BindSourceToSink) to any single frame-producing node -
+        // a raw camera, or a detector's annotated output - to stream that stage
+        public int AddWebRTCSink(string name, int bitrateKbps = 4000, int fps = 30, string encoderName = "libx264")
+        {
+            int id = ManagerWrapper.Instance.CreateWebRTCSink(bitrateKbps, fps, encoderName);
+            sinks.Add(new Sink(id, name, SinkType.WebRTCSink));
+            DB.Instance.Save();
+            return id;
+        }
+
+        public string WebRTCCreateOffer(int sinkId) => ManagerWrapper.Instance.WebRTCCreateOffer(sinkId);
+        public void WebRTCSetAnswer(int sinkId, string sdp) => ManagerWrapper.Instance.WebRTCSetAnswer(sinkId, sdp);
+        public void WebRTCAddIceCandidate(int sinkId, string candidate, string mid) =>
+            ManagerWrapper.Instance.WebRTCAddIceCandidate(sinkId, candidate, mid);
+        public bool IsWebRTCSinkConnected(int sinkId) => ManagerWrapper.Instance.IsWebRTCSinkConnected(sinkId);
+        public string GetWebRTCSinkStatus(int sinkId) => ManagerWrapper.Instance.GetWebRTCSinkStatus(sinkId);
+
         // creates an ObjectDetectionSink running a previously uploaded model. Provider is fixed
         // to ONNX for now - RKNN is accepted by the native API but throws (not implemented yet).
         public int AddObjectDetectionSink(string name, int modelId)

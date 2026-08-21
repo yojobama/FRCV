@@ -118,6 +118,7 @@
     <ClInclude Include="SystemMonitor.h" />
     <ClInclude Include="VideoFileSource.h" />
     <ClInclude Include="VkApriltagBackend.h" />
+    <ClInclude Include="WebRTCSink.h" />
     <ClInclude Include="YoloPostProcess.h" />
   </ItemGroup>
   <ItemGroup>
@@ -141,6 +142,7 @@
     <ClCompile Include="SystemMonitor.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />
     <ClCompile Include="VkApriltagBackend.cpp" />
+    <ClCompile Include="WebRTCSink.cpp" />
     <ClCompile Include="YoloPostProcess.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -156,7 +158,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>/usr/local/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;opencv_dnn;avcodec;avformat;avutil;swscale;pthread;ntcore;wpiutil;onnxruntime;vulkan;%(LibraryDependencies)</LibraryDependencies>
+      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;opencv_dnn;avcodec;avformat;avutil;swscale;pthread;ntcore;wpiutil;onnxruntime;vulkan;datachannel;%(LibraryDependencies)</LibraryDependencies>
       <AdditionalDependencies>../third_party/vkapriltag/apriltags_vulkan/build/library/libvkapriltag.a;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -169,7 +171,7 @@
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>/usr/local/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;opencv_dnn;avcodec;avformat;avutil;swscale;pthread;ntcore;wpiutil;onnxruntime;vulkan;%(LibraryDependencies)</LibraryDependencies>
+      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;opencv_dnn;avcodec;avformat;avutil;swscale;pthread;ntcore;wpiutil;onnxruntime;vulkan;datachannel;%(LibraryDependencies)</LibraryDependencies>
       <AdditionalDependencies>../third_party/vkapriltag/apriltags_vulkan/build/library/libvkapriltag.a;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

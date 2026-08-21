@@ -23,11 +23,9 @@ namespace Server
                     m.WithController<CameraCalibrationSinkController>();
                     m.WithController<NetworkTablesSinkController>();
                     m.WithController<ObjectDetectionSinkController>();
-                    // RecordingSinkController and WebRTCSinkController are intentionally not
-                    // registered yet: recording sink creation is a bare
-                    // `throw new NotImplementedException()`, and the WebRTC controller returns
-                    // hardcoded mock responses - registering either would expose an endpoint
-                    // that looks like a real feature but isn't one yet.
+                    m.WithController<WebRTCSinkController>();
+                    // RecordingSinkController is intentionally not registered yet: recording
+                    // sink creation is still a bare `throw new NotImplementedException()`.
                     // sources
                     m.WithController<SourceController>();
                     m.WithController<ImageFileSourceController>();

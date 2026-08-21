@@ -70,7 +70,13 @@ void ISource::SetLatestResult(SourceResult result)
 SourceResult ISource::GetLatestResult(bool requireFrame, bool requireJson)
 {
 	std::lock_guard<std::mutex> guard(m_ResultLock); // Use RAII for mutex locking
-	if ((m_LatestResult.json.has_value() == requireJson) && (m_LatestResult.frame.has_value() == requireFrame))
+	// "at least", not "exactly": a sink declares what it needs, not what the source may also
+	// produce. This used to require an exact match, which silently broke any sink bound to a
+	// dual-producing source (e.g. ApriltagDetector, which always sets both frame and json) if
+	// the sink only asked for one of the two - WebRTCSink (frame-only) bound to a detector's
+	// annotated output being exactly that case, and exactly the "different stages" composition
+	// the WebRTC feature depends on.
+	if ((!requireJson || m_LatestResult.json.has_value()) && (!requireFrame || m_LatestResult.frame.has_value()))
 		return m_LatestResult;
 	return SourceResult();
 }
