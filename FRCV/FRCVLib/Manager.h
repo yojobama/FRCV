@@ -13,6 +13,7 @@
 #include "ISource.h"
 #include "IDetectionBackend.h"
 #include "IApriltagBackend.h"
+#include "CalibrationBoardType.h"
 
 using namespace std;
 
@@ -94,12 +95,29 @@ public:
 	int CreateObjectDetectionSink(int id, ObjectDetectionProvider provider, string modelPath, string labelsPath,
 		YoloVariant variant, float confThreshold, float nmsThreshold, int inputSize);
 
-	// functions to create/manage camera calibrators
+	// functions to create/manage camera calibrators. Default board is a 6x9 checkerboard with
+	// 25mm squares, matching the previous hardcoded behavior; the explicit-config overloads
+	// take only primitive parameters (plus the plain CalibrationBoardType enum) rather than
+	// CalibrationBoardConfig itself - CameraCalibrator.h pulls in
+	// <opencv2/objdetect/charuco_detector.hpp>, a much heavier header than SWIG has been fed
+	// so far in this project and untested against it, so it must not reach swig.i.
 	int CreateCameraCalibrator();
 	int CreateCameraCalibrator(int id);
+	int CreateCameraCalibrator(CalibrationBoardType boardType, int rows, int cols,
+		float squareSizeMeters, float markerSizeMeters, int arucoDictionaryId);
+	int CreateCameraCalibrator(int id, CalibrationBoardType boardType, int rows, int cols,
+		float squareSizeMeters, float markerSizeMeters, int arucoDictionaryId);
 
 	// retrieves the calibration result of a CameraCalibrator sink, identified via dynamic_cast
 	CameraCalibrationResult GetCameraCalibrationResult(int calibratorId);
+	// explicitly runs cv::calibrateCamera over every snapshot saved so far and caches the
+	// result (also returned by GetCameraCalibrationResult afterwards); throws if fewer than 4
+	// snapshots have been saved
+	CameraCalibrationResult RunCameraCalibration(int calibratorId);
+
+	int GetCameraCalibrationSnapshotCount(int calibratorId);
+	bool RemoveCameraCalibrationSnapshot(int calibratorId, int index);
+	void ClearCameraCalibrationSnapshots(int calibratorId);
 
 	// saves the checkerboard corners detected in the CameraCalibrator's latest frame as a calibration
 	// snapshot to be used in the calibration phase. returns false if no board was detected yet.

@@ -404,6 +404,15 @@ string Manager::GetApriltagDetectorBackendName(int sinkId)
     return p_Detector->GetBackendName();
 }
 
+namespace {
+	CameraCalibrator* FindCalibrator(map<int, std::shared_ptr<ISink>>& sinks, int calibratorId)
+	{
+		auto sink = sinks.find(calibratorId);
+		if (sink == sinks.end()) return nullptr;
+		return dynamic_cast<CameraCalibrator*>(sink->second.get());
+	}
+}
+
 int Manager::CreateCameraCalibrator()
 {
 	int id = GenerateUUID();
@@ -425,41 +434,76 @@ int Manager::CreateCameraCalibrator(int id)
 	return id;
 }
 
+int Manager::CreateCameraCalibrator(CalibrationBoardType boardType, int rows, int cols,
+	float squareSizeMeters, float markerSizeMeters, int arucoDictionaryId)
+{
+	int id = GenerateUUID();
+	return CreateCameraCalibrator(id, boardType, rows, cols, squareSizeMeters, markerSizeMeters, arucoDictionaryId);
+}
+
+int Manager::CreateCameraCalibrator(int id, CalibrationBoardType boardType, int rows, int cols,
+	float squareSizeMeters, float markerSizeMeters, int arucoDictionaryId)
+{
+	m_Logger->EnterLog("CreateCameraCalibrator called with id=" + std::to_string(id) + ", boardType=" + std::to_string(boardType));
+
+	CalibrationBoardConfig config;
+	config.type = boardType;
+	config.rows = rows;
+	config.cols = cols;
+	config.squareSizeMeters = squareSizeMeters;
+	config.markerSizeMeters = markerSizeMeters;
+	config.arucoDictionaryId = arucoDictionaryId;
+
+	auto p_Calibrator = std::make_shared<CameraCalibrator>(m_Logger, std::to_string(id), config);
+	m_Sinks.emplace(id, p_Calibrator);
+	m_Sources.emplace(id, p_Calibrator);
+	return id;
+}
+
 CameraCalibrationResult Manager::GetCameraCalibrationResult(int calibratorId)
 {
-	m_Logger->EnterLog("GetCameraCalibrationResult called with calibratorId=" + std::to_string(calibratorId));
-	auto sink = m_Sinks.find(calibratorId);
-	if (sink == m_Sinks.end()) {
-		m_Logger->EnterLog("Sink not found: " + std::to_string(calibratorId));
-		return CameraCalibrationResult();
-	}
-
-	// dynamic_cast is used to distinguish CameraCalibrator sinks from every other sink/source type
-	CameraCalibrator* p_Calibrator = dynamic_cast<CameraCalibrator*>(sink->second.get());
+	CameraCalibrator* p_Calibrator = FindCalibrator(m_Sinks, calibratorId);
 	if (p_Calibrator == nullptr) {
-		m_Logger->EnterLog("Sink " + std::to_string(calibratorId) + " is not a CameraCalibrator");
+		m_Logger->EnterLog("CameraCalibrator not found: " + std::to_string(calibratorId));
 		return CameraCalibrationResult();
 	}
-
 	return p_Calibrator->GetCalibrationResult();
+}
+
+CameraCalibrationResult Manager::RunCameraCalibration(int calibratorId)
+{
+	CameraCalibrator* p_Calibrator = FindCalibrator(m_Sinks, calibratorId);
+	if (p_Calibrator == nullptr) {
+		throw std::runtime_error("CameraCalibrator not found: " + std::to_string(calibratorId));
+	}
+	return p_Calibrator->RunCalibration();
+}
+
+int Manager::GetCameraCalibrationSnapshotCount(int calibratorId)
+{
+	CameraCalibrator* p_Calibrator = FindCalibrator(m_Sinks, calibratorId);
+	return p_Calibrator == nullptr ? 0 : p_Calibrator->GetSnapshotCount();
+}
+
+bool Manager::RemoveCameraCalibrationSnapshot(int calibratorId, int index)
+{
+	CameraCalibrator* p_Calibrator = FindCalibrator(m_Sinks, calibratorId);
+	return p_Calibrator != nullptr && p_Calibrator->RemoveSnapshot(index);
+}
+
+void Manager::ClearCameraCalibrationSnapshots(int calibratorId)
+{
+	CameraCalibrator* p_Calibrator = FindCalibrator(m_Sinks, calibratorId);
+	if (p_Calibrator != nullptr) p_Calibrator->ClearSnapshots();
 }
 
 bool Manager::SaveCameraCalibrationBoardDetection(int calibratorId)
 {
-	m_Logger->EnterLog("SaveCameraCalibrationBoardDetection called with calibratorId=" + std::to_string(calibratorId));
-	auto sink = m_Sinks.find(calibratorId);
-	if (sink == m_Sinks.end()) {
-		m_Logger->EnterLog("Sink not found: " + std::to_string(calibratorId));
-		return false;
-	}
-
-	// dynamic_cast is used to distinguish CameraCalibrator sinks from every other sink/source type
-	CameraCalibrator* p_Calibrator = dynamic_cast<CameraCalibrator*>(sink->second.get());
+	CameraCalibrator* p_Calibrator = FindCalibrator(m_Sinks, calibratorId);
 	if (p_Calibrator == nullptr) {
-		m_Logger->EnterLog("Sink " + std::to_string(calibratorId) + " is not a CameraCalibrator");
+		m_Logger->EnterLog("CameraCalibrator not found: " + std::to_string(calibratorId));
 		return false;
 	}
-
 	return p_Calibrator->SaveBoardDetection();
 }
 

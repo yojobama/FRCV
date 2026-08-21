@@ -159,6 +159,18 @@ namespace Server
             return channel;
         }
 
+        // creates a CameraCalibrationSink with an explicit board configuration (checkerboard or
+        // ChArUco); AddSink(name, "cameracalibrationsink") still exists for the default 6x9/25mm
+        // checkerboard
+        public int AddCameraCalibrationSinkWithBoard(string name, CalibrationBoardType boardType, int rows, int cols,
+            float squareSizeMeters, float markerSizeMeters = 0.018f, int arucoDictionaryId = 10)
+        {
+            int id = ManagerWrapper.Instance.CreateCameraCalibrator(boardType, rows, cols, squareSizeMeters, markerSizeMeters, arucoDictionaryId);
+            sinks.Add(new Sink(id, name, SinkType.CameraCalibrationSink));
+            DB.Instance.Save();
+            return id;
+        }
+
         // fetches the calibration result computed by a CameraCalibrationSink
         public CameraCalibrationResult GetCameraCalibrationResult(int calibratorSinkId)
         {
@@ -171,6 +183,24 @@ namespace Server
         {
             return ManagerWrapper.Instance.SaveCameraCalibrationBoardDetection(calibratorSinkId);
         }
+
+        // explicitly runs cv::calibrateCamera over every snapshot saved so far - the UI decides
+        // when this happens rather than it running implicitly on every result fetch
+        public CameraCalibrationResult RunCameraCalibration(int calibratorSinkId)
+        {
+            var result = ManagerWrapper.Instance.RunCameraCalibration(calibratorSinkId);
+            CalibrationManager.Instance.SaveResult(calibratorSinkId, result);
+            return result;
+        }
+
+        public int GetCameraCalibrationSnapshotCount(int calibratorSinkId) =>
+            ManagerWrapper.Instance.GetCameraCalibrationSnapshotCount(calibratorSinkId);
+
+        public bool RemoveCameraCalibrationSnapshot(int calibratorSinkId, int index) =>
+            ManagerWrapper.Instance.RemoveCameraCalibrationSnapshot(calibratorSinkId, index);
+
+        public void ClearCameraCalibrationSnapshots(int calibratorSinkId) =>
+            ManagerWrapper.Instance.ClearCameraCalibrationSnapshots(calibratorSinkId);
 
         // creates an ApriltagSink that reuses the calibration result of an existing CameraCalibrationSink,
         // so the apriltag detections can be translated into real world tag locations

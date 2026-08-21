@@ -1,12 +1,32 @@
 #include "CameraCalibrator.h"
+#include <stdexcept>
 
-CameraCalibrator::CameraCalibrator(std::shared_ptr<Logger> logger, std::string id) : ISink(logger, 1, false, true, id), ISource(logger, id), m_Logger(logger)
-{
-	m_DoNotLoadCaptureThread = true;
+namespace {
+	// legacy default: only ever used by CameraCalibrator's own no-config constructor callers
+	// (pre-existing behavior preserved exactly)
+	const cv::Size LEGACY_CHECKERBOARD_PATTERN_SIZE(6, 9);
 }
 
-CameraCalibrationResult CameraCalibrator::GetCalibrationResult()
+CameraCalibrator::CameraCalibrator(std::shared_ptr<Logger> logger, std::string id, CalibrationBoardConfig boardConfig)
+	: ISink(logger, 1, false, true, id), ISource(logger, id), m_Logger(logger), m_BoardConfig(boardConfig)
 {
+	m_DoNotLoadCaptureThread = true;
+
+	if (m_BoardConfig.type == BOARD_CHARUCO) {
+		cv::aruco::Dictionary dictionary = cv::aruco::getPredefinedDictionary(m_BoardConfig.arucoDictionaryId);
+		m_CharucoBoard.emplace(
+			cv::Size(m_BoardConfig.cols, m_BoardConfig.rows),
+			m_BoardConfig.squareSizeMeters, m_BoardConfig.markerSizeMeters, dictionary);
+		m_CharucoDetector.emplace(*m_CharucoBoard);
+	}
+}
+
+CameraCalibrationResult CameraCalibrator::RunCalibration()
+{
+	if (m_ObjPoints.size() < 4) {
+		throw std::runtime_error("CameraCalibrator::RunCalibration: need at least 4 saved snapshots, have " + std::to_string(m_ObjPoints.size()));
+	}
+
 	cv::Mat cameraMatrix = cv::Mat(3, 3, CV_64F);
 	cv::Mat distCoeffsMat = cv::Mat(8, 1, CV_64F);
 	std::vector<cv::Mat> rvecs, tvecs;
@@ -18,12 +38,16 @@ CameraCalibrationResult CameraCalibrator::GetCalibrationResult()
 	double cx = cameraMatrix.at<double>(0, 2);
 	double cy = cameraMatrix.at<double>(1, 2);
 
-	// cv::calibrateCamera previously ran but the resulting distortion coefficients were
-	// discarded entirely here; every real lens has some distortion, so a caller trusting fx/fy/
-	// cx/cy alone (e.g. ApriltagDetector's pose estimation) was silently getting a wrong pose
 	std::vector<double> distCoeffs(distCoeffsMat.begin<double>(), distCoeffsMat.end<double>());
 
-	return CameraCalibrationResult(fx, fy, cx, cy, rms, distCoeffs, frameSize.width, frameSize.height);
+	m_LastResult = CameraCalibrationResult(fx, fy, cx, cy, rms, distCoeffs, frameSize.width, frameSize.height);
+	if (m_Logger) m_Logger->EnterLog("CameraCalibrator: RunCalibration produced rms=" + std::to_string(rms) + " over " + std::to_string(m_ObjPoints.size()) + " snapshot(s)");
+	return m_LastResult.value();
+}
+
+CameraCalibrationResult CameraCalibrator::GetCalibrationResult() const
+{
+	return m_LastResult.value_or(CameraCalibrationResult());
 }
 
 bool CameraCalibrator::SaveBoardDetection()
@@ -35,15 +59,7 @@ bool CameraCalibrator::SaveBoardDetection()
 		return false;
 	}
 
-	// build the object points (real world coordinates) for a single checkerboard snapshot
-	std::vector<cv::Point3f> objp;
-	for (int i = 0; i < CHECKERBOARD_WIDTH[1]; i++) {
-		for (int j = 0; j < CHECKERBOARD_WIDTH[0]; j++) {
-			objp.push_back(cv::Point3f(j * CHECKERBOARD_SQUARE_SIZE_METERS, i * CHECKERBOARD_SQUARE_SIZE_METERS, 0));
-		}
-	}
-
-	m_ObjPoints.push_back(objp);
+	m_ObjPoints.push_back(m_LastObjectPoints);
 	m_ImgPoints.push_back(m_LastCorners);
 	frameSize = m_LastFrameSize;
 
@@ -54,60 +70,124 @@ bool CameraCalibrator::SaveBoardDetection()
 	return true;
 }
 
+int CameraCalibrator::GetSnapshotCount() const
+{
+	std::lock_guard<std::mutex> lock(m_DetectionMutex);
+	return static_cast<int>(m_ImgPoints.size());
+}
+
+bool CameraCalibrator::RemoveSnapshot(int index)
+{
+	std::lock_guard<std::mutex> lock(m_DetectionMutex);
+	if (index < 0 || static_cast<size_t>(index) >= m_ImgPoints.size()) return false;
+
+	m_ObjPoints.erase(m_ObjPoints.begin() + index);
+	m_ImgPoints.erase(m_ImgPoints.begin() + index);
+	return true;
+}
+
+void CameraCalibrator::ClearSnapshots()
+{
+	std::lock_guard<std::mutex> lock(m_DetectionMutex);
+	m_ObjPoints.clear();
+	m_ImgPoints.clear();
+}
+
+void CameraCalibrator::ProcessCheckerboard(const cv::Mat& gray, cv::Mat& displayFrame)
+{
+	cv::Size patternSize(m_BoardConfig.cols, m_BoardConfig.rows);
+
+	std::vector<cv::Point2f> corners;
+	bool patternFound = cv::findChessboardCorners(gray, patternSize, corners,
+		cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_NORMALIZE_IMAGE | cv::CALIB_CB_FAST_CHECK);
+
+	if (patternFound) {
+		cv::cornerSubPix(gray, corners, cv::Size(11, 11), cv::Size(-1, -1),
+			cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 30, 0.1));
+
+		cv::drawChessboardCorners(displayFrame, patternSize, corners, patternFound);
+		cv::putText(displayFrame, "BOARD DETECTED", cv::Point(20, 40),
+			cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
+
+		std::vector<cv::Point3f> objp;
+		for (int i = 0; i < m_BoardConfig.rows; i++) {
+			for (int j = 0; j < m_BoardConfig.cols; j++) {
+				objp.push_back(cv::Point3f(j * m_BoardConfig.squareSizeMeters, i * m_BoardConfig.squareSizeMeters, 0));
+			}
+		}
+
+		std::lock_guard<std::mutex> lock(m_DetectionMutex);
+		m_LastPatternFound = true;
+		m_LastCorners = corners;
+		m_LastObjectPoints = objp;
+		m_LastFrameSize = gray.size();
+	} else {
+		cv::putText(displayFrame, "Searching for board...", cv::Point(20, 40),
+			cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 0, 255), 2);
+		std::lock_guard<std::mutex> lock(m_DetectionMutex);
+		m_LastPatternFound = false;
+	}
+}
+
+void CameraCalibrator::ProcessCharuco(const cv::Mat& gray, cv::Mat& displayFrame)
+{
+	std::vector<cv::Point2f> charucoCorners;
+	std::vector<int> charucoIds;
+	m_CharucoDetector->detectBoard(gray, charucoCorners, charucoIds);
+
+	// require a reasonable spread of corners, not just one or two - a couple of stray corners
+	// produce a numerically-collinear or near-degenerate snapshot that RunCalibration()'s
+	// cv::calibrateCamera would silently accept and quietly poison the whole result
+	bool patternFound = charucoCorners.size() >= 6 && !m_CharucoBoard->checkCharucoCornersCollinear(charucoIds);
+
+	if (patternFound) {
+		cv::aruco::drawDetectedCornersCharuco(displayFrame, charucoCorners, charucoIds, cv::Scalar(0, 255, 0));
+		cv::putText(displayFrame, "BOARD DETECTED (" + std::to_string(charucoCorners.size()) + " corners)", cv::Point(20, 40),
+			cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
+
+		const std::vector<cv::Point3f>& allBoardCorners = m_CharucoBoard->getChessboardCorners();
+		std::vector<cv::Point3f> objp;
+		objp.reserve(charucoIds.size());
+		for (int id : charucoIds) {
+			objp.push_back(allBoardCorners[id]);
+		}
+
+		std::lock_guard<std::mutex> lock(m_DetectionMutex);
+		m_LastPatternFound = true;
+		m_LastCorners = charucoCorners;
+		m_LastObjectPoints = objp;
+		m_LastFrameSize = gray.size();
+	} else {
+		cv::putText(displayFrame, "Searching for board...", cv::Point(20, 40),
+			cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 0, 255), 2);
+		std::lock_guard<std::mutex> lock(m_DetectionMutex);
+		m_LastPatternFound = false;
+	}
+}
+
 void CameraCalibrator::Process(std::vector<SourceResult> results)
 {
 	const cv::Mat& frame = results[0].frame.value();
-    cv::Mat gray;
+	cv::Mat gray;
 
-    if (frame.empty()) {
-        // std::cerr << "Error: Blank frame grabbed." << std::endl;
+	if (frame.empty()) {
 		m_Logger->EnterLog(LogLevel::Error, "CameraCalibrator: Blank frame grabbed.");
-        return;
-    }
+		return;
+	}
 
-    // Create a copy to draw overlays onto without corrupting raw capture data
-    cv::Mat displayFrame = frame.clone();
-    cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+	// Create a copy to draw overlays onto without corrupting raw capture data
+	cv::Mat displayFrame = frame.clone();
+	cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
 
-    // Vector to store corners found in this frame
-    std::vector<cv::Point2f> corners;
+	if (m_BoardConfig.type == BOARD_CHARUCO) {
+		ProcessCharuco(gray, displayFrame);
+	} else {
+		ProcessCheckerboard(gray, displayFrame);
+	}
 
-    // Find internal corners
-    bool patternFound = cv::findChessboardCorners(gray, patternSize, corners,
-        cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_NORMALIZE_IMAGE | cv::CALIB_CB_FAST_CHECK);
-
-	nlohmann::json jsonData;
-
-    if (patternFound) {
-        // Refine corner positions to sub-pixel accuracy
-        cv::cornerSubPix(gray, corners, cv::Size(11, 11), cv::Size(-1, -1),
-            cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 30, 0.1));
-
-        // Draw connecting colored lines on the display matrix
-        cv::drawChessboardCorners(displayFrame, patternSize, corners, patternFound);
-
-        cv::putText(displayFrame, "BOARD DETECTED", cv::Point(20, 40),
-            cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 0), 2);
-
-        {
-            std::lock_guard<std::mutex> lock(m_DetectionMutex);
-            m_LastPatternFound = true;
-            m_LastCorners = corners;
-            m_LastFrameSize = gray.size();
-        }
-    }
-    else {
-        cv::putText(displayFrame, "Searching for board...", cv::Point(20, 40),
-            cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 0, 255), 2);
-
-        std::lock_guard<std::mutex> lock(m_DetectionMutex);
-        m_LastPatternFound = false;
-    }
-
-    // Display counts on frame
-    std::string countText = "Saved Snapshots: " + std::to_string(m_ImgPoints.size());
-    cv::putText(displayFrame, countText, cv::Point(20, displayFrame.rows - 20),
-        cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(255, 255, 255), 2);
+	std::string countText = "Saved Snapshots: " + std::to_string(GetSnapshotCount());
+	cv::putText(displayFrame, countText, cv::Point(20, displayFrame.rows - 20),
+		cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(255, 255, 255), 2);
 
 	SetLatestResult(SourceResult(std::nullopt, displayFrame));
 }

@@ -408,7 +408,16 @@ entirely. The C# server keeps only **signalling**.
 
 ---
 
-## Phase 7 — Calibration, end to end (feature 7)
+## Phase 7 — Calibration, end to end (feature 7) — ✅ items 1-5 done (2026-08-22), item 6 (WebUI) pending
+
+Distortion coefficients (item 1, confirmed by the user), configurable board geometry including
+ChArUco (item 2 - OpenCV 5.0 moved ArUco/ChArUco into the core `objdetect` module, no contrib
+build needed), the calibrator control surface (item 3: snapshot count/remove/clear, explicit
+`RunCalibration()`), and basic persistence keyed by camera path + resolution (item 4, though
+**not yet auto-applied** when a matching camera source is recreated - `CalibrationManager` only
+covers save/list/lookup so far) are implemented and verified via full compile+link+SWIG-generation
+checks. `CameraCalibrationSinkController` (item 5) now exposes the whole surface. The calibration
+wizard WebUI screen (item 6) has not been started - that's phase 8/WebUI work.
 
 1. **Fix the data model (B8) — confirmed.** Extend `CameraCalibrationResult` with
    `distCoeffs[5..8]` (k1, k2, p1, p2, k3…), `imageWidth`/`imageHeight`, `boardSpec`,
