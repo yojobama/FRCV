@@ -15,6 +15,22 @@
       Override FRCVLibPlatform/FRCVLibConfiguration (e.g. -p:FRCVLibPlatform=ARM64) to pick up a
       build produced by a different FRCVLib configuration than the one implied by $(Configuration).
     -->
+    <!--
+      Server.csproj is always built as "Any CPU" - the .sln maps every Server
+      Debug|ARM64/Release|ARM64 solution configuration to Server's own Debug|Any CPU /
+      Release|Any CPU (a C# project has no real notion of ARM64 vs x64), so $(Platform) inside
+      this project is never ARM64 even when the solution's active platform is ARM64 for
+      deploying to the Orange Pi. FRCVLibPlatform must therefore be inferred from something that
+      *does* carry the intended target architecture: $(RuntimeIdentifier), which VS's SSH remote
+      debug/publish target sets to linux-arm64 when deploying to an ARM64 SSH target (and which
+      `dotnet publish -r` sets directly). Confirmed the hard way: deploying to the Orange Pi
+      without this silently picked up the x64 (WSL2-built) libFRCVLib.so instead of an ARM64
+      one, which was then copied into the app's output and pushed to the ARM64 device, where the
+      x86-64 ELF cannot be dlopen()'d - producing a DllNotFoundException at runtime
+      ("...or one of its dependencies... module could not be found") with no build-time warning
+      at all.
+    -->
+    <FRCVLibPlatform Condition="'$(FRCVLibPlatform)'=='' And '$(RuntimeIdentifier)'=='linux-arm64'">ARM64</FRCVLibPlatform>
     <FRCVLibPlatform Condition="'$(FRCVLibPlatform)'==''">x64</FRCVLibPlatform>
     <FRCVLibConfiguration Condition="'$(FRCVLibConfiguration)'==''">$(Configuration)</FRCVLibConfiguration>
     <FRCVLibConfiguration Condition="'$(FRCVLibConfiguration)'=='LocalCheck'">Debug</FRCVLibConfiguration>
@@ -37,6 +53,17 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <!--
+    A missing/wrong-architecture libFRCVLib.so is otherwise silent at build time (the Content
+    item above just has no match) and only surfaces as a runtime DllNotFoundException on
+    whatever machine ends up running Server.dll - a much harder place to diagnose it, especially
+    once it's been deployed to a remote target. Fail the build instead.
+  -->
+  <Target Name="CheckFRCVLibExists" BeforeTargets="Build;Publish">
+    <Error Text="libFRCVLib.so not found at '$(FRCVLibBuildDir)\libFRCVLib.so' (FRCVLibPlatform=$(FRCVLibPlatform), FRCVLibConfiguration=$(FRCVLibConfiguration)). Build FRCVLib for that platform/configuration first, or override -p:FRCVLibPlatform=/-p:FRCVLibConfiguration=."
+           Condition="!Exists('$(FRCVLibBuildDir)\libFRCVLib.so')" />
+  </Target>
 
   <!--
     Regenerates the SWIG C# bindings from FRCVLib's public API before each build. Skipped when

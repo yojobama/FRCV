@@ -586,3 +586,33 @@ incrementally rather than waiting for all of them to land.
    and the `distCoeffs` field) works end to end. This was direct verification via SSH against the
    real target, not a stand-in for Visual Studio's own WSL2/Remote_GCC build — that should still
    be exercised from Visual Studio itself before relying on it day to day.
+5. ~~**Deploying to the Orange Pi from Visual Studio threw `DllNotFoundException` for
+   `libFRCVLib`**~~ — **root-caused and fixed, verified on the real board** (2026-08-22).
+   `Server.csproj` always defaulted `FRCVLibPlatform` to `x64` regardless of which architecture
+   was actually being deployed, and the `.sln` maps *every* `Server` solution configuration
+   (including `Debug|ARM64`) down to Server's own `Debug|Any CPU` — there was no signal at all
+   telling it to bundle an ARM64 build. Since only a WSL2-built x86-64 `libFRCVLib.so` existed,
+   that's what got bundled and pushed to the aarch64 Orange Pi, where an x86-64 ELF cannot be
+   `dlopen()`'d — exactly the reported exception. Fixed by deriving `FRCVLibPlatform` from
+   `$(RuntimeIdentifier)` (`linux-arm64` → `ARM64`, set by VS's SSH remote target) and by adding a
+   build-time `Error` when the resolved `libFRCVLib.so` doesn't exist, so this class of mistake
+   fails the build instead of surfacing as a runtime crash on the deployed device.
+   `FRCVLib.vcxproj.user` also had `Debug|x64`'s WSL debugger flavor pointed at the Orange Pi's IP
+   (a leftover from before the ARM64/`Remote_GCC` configuration existed) and no debug settings at
+   all for `Debug|ARM64`/`Release|ARM64` — both corrected.
+
+   Investigating this also surfaced that **the Orange Pi had never actually been provisioned by
+   `install-deps.sh`**: it still had apt's unpatched `libapriltag3t64` (3.3.0) installed instead
+   of the patched v3.4.5 vkapriltag needs, and `libdatachannel` was entirely absent, and no .NET
+   runtime was installed at all. Ran `install-deps.sh --skip-opencv --with-webrtc --with-nt4` for
+   real on the board (OpenCV 5, ntcore/wpiutil and ONNX Runtime were already present from an
+   earlier partial run) and installed the .NET 10 ASP.NET Core runtime via `dotnet-install.sh`.
+   Built `libFRCVLib.so` for real aarch64 on the Pi (confirmed via `file`: `ELF 64-bit LSB shared
+   object, ARM aarch64`), copied it back to `FRCVLib\bin\ARM64\Debug\` so `Server.csproj`'s fixed
+   `FRCVLibPlatform` resolution has something real to find, then deployed the whole `Server`
+   output to the board and ran it there directly (not simulated). Server started with no
+   exceptions; created an `ImageFileSource` + an `ApriltagSink` requesting the **Vulkan** backend,
+   bound and enabled it, and got back a correct real detection (tag id 585, real corner/center
+   coordinates) with the backend confirmed as `"Vulkan (vkapriltag)"` — the first time the GPU
+   AprilTag path has been exercised end-to-end through the actual C#/REST stack on real silicon,
+   not just via the standalone `apriltag_vulkan_validate` tool.
