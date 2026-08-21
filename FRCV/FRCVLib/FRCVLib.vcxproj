@@ -100,7 +100,9 @@
     <ClInclude Include="CameraCalibrationResult.h" />
     <ClInclude Include="CameraCalibrator.h" />
     <ClInclude Include="CameraSource.h" />
+    <ClInclude Include="CpuApriltagBackend.h" />
     <ClInclude Include="ISource.h" />
+    <ClInclude Include="IApriltagBackend.h" />
     <ClInclude Include="ImageFileSource.h" />
     <ClInclude Include="ISink.h" />
     <ClInclude Include="Logger.h" />
@@ -115,6 +117,7 @@
     <ClInclude Include="SourceResult.h" />
     <ClInclude Include="SystemMonitor.h" />
     <ClInclude Include="VideoFileSource.h" />
+    <ClInclude Include="VkApriltagBackend.h" />
     <ClInclude Include="YoloPostProcess.h" />
   </ItemGroup>
   <ItemGroup>
@@ -123,6 +126,7 @@
     <ClCompile Include="CameraCalibrationResult.cpp" />
     <ClCompile Include="CameraCalibrator.cpp" />
     <ClCompile Include="CameraSource.cpp" />
+    <ClCompile Include="CpuApriltagBackend.cpp" />
     <ClCompile Include="ISource.cpp" />
     <ClCompile Include="ImageFileSource.cpp" />
     <ClCompile Include="ISink.cpp" />
@@ -136,6 +140,7 @@
     <ClCompile Include="SourceResult.cpp" />
     <ClCompile Include="SystemMonitor.cpp" />
     <ClCompile Include="VideoFileSource.cpp" />
+    <ClCompile Include="VkApriltagBackend.cpp" />
     <ClCompile Include="YoloPostProcess.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -145,25 +150,27 @@
 
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include;/usr/local/include/apriltag;../third_party/vkapriltag/apriltags_vulkan/library/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CppLanguageStandard>c++20</CppLanguageStandard>
       <PreprocessorDefinitions>$(FrcvCommonDefines);$(FrcvPlatformDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>/usr/local/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;opencv_dnn;avcodec;avformat;avutil;swscale;pthread;ntcore;wpiutil;onnxruntime;%(LibraryDependencies)</LibraryDependencies>
+      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;opencv_dnn;avcodec;avformat;avutil;swscale;pthread;ntcore;wpiutil;onnxruntime;vulkan;%(LibraryDependencies)</LibraryDependencies>
+      <AdditionalDependencies>../third_party/vkapriltag/apriltags_vulkan/build/library/libvkapriltag.a;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 
   <ItemDefinitionGroup Condition="'$(Platform)'=='ARM64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include;/usr/local/include/apriltag;../third_party/vkapriltag/apriltags_vulkan/library/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CppLanguageStandard>c++20</CppLanguageStandard>
       <PreprocessorDefinitions>$(FrcvCommonDefines);$(FrcvPlatformDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>/usr/local/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;opencv_dnn;avcodec;avformat;avutil;swscale;pthread;ntcore;wpiutil;onnxruntime;%(LibraryDependencies)</LibraryDependencies>
+      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;opencv_dnn;avcodec;avformat;avutil;swscale;pthread;ntcore;wpiutil;onnxruntime;vulkan;%(LibraryDependencies)</LibraryDependencies>
+      <AdditionalDependencies>../third_party/vkapriltag/apriltags_vulkan/build/library/libvkapriltag.a;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
 

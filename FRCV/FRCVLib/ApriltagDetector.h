@@ -1,11 +1,11 @@
 #pragma once
 #include "ISink.h"
 #include "ISource.h"
-#include <apriltag/apriltag.h>
+#include "IApriltagBackend.h"
 #include <apriltag/apriltag_pose.h>
-#include <apriltag/tag36h11.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/calib3d.hpp> // cv::undistortPoints - not pulled in by <opencv2/opencv.hpp> alone
+#include <memory>
 
 class Logger;
 class CameraCalibrationResult;
@@ -13,13 +13,20 @@ class CameraCalibrationResult;
 class ApriltagDetector : public ISink, public ISource
 {
 public:
-	ApriltagDetector(std::shared_ptr<Logger> logger, std::string id, CameraCalibrationResult calibrationResult, double tagSize /* in METERS you bloody Americans */);
+	ApriltagDetector(std::shared_ptr<Logger> logger, std::string id, CameraCalibrationResult calibrationResult,
+		double tagSize /* in METERS you bloody Americans */,
+		ApriltagBackendKind backendKind = APRILTAG_BACKEND_CPU,
+		int frameWidth = 0, int frameHeight = 0 /* only consulted for APRILTAG_BACKEND_VULKAN */);
 	~ApriltagDetector();
+
+	// which backend actually ended up running - may differ from what was requested if Vulkan
+	// was asked for and no usable device was found (falls back to CPU rather than failing to
+	// construct at all; see phase 5 item 5 in the implementation plan)
+	std::string GetBackendName() const;
 private:
 	void Process(std::vector<SourceResult> results) override;
 
-	apriltag_detector_t* m_Detector;
-	apriltag_family_t* m_Family;
+	std::unique_ptr<IApriltagBackend> m_Backend;
 
 	std::shared_ptr<Logger> m_Logger;
 	apriltag_detection_info_t m_DetectionInfo;
@@ -31,4 +38,3 @@ private:
 	cv::Mat m_CameraMatrix;
 	cv::Mat m_DistCoeffs;
 };
-

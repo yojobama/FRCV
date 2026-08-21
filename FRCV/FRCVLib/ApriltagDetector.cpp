@@ -1,13 +1,36 @@
 #include "ApriltagDetector.h"
 #include "ApriltagDetection.h"
 #include "CameraCalibrationResult.h"
+#include "CpuApriltagBackend.h"
+#ifdef FRCV_WITH_VULKAN_APRILTAG
+#include "VkApriltagBackend.h"
+#endif
 
-ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string id, CameraCalibrationResult cameraCalibrationResult, double tagSize) : ISource(logger, id), ISink(logger, 1, false, true, id)
+ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string id, CameraCalibrationResult cameraCalibrationResult,
+	double tagSize, ApriltagBackendKind backendKind, int frameWidth, int frameHeight)
+	: ISource(logger, id), ISink(logger, 1, false, true, id)
 {
 	if (logger) logger->EnterLog("ApriltagDetector constructed");
-	this->m_Family = tag36h11_create();
-	this->m_Detector = apriltag_detector_create();
-	apriltag_detector_add_family(this->m_Detector, this->m_Family);
+
+	if (backendKind == APRILTAG_BACKEND_VULKAN) {
+#ifdef FRCV_WITH_VULKAN_APRILTAG
+		try {
+			m_Backend = std::make_unique<VkApriltagBackend>(frameWidth, frameHeight);
+		} catch (const std::exception& e) {
+			// no usable Vulkan compute device, or GpuDetector/pipeline setup failed - fall back
+			// to CPU rather than fail to construct at all (plan phase 5, item 5)
+			if (logger) logger->EnterLog(LogLevel::Warning,
+				std::string("Vulkan AprilTag backend unavailable (") + e.what() + "), falling back to CPU");
+			m_Backend = std::make_unique<CpuApriltagBackend>();
+		}
+#else
+		if (logger) logger->EnterLog(LogLevel::Warning,
+			"Vulkan AprilTag backend requested but FRCV_WITH_VULKAN_APRILTAG was not compiled in, falling back to CPU");
+		m_Backend = std::make_unique<CpuApriltagBackend>();
+#endif
+	} else {
+		m_Backend = std::make_unique<CpuApriltagBackend>();
+	}
 
 	m_DetectionInfo.tagsize = tagSize;
 	m_DetectionInfo.fx = cameraCalibrationResult.fx;
@@ -29,33 +52,25 @@ ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string i
 	m_DoNotLoadCaptureThread = true;
 }
 
-ApriltagDetector::~ApriltagDetector()
+ApriltagDetector::~ApriltagDetector() = default;
+
+std::string ApriltagDetector::GetBackendName() const
 {
-	delete m_Family;
-	delete m_Detector;
+	return m_Backend->Name();
 }
 
 void ApriltagDetector::Process(std::vector<SourceResult> results)
 {
-	for (const SourceResult& result : results) 
+	for (const SourceResult& result : results)
 	{
-		if (result.frame.has_value()) 
+		if (result.frame.has_value())
 		{
 			const cv::Mat& sourceFrame = result.frame.value();
 			cv::Mat gray = cv::Mat(sourceFrame.rows, sourceFrame.cols, CV_8UC1);
 			cv::cvtColor(sourceFrame, gray, cv::COLOR_BGR2GRAY);
 
-			m_Logger->EnterLog("making an image_u8_t from the opencv frame");
-
-			image_u8_t img = {
-				gray.cols,
-				gray.rows,
-				gray.cols,
-				gray.data
-			};
-
-			m_Logger->EnterLog("detecting apriltags using the detector");
-			zarray_t* detections = apriltag_detector_detect(m_Detector, &img);
+			m_Logger->EnterLog("detecting apriltags using backend=" + m_Backend->Name());
+			zarray_t* detections = m_Backend->Detect(gray);
 
 			cv::Mat colouredFrame = sourceFrame.clone();
 
@@ -145,7 +160,7 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 					fontface, fontscale, cv::Scalar(0xff, 0x99, 0), 2);
 			}
 
-			apriltag_detections_destroy(detections);
+			m_Backend->ReleaseResult(detections);
 
 			SetLatestResult(SourceResult(nlohmann::json(jsonVector), colouredFrame));
 		}

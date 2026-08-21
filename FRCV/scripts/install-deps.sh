@@ -219,29 +219,68 @@ build_opencv() {
 # 24.04 install, contrary to what older Ubuntu releases shipped. Prefer the apt package; only
 # fall back to building from source if apriltag_pose.h turns out to be missing (e.g. an older
 # base image, or a future package that drops it again).
+# AprilTag: built from the SAME patched v3.4.5 source vkapriltag's own CMake fetches
+# (cmake/patches/apriltag-expose-decode-steps.patch, applied against AprilRobotics/apriltag
+# v3.4.5), installed as the system's only apriltag - not apt's package, and not a second,
+# separately-built copy. This matters because both this build and vkapriltag's own FetchContent
+# build produce a shared library with the SAME SONAME (libapriltag.so.3) regardless of the
+# 3.3.0-vs-3.4.5 version difference: confirmed by actually building both and checking. Whichever
+# libapriltag.so.3 the dynamic linker resolves at runtime is used by BOTH the CPU AprilTag
+# backend and vkapriltag's VkApriltagBackend - and only the patched build exports the two
+# symbols (quad_decode_index, reconcile_detections) VkApriltagBackend needs. So there must be
+# exactly one apriltag in the system, and it must be this patched one; apt's package and a
+# vanilla source build are both wrong for this project once FRCV_WITH_VULKAN_APRILTAG is in play.
+APRILTAG_TAG="${APRILTAG_TAG:-v3.4.5}"
+
 build_apriltag() {
-    log "AprilTag"
+    log "AprilTag ${APRILTAG_TAG} (patched for vkapriltag)"
 
-    if require_header /usr/include/apriltag/apriltag_pose.h 2>/dev/null \
-        || require_header /usr/local/include/apriltag/apriltag_pose.h 2>/dev/null; then
-        log "apriltag already installed"
+    if require_header /usr/local/include/apriltag/apriltag_pose.h 2>/dev/null; then
+        # a header check alone can't tell the patched build apart from a vanilla one; the
+        # patch only adds new *symbols*, not new headers. If this is stale from a previous
+        # run of the OLD (apt-based or vanilla-source) version of this script, the symbol
+        # check in the vkapriltag build/link step later is what will actually catch it.
+        log "apriltag already installed under /usr/local"
         return 0
     fi
 
-    apt_install libapriltag-dev
-    if require_header /usr/include/apriltag/apriltag_pose.h 2>/dev/null; then
-        return 0
+    # purge only the packages that are actually installed - `apt-get purge` aborts the WHOLE
+    # command over one unknown package name (confirmed: an earlier version of this listed
+    # libapriltag-utils3t64, which doesn't exist, and that silently left both real packages
+    # in place because of the trailing `|| true`)
+    local installed_apriltag_pkgs=()
+    for pkg in libapriltag-dev libapriltag3t64 libapriltag-utils3t64; do
+        dpkg -s "$pkg" >/dev/null 2>&1 && installed_apriltag_pkgs+=("$pkg")
+    done
+    if [[ "${#installed_apriltag_pkgs[@]}" -gt 0 ]]; then
+        warn "purging apt's apriltag package(s) [${installed_apriltag_pkgs[*]}] - it would collide (same SONAME, older/unpatched) with the patched build this project needs"
+        sudo apt-get purge -y "${installed_apriltag_pkgs[@]}"
     fi
+
     if [[ "$CHECK_ONLY" -eq 1 ]]; then
-        note_missing "apriltag (apriltag_pose.h not found via apt or under /usr/local/include)"
+        note_missing "AprilTag ${APRILTAG_TAG} (patched) not found under /usr/local/include"
         return 0
     fi
 
-    warn "libapriltag-dev did not provide apriltag_pose.h — building AprilRobotics/apriltag from source instead"
-    local src="$BUILD_ROOT/apriltag"
-    if [[ ! -d "$src" ]]; then
-        git clone --depth 1 https://github.com/AprilRobotics/apriltag.git "$src"
+    local src="$BUILD_ROOT/apriltag-patched"
+    local patch_file="$BUILD_ROOT/../third_party/vkapriltag/apriltags_vulkan/cmake/patches/apriltag-expose-decode-steps.patch"
+    # resolve relative to this script's location too, in case BUILD_ROOT isn't under the repo
+    if [[ ! -f "$patch_file" ]]; then
+        patch_file="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/third_party/vkapriltag/apriltags_vulkan/cmake/patches/apriltag-expose-decode-steps.patch"
     fi
+    if [[ ! -f "$patch_file" ]]; then
+        fail "can't find vkapriltag's apriltag patch file - is the third_party/vkapriltag submodule checked out? (git submodule update --init)"
+        return 1
+    fi
+
+    if [[ ! -d "$src" ]]; then
+        git clone --branch "$APRILTAG_TAG" --depth 1 https://github.com/AprilRobotics/apriltag.git "$src"
+    fi
+    (
+        cd "$src"
+        # idempotent, matching vkapriltag's own PATCH_COMMAND: skip re-applying if already applied
+        git apply --reverse --check "$patch_file" 2>/dev/null || git apply "$patch_file"
+    )
     mkdir -p "$src/build"
     (
         cd "$src/build"
@@ -337,6 +376,55 @@ EOF
     fi
 
     warn "if a panvk/lavapipe ICD later appears (e.g. from a mesa update), pin VK_ICD_FILENAMES=$icd_json in frcv.service so the wrong driver is never silently selected (see phase 9)"
+}
+
+# ---------------------------------------------------------------------------
+# 5b. vkapriltag (phase 5) — builds the third_party/vkapriltag submodule's static library.
+# ---------------------------------------------------------------------------
+# vkapriltag statically links its own patched AprilRobotics/apriltag v3.4.5 fetch, which
+# produces a shared library with the SAME SONAME (libapriltag.so.3) as any other apriltag
+# build - confirmed by actually building both. build_apriltag() above installs exactly that
+# patched build as the system's only /usr/local apriltag for this reason, so this function
+# builds vkapriltag itself, letting FetchContent grab its own private copy for the build only
+# (that private copy is never installed or linked into FRCVLib - only libvkapriltag.a is).
+build_vkapriltag() {
+    log "vkapriltag (Vulkan AprilTag detection submodule)"
+
+    local repo_root
+    repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    local src="$repo_root/third_party/vkapriltag/apriltags_vulkan"
+    local build_dir="$src/build"
+    local lib_path="$build_dir/library/libvkapriltag.a"
+
+    if [[ ! -d "$src" ]]; then
+        fail "third_party/vkapriltag submodule not found - run: git submodule update --init"
+        return 1
+    fi
+
+    if [[ -f "$lib_path" ]]; then
+        log "libvkapriltag.a already built"
+        return 0
+    fi
+    if [[ "$CHECK_ONLY" -eq 1 ]]; then
+        note_missing "libvkapriltag.a not built yet ($lib_path)"
+        return 0
+    fi
+
+    mkdir -p "$build_dir"
+    (
+        cd "$build_dir"
+        # -fPIC: vkapriltag's own CMakeLists doesn't set POSITION_INDEPENDENT_CODE, but
+        # libvkapriltag.a must go into FRCVLib's shared library - confirmed the hard way
+        # (`recompile with -fPIC` at final link time) before adding this.
+        cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+            -DVKAPRILTAG_BUILD_APPS=OFF -DVKAPRILTAG_BUILD_TOOLS=OFF ..
+        cmake --build . --target vkapriltag --parallel "$JOBS"
+    )
+
+    if [[ ! -f "$lib_path" ]]; then
+        fail "vkapriltag build finished but $lib_path is missing - something changed in its CMakeLists"
+        return 1
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -514,6 +602,7 @@ build_opencv
 build_apriltag
 install_ffmpeg
 install_vulkan
+build_vkapriltag || warn "vkapriltag build failed - see the log above; the CPU AprilTag backend remains the fallback"
 # these three are optional/best-effort integrations (WebRTC, NT4, RKNN) - a failure partway
 # through one of them (a bad ref, a flaky download) should not, under `set -e`, take down a
 # run that otherwise succeeded; ONNX Runtime stays unconditional since --with-* doesn't gate it

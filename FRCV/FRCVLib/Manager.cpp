@@ -370,6 +370,37 @@ int Manager::CreateApriltagDetector(int id)
     return CreateApriltagDetector(id, CameraCalibrationResult(), DEFAULT_APRILTAG_SIZE_METERS);
 }
 
+int Manager::CreateApriltagDetector(CameraCalibrationResult calibrationResult, double tagSize,
+    ApriltagBackendKind backendKind, int frameWidth, int frameHeight)
+{
+    int id = GenerateUUID();
+    return CreateApriltagDetector(id, calibrationResult, tagSize, backendKind, frameWidth, frameHeight);
+}
+
+int Manager::CreateApriltagDetector(int id, CameraCalibrationResult calibrationResult, double tagSize,
+    ApriltagBackendKind backendKind, int frameWidth, int frameHeight)
+{
+    m_Logger->EnterLog("CreateApriltagDetector called with id=" + std::to_string(id) + ", backend=" + std::to_string(backendKind));
+
+    auto p_Detector = std::make_shared<ApriltagDetector>(m_Logger, std::to_string(id), calibrationResult, tagSize,
+        backendKind, frameWidth, frameHeight);
+
+    m_Sinks.emplace(id, p_Detector);
+    m_Sources.emplace(id, p_Detector);
+    return id;
+}
+
+string Manager::GetApriltagDetectorBackendName(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return "";
+
+    ApriltagDetector* p_Detector = dynamic_cast<ApriltagDetector*>(sink->second.get());
+    if (p_Detector == nullptr) return "";
+
+    return p_Detector->GetBackendName();
+}
+
 int Manager::CreateCameraCalibrator()
 {
 	int id = GenerateUUID();

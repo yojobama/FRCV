@@ -29,7 +29,23 @@ namespace Server.Controllers.sinks
             return Task.FromResult(sinkId);
         }
 
-        // --?-- GET: Acceletation type (cpu, vulkan);
+        // POST: Create an Apriltag sink with an explicit backend (cpu/vulkan) and no calibration
+        // data yet; frameWidth/frameHeight only matter for the Vulkan backend
+        [Route(HttpVerbs.Post, "/apriltagSink/createWithBackend")]
+        public Task<int> CreateWithBackend([QueryField] string name, [QueryField] double tagSize,
+            [QueryField] ApriltagBackendKind backend, [QueryField] int frameWidth = 0, [QueryField] int frameHeight = 0)
+        {
+            int sinkId = SinkManager.Instance.AddApriltagSinkWithBackend(name, tagSize, backend, frameWidth, frameHeight);
+            return Task.FromResult(sinkId);
+        }
+
+        // GET: which backend a sink actually ended up running (may differ from what was
+        // requested - Vulkan falls back to CPU if no usable device was found)
+        [Route(HttpVerbs.Get, "/apriltagSink/backend")]
+        public Task<string> GetBackend([QueryField] int sinkId)
+        {
+            return Task.FromResult(SinkManager.Instance.GetApriltagBackendName(sinkId));
+        }
 
         // --?-- PATCH: Apriltag Family Type;
     }

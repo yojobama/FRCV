@@ -1,0 +1,3 @@
+[submodule "FRCV/third_party/vkapriltag"]
+	path = FRCV/third_party/vkapriltag
+	url = https://github.com/yojobama/vkapriltag.git

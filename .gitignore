@@ -30,8 +30,8 @@
 /FRCV/Server/*Log.txt
 /FRCV/**/DBLog.txt
 
-# Third-party
-/FRCV/third_party/vkapriltag/
+# Third-party: vkapriltag is a git submodule (tracked as a reference, not ignored);
+# only its build output is ignored, matching the rest of this file's [Bb]in/[Oo]bj/build/ rules.
 
 # Local machine-specific MSBuild overrides (RemoteRootDir, SSH targets, etc.)
 /FRCV/**/Local.props

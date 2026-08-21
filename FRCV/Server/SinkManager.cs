@@ -182,6 +182,24 @@ namespace Server
             return id;
         }
 
+        // creates an ApriltagSink with an explicit backend selection (CPU or Vulkan) and no
+        // calibration data - use AddApriltagSinkFromCalibrator, or bind+calibrate afterwards,
+        // to get real-world pose. frameWidth/frameHeight only matter for the Vulkan backend.
+        public int AddApriltagSinkWithBackend(string name, double tagSize, ApriltagBackendKind backend, int frameWidth, int frameHeight)
+        {
+            int id = ManagerWrapper.Instance.CreateApriltagDetector(new CameraCalibrationResult(), tagSize, backend, frameWidth, frameHeight);
+            sinks.Add(new Sink(id, name, SinkType.ApriltagSink));
+            DB.Instance.Save();
+            return id;
+        }
+
+        // reports which backend an ApriltagSink actually ended up running - may differ from
+        // what was requested if Vulkan was asked for and no usable device was found
+        public string GetApriltagBackendName(int sinkId)
+        {
+            return ManagerWrapper.Instance.GetApriltagDetectorBackendName(sinkId);
+        }
+
         // creates an ObjectDetectionSink running a previously uploaded model. Provider is fixed
         // to ONNX for now - RKNN is accepted by the native API but throws (not implemented yet).
         public int AddObjectDetectionSink(string name, int modelId)

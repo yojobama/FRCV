@@ -12,6 +12,7 @@
 #include "Logger.h"
 #include "ISource.h"
 #include "IDetectionBackend.h"
+#include "IApriltagBackend.h"
 
 using namespace std;
 
@@ -69,6 +70,17 @@ public:
 	// (or GetCameraCalibrationResult) to supply real calibration data once available
 	int CreateApriltagDetector();
 	int CreateApriltagDetector(int id);
+
+	// same as the overloads above, but with an explicit backend selection. frameWidth/
+	// frameHeight are only consulted for APRILTAG_BACKEND_VULKAN (the GPU pipeline's buffers
+	// are sized once at construction, unlike the CPU backend which is frame-size-agnostic); if
+	// Vulkan is requested but unavailable, the node falls back to CPU rather than failing to
+	// construct (check GetApriltagDetectorBackendName afterwards to see which one actually ran)
+	int CreateApriltagDetector(CameraCalibrationResult calibrationResult, double tagSize,
+		ApriltagBackendKind backendKind, int frameWidth, int frameHeight);
+	int CreateApriltagDetector(int id, CameraCalibrationResult calibrationResult, double tagSize,
+		ApriltagBackendKind backendKind, int frameWidth, int frameHeight);
+	string GetApriltagDetectorBackendName(int sinkId);
 	// legacy no-model overloads: there is no way to run inference without a model, so these
 	// exist only to keep already-generated SWIG call sites compiling and throw a clear error
 	// explaining that a model must be supplied via the overload below
