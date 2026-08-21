@@ -1,0 +1,34 @@
+[Unit]
+Description=FRCV vision coprocessor server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=frcv
+Group=frcv
+# supplementary groups for /dev/dri (Vulkan/rkmpp) and /dev/mpp_service (rkmpp encode) access -
+# the deploy script adds the frcv user to both; see IMPLEMENTATION_PLAN.md phase 9
+SupplementaryGroups=video render
+
+WorkingDirectory=/opt/frcv
+ExecStart=/opt/frcv/Server
+Restart=always
+RestartSec=2
+
+# libFRCVLib.so lives next to the published Server binary (Server.csproj copies it there via
+# its Content/CopyToOutputDirectory item), so the default rpath already resolves it - this is
+# only needed if that ever changes to a separate directory.
+Environment=LD_LIBRARY_PATH=/opt/frcv
+
+# pins the Vulkan driver so a future mesa/panvk package appearing on the system can never be
+# silently selected over the libmali ICD install-deps.sh registers (see phase 5 item 0 and
+# phase 9 in IMPLEMENTATION_PLAN.md)
+Environment=VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/libmali-gbm.json
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=frcv
+
+[Install]
+WantedBy=multi-user.target

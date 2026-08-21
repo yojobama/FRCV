@@ -21,6 +21,10 @@ void* ISink::InvokeProcessingThread(void* p_Reference)
 
 void ISink::Toggle(bool toggle)
 {
+    // idempotent, for the same reason as ISource::Toggle: calling Toggle(true) while already
+    // running previously spawned a second processing thread without stopping the first
+    if (toggle == m_ToggleState) return;
+
     if (toggle) {
         m_ShouldTerminate = false;
         pthread_create(&m_Thread, NULL, InvokeProcessingThread, this);

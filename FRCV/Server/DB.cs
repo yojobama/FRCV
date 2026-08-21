@@ -88,6 +88,24 @@ namespace Server
                         }
                     }
 
+                    // the robot power-cycles - a vision coprocessor that comes back up not
+                    // actually running anything until an operator opens the WebUI defeats the
+                    // point, for the sink types that are meant to run unattended. Deliberately
+                    // NOT blanket: CameraCalibrationSink is an interactive, operator-driven
+                    // wizard - auto-starting it just burns CPU hunting for a checkerboard with
+                    // no one there to capture snapshots - and WebRTCSink's processing thread
+                    // runs the H.264 encoder on every frame regardless of whether a peer is
+                    // connected, so starting it before any client has even asked for a stream
+                    // is pure waste. StartSinkById (re-)starts a sink's bound source too, which
+                    // is safe now that ISource/ISink::Toggle are idempotent.
+                    foreach (var sink in sinks)
+                    {
+                        if (sink.Type != SinkType.CameraCalibrationSink && sink.Type != SinkType.WebRTCSink)
+                        {
+                            SinkManager.Instance.EnableSinkById(sink.Id);
+                        }
+                    }
+
                     logger.EnterLog("DB loaded successfully from " + jsonPath);
                 }
                 catch (Exception ex)

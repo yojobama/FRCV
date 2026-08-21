@@ -19,11 +19,18 @@ std::string ISource::GetID()
 
 void ISource::Toggle(bool threadWantedAlive)
 {
-	if (threadWantedAlive && !m_DoNotLoadCaptureThread) {
+	if (m_DoNotLoadCaptureThread) return;
+	// idempotent: calling Toggle(true) while already running previously spawned a SECOND
+	// capture thread without stopping the first - the new thread handle overwrote m_Thread, so
+	// the original was never join-able again (leaked, not hung: m_ShouldTerminate is shared,
+	// so it would still observe a later stop request and exit - just never get reaped).
+	if (threadWantedAlive == m_ToggleState) return;
+
+	if (threadWantedAlive) {
 		m_ShouldTerminate = false;
 		pthread_create(&m_Thread, NULL, SourceThreadStart, this);
 		m_ToggleState = true;
-	} else if (!m_DoNotLoadCaptureThread) {
+	} else {
 		if (m_Thread) {
 			m_ShouldTerminate = true;
 			pthread_join(m_Thread, NULL); // Wait for the thread to terminate

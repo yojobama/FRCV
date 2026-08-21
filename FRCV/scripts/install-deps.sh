@@ -129,6 +129,13 @@ install_base() {
     require_cmd gdbserver gdbserver
     require_cmd swig swig
     require_cmd rsync
+
+    # mDNS hostname (frcv.local) so teams don't have to chase the Pi's DHCP-assigned IP -
+    # ubuntu-rockchip ships avahi-daemon already, but enable it explicitly rather than assume so
+    apt_install avahi-daemon
+    if [[ "$CHECK_ONLY" -eq 0 ]]; then
+        sudo systemctl enable --now avahi-daemon || warn "could not enable avahi-daemon"
+    fi
 }
 
 # ---------------------------------------------------------------------------

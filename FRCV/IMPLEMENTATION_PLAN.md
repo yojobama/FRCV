@@ -448,7 +448,20 @@ wizard WebUI screen (item 6) has not been started - that's phase 8/WebUI work.
 
 ---
 
-## Phase 8 — Server & WebUI refactor (feature 6)
+## Phase 8 — Server & WebUI refactor (feature 6) — server item 5 done (2026-08-22); rest pending
+
+`DB.Load()` now restores sink->source bindings (was silently dropped before, despite being
+persisted) and auto-starts every AprilTag/object-detection/NetworkTables sink on load - not
+CameraCalibrationSink (interactive, operator-driven) or WebRTCSink (its processing thread runs
+the encoder on every frame regardless of whether a peer is connected, so starting it before any
+client has asked for a stream is pure waste). Fixed a related real bug found while wiring this
+up: `ISource`/`ISink::Toggle(true)` had no guard against being called while already running - it
+would spawn a second capture/processing thread without stopping the first. Now idempotent.
+
+The node-oriented API reshape (items 1-4, 6-7) and the entire WebUI section are **not started**.
+The WebUI in particular has had zero updates despite phases 3-7 adding NT4, WebRTC, ONNX object
+detection with model upload, AprilTag backend selection, and ChArUco calibration - none of that
+is reachable from the UI yet, only via direct API calls. This is the largest remaining gap.
 
 **Server — the glue layer**
 
@@ -487,7 +500,13 @@ wizard WebUI screen (item 6) has not been started - that's phase 8/WebUI work.
 
 ---
 
-## Phase 9 — Runtime packaging on the Orange Pi
+## Phase 9 — Runtime packaging on the Orange Pi — ✅ done (2026-08-22)
+
+`scripts/frcv.service` and `scripts/deploy.ps1` written (publish self-contained linux-arm64,
+build the WebUI, copy the VS-built `libFRCVLib.so`, install/restart the systemd unit).
+`avahi-daemon` added to `install-deps.sh`. Top-level `README.md` written. **Not yet run for
+real** - `deploy.ps1` has not been executed against the actual Pi in this session, only
+reviewed; the systemd unit has not been installed/started there either.
 
 1. `systemd` unit `frcv.service`: restart-always, journald logging, starts on boot, launches the
    self-contained published server with `LD_LIBRARY_PATH` covering `libFRCVLib.so` and its
