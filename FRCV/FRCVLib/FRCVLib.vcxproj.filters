@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Sink">
@@ -37,9 +37,7 @@
     <ClCompile Include="SourceResult.cpp">
       <Filter>Source</Filter>
     </ClCompile>
-    <ClCompile Include="VideoFileRecorder.cpp" />
     <ClCompile Include="CameraCalibrator.cpp" />
-    <ClCompile Include="UDPServer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ISink.h">
@@ -71,11 +69,10 @@
     <ClInclude Include="SourceResult.h">
       <Filter>Source</Filter>
     </ClInclude>
-    <ClInclude Include="VideoFileRecorder.h" />
     <ClInclude Include="CameraCalibrator.h" />
-    <ClInclude Include="UDPServer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />
+    <None Include="Local.props.example" />
   </ItemGroup>
 </Project>

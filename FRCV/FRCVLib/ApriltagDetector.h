@@ -5,7 +5,6 @@
 #include <apriltag/apriltag_pose.h>
 #include <apriltag/tag36h11.h>
 
-class FramePool;
 class Logger;
 class CameraCalibrationResult;
 

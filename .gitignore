@@ -1,21 +1,36 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
+# Visual Studio
+/FRCV/.vs/
+/.vs/
 
-/FRCV/.vs/FRCV
-/FRCV/FRCVLib/bin/x64/Debug
-/FRCV/FRCVLib/obj/x64/Debug
-/FRCV/UnitTests/bin/x64/Debug
-/FRCV/UnitTests/obj/x64/Debug
-/FRCV/.vs/CopilotSnapshots/0D56F0DC4576EB438CF7C0577A0FC5C5/FD4ADDCDF46DA6468BE08EB8B0B209C4
-/FRCV/.vs/CopilotSnapshots/0D56F0DC4576EB438CF7C0577A0FC5C5
-/FRCV/.vs/CopilotSnapshots/81208BDCBE115343A1F9DFDE77C20A88
-/FRCV/.vs/ProjectEvaluation
-/FRCV/.vs/CopilotSnapshots/4CE21A165CEB8B45AFD9BB64E133017A
-/FRCV/FRCVLib/obj/ARM64/Debug
-/FRCV/UnitTests/obj/ARM64/Debug
-/FRCV/.vs/CopilotSnapshots
-/FRCV/Server/obj/
-/FRCV/Server/bin/
-/.vs/CopilotSnapshots
-/FRCV/.vs
+# Build outputs
+/FRCV/**/[Bb]in/
+/FRCV/**/[Oo]bj/
+/FRCV/**/build/
+*.user
+*.suo
+*.pdb
+*.ilk
+*.exp
+*.so
+*.so.*
+
+# SWIG-generated (regenerated at build time)
+/FRCV/FRCVLib/swig_wrap.cxx
+/FRCV/Server/FRCVCore/*.cs
+
+# Node / web
+/FRCV/reactproject1/node_modules/
+/FRCV/reactproject1/dist/
+/FRCV/reactproject1/C:npm-cache
+
+# Runtime data
+/FRCV/Server/data.json
+/FRCV/Server/*.log
+/FRCV/Server/*Log.txt
+/FRCV/**/DBLog.txt
+
+# Third-party
+/FRCV/third_party/vkapriltag/
+
+# Local machine-specific MSBuild overrides (RemoteRootDir, SSH targets, etc.)
+/FRCV/**/Local.props

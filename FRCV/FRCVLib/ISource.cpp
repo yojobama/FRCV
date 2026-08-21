@@ -12,51 +12,6 @@ ISource::~ISource()
 {
 }
 
-//std::shared_ptr<Frame> ISource::GetLatestFrame(bool forceNewFrame)
-//{
-//	std::lock_guard<std::mutex> guard(m_Lock); // Use RAII for mutex locking
-//
-//	if (forceNewFrame) {
-//		m_Logger->EnterLog(LogLevel::Info, "Forcing new frame capture");
-//		CaptureFrame();
-//	}
-//	while (!m_Frames.empty()) {
-//		std::shared_ptr<Frame> p_FrontFrame = m_Frames.front();
-//		if (p_FrontFrame.use_count() > 1) {
-//			// Frame is still in use, return the latest frame
-//			return m_Frames.back();
-//		} else {
-//			// Remove unused frame from the queue
-//			m_Frames.pop();
-//		}
-//	}
-//
-//	// If no valid frames are available, log an error and return nullptr
-//	m_Logger->EnterLog(LogLevel::Error, "Frame queue is empty");
-//	return nullptr;
-//}
-//
-//std::shared_ptr<Frame> ISource::GetLatestFrame()
-//{
-//	std::lock_guard<std::mutex> guard(m_Lock); // Use RAII for mutex locking
-//
-//	while (!m_Frames.empty()) {
-//		std::shared_ptr<Frame> p_FrontFrame = m_Frames.front();
-//		if (p_FrontFrame.use_count() > 1) {
-//			// Frame is still in use, return the latest frame
-//			return m_Frames.back();
-//		}
-//		else {
-//			// Remove unused frame from the queue
-//			m_Frames.pop();
-//		}
-//	}
-//
-//	// If no valid frames are available, log an error and return nullptr
-//	m_Logger->EnterLog(LogLevel::Error, "Frame queue is empty");
-//	return nullptr;
-//}
-
 std::string ISource::GetID()
 {
 	return m_ID;
@@ -87,10 +42,29 @@ bool ISource::GetToggleStatus()
 	return m_ToggleState;
 }
 
+void ISource::AddResultListener(std::function<void()> listener)
+{
+	std::lock_guard<std::mutex> guard(m_ListenersMutex);
+	m_Listeners.push_back(std::move(listener));
+}
+
 void ISource::SetLatestResult(SourceResult result)
 {
-	std::lock_guard<std::mutex> guard(m_ResultLock); // Use RAII for mutex locking
-	m_LatestResult = result;
+	{
+		std::lock_guard<std::mutex> guard(m_ResultLock); // Use RAII for mutex locking
+		m_LatestResult = result;
+	}
+
+	// notify bound sinks outside the result lock so a listener can safely call back
+	// into this source (e.g. GetLatestResult) without deadlocking
+	std::vector<std::function<void()>> listenersCopy;
+	{
+		std::lock_guard<std::mutex> guard(m_ListenersMutex);
+		listenersCopy = m_Listeners;
+	}
+	for (auto& listener : listenersCopy) {
+		listener();
+	}
 }
 
 SourceResult ISource::GetLatestResult(bool requireFrame, bool requireJson)
@@ -99,6 +73,12 @@ SourceResult ISource::GetLatestResult(bool requireFrame, bool requireJson)
 	if ((m_LatestResult.json.has_value() == requireJson) && (m_LatestResult.frame.has_value() == requireFrame))
 		return m_LatestResult;
 	return SourceResult();
+}
+
+SourceResult ISource::GetLatestResult()
+{
+	std::lock_guard<std::mutex> guard(m_ResultLock);
+	return m_LatestResult;
 }
 
 void* ISource::SourceThreadStart(void* p_Reference)

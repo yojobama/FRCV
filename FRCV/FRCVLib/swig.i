@@ -2,7 +2,6 @@
 %{
 #include "Manager.h"
 #include "CameraCalibrationResult.h"
-#include "Frame.h"
 %}
 
 %include "std_string.i"
@@ -18,9 +17,5 @@ namespace std {
     %template(VectorString) vector<string>;
     %template(VectorLog) vector<Log>;
     %template(VectorCameraHardwareInfo) vector<CameraHardwareInfo>;
-    %template(VectorFrame) vector<Frame>;
-    %template(VectorFrameSpec) vector<FrameSpec>;
     %template(UniquePtrLog) unique_ptr<Log>;
-    %template(UniquePtrFrame) unique_ptr<Frame>;
-    %template(VectorFrame) vector<shared_ptr<Frame>>;
 }

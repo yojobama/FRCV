@@ -151,6 +151,8 @@ namespace Server
         // NEW: delete a source and unbind it from any sinks referencing it
         public void DeleteSource(int sourceId)
         {
+            ManagerWrapper.Instance.DeleteSource(sourceId);
+
             // Remove source from list
             sources.RemoveAll(s => s.Id == sourceId);
 

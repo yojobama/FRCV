@@ -20,13 +20,6 @@ typedef struct {
 	string path;
 } CameraHardwareInfo;
 
-typedef struct {
-	int width;
-	int height;
-	int stride;
-	uint8_t* buf;
-} Image8U;
-
 enum ObjectDetectionProvider
 {
 	RKNN,
@@ -40,7 +33,6 @@ enum ObjectDetectionProvider
 //	CPU_DEV_X86_64
 //};
 
-class Frame;
 //class CameraCalibrationSink;
 class SystemMonitor;
 
@@ -97,6 +89,10 @@ public:
 
 	int CreateRecordingSink(int sourceId);
 
+	// stops and removes a node; also unbinds it from any sink that referenced it as a source
+	bool DeleteSink(int sinkId);
+	bool DeleteSource(int sourceId);
+
 	void StartAllSources();
 	void StopAllSources();
 	bool StopSourceById(int sourceId);
@@ -108,10 +104,6 @@ public:
 	bool StartSinkById(int sinkId);
 	bool StopSinkById(int sinkId);
 	bool IsSinkActive(int sinkId);
-
-	string GetAllSinkStatus();
-
-	string GetSinkStatusById(int sinkId);
 
 	string GetSinkResult(int sinkId);
 	string GetAllSinkResults();
@@ -129,10 +121,6 @@ public:
 	int GetCPUUsage();
 	int GetCpuTemperature();
 	int GetDiskUsage();
-
-	bool EnableSinkPreview(int sinkId);
-	bool DisableSinkPreview(int sinkId);
-	Image8U GetPreviewImage(int sinkId);
 private:
 	//bool SetSinkResult(int sinkId, string result);
 
@@ -144,8 +132,6 @@ private:
 	//map<int, std::shared_ptr<CameraCalibrationSink>> m_CameraCalibrationSinks; // camera calibration sinks
 
 	std::shared_ptr<Logger> m_Logger; // a logger for the entire application
-
-	vector<std::shared_ptr<Frame>> m_CalibrationImages;
 
 	SystemMonitor* m_SystemMonitor; // system monitor for CPU, memory and disk usage
 };

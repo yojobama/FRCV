@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,6 +6,19 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Configurations>Debug;Release;LocalCheck</Configurations>
+
+    <!--
+      FRCVLib is built by Visual Studio's WSL2/Remote_GCC toolset (see FRCVLib.vcxproj), not by
+      MSBuild's normal C# build graph, so it is consumed as a prebuilt native library rather than
+      via <ProjectReference> — that also lets Server build/publish (e.g. `dotnet publish -r
+      linux-arm64`) without a C++ toolchain on the machine, as long as the .so already exists.
+      Override FRCVLibPlatform/FRCVLibConfiguration (e.g. -p:FRCVLibPlatform=ARM64) to pick up a
+      build produced by a different FRCVLib configuration than the one implied by $(Configuration).
+    -->
+    <FRCVLibPlatform Condition="'$(FRCVLibPlatform)'==''">x64</FRCVLibPlatform>
+    <FRCVLibConfiguration Condition="'$(FRCVLibConfiguration)'==''">$(Configuration)</FRCVLibConfiguration>
+    <FRCVLibConfiguration Condition="'$(FRCVLibConfiguration)'=='LocalCheck'">Debug</FRCVLibConfiguration>
+    <FRCVLibBuildDir>..\FRCVLib\bin\$(FRCVLibPlatform)\$(FRCVLibConfiguration)</FRCVLibBuildDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,13 +32,24 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FRCVLib\FRCVLib.vcxproj">
-      <Private>True</Private>
-    </ProjectReference>
+    <Content Include="$(FRCVLibBuildDir)\libFRCVLib.so" Condition="Exists('$(FRCVLibBuildDir)\libFRCVLib.so')">
+      <Link>libFRCVLib.so</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="swig -c++ -csharp -outdir .\FRCVCore ..\FRCVLib\swig.i" />
+  <!--
+    Regenerates the SWIG C# bindings from FRCVLib's public API before each build. Skipped when
+    swig isn't on PATH so a machine that only runs the published server (no dev toolchain) isn't
+    forced to have it installed; the checked-in FRCVCore sources are then whatever was last
+    generated on a dev machine.
+  -->
+  <Target Name="RunSwig" BeforeTargets="BeforeBuild">
+    <Exec Command="where swig" ContinueOnError="true" StandardOutputImportance="low" StandardErrorImportance="low">
+      <Output TaskParameter="ExitCode" PropertyName="SwigCheckExitCode" />
+    </Exec>
+    <Exec Command="swig -c++ -csharp -outdir .\FRCVCore ..\FRCVLib\swig.i" Condition="'$(SwigCheckExitCode)'=='0'" />
+    <Warning Text="swig not found on PATH; using whatever bindings already exist in FRCVCore\." Condition="'$(SwigCheckExitCode)'!='0'" />
   </Target>
 
 </Project>

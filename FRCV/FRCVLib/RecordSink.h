@@ -3,8 +3,6 @@
 #include <string>
 #include "ISink.h"
 
-class Frame;
-
 using namespace std;
 
 namespace cv {

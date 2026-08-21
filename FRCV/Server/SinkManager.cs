@@ -93,6 +93,7 @@ namespace Server
 
         public void DeleteSink(int sinkId)
         {
+            ManagerWrapper.Instance.DeleteSink(sinkId);
             sinks.RemoveAll(sink => sink.Id == sinkId);
             DB.Instance.Save(); // Save changes to the database
         }

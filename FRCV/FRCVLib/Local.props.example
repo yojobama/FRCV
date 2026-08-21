@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Copy this file to Local.props (gitignored) and fill in the values for your machine.
+  Visual Studio's Remote_GCC toolset authenticates over its own Connection Manager
+  (Tools > Options > Cross Platform > Connection Manager) — the first build against a
+  new RemoteTarget will prompt for a username/password and store the credential in
+  Windows Credential Manager, not in this file. Never put a password here.
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Platform)'=='ARM64'">
+    <!-- hostname or IP of the Orange Pi -->
+    <RemoteTarget>192.168.55.138</RemoteTarget>
+    <RemoteUserName>ubuntu</RemoteUserName>
+    <RemoteRootDir>/home/ubuntu/frcv-remote-build</RemoteRootDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)'=='x64'">
+    <!-- WSL distro name as shown by `wsl -l -v` -->
+    <WSLPath>Ubuntu</WSLPath>
+    <RemoteRootDir>/home/john/projects</RemoteRootDir>
+  </PropertyGroup>
+</Project>

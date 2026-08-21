@@ -182,6 +182,66 @@ bool Manager::UnbindSourceFromSink(int sinkId) {
     return result;
 }
 
+bool Manager::DeleteSink(int sinkId)
+{
+    m_Logger->EnterLog("DeleteSink called with sinkId=" + std::to_string(sinkId));
+    auto sinkIt = m_Sinks.find(sinkId);
+    if (sinkIt == m_Sinks.end()) {
+        m_Logger->EnterLog("Sink not found: " + std::to_string(sinkId));
+        return false;
+    }
+
+    std::shared_ptr<ISink> p_Sink = sinkIt->second;
+    p_Sink->Toggle(false);
+
+    // dual-role nodes (e.g. CameraCalibrator, ApriltagDetector) are registered under the same id
+    // in m_Sources too; stop that half and unbind every other sink from it before erasing either,
+    // so nothing is left holding a dangling reference
+    auto sourceIt = m_Sources.find(sinkId);
+    if (sourceIt != m_Sources.end() && sourceIt->second == std::dynamic_pointer_cast<ISource>(p_Sink)) {
+        sourceIt->second->Toggle(false);
+        string sourceStringId = sourceIt->second->GetID();
+        for (auto& otherSinkPair : m_Sinks) {
+            if (otherSinkPair.first != sinkId) {
+                otherSinkPair.second->UnbindSource(sourceStringId);
+            }
+        }
+        m_Sources.erase(sourceIt);
+    }
+
+    m_Sinks.erase(sinkIt);
+    m_Logger->EnterLog("DeleteSink removed sinkId=" + std::to_string(sinkId));
+    return true;
+}
+
+bool Manager::DeleteSource(int sourceId)
+{
+    m_Logger->EnterLog("DeleteSource called with sourceId=" + std::to_string(sourceId));
+    auto sourceIt = m_Sources.find(sourceId);
+    if (sourceIt == m_Sources.end()) {
+        m_Logger->EnterLog("Source not found: " + std::to_string(sourceId));
+        return false;
+    }
+
+    std::shared_ptr<ISource> p_Source = sourceIt->second;
+    string sourceStringId = p_Source->GetID();
+    for (auto& sinkPair : m_Sinks) {
+        sinkPair.second->UnbindSource(sourceStringId);
+    }
+    p_Source->Toggle(false);
+
+    // dual-role nodes are registered under the same id in m_Sinks too; stop that half as well
+    auto sinkIt = m_Sinks.find(sourceId);
+    if (sinkIt != m_Sinks.end() && sinkIt->second == std::dynamic_pointer_cast<ISink>(p_Source)) {
+        sinkIt->second->Toggle(false);
+        m_Sinks.erase(sinkIt);
+    }
+
+    m_Sources.erase(sourceIt);
+    m_Logger->EnterLog("DeleteSource removed sourceId=" + std::to_string(sourceId));
+    return true;
+}
+
 int Manager::CreateCameraSource(CameraHardwareInfo info)
 {
     m_Logger->EnterLog("CreateCameraSource called with name=" + info.name + ", path=" + info.path);
@@ -508,80 +568,49 @@ bool Manager::StartSinkById(int sinkId) {
     return true;
 }
 
-string Manager::GetAllSinkStatus()
-{
-    m_Logger->EnterLog("GetAllSinkStatus called");
-    string returnString = "{";
-
-    auto iterator = m_Sinks.begin();
-
-    while (iterator != m_Sinks.end()) {
-        returnString += "\"" + std::to_string(iterator->first) + "\": \"";
-        returnString += iterator->second->GetStatus();
-        returnString += "\"";
-
-        iterator++;
-        if (iterator != m_Sinks.end()) {
-            returnString += ", ";
-        }
-    }
-
-    returnString += "}";
-
-    return returnString;
-}
-
-string Manager::GetSinkStatusById(int sinkId)
-{
-    m_Logger->EnterLog("GetSinkStatusById called with sinkId=" + std::to_string(sinkId));
-    auto sink = m_Sinks.find(sinkId);
-
-    if (sink == m_Sinks.end()) {
-        m_Logger->EnterLog("Sink not found: " + std::to_string(sinkId));
-        return "";
-    }
-
-    string status = sink->second->GetStatus();
-    m_Logger->EnterLog("GetSinkStatusById result: " + status);
-    return status;
-}
-
 string Manager::GetSinkResult(int sinkId)
 {
     m_Logger->EnterLog("GetSinkResult called with sinkId=" + std::to_string(sinkId));
     auto sink = m_Sinks.find(sinkId);
     if (sink == m_Sinks.end()) {
-        m_Logger->EnterLog("Result not found for sinkId: " + std::to_string(sinkId));
-        return "";
+        m_Logger->EnterLog("Sink not found: " + std::to_string(sinkId));
+        return "{}";
     }
-    // TODO: fix
-    //string result = m_Sinks.find(sinkId)->second->GetCurrentResults();
-    //m_Logger->EnterLog("GetSinkResult result: " + result);
-    //return result;
-    return nullptr; // NULL
+
+    // a sink's result is only meaningful when it is also a source (ApriltagDetector,
+    // CameraCalibrator, future ObjectDetectionSink); terminal sinks (RecordSink, and in future
+    // NetworkTablesSink/WebRTCSink) consume results but don't produce any of their own
+    ISource* p_AsSource = dynamic_cast<ISource*>(sink->second.get());
+    if (p_AsSource == nullptr) {
+        return "{}";
+    }
+
+    SourceResult result = p_AsSource->GetLatestResult();
+    if (!result.json.has_value()) {
+        return "{}";
+    }
+
+    return result.json.value().dump();
 }
 
 string Manager::GetAllSinkResults()
 {
     m_Logger->EnterLog("GetAllSinkResults called");
-    string returnString = "{";
+    nlohmann::json allResults = nlohmann::json::object();
 
-    auto iterator = m_Sinks.begin();
+    for (auto& sinkPair : m_Sinks) {
+        ISource* p_AsSource = dynamic_cast<ISource*>(sinkPair.second.get());
+        if (p_AsSource == nullptr) {
+            continue;
+        }
 
-    while (iterator != m_Sinks.end()) {
-        returnString += "\"" + std::to_string(iterator->first) + "\": ";
-        // TODO: fix
-        returnString += iterator->second->GetStatus();
-
-        iterator++;
-        if (iterator != m_Sinks.end()) {
-            returnString += ", ";
+        SourceResult result = p_AsSource->GetLatestResult();
+        if (result.json.has_value()) {
+            allResults[std::to_string(sinkPair.first)] = result.json.value();
         }
     }
 
-    returnString += "}";
-
-    return returnString;
+    return allResults.dump();
 }
 
 //bool Manager::SetSinkResult(int sinkId, string result)
@@ -685,29 +714,3 @@ int Manager::GetDiskUsage()
     return m_SystemMonitor->GetDiskUsage();
 }
 
-bool Manager::EnableSinkPreview(int sinkId)
-{
-    auto sink = m_Sinks.find(sinkId);
-    
-    if (sink == m_Sinks.end()) throw "There is not sink with that id";
-
-    return true;
-}
-
-bool Manager::DisableSinkPreview(int sinkId)
-{
-    auto sink = m_Sinks.find(sinkId);
-    
-    if (sink == m_Sinks.end()) throw "There is not sink with that id";
-
-    return true;
-}
-
-Image8U Manager::GetPreviewImage(int sinkId)
-{
-    auto sink = m_Sinks.find(sinkId);
-    
-    if (sink == m_Sinks.end()) throw "There is not sink with that id";
-
-    throw "Preview images are not exposed by the current ISink interface";
-}
