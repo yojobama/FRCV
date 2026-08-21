@@ -14,6 +14,7 @@
 
 namespace std {
     %template(VectorInt) vector<int>;
+    %template(VectorDouble) vector<double>;
     %template(VectorString) vector<string>;
     %template(VectorLog) vector<Log>;
     %template(VectorCameraHardwareInfo) vector<CameraHardwareInfo>;

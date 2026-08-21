@@ -128,7 +128,7 @@ a debugger — with a single dependency script that prepares either machine.
    - **Visual Studio remote toolchain requirements** (the part that is easy to forget):
      `openssh-server g++ gdb gdbserver make ninja-build zip tar rsync`, and enables `sshd`.
      The Pi image is a **server** image, so this is the only way in — verify SSH before anything else.
-   - Base: `git pkg-config curl unzip swig4.0`
+   - Base: `git pkg-config curl unzip swig`
    - CV: **build OpenCV 5.0 from source with the `opencv_contrib` modules** (ArUco, needed for
      phase 7's ChArUco support) into `/usr/local`, rather than the distro's 4.6 packages —
      confirmed decision. Cache the build (checked-out tag + build dir) so `--check` reruns don't

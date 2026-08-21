@@ -8,17 +8,22 @@ CameraCalibrator::CameraCalibrator(std::shared_ptr<Logger> logger, std::string i
 CameraCalibrationResult CameraCalibrator::GetCalibrationResult()
 {
 	cv::Mat cameraMatrix = cv::Mat(3, 3, CV_64F);
-	cv::Mat distCoeffs = cv::Mat(8, 1, CV_64F);
+	cv::Mat distCoeffsMat = cv::Mat(8, 1, CV_64F);
 	std::vector<cv::Mat> rvecs, tvecs;
 
-	double rms = cv::calibrateCamera(m_ObjPoints, m_ImgPoints, frameSize, cameraMatrix, distCoeffs, rvecs, tvecs);
+	double rms = cv::calibrateCamera(m_ObjPoints, m_ImgPoints, frameSize, cameraMatrix, distCoeffsMat, rvecs, tvecs);
 
 	double fx = cameraMatrix.at<double>(0, 0);
 	double fy = cameraMatrix.at<double>(1, 1);
 	double cx = cameraMatrix.at<double>(0, 2);
 	double cy = cameraMatrix.at<double>(1, 2);
 
-	return CameraCalibrationResult(fx, fy, cx, cy, rms);
+	// cv::calibrateCamera previously ran but the resulting distortion coefficients were
+	// discarded entirely here; every real lens has some distortion, so a caller trusting fx/fy/
+	// cx/cy alone (e.g. ApriltagDetector's pose estimation) was silently getting a wrong pose
+	std::vector<double> distCoeffs(distCoeffsMat.begin<double>(), distCoeffsMat.end<double>());
+
+	return CameraCalibrationResult(fx, fy, cx, cy, rms, distCoeffs, frameSize.width, frameSize.height);
 }
 
 bool CameraCalibrator::SaveBoardDetection()

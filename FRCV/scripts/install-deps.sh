@@ -92,7 +92,18 @@ apt_install() {
         done
         return 0
     fi
-    sudo apt-get install -y "$@"
+    # try the whole batch first (fast path); if apt rejects it (e.g. one bad/renamed package
+    # name), fall back to installing one at a time so a single typo doesn't sink everything else
+    if ! sudo apt-get install -y "$@"; then
+        warn "batch install failed, retrying package-by-package: $*"
+        local failed=()
+        for p in "$@"; do
+            sudo apt-get install -y "$p" || failed+=("$p")
+        done
+        if [[ "${#failed[@]}" -gt 0 ]]; then
+            for p in "${failed[@]}"; do note_missing "apt package: $p (install failed)"; done
+        fi
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -108,7 +119,7 @@ install_base() {
     apt_install \
         build-essential gcc g++ gdb gdbserver make ninja-build cmake \
         openssh-server rsync zip unzip tar git curl pkg-config \
-        swig4.0 nlohmann-json3-dev
+        swig nlohmann-json3-dev
 
     if [[ "$CHECK_ONLY" -eq 0 ]]; then
         sudo systemctl enable --now ssh || warn "could not enable sshd — is this a container without systemd?"
@@ -116,7 +127,7 @@ install_base() {
     require_cmd gcc
     require_cmd g++
     require_cmd gdbserver gdbserver
-    require_cmd swig swig4.0
+    require_cmd swig swig
     require_cmd rsync
 }
 
@@ -269,21 +280,58 @@ install_vulkan() {
     log "Vulkan development packages"
     apt_install libvulkan-dev vulkan-tools glslang-tools spirv-tools
 
-    if [[ "$ARCH" == "aarch64" ]]; then
-        log "Checking Vulkan ICD (expecting the image's bundled libmali, not panfrost/panvk)"
-        if [[ -d /usr/share/vulkan/icd.d ]]; then
-            ls /usr/share/vulkan/icd.d/ || true
-        fi
-        if command -v vulkaninfo >/dev/null 2>&1; then
-            if [[ "$CHECK_ONLY" -eq 0 ]]; then
-                vulkaninfo --summary 2>&1 | tee "$BUILD_ROOT/vulkaninfo-summary.log" || \
-                    warn "vulkaninfo failed — see phase 5 item 0 in IMPLEMENTATION_PLAN.md before attempting the Vulkan AprilTag backend"
-            fi
-        else
-            note_missing "vulkaninfo (from vulkan-tools)"
-        fi
-        warn "if a panvk/lavapipe ICD is also installed, pin VK_ICD_FILENAMES to the libmali ICD json (see IMPLEMENTATION_PLAN.md phase 5 / phase 9)"
+    if [[ "$ARCH" != "aarch64" ]]; then
+        return 0
     fi
+
+    log "Checking Vulkan ICD (expecting the image's bundled libmali, not panfrost/panvk)"
+
+    # ubuntu-rockchip installs several libmali*.so variants (x11, wayland-gbm, with/without
+    # vulkan) but — as of this image — registers no /usr/share/vulkan/icd.d/*.json for any of
+    # them, so nothing picks a driver until we write one. On a headless SERVER image the only
+    # variant that can plausibly init without a display server is the "wayland-gbm" one (GBM
+    # talks to the kernel DRM/GBM API directly, no compositor needed) — and of those, only the
+    # one with "-vulkan" in its name actually implements the Vulkan ICD entry points; the
+    # plain "-wayland-gbm" ones are OpenGL/EGL only. If the image's package version numbering
+    # ever changes this filename, this glob still finds it by content, not a hardcoded name.
+    local mali_lib
+    mali_lib="$(find /usr/lib/aarch64-linux-gnu -maxdepth 1 -iname 'libmali-*wayland-gbm*vulkan*.so' 2>/dev/null | head -1)"
+
+    local icd_dir=/usr/share/vulkan/icd.d
+    local icd_json="$icd_dir/libmali-gbm.json"
+
+    if [[ -d "$icd_dir" ]] && ls "$icd_dir"/*.json >/dev/null 2>&1; then
+        log "Vulkan ICD(s) already registered:"
+        ls "$icd_dir"/*.json
+    elif [[ -n "$mali_lib" ]]; then
+        if [[ "$CHECK_ONLY" -eq 1 ]]; then
+            note_missing "Vulkan ICD not registered (would write $icd_json -> $mali_lib)"
+        else
+            log "No Vulkan ICD registered yet; writing one for $mali_lib"
+            sudo mkdir -p "$icd_dir"
+            sudo tee "$icd_json" >/dev/null <<EOF
+{
+    "file_format_version": "1.0.0",
+    "ICD": {
+        "library_path": "$mali_lib",
+        "api_version": "1.2.0"
+    }
+}
+EOF
+        fi
+    else
+        note_missing "libmali wayland-gbm+vulkan .so not found under /usr/lib/aarch64-linux-gnu — is this actually the ubuntu-rockchip image with libmali installed?"
+    fi
+
+    if command -v vulkaninfo >/dev/null 2>&1 && [[ "$CHECK_ONLY" -eq 0 ]]; then
+        log "Running vulkaninfo --summary (expect a Mali device with a VK_QUEUE_COMPUTE_BIT queue family)"
+        VK_ICD_FILENAMES="$icd_json" vulkaninfo --summary 2>&1 | tee "$BUILD_ROOT/vulkaninfo-summary.log" || \
+            warn "vulkaninfo failed even headless with the gbm+vulkan ICD — see phase 5 item 0 in IMPLEMENTATION_PLAN.md; the CPU AprilTag backend remains the fallback"
+    elif ! command -v vulkaninfo >/dev/null 2>&1; then
+        note_missing "vulkaninfo (from vulkan-tools)"
+    fi
+
+    warn "if a panvk/lavapipe ICD later appears (e.g. from a mesa update), pin VK_ICD_FILENAMES=$icd_json in frcv.service so the wrong driver is never silently selected (see phase 9)"
 }
 
 # ---------------------------------------------------------------------------

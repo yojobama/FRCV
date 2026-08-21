@@ -4,6 +4,7 @@
 #include <apriltag/apriltag.h>
 #include <apriltag/apriltag_pose.h>
 #include <apriltag/tag36h11.h>
+#include <opencv2/opencv.hpp>
 
 class Logger;
 class CameraCalibrationResult;
@@ -21,5 +22,12 @@ private:
 
 	std::shared_ptr<Logger> m_Logger;
 	apriltag_detection_info_t m_DetectionInfo;
+
+	// present only when the supplied CameraCalibrationResult had real distortion coefficients;
+	// when absent, pose estimation runs on the raw detected corners as before (best-effort,
+	// biased by whatever distortion the lens actually has)
+	bool m_HasDistortion = false;
+	cv::Mat m_CameraMatrix;
+	cv::Mat m_DistCoeffs;
 };
 
