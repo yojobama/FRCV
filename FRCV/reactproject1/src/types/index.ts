@@ -26,6 +26,39 @@ export interface CameraHardwareInfo {
   path: string;
 }
 
+// An uploaded ONNX object detection model (YOLOv8/YOLOv11), as returned by /model/getAll
+export interface Model {
+  id: number;
+  name: string;
+  variant: number; // 0 = YOLOv8, 1 = YOLOv11
+  inputSize: number;
+  confThreshold: number;
+  nmsThreshold: number;
+}
+
+// Extra fields AddSinkModal collects for sink types that need more than just a name -
+// handleAddSink dispatches on `type` to decide which of these actually apply.
+export interface AddSinkOptions {
+  modelId?: number;
+  newModel?: {
+    name: string;
+    variant: number;
+    inputSize: number;
+    confThreshold: number;
+    nmsThreshold: number;
+    modelFile: File;
+    labelsFile?: File;
+  };
+  teamNumber?: number;
+  serverAddress?: string;
+  port?: number;
+  rootTable?: string;
+  clientIdentity?: string;
+  bitrateKbps?: number;
+  fps?: number;
+  encoderName?: string;
+}
+
 export interface SystemStats {
   sources: number;
   sinks: number;
@@ -61,10 +94,6 @@ export interface ModalProps {
 
 export interface AddSourceModalProps extends ModalProps {
   onAdd: (name: string, type: string, file?: File, fps?: number, hardwareInfo?: CameraHardwareInfo) => void;
-}
-
-export interface AddSinkModalProps extends ModalProps {
-  onAdd: (name: string, type: string) => void;
 }
 
 export interface SettingsModalProps extends ModalProps {

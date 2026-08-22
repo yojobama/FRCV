@@ -36,9 +36,6 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
   const startWebRTCConnection = async () => {
     try {
       setConnectionState('connecting');
-      
-      // Enable preview first
-      await api.enablePreview(sinkId);
 
       const config = {
         iceServers: [
@@ -64,47 +61,45 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
         }
       };
 
+      // WebRTCSink uses non-trickle ICE on FRCV's side (see WebRTCSinkController) - it gathers
+      // its own candidates internally before ever returning an offer. The browser's candidates
+      // still trickle one at a time here, starting as soon as setLocalDescription() is called
+      // below - which is BEFORE the answer has been POSTed to the server. Sending a candidate
+      // ahead of the answer isn't just late, it crashes the whole server process: libdatachannel
+      // throws if a remote candidate arrives before the remote description is set, and that
+      // exception was crossing the P/Invoke boundary uncaught (confirmed the hard way - fixed
+      // server-side too in WebRTCSink::AddIceCandidate, but there's no reason to rely on that as
+      // the only guard). Buffer every candidate here and only flush them once the answer POST
+      // has actually completed.
+      let answerSent = false;
+      const pendingCandidates: RTCIceCandidate[] = [];
       pc.onicecandidate = async (event) => {
-        if (event.candidate) {
-          try {
-            await fetch(`${window.location.origin}/api/sink/webrtc/ice`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                sinkId: sinkId,
-                connectionId: `conn_${sinkId}`,
-                candidate: {
-                  candidate: event.candidate.candidate,
-                  sdpMid: event.candidate.sdpMid,
-                  sdpMLineIndex: event.candidate.sdpMLineIndex
-                }
-              })
-            });
-          } catch (err) {
-            console.warn('Failed to send ICE candidate:', err);
-          }
+        if (!event.candidate) return;
+        if (!answerSent) {
+          pendingCandidates.push(event.candidate);
+          return;
+        }
+        try {
+          await api.sendWebRTCIceCandidate(sinkId, event.candidate.candidate, event.candidate.sdpMid || '');
+        } catch (err) {
+          console.warn('Failed to send ICE candidate:', err);
         }
       };
 
-      // Start stream
-      const response = await api.startWebRTCStream(sinkId);
-      if (response.success && response.offer) {
-        await pc.setRemoteDescription(response.offer);
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        
-        // Send answer back to server
-        await fetch(`${window.location.origin}/api/sink/webrtc/answer`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            sinkId: sinkId,
-            connectionId: response.connectionId,
-            answer: { type: answer.type, sdp: answer.sdp }
-          })
-        });
-      } else {
-        throw new Error(response.error || 'Failed to start stream');
+      // getWebRTCOffer blocks briefly server-side for its own ICE gathering, then returns a
+      // plain SDP string (not a JSON envelope) - see WebRTCSinkController.CreateOffer.
+      const offerSdp = await api.getWebRTCOffer(sinkId);
+      await pc.setRemoteDescription({ type: 'offer', sdp: offerSdp });
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await api.sendWebRTCAnswer(sinkId, answer.sdp || '');
+      answerSent = true;
+      for (const candidate of pendingCandidates) {
+        try {
+          await api.sendWebRTCIceCandidate(sinkId, candidate.candidate, candidate.sdpMid || '');
+        } catch (err) {
+          console.warn('Failed to send buffered ICE candidate:', err);
+        }
       }
     } catch (error) {
       console.error('WebRTC connection failed:', error);
@@ -113,18 +108,14 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
     }
   };
 
-  const stopStream = async () => {
-    try {
-      if (peerConnection) {
-        peerConnection.close();
-      }
-      await api.stopWebRTCStream(sinkId);
-      await api.disablePreview(sinkId);
-    } catch (error) {
-      console.warn('Error stopping stream:', error);
-    } finally {
-      onStop();
+  const stopStream = () => {
+    // No server-side "stop" endpoint exists for a WebRTCSink (see WebRTCSinkController) -
+    // closing the local RTCPeerConnection is all a viewer needs to do; the sink itself keeps
+    // running until its own toggle/delete is used.
+    if (peerConnection) {
+      peerConnection.close();
     }
+    onStop();
   };
 
   const toggleFullscreen = () => {

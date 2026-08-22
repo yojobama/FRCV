@@ -458,10 +458,48 @@ client has asked for a stream is pure waste). Fixed a related real bug found whi
 up: `ISource`/`ISink::Toggle(true)` had no guard against being called while already running - it
 would spawn a second capture/processing thread without stopping the first. Now idempotent.
 
-The node-oriented API reshape (items 1-4, 6-7) and the entire WebUI section are **not started**.
-The WebUI in particular has had zero updates despite phases 3-7 adding NT4, WebRTC, ONNX object
-detection with model upload, AprilTag backend selection, and ChArUco calibration - none of that
-is reachable from the UI yet, only via direct API calls. This is the largest remaining gap.
+The node-oriented API reshape (items 1-4, 6-7) is **not started**. The WebUI gap called out below
+(no way to create Object Detection/NetworkTables/WebRTC sinks) is now **closed** (2026-08-22):
+the "Add Sink" dialog's type dropdown grew three new options with their real fields (a model
+picker + inline upload for Object Detection, team-number/server-address for NetworkTables,
+bitrate/fps/encoder for WebRTC), wired straight to the real `ObjectDetectionSinkController`/
+`NetworkTablesSinkController`/`WebRTCSinkController`/`ModelController` endpoints - no mocked
+responses. Also removed "Recording" and "Stereo Vision" from the dropdown: both were already
+unreachable dead options (`RecordingSinkController.Create` is a bare `throw new
+NotImplementedException()` and isn't even registered in `Program.cs`; no `StereoSink`
+implementation exists anywhere beyond a forward declaration), so keeping them selectable was
+worse than removing them. AprilTag Detection and Camera Calibration (the latter previously also
+silently broken - `handleAddSink` rejected every type except a literal `'ApriltagSink'` string)
+now both work too.
+
+Verified for real, end to end, through the actual browser against the Orange Pi - and this is
+where three separate server-crashing bugs surfaced, all the same underlying class: **swig.i had
+no `%exception` block anywhere**, so any C++ exception thrown by application code (not just a
+SWIG-recognized case) crosses the P/Invoke boundary completely uncaught and calls
+`std::terminate()`, killing the *entire server process* over what is often a perfectly ordinary,
+expected failure:
+1. `WebRTCSink::AddIceCandidate`/`SetAnswer` crashed the server the first time a real ICE
+   candidate raced ahead of the answer being set (a real, common ordering race: browsers start
+   firing `onicecandidate` as soon as `setLocalDescription()` is called, which is before the
+   answer has been POSTed). Fixed by catching inside `WebRTCSink.cpp` itself, and by having
+   `WebRTCStream.tsx` buffer candidates client-side until the answer POST actually completes.
+2. `/webrtcSink/offer`'s `Task<string>` return crashed the *browser's* JSON parsing (not the
+   server) with "Bad control character in string literal" - EmbedIO's default string
+   auto-serialization doesn't escape the literal `\r\n` that SDP is full of. Fixed by writing the
+   offer as a raw `text/plain` body (`HttpContext.SendStringAsync`) instead of relying on
+   auto-JSON-wrapping a plain string return value.
+3. Uploading a model that isn't valid ONNX (confirmed with a dummy file) crashed the server via
+   `Manager::CreateObjectDetectionSink`'s `throw std::runtime_error("failed to load detection
+   model...")` - textbook expected input validation failure, not a bug, yet fatal to the whole
+   process.
+
+Rather than patch each throw site, added a global `%exception` block to `swig.i` (using
+`swig.i`'s already-generated-but-never-invoked `SWIGExceptionHelper`/
+`SWIGRegisterExceptionCallbacks` C# marshaling machinery - it existed in every generated wrapper
+all along, just never triggered without a `%exception` block). Every C++ exception across the
+whole library is now converted into a real, catchable `System.ApplicationException` instead of
+terminating the process. Verified: re-ran the exact bad-model-upload request post-fix and got a
+clean `500` with the exception message, server still running and responsive immediately after.
 
 **Server — the glue layer**
 

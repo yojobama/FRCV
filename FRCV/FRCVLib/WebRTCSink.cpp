@@ -66,12 +66,34 @@ std::string WebRTCSink::CreateOffer()
 
 void WebRTCSink::SetAnswer(const std::string& sdp)
 {
-	m_PeerConnection->setRemoteDescription(Description(sdp, Description::Type::Answer));
+	try {
+		m_PeerConnection->setRemoteDescription(Description(sdp, Description::Type::Answer));
+	} catch (const std::exception& e) {
+		// Deliberately swallowed, not rethrown: whether a C++ exception thrown here gets
+		// marshaled into a well-behaved C# exception at the SWIG/P-Invoke boundary depends on
+		// swig.i actually wrapping this call with an %exception typemap, and a neighboring
+		// method on this exact class (AddIceCandidate) was confirmed to have no such wrapper -
+		// an uncaught exception there crossed the boundary and terminated the whole server
+        // process. Not worth gambling on this one being wired correctly: a bad/stale answer just
+		// means this connection attempt fails, which the browser side already notices via
+		// connectionstatechange/timeout without needing a thrown exception here.
+		if (m_Logger) m_Logger->EnterLog(::LogLevel::Error, std::string("WebRTCSink::SetAnswer failed: ") + e.what());
+	}
 }
 
 void WebRTCSink::AddIceCandidate(const std::string& candidate, const std::string& mid)
 {
-	m_PeerConnection->addRemoteCandidate(Candidate(candidate, mid));
+	try {
+		m_PeerConnection->addRemoteCandidate(Candidate(candidate, mid));
+	} catch (const std::exception& e) {
+		// Same reasoning as SetAnswer above - libdatachannel throws std::logic_error if a
+		// candidate arrives before the remote description is set (a real race: browsers start
+		// firing onicecandidate as soon as setLocalDescription is called, which can beat this
+		// sink's /webrtcSink/answer request to the server). A dropped candidate is harmless -
+		// ICE negotiation tolerates missing candidates - so this is swallowed rather than
+		// rethrown, unlike SetAnswer where the caller genuinely needs to know the answer failed.
+		if (m_Logger) m_Logger->EnterLog(::LogLevel::Warning, std::string("WebRTCSink::AddIceCandidate dropped a candidate: ") + e.what());
+	}
 }
 
 bool WebRTCSink::IsConnected() const

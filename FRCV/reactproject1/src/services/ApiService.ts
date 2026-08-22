@@ -1,4 +1,4 @@
-import type { CameraHardwareInfo } from '../types';
+import type { CameraHardwareInfo, Model } from '../types';
 
 export class ApiService {
   // Relative to wherever this page is served from - the C# server always serves its own built
@@ -123,6 +123,120 @@ export class ApiService {
       const response = await fetch(`${this.baseUrl}/apriltagSink/create?name=${encodeURIComponent(name)}&type=apriltag`, { method: 'POST' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
+  }
+
+  // Camera Calibration Sink Controller routes (default 6x9 checkerboard, 25mm squares - see
+  // CreateWithBoard for a custom board, not exposed in the WebUI yet)
+  async createCameraCalibrationSink(name: string): Promise<number> {
+    const response = await fetch(`${this.baseUrl}/cameraCalibrationSink/create?name=${encodeURIComponent(name)}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // Object Detection Sink Controller routes
+  async createObjectDetectionSink(name: string, modelId: number): Promise<number> {
+    const response = await fetch(`${this.baseUrl}/objectDetectionSink/create?name=${encodeURIComponent(name)}&modelId=${modelId}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // Model Controller routes (uploaded YOLOv8/YOLOv11 ONNX models, consumed by object detection sinks)
+  async getAllModels(): Promise<Model[]> {
+    const response = await fetch(`${this.baseUrl}/model/getAll`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async uploadModel(params: {
+    name: string;
+    variant: number; // 0 = YOLOv8, 1 = YOLOv11
+    inputSize?: number;
+    confThreshold?: number;
+    nmsThreshold?: number;
+    modelFile: File;
+    labelsFile?: File;
+  }): Promise<number> {
+    const formData = new FormData();
+    formData.append('name', params.name);
+    formData.append('variant', String(params.variant));
+    formData.append('inputSize', String(params.inputSize ?? 640));
+    formData.append('confThreshold', String(params.confThreshold ?? 0.25));
+    formData.append('nmsThreshold', String(params.nmsThreshold ?? 0.45));
+    formData.append('model', params.modelFile);
+    if (params.labelsFile) formData.append('labels', params.labelsFile);
+
+    const response = await fetch(`${this.baseUrl}/model/upload`, { method: 'POST', body: formData });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async deleteModel(id: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/model/delete?id=${id}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  // NetworkTables Sink Controller routes
+  async createNetworkTablesSinkForTeam(name: string, teamNumber: number, rootTable = 'FRCV', clientIdentity = 'FRCV'): Promise<number> {
+    const params = new URLSearchParams({ name, teamNumber: String(teamNumber), rootTable, clientIdentity });
+    const response = await fetch(`${this.baseUrl}/networkTablesSink/createForTeam?${params.toString()}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async createNetworkTablesSinkForServer(name: string, serverAddress: string, port = 0, rootTable = 'FRCV', clientIdentity = 'FRCV'): Promise<number> {
+    const params = new URLSearchParams({ name, serverAddress, port: String(port), rootTable, clientIdentity });
+    const response = await fetch(`${this.baseUrl}/networkTablesSink/createForServer?${params.toString()}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async getNetworkTablesStatus(sinkId: number): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/networkTablesSink/status?sinkId=${sinkId}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    // the controller returns Task<string> - a JSON *string*, so the body is JSON-encoded JSON
+    // and needs decoding twice (matches SinkController.GetResult's same shape)
+    const text: string = await response.json();
+    return JSON.parse(text);
+  }
+
+  // WebRTC Sink Controller routes
+  async createWebRTCSink(name: string, bitrateKbps = 4000, fps = 30, encoderName = 'libx264'): Promise<number> {
+    const params = new URLSearchParams({ name, bitrateKbps: String(bitrateKbps), fps: String(fps), encoderName });
+    const response = await fetch(`${this.baseUrl}/webrtcSink/create?${params.toString()}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // Blocks briefly server-side for ICE gathering (non-trickle on FRCV's side). Returned as a
+  // raw text/plain body, not JSON - SDP is full of literal \r\n line endings that EmbedIO's
+  // default string auto-serialization does not escape, which makes response.json() fail with
+  // "Bad control character in string literal" (confirmed the hard way).
+  async getWebRTCOffer(sinkId: number): Promise<string> {
+    const response = await fetch(`${this.baseUrl}/webrtcSink/offer?sinkId=${sinkId}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.text();
+  }
+
+  async sendWebRTCAnswer(sinkId: number, sdp: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/webrtcSink/answer?sinkId=${sinkId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: sdp
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  async sendWebRTCIceCandidate(sinkId: number, candidate: string, mid: string): Promise<void> {
+    const params = new URLSearchParams({ sinkId: String(sinkId), candidate, mid: mid ?? '' });
+    const response = await fetch(`${this.baseUrl}/webrtcSink/candidate?${params.toString()}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  async getWebRTCSinkStatus(sinkId: number): Promise<any> {
+    const response = await fetch(`${this.baseUrl}/webrtcSink/status?sinkId=${sinkId}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const text: string = await response.json();
+    return JSON.parse(text);
   }
 
   // Device Controller routes
@@ -341,24 +455,4 @@ export class ApiService {
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
-  // WebRTC methods - not implemented in current API
-  async startWebRTCStream(sinkId: number): Promise<any> {
-    throw new Error('WebRTC streaming not implemented in current API');
-  }
-
-  async stopWebRTCStream(sinkId: number): Promise<any> {
-    throw new Error('WebRTC streaming not implemented in current API');
-  }
-
-  async getWebRTCStatus(sinkId: number): Promise<any> {
-    throw new Error('WebRTC status not implemented in current API');
-  }
-
-  async enablePreview(sinkId: number): Promise<any> {
-    throw new Error('Preview functionality not implemented in current API');
-  }
-
-  async disablePreview(sinkId: number): Promise<any> {
-    throw new Error('Preview functionality not implemented in current API');
-  }
 }

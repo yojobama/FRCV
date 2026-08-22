@@ -1,6 +1,7 @@
 using EmbedIO;
 using EmbedIO.Routing;
 using EmbedIO.WebApi;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Server.Controllers.sinks
@@ -22,11 +23,17 @@ namespace Server.Controllers.sinks
             return Task.FromResult(sinkId);
         }
 
-        // POST: get an SDP offer from a WebRTCSink (blocks briefly for ICE gathering)
+        // POST: get an SDP offer from a WebRTCSink (blocks briefly for ICE gathering). Written
+        // as a raw text/plain body rather than returned as Task<string> - EmbedIO's default
+        // response serializer for a plain string return value does not escape control
+        // characters, and SDP is full of literal \r\n line endings, so JSON-wrapping it that
+        // way produces a syntactically invalid JSON string (confirmed the hard way: the browser
+        // got "Bad control character in string literal in JSON" trying to parse it).
         [Route(HttpVerbs.Post, "/webrtcSink/offer")]
-        public Task<string> CreateOffer([QueryField] int sinkId)
+        public async Task CreateOffer([QueryField] int sinkId)
         {
-            return Task.FromResult(SinkManager.Instance.WebRTCCreateOffer(sinkId));
+            string sdp = SinkManager.Instance.WebRTCCreateOffer(sinkId);
+            await HttpContext.SendStringAsync(sdp, "text/plain", Encoding.UTF8);
         }
 
         // POST: submit the browser's SDP answer

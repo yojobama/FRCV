@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import type { Source, Sink, SystemStats, Toast, DeviceStats } from '../types';
+import type { Source, Sink, SystemStats, Toast, DeviceStats, AddSinkOptions } from '../types';
 import { ApiService } from '../services/ApiService';
 
 export const useAppData = () => {
@@ -41,7 +41,9 @@ export const useAppData = () => {
     }
   }, []);
 
-  // helper to map server sink type enum to string label
+  // helper to map server sink type enum to string label - must mirror Server.SinkType exactly
+  // (Sink.cs): ApriltagSink=0, ObjectDetectionSink=1, RecordingSink=2, CameraCalibrationSink=3,
+  // NetworkTablesSink=4, WebRTCSink=5.
   const mapSinkType = (type: any): string => {
     if (typeof type === 'string') return type;
     switch (type) {
@@ -49,6 +51,8 @@ export const useAppData = () => {
       case 1: return 'object';
       case 2: return 'record';
       case 3: return 'calibration';
+      case 4: return 'networktables';
+      case 5: return 'webrtc';
       default: return 'unknown';
     }
   };
@@ -123,8 +127,16 @@ export const useAppData = () => {
   }, [streamingSinks.size, loadDeviceStats]);
 
   const startStream = (sinkId: number) => {
-    // Note: WebRTC streaming is not implemented in current API
-    showToast(`WebRTC streaming not yet implemented for Sink ${sinkId}`, 'info');
+    // Only WebRTCSink actually has a preview implementation (WebRTCStream.tsx, driven by
+    // WebRTCSinkController's real signalling endpoints) - every other sink type has no preview
+    // mechanism at all, so "Start Stream" on those stays an explicit "not implemented" rather
+    // than silently doing nothing.
+    const sink = sinks.find(s => s.id === sinkId);
+    if (sink?.type !== 'webrtc') {
+      showToast(`Live preview is not available for sink type "${sink?.type ?? 'unknown'}"`, 'info');
+      return;
+    }
+    setStreamingSinks(prev => new Set(prev).add(sinkId));
   };
 
   const stopStream = (sinkId: number) => {
@@ -177,19 +189,53 @@ export const useAppData = () => {
     }
   };
 
-  const handleAddSink = async (name: string, type: string) => {
+  const handleAddSink = async (name: string, type: string, options?: AddSinkOptions) => {
     try {
-      // Currently only AprilTag sinks are implemented
-      if (type !== 'ApriltagSink') {
-        showToast(`Sink type "${type}" is not yet implemented. Only AprilTag sinks are available.`, 'error');
-        return;
+      let sinkId: number;
+
+      switch (type) {
+        case 'ApriltagSink':
+          sinkId = await api.createApriltagSink(name, type);
+          break;
+
+        case 'calibration':
+          sinkId = await api.createCameraCalibrationSink(name);
+          break;
+
+        case 'object': {
+          let modelId = options?.modelId;
+          if (!modelId && options?.newModel) {
+            modelId = await api.uploadModel(options.newModel);
+          }
+          if (!modelId) throw new Error('an object detection sink needs a model - upload one or pick an existing one');
+          sinkId = await api.createObjectDetectionSink(name, modelId);
+          break;
+        }
+
+        case 'networktables':
+          if (options?.serverAddress) {
+            sinkId = await api.createNetworkTablesSinkForServer(
+              name, options.serverAddress, options.port ?? 0, options.rootTable, options.clientIdentity);
+          } else if (options?.teamNumber) {
+            sinkId = await api.createNetworkTablesSinkForTeam(
+              name, options.teamNumber, options.rootTable, options.clientIdentity);
+          } else {
+            throw new Error('a NetworkTables sink needs either a team number or a server address');
+          }
+          break;
+
+        case 'webrtc':
+          sinkId = await api.createWebRTCSink(name, options?.bitrateKbps, options?.fps, options?.encoderName);
+          break;
+
+        default:
+          showToast(`Sink type "${type}" is not yet implemented.`, 'error');
+          return;
       }
-      
-      const sinkId = await api.createApriltagSink(name, type);
-      
+
       // Refresh sinks from backend to keep UI consistent across reloads
       await loadData();
-      
+
       showToast(`Sink "${name}" added successfully with ID ${sinkId}`, 'success');
     } catch (error) {
       showToast(`Failed to add sink: ${error}`, 'error');

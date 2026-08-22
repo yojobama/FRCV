@@ -31,17 +31,20 @@ import {
 } from 'lucide-react';
 import './App.css';
 
-import type { 
-  Source, 
-  Sink, 
-  SystemStats, 
-  Settings as SettingsType
+import type {
+  Source,
+  Sink,
+  SystemStats,
+  Settings as SettingsType,
+  Model,
+  AddSinkOptions
 } from './types';
 
 import { WebRTCStream } from './components/WebRTCStream';
 import { AddSourceModal } from './components/AddSourceModal';
 import { BulkUploadComponent } from './components/BulkUploadComponent';
 import { useAppData } from './hooks/useAppData';
+import { ApiService } from './services/ApiService';
 
 /***************************
  * Dark Mode Hook (original)
@@ -143,17 +146,18 @@ const Toast: React.FC<{
 /****************
  * Modal Wrapper
  ****************/
-const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode }> = ({ 
-  isOpen, 
-  onClose, 
-  title, 
-  children 
+const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; wide?: boolean }> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  wide = false
 }) => {
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
+      <div className={`bg-white dark:bg-gray-800 rounded-lg p-6 w-full mx-4 max-h-[90vh] overflow-y-auto ${wide ? 'max-w-2xl' : 'max-w-md'}`}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Plus className="w-5 h-5" />
@@ -172,22 +176,108 @@ const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; chi
 /****************
  * Add Sink Modal
  ****************/
-const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd: (name: string, type: string) => void; }> = ({ isOpen, onClose, onAdd }) => {
+const addSinkModalApi = new ApiService();
+
+const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd: (name: string, type: string, options?: AddSinkOptions) => void; }> = ({ isOpen, onClose, onAdd }) => {
   const [name, setName] = useState('');
   const [type, setType] = useState('ApriltagSink');
 
+  // Object Detection fields
+  const [models, setModels] = useState<Model[]>([]);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [modelId, setModelId] = useState<number | ''>('');
+  const [uploadingNewModel, setUploadingNewModel] = useState(false);
+  const [newModelName, setNewModelName] = useState('');
+  const [newModelVariant, setNewModelVariant] = useState(0); // 0 = YOLOv8, 1 = YOLOv11
+  const [newModelFile, setNewModelFile] = useState<File | null>(null);
+  const [newModelLabelsFile, setNewModelLabelsFile] = useState<File | null>(null);
+
+  // NetworkTables fields
+  const [ntMode, setNtMode] = useState<'team' | 'server'>('team');
+  const [teamNumber, setTeamNumber] = useState<number | ''>('');
+  const [serverAddress, setServerAddress] = useState('');
+  const [ntPort, setNtPort] = useState<number | ''>('');
+  const [rootTable, setRootTable] = useState('FRCV');
+  const [clientIdentity, setClientIdentity] = useState('FRCV');
+
+  // WebRTC fields
+  const [bitrateKbps, setBitrateKbps] = useState(4000);
+  const [fps, setFps] = useState(30);
+  const [encoderName, setEncoderName] = useState('libx264');
+
+  const resetForm = () => {
+    setName('');
+    setType('ApriltagSink');
+    setModelId('');
+    setUploadingNewModel(false);
+    setNewModelName('');
+    setNewModelVariant(0);
+    setNewModelFile(null);
+    setNewModelLabelsFile(null);
+    setNtMode('team');
+    setTeamNumber('');
+    setServerAddress('');
+    setNtPort('');
+    setRootTable('FRCV');
+    setClientIdentity('FRCV');
+    setBitrateKbps(4000);
+    setFps(30);
+    setEncoderName('libx264');
+  };
+
+  // Refresh the model list every time the dialog is opened on the Object Detection type, so a
+  // model uploaded in a previous visit shows up without a full page reload.
+  useEffect(() => {
+    if (isOpen && type === 'object') {
+      setModelsLoading(true);
+      addSinkModalApi.getAllModels()
+        .then(list => {
+          setModels(list);
+          if (list.length > 0 && modelId === '') setModelId(list[0].id);
+        })
+        .catch(() => setModels([]))
+        .finally(() => setModelsLoading(false));
+    }
+  }, [isOpen, type]);
+
+  if (!isOpen) return null;
+
+  const canSubmit = (): boolean => {
+    if (!name.trim()) return false;
+    if (type === 'object') {
+      if (uploadingNewModel) return !!newModelName.trim() && !!newModelFile;
+      return modelId !== '';
+    }
+    if (type === 'networktables') {
+      return ntMode === 'team' ? teamNumber !== '' : serverAddress.trim() !== '';
+    }
+    return true;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) {
-      onAdd(name.trim(), type);
-      setName('');
-      setType('ApriltagSink');
-      onClose();
+    if (!canSubmit()) return;
+
+    let options: AddSinkOptions | undefined;
+    if (type === 'object') {
+      options = uploadingNewModel
+        ? { newModel: { name: newModelName.trim(), variant: newModelVariant, inputSize: 640, confThreshold: 0.25, nmsThreshold: 0.45, modelFile: newModelFile!, labelsFile: newModelLabelsFile ?? undefined } }
+        : { modelId: modelId as number };
+    } else if (type === 'networktables') {
+      options = ntMode === 'team'
+        ? { teamNumber: teamNumber as number, rootTable, clientIdentity }
+        : { serverAddress: serverAddress.trim(), port: ntPort === '' ? undefined : ntPort as number, rootTable, clientIdentity };
+    } else if (type === 'webrtc') {
+      options = { bitrateKbps, fps, encoderName };
     }
+
+    onAdd(name.trim(), type, options);
+    resetForm();
+    onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add New Sink">
+    <Modal isOpen={isOpen} onClose={() => { resetForm(); onClose(); }} title="Add New Sink" wide>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -212,14 +302,152 @@ const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd: (nam
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
           >
             <option value="ApriltagSink">AprilTag Detection</option>
-            <option value="record">Recording</option>
-            <option value="stereo">Stereo Vision</option>
             <option value="calibration">Camera Calibration</option>
+            <option value="object">Object Detection (ONNX)</option>
+            <option value="networktables">NetworkTables (NT4)</option>
+            <option value="webrtc">WebRTC Stream</option>
           </select>
         </div>
+
+        {/* Object Detection: pick an existing model, or upload a new one */}
+        {type === 'object' && (
+          <div className="space-y-3 p-3 border border-gray-200 dark:border-gray-700 rounded-md">
+            {!uploadingNewModel ? (
+              <>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Model</label>
+                {modelsLoading ? (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Loading models...</div>
+                ) : models.length > 0 ? (
+                  <select
+                    value={modelId}
+                    onChange={(e) => setModelId(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                  >
+                    {models.map(m => (
+                      <option key={m.id} value={m.id}>{m.name} ({m.variant === 1 ? 'YOLOv11' : 'YOLOv8'})</option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">No models uploaded yet.</div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setUploadingNewModel(true)}
+                  className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+                >
+                  <Plus className="w-3 h-3" />Upload a new model instead
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">New Model</label>
+                  {models.length > 0 && (
+                    <button type="button" onClick={() => setUploadingNewModel(false)} className="text-blue-600 hover:text-blue-700 text-xs">
+                      Use an existing model instead
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  value={newModelName}
+                  onChange={(e) => setNewModelName(e.target.value)}
+                  placeholder="Model name"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                />
+                <select
+                  value={newModelVariant}
+                  onChange={(e) => setNewModelVariant(parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                >
+                  <option value={0}>YOLOv8</option>
+                  <option value={1}>YOLOv11</option>
+                </select>
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Model weights (.onnx)</label>
+                  <input type="file" accept=".onnx" onChange={(e) => setNewModelFile(e.target.files?.[0] ?? null)}
+                    className="w-full text-sm text-gray-700 dark:text-gray-300" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Class labels (optional, one per line)</label>
+                  <input type="file" accept=".txt" onChange={(e) => setNewModelLabelsFile(e.target.files?.[0] ?? null)}
+                    className="w-full text-sm text-gray-700 dark:text-gray-300" />
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* NetworkTables: connect by FRC team number, or an explicit server address for bench testing */}
+        {type === 'networktables' && (
+          <div className="space-y-3 p-3 border border-gray-200 dark:border-gray-700 rounded-md">
+            <div className="flex gap-4 text-sm">
+              <label className="flex items-center gap-1">
+                <input type="radio" checked={ntMode === 'team'} onChange={() => setNtMode('team')} />Team Number
+              </label>
+              <label className="flex items-center gap-1">
+                <input type="radio" checked={ntMode === 'server'} onChange={() => setNtMode('server')} />Server Address
+              </label>
+            </div>
+            {ntMode === 'team' ? (
+              <input
+                type="number"
+                value={teamNumber}
+                onChange={(e) => setTeamNumber(e.target.value === '' ? '' : parseInt(e.target.value))}
+                placeholder="FRC team number, e.g. 1234"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+              />
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={serverAddress}
+                  onChange={(e) => setServerAddress(e.target.value)}
+                  placeholder="Server address, e.g. 10.0.0.2"
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                />
+                <input
+                  type="number"
+                  value={ntPort}
+                  onChange={(e) => setNtPort(e.target.value === '' ? '' : parseInt(e.target.value))}
+                  placeholder="Port (default)"
+                  className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input type="text" value={rootTable} onChange={(e) => setRootTable(e.target.value)} placeholder="Root table"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
+              <input type="text" value={clientIdentity} onChange={(e) => setClientIdentity(e.target.value)} placeholder="Client identity"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
+            </div>
+          </div>
+        )}
+
+        {/* WebRTC: streaming parameters */}
+        {type === 'webrtc' && (
+          <div className="flex gap-2 p-3 border border-gray-200 dark:border-gray-700 rounded-md">
+            <div className="flex-1">
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Bitrate (kbps)</label>
+              <input type="number" value={bitrateKbps} onChange={(e) => setBitrateKbps(parseInt(e.target.value) || 4000)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">FPS</label>
+              <input type="number" value={fps} onChange={(e) => setFps(parseInt(e.target.value) || 30)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Encoder</label>
+              <input type="text" value={encoderName} onChange={(e) => setEncoderName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end space-x-3 mt-6">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">Cancel</button>
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2">
+          <button type="button" onClick={() => { resetForm(); onClose(); }} className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">Cancel</button>
+          <button type="submit" disabled={!canSubmit()} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2">
             <Plus className="w-4 h-4" />Add Sink
           </button>
         </div>
@@ -618,8 +846,15 @@ const DashboardPage: React.FC<{
           <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Activity className="w-5 h-5" />Live Streams</h2>
           <button onClick={onStopAllStreams} className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 flex items-center gap-1" title="Stop all streams"><StopCircle className="w-4 h-4" />Stop All Streams</button>
         </div>
-        <div className="text-center py-8">
-          <p className="text-gray-600 dark:text-gray-400">WebRTC streaming functionality is not yet implemented in the current API.</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {Array.from(streamingSinks).map(sinkId => (
+            <WebRTCStream
+              key={sinkId}
+              sinkId={sinkId}
+              onStop={() => onStopStream(sinkId)}
+              onError={(error) => onStreamError(sinkId, error)}
+            />
+          ))}
         </div>
       </div>
     )}
@@ -627,7 +862,7 @@ const DashboardPage: React.FC<{
       <div className="text-center py-12">
         <MonitorSpeaker className="w-16 h-16 mx-auto mb-4 text-gray-400" />
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Active Streams</h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">WebRTC streaming will be available when implemented in the API.</p>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">Start a WebRTC sink's stream from the Sinks page to see it here.</p>
         <button onClick={onGoToSinks} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2 mx-auto"><Target className="w-4 h-4" />Go to Sinks</button>
       </div>
     )}
@@ -704,17 +939,18 @@ const SourcesPage: React.FC<{
 /***************
  * Sinks Page
  ***************/
-const SinksPage: React.FC<{ 
-  sinks: Sink[]; 
-  loading: boolean; 
-  streamingSinks: Set<number>; 
-  onAddSink:()=>void; 
-  onStartStream:(id:number)=>void; 
-  onStopStream:(id:number)=>void; 
-  onConfigure:(s:Sink)=>void; 
+const SinksPage: React.FC<{
+  sinks: Sink[];
+  loading: boolean;
+  streamingSinks: Set<number>;
+  onAddSink:()=>void;
+  onStartStream:(id:number)=>void;
+  onStopStream:(id:number)=>void;
+  onStreamError:(id:number, error:string)=>void;
+  onConfigure:(s:Sink)=>void;
   onDelete:(id:number)=>void;
   onToggleSink:(id:number, enabled:boolean)=>void;
-}> = ({ sinks, loading, streamingSinks, onAddSink, onStartStream, onStopStream, onConfigure, onDelete, onToggleSink }) => (
+}> = ({ sinks, loading, streamingSinks, onAddSink, onStartStream, onStopStream, onStreamError, onConfigure, onDelete, onToggleSink }) => (
   <div className="space-y-6">
     <div className="flex justify-between items-center">
       <div>
@@ -769,6 +1005,15 @@ const SinksPage: React.FC<{
               )}
               <button onClick={()=>onConfigure(sink)} className="px-3 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colours" title="Configure"><Cog className="w-4 h-4" /></button>
             </div>
+            {streamingSinks.has(sink.id) && (
+              <div className="mb-4">
+                <WebRTCStream
+                  sinkId={sink.id}
+                  onStop={() => onStopStream(sink.id)}
+                  onError={(error) => onStreamError(sink.id, error)}
+                />
+              </div>
+            )}
             <div className="text-xs text-gray-400">Updated: {sink.lastUpdate?.toLocaleTimeString()}</div>
           </div>
         ))}
@@ -896,14 +1141,15 @@ function App() {
             />
           )}
           {currentTab === 'sinks' && (
-            <SinksPage 
-              sinks={sinks} 
-              loading={loading} 
-              streamingSinks={streamingSinks} 
-              onAddSink={()=>setShowAddSink(true)} 
-              onStartStream={startStream} 
-              onStopStream={stopStream} 
-              onConfigure={s=>setCfgSink(s)} 
+            <SinksPage
+              sinks={sinks}
+              loading={loading}
+              streamingSinks={streamingSinks}
+              onAddSink={()=>setShowAddSink(true)}
+              onStartStream={startStream}
+              onStopStream={stopStream}
+              onStreamError={handleStreamError}
+              onConfigure={s=>setCfgSink(s)}
               onDelete={id=>handleDeleteSink(id)}
               onToggleSink={handleToggleSink}
             />
