@@ -10,7 +10,15 @@ namespace Server
     {
         Camera,
         ImageFile,
-        VideoFile
+        VideoFile,
+        // A dual-role sink (ApriltagSink, ObjectDetectionSink, CameraCalibrationSink) acting as
+        // the frame/json-producing side of itself - natively these are already registered in
+        // Manager's own m_Sources map (see Manager.cpp), but SourceManager's C# source list only
+        // ever tracked "real" sources (camera/video/image), so a WebRTCSink or NetworkTablesSink
+        // could never be bound to e.g. an AprilTag detector's own output - confirmed the hard way,
+        // this is why WebRTC preview against the AprilTag detector didn't work. See
+        // SinkManager.BindSourceToSink.
+        SinkOutput
     }
 
     public class Source

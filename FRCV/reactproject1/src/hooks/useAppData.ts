@@ -1,6 +1,10 @@
 import { useState, useCallback } from 'react';
-import type { Source, Sink, SystemStats, Toast, DeviceStats, AddSinkOptions } from '../types';
+import type { Source, Sink, SystemStats, Toast, DeviceStats, AddSinkOptions, NT4Defaults } from '../types';
 import { ApiService } from '../services/ApiService';
+
+// Sink types that can themselves have a live preview or be published to NetworkTables -
+// everything with a frame/json output, whether it's a raw Source or a dual-role detector Sink.
+export const PUBLISHABLE_SINK_TYPES = ['apriltag', 'object', 'calibration'];
 
 export const useAppData = () => {
   const [sources, setSources] = useState<Source[]>([]);
@@ -126,19 +130,6 @@ export const useAppData = () => {
     }
   }, [streamingSinks.size, loadDeviceStats]);
 
-  const startStream = (sinkId: number) => {
-    // Only WebRTCSink actually has a preview implementation (WebRTCStream.tsx, driven by
-    // WebRTCSinkController's real signalling endpoints) - every other sink type has no preview
-    // mechanism at all, so "Start Stream" on those stays an explicit "not implemented" rather
-    // than silently doing nothing.
-    const sink = sinks.find(s => s.id === sinkId);
-    if (sink?.type !== 'webrtc') {
-      showToast(`Live preview is not available for sink type "${sink?.type ?? 'unknown'}"`, 'info');
-      return;
-    }
-    setStreamingSinks(prev => new Set(prev).add(sinkId));
-  };
-
   const stopStream = (sinkId: number) => {
     setStreamingSinks(prev => {
       const newSet = new Set(prev);
@@ -195,7 +186,7 @@ export const useAppData = () => {
 
       switch (type) {
         case 'ApriltagSink':
-          sinkId = await api.createApriltagSink(name, type);
+          sinkId = await api.createApriltagSinkWithBackend(name, options?.tagSize ?? 0.1651, options?.backend ?? 0);
           break;
 
         case 'calibration':
@@ -211,22 +202,6 @@ export const useAppData = () => {
           sinkId = await api.createObjectDetectionSink(name, modelId);
           break;
         }
-
-        case 'networktables':
-          if (options?.serverAddress) {
-            sinkId = await api.createNetworkTablesSinkForServer(
-              name, options.serverAddress, options.port ?? 0, options.rootTable, options.clientIdentity);
-          } else if (options?.teamNumber) {
-            sinkId = await api.createNetworkTablesSinkForTeam(
-              name, options.teamNumber, options.rootTable, options.clientIdentity);
-          } else {
-            throw new Error('a NetworkTables sink needs either a team number or a server address');
-          }
-          break;
-
-        case 'webrtc':
-          sinkId = await api.createWebRTCSink(name, options?.bitrateKbps, options?.fps, options?.encoderName);
-          break;
 
         default:
           showToast(`Sink type "${type}" is not yet implemented.`, 'error');
@@ -362,6 +337,68 @@ export const useAppData = () => {
     }
   };
 
+  // "Live Preview" toggle for any node (a raw Source, or a dual-role detector Sink) - creates a
+  // dedicated WebRTCSink bound to it on first use rather than requiring the user to create and
+  // bind one manually. WebRTC is not itself a user-facing addable sink type anymore; this is
+  // what replaced that.
+  const handleTogglePreview = async (node: { id: number; name: string }) => {
+    try {
+      const companion = sinks.find(s => s.type === 'webrtc' && s.sourceId === node.id);
+      if (companion) {
+        if (streamingSinks.has(companion.id)) {
+          stopStream(companion.id);
+          return;
+        }
+        if (!companion.isEnabled) {
+          await api.toggleSink(companion.id, true);
+        }
+        setStreamingSinks(prev => new Set(prev).add(companion.id));
+        return;
+      }
+
+      const sinkId = await api.createWebRTCSink(`${node.name}-preview`);
+      await api.bindSinkToSource(sinkId, node.id);
+      await api.toggleSink(sinkId, true);
+      await loadData();
+      setStreamingSinks(prev => new Set(prev).add(sinkId));
+    } catch (error) {
+      showToast(`Failed to start preview: ${error}`, 'error');
+    }
+  };
+
+  // "Publish to NetworkTables" toggle for a detector-type sink (apriltag/object/calibration) -
+  // creates a dedicated NetworkTablesSink bound to it on first use, reusing the connection
+  // details configured once in Settings. NetworkTables is not itself a user-facing addable sink
+  // type anymore; this is what replaced that.
+  const handleToggleNT4Publish = async (node: { id: number; name: string }, nt4: NT4Defaults) => {
+    try {
+      const companion = sinks.find(s => s.type === 'networktables' && s.sourceId === node.id);
+      if (companion) {
+        await handleToggleSink(companion.id, !companion.isEnabled);
+        return;
+      }
+
+      if (nt4.mode === 'team' && !nt4.teamNumber) {
+        showToast('Set a NetworkTables team number in Settings first', 'error');
+        return;
+      }
+      if (nt4.mode === 'server' && !nt4.serverAddress) {
+        showToast('Set a NetworkTables server address in Settings first', 'error');
+        return;
+      }
+
+      const sinkId = nt4.mode === 'server'
+        ? await api.createNetworkTablesSinkForServer(`${node.name}-nt4`, nt4.serverAddress!, nt4.port ?? 0, nt4.rootTable)
+        : await api.createNetworkTablesSinkForTeam(`${node.name}-nt4`, nt4.teamNumber!, nt4.rootTable);
+      await api.bindSinkToSource(sinkId, node.id);
+      await api.toggleSink(sinkId, true);
+      await loadData();
+      showToast(`Publishing "${node.name}" to NetworkTables`, 'success');
+    } catch (error) {
+      showToast(`Failed to toggle NetworkTables publishing: ${error}`, 'error');
+    }
+  };
+
   const handleToggleSink = async (sinkId: number, enabled: boolean) => {
     try {
       await api.toggleSink(sinkId, enabled);
@@ -394,7 +431,6 @@ export const useAppData = () => {
     toast,
     loadData,
     loadDeviceStats,
-    startStream,
     stopStream,
     handleStreamError,
     showToast,
@@ -411,6 +447,8 @@ export const useAppData = () => {
     startUDPTransmission,
     stopUDPTransmission,
     handleToggleSink,
+    handleTogglePreview,
+    handleToggleNT4Publish,
     setStreamingSinks,
     setError,
     setToast

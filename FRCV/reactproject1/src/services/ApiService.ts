@@ -125,6 +125,23 @@ export class ApiService {
     return response.json();
   }
 
+  // Create an AprilTag sink with an explicit CPU/Vulkan backend and tag size - no calibration
+  // data yet (see createApriltagSinkFromCalibrator for that). backend: 0 = CPU, 1 = Vulkan.
+  async createApriltagSinkWithBackend(name: string, tagSize: number, backend: number, frameWidth = 0, frameHeight = 0): Promise<number> {
+    const params = new URLSearchParams({ name, tagSize: String(tagSize), backend: String(backend), frameWidth: String(frameWidth), frameHeight: String(frameHeight) });
+    const response = await fetch(`${this.baseUrl}/apriltagSink/createWithBackend?${params.toString()}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // Which backend a sink actually ended up running - may differ from what was requested if
+  // Vulkan was asked for and no usable device was found (falls back to CPU)
+  async getApriltagBackendName(sinkId: number): Promise<string> {
+    const response = await fetch(`${this.baseUrl}/apriltagSink/backend?sinkId=${sinkId}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
   // Camera Calibration Sink Controller routes (default 6x9 checkerboard, 25mm squares - see
   // CreateWithBoard for a custom board, not exposed in the WebUI yet)
   async createCameraCalibrationSink(name: string): Promise<number> {

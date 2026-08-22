@@ -37,8 +37,12 @@ export interface Model {
 }
 
 // Extra fields AddSinkModal collects for sink types that need more than just a name -
-// handleAddSink dispatches on `type` to decide which of these actually apply.
+// handleAddSink dispatches on `type` to decide which of these actually apply. WebRTC and
+// NetworkTables are no longer creatable this way (see AddSinkOptions vs. the per-node preview/
+// publish toggles in useAppData.ts) - tagSize/backend cover AprilTag instead.
 export interface AddSinkOptions {
+  tagSize?: number;
+  backend?: number; // 0 = CPU, 1 = Vulkan
   modelId?: number;
   newModel?: {
     name: string;
@@ -49,14 +53,18 @@ export interface AddSinkOptions {
     modelFile: File;
     labelsFile?: File;
   };
+}
+
+// Shared connection defaults for the per-node "Publish to NetworkTables" toggle - configured
+// once in Settings rather than re-entered every time, since a real robot only has one NT4
+// server to talk to. Each toggle still creates its own dedicated NetworkTablesSink (ISink only
+// binds one source at a time), just reusing these connection details.
+export interface NT4Defaults {
+  mode: 'team' | 'server';
   teamNumber?: number;
   serverAddress?: string;
   port?: number;
-  rootTable?: string;
-  clientIdentity?: string;
-  bitrateKbps?: number;
-  fps?: number;
-  encoderName?: string;
+  rootTable: string;
 }
 
 export interface SystemStats {
@@ -73,6 +81,7 @@ export interface SystemStats {
 export interface Settings {
   serverUrl: string;
   refreshInterval: number;
+  nt4: NT4Defaults;
 }
 
 export interface Toast {

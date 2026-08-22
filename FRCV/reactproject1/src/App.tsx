@@ -37,13 +37,14 @@ import type {
   SystemStats,
   Settings as SettingsType,
   Model,
-  AddSinkOptions
+  AddSinkOptions,
+  NT4Defaults
 } from './types';
 
 import { WebRTCStream } from './components/WebRTCStream';
 import { AddSourceModal } from './components/AddSourceModal';
 import { BulkUploadComponent } from './components/BulkUploadComponent';
-import { useAppData } from './hooks/useAppData';
+import { useAppData, PUBLISHABLE_SINK_TYPES } from './hooks/useAppData';
 import { ApiService } from './services/ApiService';
 
 /***************************
@@ -182,6 +183,10 @@ const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd: (nam
   const [name, setName] = useState('');
   const [type, setType] = useState('ApriltagSink');
 
+  // AprilTag fields
+  const [tagSize, setTagSize] = useState(0.1651); // meters - 6.5" tags, FRC's usual size
+  const [apriltagBackend, setApriltagBackend] = useState(0); // 0 = CPU, 1 = Vulkan (vkapriltag)
+
   // Object Detection fields
   const [models, setModels] = useState<Model[]>([]);
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -192,37 +197,17 @@ const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd: (nam
   const [newModelFile, setNewModelFile] = useState<File | null>(null);
   const [newModelLabelsFile, setNewModelLabelsFile] = useState<File | null>(null);
 
-  // NetworkTables fields
-  const [ntMode, setNtMode] = useState<'team' | 'server'>('team');
-  const [teamNumber, setTeamNumber] = useState<number | ''>('');
-  const [serverAddress, setServerAddress] = useState('');
-  const [ntPort, setNtPort] = useState<number | ''>('');
-  const [rootTable, setRootTable] = useState('FRCV');
-  const [clientIdentity, setClientIdentity] = useState('FRCV');
-
-  // WebRTC fields
-  const [bitrateKbps, setBitrateKbps] = useState(4000);
-  const [fps, setFps] = useState(30);
-  const [encoderName, setEncoderName] = useState('libx264');
-
   const resetForm = () => {
     setName('');
     setType('ApriltagSink');
+    setTagSize(0.1651);
+    setApriltagBackend(0);
     setModelId('');
     setUploadingNewModel(false);
     setNewModelName('');
     setNewModelVariant(0);
     setNewModelFile(null);
     setNewModelLabelsFile(null);
-    setNtMode('team');
-    setTeamNumber('');
-    setServerAddress('');
-    setNtPort('');
-    setRootTable('FRCV');
-    setClientIdentity('FRCV');
-    setBitrateKbps(4000);
-    setFps(30);
-    setEncoderName('libx264');
   };
 
   // Refresh the model list every time the dialog is opened on the Object Detection type, so a
@@ -244,12 +229,10 @@ const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd: (nam
 
   const canSubmit = (): boolean => {
     if (!name.trim()) return false;
+    if (type === 'ApriltagSink') return tagSize > 0;
     if (type === 'object') {
       if (uploadingNewModel) return !!newModelName.trim() && !!newModelFile;
       return modelId !== '';
-    }
-    if (type === 'networktables') {
-      return ntMode === 'team' ? teamNumber !== '' : serverAddress.trim() !== '';
     }
     return true;
   };
@@ -259,16 +242,12 @@ const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd: (nam
     if (!canSubmit()) return;
 
     let options: AddSinkOptions | undefined;
-    if (type === 'object') {
+    if (type === 'ApriltagSink') {
+      options = { tagSize, backend: apriltagBackend };
+    } else if (type === 'object') {
       options = uploadingNewModel
         ? { newModel: { name: newModelName.trim(), variant: newModelVariant, inputSize: 640, confThreshold: 0.25, nmsThreshold: 0.45, modelFile: newModelFile!, labelsFile: newModelLabelsFile ?? undefined } }
         : { modelId: modelId as number };
-    } else if (type === 'networktables') {
-      options = ntMode === 'team'
-        ? { teamNumber: teamNumber as number, rootTable, clientIdentity }
-        : { serverAddress: serverAddress.trim(), port: ntPort === '' ? undefined : ntPort as number, rootTable, clientIdentity };
-    } else if (type === 'webrtc') {
-      options = { bitrateKbps, fps, encoderName };
     }
 
     onAdd(name.trim(), type, options);
@@ -304,10 +283,29 @@ const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd: (nam
             <option value="ApriltagSink">AprilTag Detection</option>
             <option value="calibration">Camera Calibration</option>
             <option value="object">Object Detection (ONNX)</option>
-            <option value="networktables">NetworkTables (NT4)</option>
-            <option value="webrtc">WebRTC Stream</option>
           </select>
         </div>
+
+        {/* AprilTag: tag size and detector backend (CPU always available; Vulkan/vkapriltag
+            falls back to CPU automatically if the device has no usable GPU) */}
+        {type === 'ApriltagSink' && (
+          <div className="flex gap-2 p-3 border border-gray-200 dark:border-gray-700 rounded-md">
+            <div className="flex-1">
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Tag Size (meters)</label>
+              <input type="number" step="any" min="0.001" value={tagSize}
+                onChange={(e) => setTagSize(parseFloat(e.target.value) || 0.1651)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
+            </div>
+            <div className="flex-1">
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Backend</label>
+              <select value={apriltagBackend} onChange={(e) => setApriltagBackend(parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white">
+                <option value={0}>CPU (apriltag)</option>
+                <option value={1}>Vulkan (vkapriltag)</option>
+              </select>
+            </div>
+          </div>
+        )}
 
         {/* Object Detection: pick an existing model, or upload a new one */}
         {type === 'object' && (
@@ -378,72 +376,6 @@ const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd: (nam
           </div>
         )}
 
-        {/* NetworkTables: connect by FRC team number, or an explicit server address for bench testing */}
-        {type === 'networktables' && (
-          <div className="space-y-3 p-3 border border-gray-200 dark:border-gray-700 rounded-md">
-            <div className="flex gap-4 text-sm">
-              <label className="flex items-center gap-1">
-                <input type="radio" checked={ntMode === 'team'} onChange={() => setNtMode('team')} />Team Number
-              </label>
-              <label className="flex items-center gap-1">
-                <input type="radio" checked={ntMode === 'server'} onChange={() => setNtMode('server')} />Server Address
-              </label>
-            </div>
-            {ntMode === 'team' ? (
-              <input
-                type="number"
-                value={teamNumber}
-                onChange={(e) => setTeamNumber(e.target.value === '' ? '' : parseInt(e.target.value))}
-                placeholder="FRC team number, e.g. 1234"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-              />
-            ) : (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={serverAddress}
-                  onChange={(e) => setServerAddress(e.target.value)}
-                  placeholder="Server address, e.g. 10.0.0.2"
-                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-                />
-                <input
-                  type="number"
-                  value={ntPort}
-                  onChange={(e) => setNtPort(e.target.value === '' ? '' : parseInt(e.target.value))}
-                  placeholder="Port (default)"
-                  className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-                />
-              </div>
-            )}
-            <div className="flex gap-2">
-              <input type="text" value={rootTable} onChange={(e) => setRootTable(e.target.value)} placeholder="Root table"
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
-              <input type="text" value={clientIdentity} onChange={(e) => setClientIdentity(e.target.value)} placeholder="Client identity"
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
-            </div>
-          </div>
-        )}
-
-        {/* WebRTC: streaming parameters */}
-        {type === 'webrtc' && (
-          <div className="flex gap-2 p-3 border border-gray-200 dark:border-gray-700 rounded-md">
-            <div className="flex-1">
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Bitrate (kbps)</label>
-              <input type="number" value={bitrateKbps} onChange={(e) => setBitrateKbps(parseInt(e.target.value) || 4000)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">FPS</label>
-              <input type="number" value={fps} onChange={(e) => setFps(parseInt(e.target.value) || 30)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Encoder</label>
-              <input type="text" value={encoderName} onChange={(e) => setEncoderName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
-            </div>
-          </div>
-        )}
 
         <div className="flex justify-end space-x-3 mt-6">
           <button type="button" onClick={() => { resetForm(); onClose(); }} className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">Cancel</button>
@@ -485,6 +417,51 @@ const SettingsModal: React.FC<{
             type="number" min="1" max="60"
             value={localSettings.refreshInterval}
             onChange={(e) => setLocalSettings({...localSettings, refreshInterval: parseInt(e.target.value)})}
+            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+          />
+        </div>
+        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">NetworkTables Connection</label>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Used by every node's "Publish to NT4" toggle - one robot only has one NT4 server to talk to.</p>
+          <div className="flex gap-4 text-sm mb-2">
+            <label className="flex items-center gap-1">
+              <input type="radio" checked={localSettings.nt4.mode === 'team'} onChange={() => setLocalSettings({...localSettings, nt4: {...localSettings.nt4, mode: 'team'}})} />Team Number
+            </label>
+            <label className="flex items-center gap-1">
+              <input type="radio" checked={localSettings.nt4.mode === 'server'} onChange={() => setLocalSettings({...localSettings, nt4: {...localSettings.nt4, mode: 'server'}})} />Server Address
+            </label>
+          </div>
+          {localSettings.nt4.mode === 'team' ? (
+            <input
+              type="number"
+              value={localSettings.nt4.teamNumber ?? ''}
+              onChange={(e) => setLocalSettings({...localSettings, nt4: {...localSettings.nt4, teamNumber: e.target.value === '' ? undefined : parseInt(e.target.value)}})}
+              placeholder="FRC team number, e.g. 1234"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white mb-2"
+            />
+          ) : (
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={localSettings.nt4.serverAddress ?? ''}
+                onChange={(e) => setLocalSettings({...localSettings, nt4: {...localSettings.nt4, serverAddress: e.target.value}})}
+                placeholder="Server address, e.g. 10.0.0.2"
+                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+              />
+              <input
+                type="number"
+                value={localSettings.nt4.port ?? ''}
+                onChange={(e) => setLocalSettings({...localSettings, nt4: {...localSettings.nt4, port: e.target.value === '' ? undefined : parseInt(e.target.value)}})}
+                placeholder="Port (default)"
+                className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+          )}
+          <input
+            type="text"
+            value={localSettings.nt4.rootTable}
+            onChange={(e) => setLocalSettings({...localSettings, nt4: {...localSettings.nt4, rootTable: e.target.value}})}
+            placeholder="Root table"
             className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
           />
         </div>
@@ -712,13 +689,17 @@ const DashboardPage: React.FC<{
   onStopAllStreams: () => void;
   onStopStream: (id: number) => void;
   onStreamError: (id: number, error: string) => void;
-  onStartStream: (id: number) => void;
+  onTogglePreview: (node: {id:number; name:string}) => void;
   onGoToSinks: () => void;
   onGoToSources: () => void;
   onStartUDP: () => void;
   onStopUDP: () => void;
   onToggleSink: (id: number, enabled: boolean) => void;
-}> = ({ systemStats, deviceStats, streamingSinks, sources, sinks, onStopAllStreams, onStopStream, onStreamError, onStartStream, onGoToSinks, onGoToSources, onStartUDP, onStopUDP, onToggleSink }) => (
+}> = ({ systemStats, deviceStats, streamingSinks, sources, sinks, onStopAllStreams, onStopStream, onStreamError, onTogglePreview, onGoToSinks, onGoToSources, onStartUDP, onStopUDP, onToggleSink }) => {
+  // WebRTC/NetworkTables sinks are plumbing auto-created by the Live Preview / Publish to NT4
+  // toggles - not something the user directly created, so they're left out of this summary too.
+  const visibleSinks = sinks.filter(s => s.type !== 'webrtc' && s.type !== 'networktables');
+  return (
   <div className="space-y-6">
     <SystemStatus systemStats={systemStats} deviceStats={deviceStats} />
     
@@ -797,7 +778,7 @@ const DashboardPage: React.FC<{
           <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Target className="w-5 h-5 text-green-600" />Processing Sinks</h2>
           <button onClick={onGoToSinks} className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">View All <ExternalLink className="w-3 h-3" /></button>
         </div>
-        {sinks.length === 0 ? (
+        {visibleSinks.length === 0 ? (
           <div className="text-center py-8">
             <Target className="w-12 h-12 mx-auto mb-3 text-gray-400" />
             <p className="text-gray-500 dark:text-gray-400">No sinks available</p>
@@ -805,7 +786,10 @@ const DashboardPage: React.FC<{
           </div>
         ) : (
           <div className="space-y-3 max-h-64 overflow-y-auto">
-            {sinks.slice(0,4).map(sink => (
+            {visibleSinks.slice(0,4).map(sink => {
+              const preview = sinks.find(s => s.type === 'webrtc' && s.sourceId === sink.id);
+              const isStreaming = preview != null && streamingSinks.has(preview.id);
+              return (
               <div key={sink.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className={`w-3 h-3 rounded-full ${sink.status==='active' ? 'bg-green-500' : sink.status==='inactive' ? 'bg-gray-400' : 'bg-red-500'}`} />
@@ -815,24 +799,25 @@ const DashboardPage: React.FC<{
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <ToggleSwitch 
-                    enabled={sink.isEnabled ?? false} 
+                  <ToggleSwitch
+                    enabled={sink.isEnabled ?? false}
                     onChange={(enabled) => onToggleSink(sink.id, enabled)}
                   />
-                  {streamingSinks.has(sink.id) ? (
+                  {isStreaming ? (
                     <>
                       <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded text-xs font-medium">LIVE</span>
-                      <button onClick={()=>onStopStream(sink.id)} className="p-1 text-red-600 hover:text-red-700" title="Stop stream"><StopCircle className="w-4 h-4" /></button>
+                      <button onClick={()=>onTogglePreview({id: sink.id, name: sink.name})} className="p-1 text-red-600 hover:text-red-700" title="Stop preview"><StopCircle className="w-4 h-4" /></button>
                     </>
                   ) : (
-                    <button onClick={()=>onStartStream(sink.id)} className="p-1 text-green-600 hover:text-green-700" title="Start stream" disabled={sink.status==='error'}><PlayCircle className="w-4 h-4" /></button>
+                    <button onClick={()=>onTogglePreview({id: sink.id, name: sink.name})} className="p-1 text-green-600 hover:text-green-700" title="Start preview" disabled={sink.status==='error'}><PlayCircle className="w-4 h-4" /></button>
                   )}
                 </div>
               </div>
-            ))}
-            {sinks.length > 4 && (
+              );
+            })}
+            {visibleSinks.length > 4 && (
               <div className="text-center pt-2">
-                <button onClick={onGoToSinks} className="text-blue-600 hover:text-blue-700 text-sm">+{sinks.length - 4} more sinks</button>
+                <button onClick={onGoToSinks} className="text-blue-600 hover:text-blue-700 text-sm">+{visibleSinks.length - 4} more sinks</button>
               </div>
             )}
           </div>
@@ -862,25 +847,30 @@ const DashboardPage: React.FC<{
       <div className="text-center py-12">
         <MonitorSpeaker className="w-16 h-16 mx-auto mb-4 text-gray-400" />
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Active Streams</h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">Start a WebRTC sink's stream from the Sinks page to see it here.</p>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">Activate Live Preview on a node from the Sources or Sinks page to see it here.</p>
         <button onClick={onGoToSinks} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2 mx-auto"><Target className="w-4 h-4" />Go to Sinks</button>
       </div>
     )}
   </div>
-);
+  );
+};
 
 /****************
  * Sources Page
  ****************/
-const SourcesPage: React.FC<{ 
-  sources: Source[]; 
-  loading: boolean; 
-  onAddSource: () => void; 
-  onConfigure:(s:Source)=>void; 
+const SourcesPage: React.FC<{
+  sources: Source[];
+  sinks: Sink[];
+  streamingSinks: Set<number>;
+  loading: boolean;
+  onAddSource: () => void;
+  onConfigure:(s:Source)=>void;
   onDelete:(id:number)=>void;
+  onTogglePreview:(node: {id:number; name:string})=>void;
+  onStreamError:(id:number, error:string)=>void;
   onBulkVideoUpload: (files: FileList, fps?: number) => Promise<{ success: boolean; sourceIds: number[]; message: string }>;
   onBulkImageUpload: (files: FileList) => Promise<{ success: boolean; sourceIds: number[]; message: string }>;
-}> = ({ sources, loading, onAddSource, onConfigure, onDelete, onBulkVideoUpload, onBulkImageUpload }) => (
+}> = ({ sources, sinks, streamingSinks, loading, onAddSource, onConfigure, onDelete, onTogglePreview, onStreamError, onBulkVideoUpload, onBulkImageUpload }) => (
   <div className="space-y-6">
     <div className="flex justify-between items-center">
       <div>
@@ -889,9 +879,9 @@ const SourcesPage: React.FC<{
       </div>
       <button onClick={onAddSource} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"><Plus className="w-4 h-4" />Add Source</button>
     </div>
-    
+
     {/* Bulk Upload Component */}
-    <BulkUploadComponent 
+    <BulkUploadComponent
       onVideoUpload={onBulkVideoUpload}
       onImageUpload={onBulkImageUpload}
       className="mb-6"
@@ -906,7 +896,10 @@ const SourcesPage: React.FC<{
       </div>
     ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sources.map(source => (
+        {sources.map(source => {
+          const preview = sinks.find(s => s.type === 'webrtc' && s.sourceId === source.id);
+          const isStreaming = preview != null && streamingSinks.has(preview.id);
+          return (
           <div key={source.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-all">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2">
@@ -926,11 +919,21 @@ const SourcesPage: React.FC<{
             {source.fps && (
               <p className="text-xs text-gray-400 mb-2">FPS: {source.fps}</p>
             )}
+            <button onClick={()=>onTogglePreview({id: source.id, name: source.name})}
+              className={`w-full px-3 py-2 rounded text-sm flex items-center gap-1 justify-center mb-3 ${isStreaming ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white`}>
+              {isStreaming ? <><StopCircle className="w-4 h-4" />Stop Preview</> : <><PlayCircle className="w-4 h-4" />Live Preview</>}
+            </button>
+            {isStreaming && preview && (
+              <div className="mb-3">
+                <WebRTCStream sinkId={preview.id} onStop={()=>onTogglePreview({id: source.id, name: source.name})} onError={(error)=>onStreamError(preview.id, error)} />
+              </div>
+            )}
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-400">Updated: {source.lastUpdate?.toLocaleTimeString()}</span>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
     )}
   </div>
@@ -943,14 +946,20 @@ const SinksPage: React.FC<{
   sinks: Sink[];
   loading: boolean;
   streamingSinks: Set<number>;
+  nt4Settings: NT4Defaults;
   onAddSink:()=>void;
-  onStartStream:(id:number)=>void;
-  onStopStream:(id:number)=>void;
+  onTogglePreview:(node: {id:number; name:string})=>void;
+  onToggleNT4Publish:(node: {id:number; name:string}, nt4: NT4Defaults)=>void;
   onStreamError:(id:number, error:string)=>void;
   onConfigure:(s:Sink)=>void;
   onDelete:(id:number)=>void;
   onToggleSink:(id:number, enabled:boolean)=>void;
-}> = ({ sinks, loading, streamingSinks, onAddSink, onStartStream, onStopStream, onStreamError, onConfigure, onDelete, onToggleSink }) => (
+}> = ({ sinks, loading, streamingSinks, nt4Settings, onAddSink, onTogglePreview, onToggleNT4Publish, onStreamError, onConfigure, onDelete, onToggleSink }) => {
+  // WebRTC/NetworkTables sinks are plumbing auto-created by the Live Preview / Publish to NT4
+  // toggles below - they're not something the user directly created, so they don't get their
+  // own card (that's the whole point of them not being addable sink types anymore).
+  const visibleSinks = sinks.filter(s => s.type !== 'webrtc' && s.type !== 'networktables');
+  return (
   <div className="space-y-6">
     <div className="flex justify-between items-center">
       <div>
@@ -959,7 +968,7 @@ const SinksPage: React.FC<{
       </div>
       <button onClick={onAddSink} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"><Plus className="w-4 h-4" />Add Sink</button>
     </div>
-    {sinks.length === 0 && !loading ? (
+    {visibleSinks.length === 0 && !loading ? (
       <div className="text-center py-12">
         <Target className="w-16 h-16 mx-auto mb-4 text-gray-400" />
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Sinks Found</h3>
@@ -968,7 +977,12 @@ const SinksPage: React.FC<{
       </div>
     ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sinks.map(sink => (
+        {visibleSinks.map(sink => {
+          const preview = sinks.find(s => s.type === 'webrtc' && s.sourceId === sink.id);
+          const isStreaming = preview != null && streamingSinks.has(preview.id);
+          const nt4 = sinks.find(s => s.type === 'networktables' && s.sourceId === sink.id);
+          const canPublish = PUBLISHABLE_SINK_TYPES.includes(sink.type);
+          return (
           <div key={sink.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-all">
             <div className="flex justify-between items-start mb-4">
               <div className="flex items-center gap-2">
@@ -988,8 +1002,8 @@ const SinksPage: React.FC<{
             <div className="flex items-center gap-3 mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-700 dark:text-gray-300">Status:</span>
-                <ToggleSwitch 
-                  enabled={sink.isEnabled ?? false} 
+                <ToggleSwitch
+                  enabled={sink.isEnabled ?? false}
                   onChange={(enabled) => onToggleSink(sink.id, enabled)}
                 />
                 <span className={`text-sm font-medium ${sink.isEnabled ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
@@ -997,30 +1011,43 @@ const SinksPage: React.FC<{
                 </span>
               </div>
             </div>
+            {canPublish && (
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Publish to NT4:</span>
+                  <ToggleSwitch
+                    enabled={nt4?.isEnabled ?? false}
+                    onChange={() => onToggleNT4Publish({id: sink.id, name: sink.name}, nt4Settings)}
+                  />
+                </div>
+              </div>
+            )}
             <div className="flex gap-2 mb-4">
-              {streamingSinks.has(sink.id) ? (
-                <button onClick={()=>onStopStream(sink.id)} className="flex-1 px-3 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 flex items-center gap-1 justify-center"><StopCircle className="w-4 h-4" />Stop Stream</button>
-              ) : (
-                <button onClick={()=>onStartStream(sink.id)} className="flex-1 px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 flex items-center gap-1 justify-center" disabled={sink.status==='error'}><PlayCircle className="w-4 h-4" />Start Stream</button>
-              )}
+              <button onClick={()=>onTogglePreview({id: sink.id, name: sink.name})}
+                className={`flex-1 px-3 py-2 rounded text-sm flex items-center gap-1 justify-center text-white ${isStreaming ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+                disabled={sink.status==='error'}>
+                {isStreaming ? <><StopCircle className="w-4 h-4" />Stop Preview</> : <><PlayCircle className="w-4 h-4" />Live Preview</>}
+              </button>
               <button onClick={()=>onConfigure(sink)} className="px-3 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colours" title="Configure"><Cog className="w-4 h-4" /></button>
             </div>
-            {streamingSinks.has(sink.id) && (
+            {isStreaming && preview && (
               <div className="mb-4">
                 <WebRTCStream
-                  sinkId={sink.id}
-                  onStop={() => onStopStream(sink.id)}
-                  onError={(error) => onStreamError(sink.id, error)}
+                  sinkId={preview.id}
+                  onStop={() => onTogglePreview({id: sink.id, name: sink.name})}
+                  onError={(error) => onStreamError(preview.id, error)}
                 />
               </div>
             )}
             <div className="text-xs text-gray-400">Updated: {sink.lastUpdate?.toLocaleTimeString()}</div>
           </div>
-        ))}
+          );
+        })}
       </div>
     )}
   </div>
-);
+  );
+};
 
 /*******************
  * Main App
@@ -1031,7 +1058,19 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddSource, setShowAddSource] = useState(false);
   const [showAddSink, setShowAddSink] = useState(false);
-  const [settings, setSettings] = useState<SettingsType>({ serverUrl: window.location.origin, refreshInterval: 5 });
+  const [settings, setSettingsState] = useState<SettingsType>(() => {
+    try {
+      const saved = localStorage.getItem('frcvSettings');
+      if (saved) return { ...JSON.parse(saved), serverUrl: window.location.origin };
+    } catch { /* ignore malformed/unavailable localStorage, fall through to defaults */ }
+    return { serverUrl: window.location.origin, refreshInterval: 5, nt4: { mode: 'team', rootTable: 'FRCV' } };
+  });
+  // NT4 connection details are worth remembering across reloads (they're per-robot, not
+  // per-session) - persisted the same way darkMode already is.
+  const setSettings = (next: SettingsType) => {
+    setSettingsState(next);
+    try { localStorage.setItem('frcvSettings', JSON.stringify(next)); } catch { /* ignore */ }
+  };
   const [cfgSource, setCfgSource] = useState<Source|null>(null);
   const [cfgSink, setCfgSink] = useState<Sink|null>(null);
 
@@ -1045,7 +1084,6 @@ function App() {
     deviceStats,
     toast,
     loadData,
-    startStream,
     stopStream,
     handleStreamError,
     showToast,
@@ -1062,10 +1100,23 @@ function App() {
     startUDPTransmission,
     stopUDPTransmission,
     handleToggleSink,
+    handleTogglePreview,
+    handleToggleNT4Publish,
     setStreamingSinks,
     setError,
     setToast
   } = useAppData();
+
+  // AprilTag/Object Detection/Calibration sinks are dual-role sources too (see Manager.cpp's
+  // m_Sources.emplace alongside m_Sinks.emplace) - the bind picker needs to offer them
+  // alongside real Sources, or a WebRTC/NT4 sink could never be pointed at a detector's own
+  // annotated output (confirmed the hard way: this is why AprilTag preview didn't work before).
+  const bindableSources: Source[] = [
+    ...sources,
+    ...sinks.filter(s => PUBLISHABLE_SINK_TYPES.includes(s.type)).map(s => ({
+      id: s.id, name: s.name, type: 'detector-output', status: 'active' as const
+    }))
+  ];
 
   useEffect(() => {
     loadData();
@@ -1112,17 +1163,17 @@ function App() {
 
         <main className="p-6">
           {currentTab === 'dashboard' && (
-            <DashboardPage 
-              systemStats={systemStats} 
+            <DashboardPage
+              systemStats={systemStats}
               deviceStats={deviceStats}
-              streamingSinks={streamingSinks} 
-              sources={sources} 
-              sinks={sinks} 
-              onStopAllStreams={()=>setStreamingSinks(new Set())} 
-              onStopStream={stopStream} 
-              onStreamError={handleStreamError} 
-              onStartStream={startStream} 
-              onGoToSinks={()=>setCurrentTab('sinks')} 
+              streamingSinks={streamingSinks}
+              sources={sources}
+              sinks={sinks}
+              onStopAllStreams={()=>setStreamingSinks(new Set())}
+              onStopStream={stopStream}
+              onStreamError={handleStreamError}
+              onTogglePreview={handleTogglePreview}
+              onGoToSinks={()=>setCurrentTab('sinks')}
               onGoToSources={()=>setCurrentTab('sources')}
               onStartUDP={startUDPTransmission}
               onStopUDP={stopUDPTransmission}
@@ -1130,12 +1181,16 @@ function App() {
             />
           )}
           {currentTab === 'sources' && (
-            <SourcesPage 
-              sources={sources} 
-              loading={loading} 
-              onAddSource={()=>setShowAddSource(true)} 
-              onConfigure={s=>setCfgSource(s)} 
+            <SourcesPage
+              sources={sources}
+              sinks={sinks}
+              streamingSinks={streamingSinks}
+              loading={loading}
+              onAddSource={()=>setShowAddSource(true)}
+              onConfigure={s=>setCfgSource(s)}
               onDelete={id=>handleDeleteSource(id)}
+              onTogglePreview={handleTogglePreview}
+              onStreamError={handleStreamError}
               onBulkVideoUpload={handleBulkVideoUpload}
               onBulkImageUpload={handleBulkImageUpload}
             />
@@ -1145,9 +1200,10 @@ function App() {
               sinks={sinks}
               loading={loading}
               streamingSinks={streamingSinks}
+              nt4Settings={settings.nt4}
               onAddSink={()=>setShowAddSink(true)}
-              onStartStream={startStream}
-              onStopStream={stopStream}
+              onTogglePreview={handleTogglePreview}
+              onToggleNT4Publish={handleToggleNT4Publish}
               onStreamError={handleStreamError}
               onConfigure={s=>setCfgSink(s)}
               onDelete={id=>handleDeleteSink(id)}
@@ -1161,7 +1217,7 @@ function App() {
         <AddSinkModal isOpen={showAddSink} onClose={()=>setShowAddSink(false)} onAdd={handleAddSink} />
 
         <ConfigureSourceModal isOpen={!!cfgSource} source={cfgSource} onClose={()=>setCfgSource(null)} onRename={name=> cfgSource && handleRenameSource(cfgSource.id, name)} onDelete={()=> { if(cfgSource){ handleDeleteSource(cfgSource.id); setCfgSource(null);} }} />
-        <ConfigureSinkModal isOpen={!!cfgSink} sink={cfgSink} sources={sources} onClose={()=>setCfgSink(null)} onRename={name=> cfgSink && handleRenameSink(cfgSink.id, name)} onDelete={()=> { if(cfgSink){ handleDeleteSink(cfgSink.id); setCfgSink(null);} }} onBind={(src)=> cfgSink && handleBindSink(cfgSink.id, src)} onUnbind={(src)=> cfgSink && handleUnbindSink(cfgSink.id, src)} />
+        <ConfigureSinkModal isOpen={!!cfgSink} sink={cfgSink} sources={bindableSources.filter(s => s.id !== cfgSink?.id)} onClose={()=>setCfgSink(null)} onRename={name=> cfgSink && handleRenameSink(cfgSink.id, name)} onDelete={()=> { if(cfgSink){ handleDeleteSink(cfgSink.id); setCfgSink(null);} }} onBind={(src)=> cfgSink && handleBindSink(cfgSink.id, src)} onUnbind={(src)=> cfgSink && handleUnbindSink(cfgSink.id, src)} />
 
         {toast && <Toast message={toast.message} type={toast.type} onClose={()=>setToast(null)} />}
       </div>

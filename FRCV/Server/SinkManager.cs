@@ -422,15 +422,38 @@ namespace Server
             }
         }
 
+        // ApriltagSink, ObjectDetectionSink and CameraCalibrationSink are dual-role: natively
+        // registered as both a sink AND a source (see the m_Sources.emplace calls alongside
+        // m_Sinks.emplace in Manager.cpp's CreateApriltagDetector/CreateObjectDetectionSink/
+        // CreateCameraCalibrator), so their own id is a perfectly valid bind target for e.g. a
+        // WebRTCSink wanting to preview a detector's annotated output. SourceManager's C# source
+        // list never tracked these though - only real camera/video/image sources - so binding to
+        // one used to look up a null Source here and NullReferenceException on the line below.
+        private static readonly HashSet<SinkType> DualRoleSinkTypes = new HashSet<SinkType> {
+            SinkType.ApriltagSink, SinkType.ObjectDetectionSink, SinkType.CameraCalibrationSink
+        };
+
         public void BindSourceToSink(int sinkId, int sourceId)
         {
             foreach (var sink in sinks)
             {
                 if (sink.Id == sinkId)
                 {
-                    sink.Source = SourceManager.Instance.GetSourceById(sourceId);
+                    Source? source = SourceManager.Instance.GetSourceById(sourceId);
+                    bool isRealSource = source != null;
+                    if (source == null)
+                    {
+                        var sourceSink = sinks.FirstOrDefault(s => s.Id == sourceId && DualRoleSinkTypes.Contains(s.Type));
+                        if (sourceSink != null) source = new Source(sourceSink.Id, sourceSink.Name, SourceType.SinkOutput);
+                    }
+                    if (source == null) throw new Exception($"no source (or dual-role sink) with id {sourceId}");
+
+                    sink.Source = source;
                     ManagerWrapper.Instance.BindSourceToSink(sourceId, sinkId);
-                    SourceManager.Instance.EnableSourceById(sink.Source.Id);
+                    // Only a "real" SourceManager-tracked source has its own enable/disable
+                    // lifecycle to kick off here - a dual-role sink's underlying node is already
+                    // started/stopped via its own Enabled toggle (EnableSinkById), not this one.
+                    if (isRealSource) SourceManager.Instance.EnableSourceById(source.Id);
                     DB.Instance.Save(); // Save changes to the database
                     break;
                 }

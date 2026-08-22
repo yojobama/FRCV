@@ -501,6 +501,42 @@ whole library is now converted into a real, catchable `System.ApplicationExcepti
 terminating the process. Verified: re-ran the exact bad-model-upload request post-fix and got a
 clean `500` with the exception message, server still running and responsive immediately after.
 
+**Follow-up redesign after real user feedback** (2026-08-22, same day): WebRTC and NetworkTables
+as standalone addable "Sink Types" turned out to be the wrong shape entirely - both are really
+attributes of *another* node's output, not first-class processing pipelines a user creates on
+purpose. Redesigned per feedback:
+- AprilTag Detection gained the Tag Size and CPU/Vulkan Backend fields it was missing, now wired
+  to `/apriltagSink/createWithBackend` instead of the parameterless `/apriltagSink/create`.
+- WebRTC and NetworkTables were removed from the "Add Sink" dropdown again. In their place, every
+  node that can produce a frame or JSON result - a raw Source card, or an AprilTag/Object
+  Detection/Camera Calibration Sink card - now has a "Live Preview" toggle, and detector Sinks
+  additionally get a "Publish to NT4" toggle. Toggling either auto-creates (once) a dedicated
+  WebRTCSink/NetworkTablesSink bound to that node, reusing NT4 connection details (team number or
+  server address, root table) configured once in Settings rather than re-entered per node. These
+  auto-created sinks are filtered out of the Sinks page/Dashboard sink lists entirely - they're
+  plumbing, not something the user directly manages.
+- This surfaced the actual root cause of a real bug report ("WebRTC preview didn't work against
+  the AprilTag detector"): `SourceManager`'s C# source list only ever tracked "real" sources
+  (camera/video/image) - a dual-role node like `ApriltagDetector` (registered as both a sink AND
+  a source natively, see `Manager.cpp`'s `m_Sources.emplace` alongside `m_Sinks.emplace`) could
+  never be selected as a bind target, and `SinkManager.BindSourceToSink` would
+  NullReferenceException trying to construct `sink.Source` from a lookup that always returned
+  null for such an id. Fixed by adding `SourceType.SinkOutput` and having `BindSourceToSink`
+  construct a synthetic `Source` for a dual-role sink id instead of only ever checking
+  `SourceManager`'s own list; the WebUI's bind picker (and the new preview/publish toggles) now
+  offer these nodes too.
+- Verified for real against actual Orange Pi hardware with a live USB webcam connected
+  (`webcam_HD_2MP_WEBCAM` at `/dev/video0`): created a real camera source, watched its live feed
+  over WebRTC in the browser; created an AprilTag sink with the Vulkan backend explicitly
+  selected (confirmed via `/apriltagSink/backend` returning `"Vulkan (vkapriltag)"`), bound it to
+  the camera, and got a working Live Preview of *the detector's own annotated output* - the exact
+  scenario that was broken before. Toggled Publish to NT4 on the same sink and confirmed via
+  `/networkTablesSink/status` that a real NT4 client was created with the configured team number.
+  Also caught and fixed two smaller bugs this surfaced: the Tag Size field's default (0.1651)
+  wasn't a multiple of its `step="0.001"`, which silently blocked submission (browsers reject
+  non-conforming values with a UI hint but no visible field error) - changed to `step="any"`; and
+  the bind picker offered a sink as a valid bind target for *itself*.
+
 **Server — the glue layer**
 
 1. Register every controller in `Program.cs` (B7); add `NetworkTablesController`,
