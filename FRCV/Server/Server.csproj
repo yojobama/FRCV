@@ -47,10 +47,22 @@
     <PackageReference Include="System.Text.Json" Version="10.0.10" />
   </ItemGroup>
 
+  <!--
+    CopyToOutputDirectory must be Always, not PreserveNewest: PreserveNewest only compares file
+    timestamps, and libFRCVLib.so is copied to the SAME output filename regardless of which
+    FRCVLibPlatform it came from. Building ARM64 (for an Orange Pi deploy) and then switching
+    back to a plain x64 build (e.g. for local WSL2 debugging) without a clean lands an x64-newer
+    source next to an already-copied ARM64 output file that's newer still (from the earlier
+    build) - PreserveNewest sees the destination as "already newest" and skips the copy,
+    silently leaving the wrong-architecture .so in the output directory. Confirmed the hard way:
+    reproduced exactly this (a stale ARM64 libFRCVLib.so left in Server/bin/Debug/net10.0 after
+    an x64-only `dotnet build`), which is indistinguishable at runtime from the DllNotFoundException
+    this project hit for the opposite mismatch (x64 .so deployed to an ARM64 device).
+  -->
   <ItemGroup>
     <Content Include="$(FRCVLibBuildDir)\libFRCVLib.so" Condition="Exists('$(FRCVLibBuildDir)\libFRCVLib.so')">
       <Link>libFRCVLib.so</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
 
