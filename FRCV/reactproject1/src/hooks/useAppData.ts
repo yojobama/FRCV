@@ -151,7 +151,7 @@ export const useAppData = () => {
   const handleAddSource = async (name: string, type: string, files?: FileList, fps?: number, hardwareInfo?: any) => {
     try {
       if (type === 'camera' && hardwareInfo) {
-        const sourceId = await api.createCameraSource(hardwareInfo);
+        const sourceId = await api.createCameraSource(hardwareInfo, name);
         showToast(`Camera source "${name}" added successfully with ID ${sourceId}`, 'success');
       } else if (type === 'video' && files && files.length > 0) {
         const result = await api.uploadVideoFiles(files, fps || 30);

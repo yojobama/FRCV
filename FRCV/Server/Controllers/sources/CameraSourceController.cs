@@ -36,9 +36,9 @@ namespace Server.Controllers.sources
 
         // POST: Create a camera source from a specified camera;
         [Route(EmbedIO.HttpVerbs.Post, "/cameraSource/create")]
-        public Task<int> Create([JsonData] CameraHardwareInfo hardwareInfo)
+        public Task<int> Create([JsonData] CameraHardwareInfo hardwareInfo, [QueryField] string name = "default")
         {
-            int sourceId = SourceManager.Instance.InitializeCameraSource(hardwareInfo);
+            int sourceId = SourceManager.Instance.InitializeCameraSource(hardwareInfo, name);
             return Task.FromResult(sourceId);
         }
 

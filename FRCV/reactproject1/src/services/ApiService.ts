@@ -37,8 +37,8 @@ export class ApiService {
     return response.json();
   }
 
-  async createCameraSource(hardwareInfo: CameraHardwareInfo): Promise<number> {
-    const response = await fetch(`${this.baseUrl}/cameraSource/create`, {
+  async createCameraSource(hardwareInfo: CameraHardwareInfo, name = 'default'): Promise<number> {
+    const response = await fetch(`${this.baseUrl}/cameraSource/create?name=${encodeURIComponent(name)}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(hardwareInfo)
