@@ -55,6 +55,24 @@
   </ItemGroup>
 
   <!--
+    The React WebUI (reactproject1) is a separate npm/Vite project, not part of this C# build
+    graph - `npm run build` there produces reactproject1\dist, which Program.cs serves as static
+    files from a "wwwroot" folder next to Server.dll. Guarded on Exists() the same way as
+    libFRCVLib.so above: a machine that hasn't built the WebUI yet still builds and runs Server
+    fine (Program.cs falls back to API-only with a warning), rather than failing the build over a
+    separate project's output.
+  -->
+  <ItemGroup>
+    <Content Include="wwwroot\**" Exclude="wwwroot\dist\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\reactproject1\dist\**" Condition="Exists('..\reactproject1\dist')">
+      <Link>wwwroot\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!--
     A missing/wrong-architecture libFRCVLib.so is otherwise silent at build time (the Content
     item above just has no match) and only surfaces as a runtime DllNotFoundException on
     whatever machine ends up running Server.dll - a much harder place to diagnose it, especially

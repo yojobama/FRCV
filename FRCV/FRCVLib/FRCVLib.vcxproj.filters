@@ -38,6 +38,14 @@
       <Filter>Source</Filter>
     </ClCompile>
     <ClCompile Include="CameraCalibrator.cpp" />
+    <ClCompile Include="CpuApriltagBackend.cpp" />
+    <ClCompile Include="NetworkTablesSink.cpp" />
+    <ClCompile Include="ObjectDetectionSink.cpp" />
+    <ClCompile Include="OnnxDetectionBackend.cpp" />
+    <ClCompile Include="VkApriltagBackend.cpp" />
+    <ClCompile Include="WebRTCSink.cpp" />
+    <ClCompile Include="YoloPostProcess.cpp" />
+    <ClCompile Include="swig_wrap.cxx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ISink.h">
@@ -70,6 +78,16 @@
       <Filter>Source</Filter>
     </ClInclude>
     <ClInclude Include="CameraCalibrator.h" />
+    <ClInclude Include="CalibrationBoardType.h" />
+    <ClInclude Include="CpuApriltagBackend.h" />
+    <ClInclude Include="IApriltagBackend.h" />
+    <ClInclude Include="IDetectionBackend.h" />
+    <ClInclude Include="NetworkTablesSink.h" />
+    <ClInclude Include="ObjectDetectionSink.h" />
+    <ClInclude Include="OnnxDetectionBackend.h" />
+    <ClInclude Include="VkApriltagBackend.h" />
+    <ClInclude Include="WebRTCSink.h" />
+    <ClInclude Include="YoloPostProcess.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="swig.i" />

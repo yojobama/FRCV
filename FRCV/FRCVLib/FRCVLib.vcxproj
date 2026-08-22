@@ -29,7 +29,6 @@
     <LinuxProjectType>{2238F9CD-F817-4ECC-BD14-2524D2669B35}</LinuxProjectType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-
   <!--
     Debug|x64 and Release|x64 build inside WSL2 for the local dev inner loop.
     Debug|ARM64 and Release|ARM64 cross-build remotely on the Orange Pi (RK3588) over SSH via
@@ -56,7 +55,6 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <PlatformToolset>Remote_GCC_1_0</PlatformToolset>
   </PropertyGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Label="Shared" />
@@ -64,7 +62,6 @@
     <Import Project="Local.props" Condition="exists('Local.props')" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-
   <!--
     Feature flags: since the build stays MSBuild-only (no CMake), optional backends are
     toggled via preprocessor defines instead of build options. FRCV_WITH_RKNN is ARM64-only
@@ -77,9 +74,9 @@
     <FrcvPlatformDefines>FRCV_WITH_RKNN</FrcvPlatformDefines>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
-    <FrcvPlatformDefines></FrcvPlatformDefines>
+    <FrcvPlatformDefines>
+    </FrcvPlatformDefines>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <WSLPath Condition="'$(WSLPath)'==''">Ubuntu</WSLPath>
     <EnableASAN>false</EnableASAN>
@@ -93,7 +90,6 @@
     <IncludePath>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include</IncludePath>
     <EnableIncrementalBuild>WithNinja</EnableIncrementalBuild>
   </PropertyGroup>
-
   <ItemGroup>
     <ClInclude Include="ApriltagDetection.h" />
     <ClInclude Include="ApriltagDetector.h" />
@@ -164,7 +160,6 @@
     <None Include="swig.i" />
     <None Include="Local.props.example" />
   </ItemGroup>
-
   <!--
     PreBuildEvent commands run locally (via cmd.exe on Windows), even for this Linux/WSL2/
     Remote_GCC-toolset project - only ClCompile/Link get proxied to the remote build machine.
@@ -178,7 +173,9 @@
       <Command>swig -c++ -csharp -DFRCV_WITH_ONNX -DFRCV_WITH_NT4 -DFRCV_WITH_WEBRTC -DFRCV_WITH_VULKAN_APRILTAG -outdir ..\Server\FRCVCore -o swig_wrap.cxx swig.i</Command>
     </PreBuildEvent>
   </PropertyGroup>
-
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <MultiProcNumber>12</MultiProcNumber>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include;/usr/local/include/apriltag;../third_party/vkapriltag/apriltags_vulkan/library/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -191,7 +188,6 @@
       <AdditionalDependencies>../third_party/vkapriltag/apriltags_vulkan/build/library/libvkapriltag.a;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-
   <ItemDefinitionGroup Condition="'$(Platform)'=='ARM64'">
     <ClCompile>
       <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include;/usr/local/include/apriltag;../third_party/vkapriltag/apriltags_vulkan/library/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -204,7 +200,6 @@
       <AdditionalDependencies>../third_party/vkapriltag/apriltags_vulkan/build/library/libvkapriltag.a;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>

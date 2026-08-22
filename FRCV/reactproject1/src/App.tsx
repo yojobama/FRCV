@@ -786,7 +786,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddSource, setShowAddSource] = useState(false);
   const [showAddSink, setShowAddSink] = useState(false);
-  const [settings, setSettings] = useState<SettingsType>({ serverUrl: 'http://localhost:8175', refreshInterval: 5 });
+  const [settings, setSettings] = useState<SettingsType>({ serverUrl: window.location.origin, refreshInterval: 5 });
   const [cfgSource, setCfgSource] = useState<Source|null>(null);
   const [cfgSink, setCfgSink] = useState<Sink|null>(null);
 

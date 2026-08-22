@@ -1,4 +1,5 @@
 ﻿using EmbedIO;
+using EmbedIO.Files;
 using EmbedIO.WebApi;
 using EmbedIO.Cors;
 using Server.Controllers;
@@ -38,6 +39,21 @@ namespace Server
                     m.WithController<DeviceController>();
                 });
 
+            // Serves the built React WebUI (npm run build in reactproject1, copied into
+            // wwwroot by Server.csproj) - registered after WithWebApi so /api/* is always
+            // matched by the API module first; EmbedIO tries modules in registration order.
+            // isImmutable=false: a Vite build's index.html is small and changes on every
+            // rebuild, so it shouldn't be served from a stale cache.
+            string wwwrootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot");
+            if (Directory.Exists(wwwrootPath))
+            {
+                server = server.WithStaticFolder("/", wwwrootPath, false);
+            }
+            else
+            {
+                Console.WriteLine($"WARNING: wwwroot not found at '{wwwrootPath}' - WebUI will not be served (API is still available under /api)");
+            }
+
             // Optional: Listen for state changes
             server.StateChanged += (s, e) =>
                 Console.WriteLine($"WebServer New State - {e.NewState}");
@@ -58,7 +74,10 @@ namespace Server
 
             // initializing the web server
             Console.WriteLine("Starting HTTP server...");
-            var server = CreateWebServer("http://localhost:8175");
+            // "*" (not "localhost") so the WebUI and API are reachable from other machines on
+            // the network - this is what actually makes "running the WebUI on the Pi" useful,
+            // since nobody browses to the Orange Pi's own localhost.
+            var server = CreateWebServer("http://*:8175");
             server.Start();
 
             Console.WriteLine("Server is running. Press Enter to exit.");

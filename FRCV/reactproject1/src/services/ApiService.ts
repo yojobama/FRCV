@@ -1,7 +1,10 @@
 import type { CameraHardwareInfo } from '../types';
 
 export class ApiService {
-  private baseUrl = 'http://localhost:8175/api';
+  // Relative to wherever this page is served from - the C# server always serves its own built
+  // WebUI, so hardcoding localhost:8175 broke it for anyone reaching the server by its real
+  // hostname/IP (e.g. the Orange Pi over the network) rather than from a dev machine.
+  private baseUrl = `${window.location.origin}/api`;
 
   // Source Controller routes
   async getSources(): Promise<any[]> {

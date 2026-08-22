@@ -67,7 +67,7 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
       pc.onicecandidate = async (event) => {
         if (event.candidate) {
           try {
-            await fetch(`http://localhost:8175/api/sink/webrtc/ice`, {
+            await fetch(`${window.location.origin}/api/sink/webrtc/ice`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -94,7 +94,7 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
         await pc.setLocalDescription(answer);
         
         // Send answer back to server
-        await fetch(`http://localhost:8175/api/sink/webrtc/answer`, {
+        await fetch(`${window.location.origin}/api/sink/webrtc/answer`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

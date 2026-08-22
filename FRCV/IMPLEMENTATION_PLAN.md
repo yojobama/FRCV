@@ -467,8 +467,20 @@ is reachable from the UI yet, only via direct API calls. This is the largest rem
 
 1. Register every controller in `Program.cs` (B7); add `NetworkTablesController`,
    `ModelController`, `CalibrationController`, and the real `WebRTCSinkController`.
-2. Bind to `http://*:8175` (B12) and serve the built WebUI from `wwwroot`, so the Orange Pi hosts
-   a single origin — no CORS, one port to remember, and the frontend base URL becomes relative.
+2. ~~Bind to `http://*:8175` (B12) and serve the built WebUI from `wwwroot`~~ — **done, verified
+   on the real Orange Pi** (2026-08-22). `Program.cs` now binds `http://*:8175` (was `localhost`)
+   and adds `.WithStaticFolder("/", wwwroot, false)` after `WithWebApi`, so `/api/*` still wins
+   the route match. `Server.csproj` copies `reactproject1/dist/**` into `wwwroot/**` at build
+   time (guarded on `Exists()`, same pattern as the `libFRCVLib.so` check, so a machine that
+   hasn't run `npm run build` yet still builds and runs Server fine — just API-only). The
+   frontend's three hardcoded `http://localhost:8175` references (`ApiService.ts`,
+   `WebRTCStream.tsx` ×2, plus a cosmetic default in `App.tsx`'s settings panel) are now
+   `window.location.origin`-relative, since the server always serves its own UI - a page loaded
+   from the Pi's real IP was otherwise still trying to call back into `localhost` from the
+   browser, which resolves to the browser's own machine, not the Pi. Verified by opening
+   `http://192.168.55.138:8175/` in a real browser: `index.html` and JS/CSS assets loaded (`200`),
+   and the dashboard's own polling (`source/getAll`, `sink/getAll`, `device/cpuUsage` etc, all
+   through the relative base URL) hit the server log as real `200 OK`s with zero exceptions.
 3. **Reshape the API around nodes**, matching the library: `/api/nodes` (list with type,
    bindings, state), `/api/nodes/{id}` (delete, start/stop), `/api/nodes/{id}/bind`,
    and typed creation endpoints per node type. **No compatibility shim** — the old
