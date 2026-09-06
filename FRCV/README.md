@@ -120,10 +120,15 @@ on by default — see the feature-flag table above), a depth range, and the cali
 from above, then bind the same two cameras. `GET .../stats` returns the last pair's valid
 fraction and median depth; the full per-block grid is in `/api/sink/getResult`'s JSON.
 
-**Not implemented in this pass**: the WebUI (queued behind the existing WebUI catch-up per
-`IMPLEMENTATION_PLAN.md` phase 8), and `DepthFusionNode` (fusing a detection's bounding box with
-the depth grid for a real-world distance — `STEREO_IMPLEMENTATION_PLAN.md` ss10.4). Both are
-usable purely via REST today.
+Optionally, `POST /api/depthFusionSink/create` fuses a detector's (AprilTag/object detection)
+bounding boxes with a `StereoDepthSink`'s depth grid — bind the detector to the depth sink's own
+rectified-left frame output (not a raw camera, or its bbox pixel coordinates won't index into
+the same grid), then `PATCH .../attachDepthSource` to point it at the depth sink directly (a
+plain C++ reference, not a bound source — the full depth grid is deliberately never serialized
+through JSON). Each detection comes back with `distanceMeters`/`xMeters`/`yMeters` added.
+
+The WebUI has a "Stereo" tab covering this whole flow — calibration wizard, depth node config,
+and fusion — with `epipolarRms` and the 0.5px gate called out explicitly.
 
 ## Known gaps
 
