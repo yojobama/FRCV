@@ -18,6 +18,9 @@ export interface Sink {
   isStreaming?: boolean;
   lastUpdate?: Date;
   sourceId?: number;
+  // stereo sinks only (StereoCalibrationSink/StereoDepthSink) - sourceId is the LEFT camera,
+  // this is the RIGHT one. See Sink.Source2 (Server/Sink.cs).
+  source2Id?: number;
   isEnabled?: boolean; // Track whether sink is enabled/disabled
 }
 
@@ -121,4 +124,65 @@ export interface DeviceStats {
   cpuUsage: number;
   ramUsage: number;
   diskUsage: number;
+}
+
+// --- Stereo depth (phase 10) - see STEREO_IMPLEMENTATION_PLAN.md ---
+
+export interface CameraCalibrationResult {
+  fx: number; fy: number; cx: number; cy: number; rms: number;
+  distCoeffs: number[]; imageWidth: number; imageHeight: number;
+}
+
+// Mirrors StereoCalibrationResult.h field-for-field. R/T/E/F/R1/R2/P1/P2/Q are flat row-major
+// arrays (see that header's own comments for each matrix's shape) - only epipolarRms,
+// baselineMeters, rectifiedFx/Cx/Cy and the two CameraCalibrationResults are actually read by
+// this WebUI; the rest is carried through opaquely to StereoDepthSink's create call.
+export interface StereoCalibrationResult {
+  left: CameraCalibrationResult;
+  right: CameraCalibrationResult;
+  R: number[]; T: number[]; E: number[]; F: number[];
+  R1: number[]; R2: number[]; P1: number[]; P2: number[]; Q: number[];
+  stereoRms: number;
+  epipolarRms: number; // the real gate for real use - see STEREO_IMPLEMENTATION_PLAN.md ss10.2. < 0.5px
+  baselineMeters: number;
+  rectifiedFx: number; rectifiedCx: number; rectifiedCy: number;
+  imageWidth: number; imageHeight: number;
+  roiLeftX: number; roiLeftY: number; roiLeftW: number; roiLeftH: number;
+  roiRightX: number; roiRightY: number; roiRightW: number; roiRightH: number;
+}
+
+// matches StereoDepthBackendKind.h - a plain C++ enum, so the values below are its declaration
+// order (0-indexed), exactly what SWIG/System.Text.Json serialize an enum as.
+export const StereoDepthBackendKind = {
+  CODEC_AUTO: 0,
+  CODEC_LAVC: 1,
+  CODEC_RKMPP_HWENC: 2,
+  SGBM: 3,
+} as const;
+export type StereoDepthBackendKindValue = typeof StereoDepthBackendKind[keyof typeof StereoDepthBackendKind];
+
+export const STEREO_BACKEND_LABELS: Record<number, string> = {
+  0: 'Auto (codec-stereo)',
+  1: 'codec-stereo: lavc_sw (software, any platform)',
+  2: 'codec-stereo: rkmpp_hwenc (Orange Pi hardware)',
+  3: 'SGBM (OpenCV, CPU - accuracy reference)',
+};
+
+// matches StereoFrameOutput.h
+export const StereoFrameOutput = {
+  DEPTH_COLORMAP: 0,
+  RECTIFIED_LEFT: 1,
+  DEPTH_OVERLAY: 2,
+} as const;
+export type StereoFrameOutputValue = typeof StereoFrameOutput[keyof typeof StereoFrameOutput];
+
+export const STEREO_FRAME_OUTPUT_LABELS: Record<number, string> = {
+  0: 'Depth colormap',
+  1: 'Rectified left (bind a detector here for DepthFusionNode)',
+  2: 'Depth overlay',
+};
+
+export interface StereoDepthStats {
+  validFraction: number;
+  medianDepthMeters: number;
 }

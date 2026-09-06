@@ -100,6 +100,18 @@ double StereoDepthNode::GetLastMedianDepthMeters() const
 	return m_LastMedianDepthMeters;
 }
 
+bool StereoDepthNode::GetLastDepthGrid(std::vector<float>& outDepth, int& cols, int& rows, int& blockW, int& blockH) const
+{
+	std::lock_guard<std::mutex> lock(m_StatsMutex);
+	if (!m_HasDepthGrid) return false;
+	outDepth = m_LastDepthGrid;
+	cols = m_LastCols;
+	rows = m_LastRows;
+	blockW = m_Backend->BlockW();
+	blockH = m_Backend->BlockH();
+	return true;
+}
+
 void StereoDepthNode::EnsureRectifyMaps(const cv::Size& sourceSize)
 {
 	if (sourceSize == m_RectifiedSourceSize && !m_MapLx.empty()) return;
@@ -278,6 +290,10 @@ void StereoDepthNode::Process(std::vector<SourceResult> results)
 		std::lock_guard<std::mutex> lock(m_StatsMutex);
 		m_LastValidFraction = validFraction;
 		m_LastMedianDepthMeters = medianDepth;
+		m_LastDepthGrid = depth;
+		m_LastCols = cols;
+		m_LastRows = rows;
+		m_HasDepthGrid = true;
 	}
 
 	// output frame - see StereoFrameOutput.h / ss10.3 "Outputs"

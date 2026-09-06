@@ -92,6 +92,11 @@ namespace Server
                         {
                             SinkManager.Instance.BindSourceToSink(sink.Id, sink.Source.Id);
                         }
+
+                        if (sink.DepthSourceId.HasValue)
+                        {
+                            SinkManager.Instance.AttachDepthFusionSource(sink.Id, sink.DepthSourceId.Value);
+                        }
                     }
 
                     // the robot power-cycles - a vision coprocessor that comes back up not

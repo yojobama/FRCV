@@ -27,9 +27,11 @@ import {
   Link2,
   Unlink,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  Layers
 } from 'lucide-react';
 import './App.css';
+import StereoPage from './components/StereoPage';
 
 import type {
   Source,
@@ -663,7 +665,7 @@ const Navigation: React.FC<{ currentTab: string; onTabChange: (tab: string) => v
   <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
     <div className="px-6">
       <div className="flex space-x-8">
-        {[{ id: 'dashboard', label: 'Dashboard', icon: BarChart3 },{ id: 'sources', label: 'Sources', icon: Camera },{ id: 'sinks', label: 'Sinks', icon: Target }].map(tab => (
+        {[{ id: 'dashboard', label: 'Dashboard', icon: BarChart3 },{ id: 'sources', label: 'Sources', icon: Camera },{ id: 'sinks', label: 'Sinks', icon: Target },{ id: 'stereo', label: 'Stereo', icon: Layers }].map(tab => (
           <button key={tab.id} onClick={()=>onTabChange(tab.id)} className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colours ${currentTab===tab.id ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}`}>
             <tab.icon className="w-4 h-4" />
             <span>{tab.label}</span>
@@ -1209,6 +1211,9 @@ function App() {
               onDelete={id=>handleDeleteSink(id)}
               onToggleSink={handleToggleSink}
             />
+          )}
+          {currentTab === 'stereo' && (
+            <StereoPage sources={sources} sinks={sinks} onToast={showToast} onRefresh={loadData} />
           )}
         </main>
 

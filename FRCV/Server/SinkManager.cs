@@ -136,6 +136,10 @@ namespace Server
                         id = ManagerWrapper.Instance.CreateStereoCalibrator(id.Value);
                         sinks.Add(new Sink(id.Value, name, SinkType.StereoCalibrationSink));
                         break;
+                    case "depthfusionsink":
+                        id = ManagerWrapper.Instance.CreateDepthFusionNode(id.Value);
+                        sinks.Add(new Sink(id.Value, name, SinkType.DepthFusionSink));
+                        break;
                     // StereoDepthSink is deliberately NOT restorable through this generic path -
                     // same gap as WebRTCSink/NetworkTablesSink above: it needs a backend,
                     // calibration result and depth range that this signature has no room for.
@@ -164,6 +168,10 @@ namespace Server
                     case "stereocalibrationsink":
                         id = ManagerWrapper.Instance.CreateStereoCalibrator();
                         sinks.Add(new Sink(id.Value, name, SinkType.StereoCalibrationSink));
+                        break;
+                    case "depthfusionsink":
+                        id = ManagerWrapper.Instance.CreateDepthFusionNode();
+                        sinks.Add(new Sink(id.Value, name, SinkType.DepthFusionSink));
                         break;
                 }
 
@@ -416,6 +424,34 @@ namespace Server
         public double GetStereoDepthValidFraction(int sinkId) => ManagerWrapper.Instance.GetStereoDepthValidFraction(sinkId);
         public double GetStereoDepthMedianDepthMeters(int sinkId) => ManagerWrapper.Instance.GetStereoDepthMedianDepthMeters(sinkId);
 
+        // creates a DepthFusionNode - bind the detector (ObjectDetectionSink/ApriltagSink) with
+        // the ordinary BindSourceToSink (it must itself be bound to the StereoDepthSink's own
+        // rectified-left frame output, not a raw camera - see DepthFusionNode.h), then attach
+        // the depth source separately via AttachDepthFusionSource.
+        public int AddDepthFusionSink(string name)
+        {
+            int id = ManagerWrapper.Instance.CreateDepthFusionNode();
+            sinks.Add(new Sink(id, name, SinkType.DepthFusionSink));
+            DB.Instance.Save();
+            return id;
+        }
+
+        // attaches the StereoDepthSink a DepthFusionNode reads its depth grid from directly -
+        // not a normal bind (see DepthFusionNode.h: the full depth grid is never serialized
+        // through SourceResult/JSON, so this is a distinct, direct C++ reference).
+        public void AttachDepthFusionSource(int fusionSinkId, int stereoDepthSinkId)
+        {
+            bool ok = ManagerWrapper.Instance.SetDepthFusionDepthNode(fusionSinkId, stereoDepthSinkId);
+            if (!ok) throw new Exception($"AttachDepthFusionSource failed for fusion sink {fusionSinkId} / depth sink {stereoDepthSinkId}");
+
+            var sink = sinks.FirstOrDefault(s => s.Id == fusionSinkId);
+            if (sink != null)
+            {
+                sink.DepthSourceId = stereoDepthSinkId;
+                DB.Instance.Save();
+            }
+        }
+
         // update results
         private void updateResults()
         {
@@ -546,7 +582,7 @@ namespace Server
         // one used to look up a null Source here and NullReferenceException on the line below.
         private static readonly HashSet<SinkType> DualRoleSinkTypes = new HashSet<SinkType> {
             SinkType.ApriltagSink, SinkType.ObjectDetectionSink, SinkType.CameraCalibrationSink,
-            SinkType.StereoCalibrationSink, SinkType.StereoDepthSink
+            SinkType.StereoCalibrationSink, SinkType.StereoDepthSink, SinkType.DepthFusionSink
         };
 
         public void BindSourceToSink(int sinkId, int sourceId)

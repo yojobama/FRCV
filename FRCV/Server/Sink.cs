@@ -25,6 +25,8 @@ namespace Server
         StereoCalibrationSink,
         [Description("StereoDepthSink")]
         StereoDepthSink,
+        [Description("DepthFusionSink")]
+        DepthFusionSink,
     }
 
     public class Sink
@@ -87,6 +89,11 @@ namespace Server
             get => source2;
             set => source2 = value;
         }
+
+        // DepthFusionSink only: the StereoDepthSink id it reads its depth grid from directly
+        // (see DepthFusionNode.h / AttachDepthFusionSource) - not a Source, since it isn't
+        // reached through the normal ISink bind/Process path at all.
+        public int? DepthSourceId { get; set; }
 
         public Sink(int id, string name, SinkType type, Source? source = null)
         {

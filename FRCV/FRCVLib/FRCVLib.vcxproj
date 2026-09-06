@@ -126,6 +126,7 @@
     <ClInclude Include="SgbmStereoBackend.h" />
     <ClInclude Include="CodecStereoBackend.h" />
     <ClInclude Include="StereoDepthNode.h" />
+    <ClInclude Include="DepthFusionNode.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApriltagDetection.cpp" />
@@ -141,6 +142,7 @@
     <ClCompile Include="SgbmStereoBackend.cpp" />
     <ClCompile Include="CodecStereoBackend.cpp" />
     <ClCompile Include="StereoDepthNode.cpp" />
+    <ClCompile Include="DepthFusionNode.cpp" />
     <ClCompile Include="ISink.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Manager.cpp" />

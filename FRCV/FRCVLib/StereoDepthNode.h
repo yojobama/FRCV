@@ -38,6 +38,16 @@ public:
 	double GetLastValidFraction() const;
 	double GetLastMedianDepthMeters() const;
 
+	// direct in-process access to the full block-grid depth map for DepthFusionNode - never
+	// serialized through SourceResult/JSON (see the "Outputs" note above for why), so this is a
+	// plain C++ call, not something reachable over REST/NT4. Returns false if no pair has been
+	// processed yet. outDepth is cols*rows meters, 0.0f for invalid cells (matching Process()'s
+	// own convention - see StereoDepthNode.cpp).
+	bool GetLastDepthGrid(std::vector<float>& outDepth, int& cols, int& rows, int& blockW, int& blockH) const;
+	// calibration this node is using - DepthFusionNode needs rectifiedFx/Cx/Cy to turn a
+	// detection's pixel-space bbox center into real-world X/Y alongside the fused distance.
+	StereoCalibrationResult GetCalibration() const { return m_Calibration; }
+
 private:
 	void Process(std::vector<SourceResult> results) override;
 	void EnsureRectifyMaps(const cv::Size& sourceSize);
@@ -70,4 +80,7 @@ private:
 	mutable std::mutex m_StatsMutex;
 	double m_LastValidFraction = 0.0;
 	double m_LastMedianDepthMeters = 0.0;
+	std::vector<float> m_LastDepthGrid;
+	int m_LastCols = 0, m_LastRows = 0;
+	bool m_HasDepthGrid = false;
 };

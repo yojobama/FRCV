@@ -47,7 +47,8 @@ export const useAppData = () => {
 
   // helper to map server sink type enum to string label - must mirror Server.SinkType exactly
   // (Sink.cs): ApriltagSink=0, ObjectDetectionSink=1, RecordingSink=2, CameraCalibrationSink=3,
-  // NetworkTablesSink=4, WebRTCSink=5.
+  // NetworkTablesSink=4, WebRTCSink=5, StereoCalibrationSink=6, StereoDepthSink=7,
+  // DepthFusionSink=8.
   const mapSinkType = (type: any): string => {
     if (typeof type === 'string') return type;
     switch (type) {
@@ -57,6 +58,9 @@ export const useAppData = () => {
       case 3: return 'calibration';
       case 4: return 'networktables';
       case 5: return 'webrtc';
+      case 6: return 'stereocalibration';
+      case 7: return 'stereodepth';
+      case 8: return 'depthfusion';
       default: return 'unknown';
     }
   };
@@ -99,6 +103,7 @@ export const useAppData = () => {
           status: 'active',
           lastUpdate: new Date(),
           sourceId: (s.Source && (s.Source.Id || s.Source.id)) || (s.source && (s.source.Id || s.source.id)),
+          source2Id: (s.Source2 && (s.Source2.Id || s.Source2.id)) || (s.source2 && (s.source2.Id || s.source2.id)),
           isEnabled
         };
       }));

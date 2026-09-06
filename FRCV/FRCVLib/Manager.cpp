@@ -5,6 +5,7 @@
 #include "CameraCalibrator.h"
 #include "StereoCalibrator.h"
 #include "StereoDepthNode.h"
+#include "DepthFusionNode.h"
 #include "IStereoRoleReceiver.h"
 #include "RecordSink.h"
 #include "CameraSource.h"
@@ -708,6 +709,55 @@ double Manager::GetStereoDepthMedianDepthMeters(int sinkId)
 {
     StereoDepthNode* p_Node = FindStereoDepthNode(m_Sinks, sinkId);
     return p_Node == nullptr ? 0.0 : p_Node->GetLastMedianDepthMeters();
+}
+
+int Manager::CreateDepthFusionNode()
+{
+    int id = GenerateUUID();
+    return CreateDepthFusionNode(id);
+}
+
+int Manager::CreateDepthFusionNode(int id)
+{
+    m_Logger->EnterLog("CreateDepthFusionNode called with id=" + std::to_string(id));
+
+    auto p_Node = std::make_shared<DepthFusionNode>(m_Logger, std::to_string(id));
+
+    // dual-role, same as every other detector-shaped node: ISink (consumes the detector's
+    // bbox JSON) and ISource (produces the fused distance/bearing JSON + annotated frame)
+    m_Sinks.emplace(id, p_Node);
+    m_Sources.emplace(id, p_Node);
+
+    m_Logger->EnterLog("DepthFusionNode created with id=" + std::to_string(id));
+    return id;
+}
+
+bool Manager::SetDepthFusionDepthNode(int fusionSinkId, int depthNodeSourceId)
+{
+    auto sinkIt = m_Sinks.find(fusionSinkId);
+    if (sinkIt == m_Sinks.end()) {
+        m_Logger->EnterLog("SetDepthFusionDepthNode: fusion sink not found: " + std::to_string(fusionSinkId));
+        return false;
+    }
+    DepthFusionNode* p_Fusion = dynamic_cast<DepthFusionNode*>(sinkIt->second.get());
+    if (p_Fusion == nullptr) {
+        m_Logger->EnterLog(LogLevel::Error, "SetDepthFusionDepthNode: sink " + std::to_string(fusionSinkId) + " is not a DepthFusionNode");
+        return false;
+    }
+
+    auto sourceIt = m_Sources.find(depthNodeSourceId);
+    if (sourceIt == m_Sources.end()) {
+        m_Logger->EnterLog("SetDepthFusionDepthNode: depth node source not found: " + std::to_string(depthNodeSourceId));
+        return false;
+    }
+    auto p_DepthNode = std::dynamic_pointer_cast<StereoDepthNode>(sourceIt->second);
+    if (!p_DepthNode) {
+        m_Logger->EnterLog(LogLevel::Error, "SetDepthFusionDepthNode: source " + std::to_string(depthNodeSourceId) + " is not a StereoDepthNode");
+        return false;
+    }
+
+    p_Fusion->SetStereoDepthNode(p_DepthNode);
+    return true;
 }
 
 int Manager::CreateObjectDetectionSink(ObjectDetectionProvider provider)

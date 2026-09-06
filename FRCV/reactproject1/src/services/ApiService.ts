@@ -1,4 +1,4 @@
-import type { CameraHardwareInfo, Model } from '../types';
+import type { CameraHardwareInfo, Model, StereoCalibrationResult, StereoDepthStats } from '../types';
 
 export class ApiService {
   // Relative to wherever this page is served from - the C# server always serves its own built
@@ -254,6 +254,115 @@ export class ApiService {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text: string = await response.json();
     return JSON.parse(text);
+  }
+
+  // Stereo Calibration Sink Controller routes (phase 10 - see STEREO_IMPLEMENTATION_PLAN.md)
+  async createStereoCalibrationSink(name: string): Promise<number> {
+    const response = await fetch(`${this.baseUrl}/stereoCalibrationSink/create?name=${encodeURIComponent(name)}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // ChArUco is not supported for stereo yet (StereoCalibrator.h) - boardType is always the
+  // checkerboard value (0) from this WebUI.
+  async createStereoCalibrationSinkWithBoard(name: string, rows: number, cols: number, squareSizeMeters: number): Promise<number> {
+    const params = new URLSearchParams({ name, boardType: '0', rows: String(rows), cols: String(cols), squareSizeMeters: String(squareSizeMeters) });
+    const response = await fetch(`${this.baseUrl}/stereoCalibrationSink/createWithBoard?${params.toString()}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // binds the explicit left/right camera sources for a stereo sink (StereoCalibrationSink or
+  // StereoDepthSink) - the ordinary bindSinkToSource doesn't apply here, since getting
+  // left/right backwards silently flips the sign of every disparity.
+  async bindStereoSources(sinkId: number, leftSourceId: number, rightSourceId: number): Promise<void> {
+    const params = new URLSearchParams({ leftSourceId: String(leftSourceId), rightSourceId: String(rightSourceId) });
+    const response = await fetch(`${this.baseUrl}/stereoCalibrationSink/${sinkId}/bind?${params.toString()}`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  async bindStereoDepthSources(sinkId: number, leftSourceId: number, rightSourceId: number): Promise<void> {
+    const params = new URLSearchParams({ leftSourceId: String(leftSourceId), rightSourceId: String(rightSourceId) });
+    const response = await fetch(`${this.baseUrl}/stereoDepthSink/${sinkId}/bind?${params.toString()}`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  async saveStereoCalibrationDetection(sinkId: number): Promise<boolean> {
+    const response = await fetch(`${this.baseUrl}/stereoCalibrationSink/${sinkId}/saveDetection`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async getStereoCalibrationPairCount(sinkId: number): Promise<number> {
+    const response = await fetch(`${this.baseUrl}/stereoCalibrationSink/${sinkId}/pairCount`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async clearStereoCalibrationPairs(sinkId: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/stereoCalibrationSink/${sinkId}/pairs`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  // runs cv::stereoCalibrate + cv::stereoRectify over every saved pair. Check the returned
+  // epipolarRms - gate real use at < 0.5px (STEREO_IMPLEMENTATION_PLAN.md ss10.2); stereoRms
+  // alone does not predict codec-stereo density/validity the way epipolarRms does.
+  async runStereoCalibration(sinkId: number): Promise<StereoCalibrationResult> {
+    const response = await fetch(`${this.baseUrl}/stereoCalibrationSink/${sinkId}/run`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async getStereoCalibrationResult(sinkId: number): Promise<StereoCalibrationResult> {
+    const response = await fetch(`${this.baseUrl}/stereoCalibrationSink/${sinkId}/result`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // Stereo Depth Sink Controller routes
+  async createStereoDepthSink(params: {
+    name: string; backend: number; minDepthMeters: number; maxDepthMeters: number;
+    maxSkewUs: number; frameOutput: number; calibration: StereoCalibrationResult;
+  }): Promise<number> {
+    const query = new URLSearchParams({
+      name: params.name, backend: String(params.backend),
+      minDepthMeters: String(params.minDepthMeters), maxDepthMeters: String(params.maxDepthMeters),
+      maxSkewUs: String(params.maxSkewUs), frameOutput: String(params.frameOutput),
+    });
+    const response = await fetch(`${this.baseUrl}/stereoDepthSink/create?${query.toString()}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params.calibration),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async getStereoDepthBackendName(sinkId: number): Promise<string> {
+    const response = await fetch(`${this.baseUrl}/stereoDepthSink/${sinkId}/backendName`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async getStereoDepthStats(sinkId: number): Promise<StereoDepthStats> {
+    const response = await fetch(`${this.baseUrl}/stereoDepthSink/${sinkId}/stats`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // Depth Fusion Sink Controller routes - fuses a detector's boxes with a StereoDepthSink's
+  // depth grid (STEREO_IMPLEMENTATION_PLAN.md ss10.4). Bind the detector with the ordinary
+  // bindSinkToSource (it must itself be bound to the StereoDepthSink's rectified-left frame
+  // output, not a raw camera); attach the depth source separately.
+  async createDepthFusionSink(name: string): Promise<number> {
+    const response = await fetch(`${this.baseUrl}/depthFusionSink/create?name=${encodeURIComponent(name)}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async attachDepthFusionSource(fusionSinkId: number, stereoDepthSinkId: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/depthFusionSink/${fusionSinkId}/attachDepthSource?stereoDepthSinkId=${stereoDepthSinkId}`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
   // Device Controller routes

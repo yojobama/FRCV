@@ -174,6 +174,17 @@ public:
 	double GetStereoDepthValidFraction(int sinkId);
 	double GetStereoDepthMedianDepthMeters(int sinkId);
 
+	// DepthFusionNode: fuses a detector's bounding boxes with a StereoDepthNode's depth grid -
+	// see STEREO_IMPLEMENTATION_PLAN.md ss10.4. Bind the detector with the ordinary
+	// BindSourceToSink (it must itself be bound to the StereoDepthNode's own rectified-left
+	// frame output, not a raw camera - see DepthFusionNode.h); attach the depth source
+	// separately here, since it's read directly in-process rather than through the normal
+	// ISource/ISink result path (the full depth grid is deliberately never serialized through
+	// SourceResult/JSON - see StereoDepthNode::GetLastDepthGrid's own comment).
+	int CreateDepthFusionNode();
+	int CreateDepthFusionNode(int id);
+	bool SetDepthFusionDepthNode(int fusionSinkId, int depthNodeSourceId);
+
 	int CreateRecordingSink(int sourceId);
 
 #ifdef FRCV_WITH_NT4
