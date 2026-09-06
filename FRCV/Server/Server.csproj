@@ -140,7 +140,7 @@
       Forward slashes in the paths below, not backslashes: this Exec runs through a POSIX shell
       on Linux, where a literal backslash is not a path separator.
     -->
-    <Exec Command="swig -c++ -csharp -DFRCV_WITH_ONNX -DFRCV_WITH_NT4 -DFRCV_WITH_WEBRTC -DFRCV_WITH_VULKAN_APRILTAG -outdir ./FRCVCore ../FRCVLib/swig.i" Condition="'$(SwigCheckExitCode)'=='0'" />
+    <Exec Command="swig -c++ -csharp -DFRCV_WITH_ONNX -DFRCV_WITH_NT4 -DFRCV_WITH_WEBRTC -DFRCV_WITH_VULKAN_APRILTAG -DFRCV_WITH_CODEC_STEREO -outdir ./FRCVCore ../FRCVLib/swig.i" Condition="'$(SwigCheckExitCode)'=='0'" />
     <Warning Text="swig not found on PATH; using whatever bindings already exist in FRCVCore\." Condition="'$(SwigCheckExitCode)'!='0'" />
     <ItemGroup>
       <Compile Include="FRCVCore\*.cs" Exclude="@(Compile)" />

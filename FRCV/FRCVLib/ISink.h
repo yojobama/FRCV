@@ -12,9 +12,6 @@
 #include <memory>
 #include "SourceResult.h"
 
-class StereoSink;
-
-
 class ISink
 {
 public:

@@ -3,6 +3,9 @@
 #include "VideoFileSource.h"
 #include "ApriltagDetector.h"
 #include "CameraCalibrator.h"
+#include "StereoCalibrator.h"
+#include "StereoDepthNode.h"
+#include "IStereoRoleReceiver.h"
 #include "RecordSink.h"
 #include "CameraSource.h"
 #include "SystemMonitor.h"
@@ -152,6 +155,38 @@ vector<CameraHardwareInfo> Manager::EnumerateAvailableCameras()
     }
     closedir(p_Dir);
     return cameras;
+}
+
+bool Manager::BindStereoSources(int sinkId, int leftSourceId, int rightSourceId) {
+    m_Logger->EnterLog("BindStereoSources called with sinkId=" + std::to_string(sinkId) +
+        ", leftSourceId=" + std::to_string(leftSourceId) + ", rightSourceId=" + std::to_string(rightSourceId));
+
+    auto sinkIt = m_Sinks.find(sinkId);
+    if (sinkIt == m_Sinks.end()) {
+        m_Logger->EnterLog("Sink not found: " + std::to_string(sinkId));
+        return false;
+    }
+    auto leftIt = m_Sources.find(leftSourceId);
+    auto rightIt = m_Sources.find(rightSourceId);
+    if (leftIt == m_Sources.end() || rightIt == m_Sources.end()) {
+        m_Logger->EnterLog("BindStereoSources: left or right source not found");
+        return false;
+    }
+
+    IStereoRoleReceiver* p_RoleReceiver = dynamic_cast<IStereoRoleReceiver*>(sinkIt->second.get());
+    if (p_RoleReceiver == nullptr) {
+        m_Logger->EnterLog(LogLevel::Error, "BindStereoSources: sink " + std::to_string(sinkId) + " is not a stereo node");
+        return false;
+    }
+
+    bool bound = sinkIt->second->BindSource(leftIt->second) && sinkIt->second->BindSource(rightIt->second);
+    if (bound) {
+        // recorded explicitly by source ID rather than relying on ISink::BindSource's own
+        // bind-order bookkeeping, which has no left/right notion at all - see IStereoRoleReceiver.h
+        p_RoleReceiver->SetStereoRoles(leftIt->second->GetID(), rightIt->second->GetID());
+    }
+    m_Logger->EnterLog("BindStereoSources result: " + std::to_string(bound));
+    return bound;
 }
 
 bool Manager::BindSourceToSink(int sourceId, int sinkId) {
@@ -522,6 +557,157 @@ int Manager::CreateApriltagDetectorFromCalibrator(int id, int calibratorId, doub
 	CameraCalibrationResult calibrationResult = GetCameraCalibrationResult(calibratorId);
 
 	return CreateApriltagDetector(id, calibrationResult, tagSize);
+}
+
+namespace {
+    // legacy default, matching CameraCalibrator's own default board
+    const StereoCalibrationBoardConfig DEFAULT_STEREO_BOARD_CONFIG;
+
+    StereoCalibrator* FindStereoCalibrator(map<int, std::shared_ptr<ISink>>& sinks, int calibratorId)
+    {
+        auto sink = sinks.find(calibratorId);
+        if (sink == sinks.end()) return nullptr;
+        return dynamic_cast<StereoCalibrator*>(sink->second.get());
+    }
+
+    StereoDepthNode* FindStereoDepthNode(map<int, std::shared_ptr<ISink>>& sinks, int nodeId)
+    {
+        auto sink = sinks.find(nodeId);
+        if (sink == sinks.end()) return nullptr;
+        return dynamic_cast<StereoDepthNode*>(sink->second.get());
+    }
+}
+
+int Manager::CreateStereoCalibrator()
+{
+    int id = GenerateUUID();
+    return CreateStereoCalibrator(id);
+}
+
+int Manager::CreateStereoCalibrator(int id)
+{
+    m_Logger->EnterLog("CreateStereoCalibrator called with id=" + std::to_string(id));
+
+    auto p_Calibrator = std::make_shared<StereoCalibrator>(m_Logger, std::to_string(id));
+
+    // like CameraCalibrator, dual-role: both an ISink (consumes the left/right camera pair) and
+    // an ISource (produces the side-by-side rectified preview + status JSON)
+    m_Sinks.emplace(id, p_Calibrator);
+    m_Sources.emplace(id, p_Calibrator);
+
+    m_Logger->EnterLog("StereoCalibrator created with id=" + std::to_string(id));
+    return id;
+}
+
+int Manager::CreateStereoCalibrator(CalibrationBoardType boardType, int rows, int cols, float squareSizeMeters)
+{
+    int id = GenerateUUID();
+    return CreateStereoCalibrator(id, boardType, rows, cols, squareSizeMeters);
+}
+
+int Manager::CreateStereoCalibrator(int id, CalibrationBoardType boardType, int rows, int cols, float squareSizeMeters)
+{
+    m_Logger->EnterLog("CreateStereoCalibrator called with id=" + std::to_string(id) + ", boardType=" + std::to_string(boardType));
+
+    StereoCalibrationBoardConfig config;
+    config.type = boardType;
+    config.rows = rows;
+    config.cols = cols;
+    config.squareSizeMeters = squareSizeMeters;
+
+    auto p_Calibrator = std::make_shared<StereoCalibrator>(m_Logger, std::to_string(id), config);
+    m_Sinks.emplace(id, p_Calibrator);
+    m_Sources.emplace(id, p_Calibrator);
+    return id;
+}
+
+bool Manager::SaveStereoCalibrationDetection(int calibratorId)
+{
+    StereoCalibrator* p_Calibrator = FindStereoCalibrator(m_Sinks, calibratorId);
+    if (p_Calibrator == nullptr) {
+        m_Logger->EnterLog("StereoCalibrator not found: " + std::to_string(calibratorId));
+        return false;
+    }
+    return p_Calibrator->SaveStereoDetection();
+}
+
+int Manager::GetStereoCalibrationPairCount(int calibratorId)
+{
+    StereoCalibrator* p_Calibrator = FindStereoCalibrator(m_Sinks, calibratorId);
+    return p_Calibrator == nullptr ? 0 : p_Calibrator->GetPairCount();
+}
+
+bool Manager::RemoveStereoCalibrationPair(int calibratorId, int index)
+{
+    StereoCalibrator* p_Calibrator = FindStereoCalibrator(m_Sinks, calibratorId);
+    return p_Calibrator != nullptr && p_Calibrator->RemovePair(index);
+}
+
+void Manager::ClearStereoCalibrationPairs(int calibratorId)
+{
+    StereoCalibrator* p_Calibrator = FindStereoCalibrator(m_Sinks, calibratorId);
+    if (p_Calibrator != nullptr) p_Calibrator->ClearPairs();
+}
+
+StereoCalibrationResult Manager::RunStereoCalibration(int calibratorId)
+{
+    StereoCalibrator* p_Calibrator = FindStereoCalibrator(m_Sinks, calibratorId);
+    if (p_Calibrator == nullptr) {
+        throw std::runtime_error("StereoCalibrator not found: " + std::to_string(calibratorId));
+    }
+    return p_Calibrator->RunCalibration();
+}
+
+StereoCalibrationResult Manager::GetStereoCalibrationResult(int calibratorId)
+{
+    StereoCalibrator* p_Calibrator = FindStereoCalibrator(m_Sinks, calibratorId);
+    if (p_Calibrator == nullptr) {
+        m_Logger->EnterLog("StereoCalibrator not found: " + std::to_string(calibratorId));
+        return StereoCalibrationResult();
+    }
+    return p_Calibrator->GetCalibrationResult();
+}
+
+int Manager::CreateStereoDepthNode(StereoDepthBackendKind backend, StereoCalibrationResult calibration,
+    double minDepthMeters, double maxDepthMeters, int maxSkewUs, StereoFrameOutput frameOutput)
+{
+    int id = GenerateUUID();
+    return CreateStereoDepthNode(id, backend, calibration, minDepthMeters, maxDepthMeters, maxSkewUs, frameOutput);
+}
+
+int Manager::CreateStereoDepthNode(int id, StereoDepthBackendKind backend, StereoCalibrationResult calibration,
+    double minDepthMeters, double maxDepthMeters, int maxSkewUs, StereoFrameOutput frameOutput)
+{
+    m_Logger->EnterLog("CreateStereoDepthNode called with id=" + std::to_string(id) + ", backend=" + std::to_string(backend));
+
+    auto p_Node = std::make_shared<StereoDepthNode>(m_Logger, std::to_string(id), backend, calibration,
+        minDepthMeters, maxDepthMeters, maxSkewUs, frameOutput);
+
+    // dual-role: ISink (consumes the left/right pair) and ISource (produces depth JSON + a
+    // colormap/rectified frame) - a downstream WebRTCSink or DepthFusionNode binds to this same id
+    m_Sinks.emplace(id, p_Node);
+    m_Sources.emplace(id, p_Node);
+
+    m_Logger->EnterLog("StereoDepthNode created with id=" + std::to_string(id));
+    return id;
+}
+
+string Manager::GetStereoDepthBackendName(int sinkId)
+{
+    StereoDepthNode* p_Node = FindStereoDepthNode(m_Sinks, sinkId);
+    return p_Node == nullptr ? "" : p_Node->GetBackendName();
+}
+
+double Manager::GetStereoDepthValidFraction(int sinkId)
+{
+    StereoDepthNode* p_Node = FindStereoDepthNode(m_Sinks, sinkId);
+    return p_Node == nullptr ? 0.0 : p_Node->GetLastValidFraction();
+}
+
+double Manager::GetStereoDepthMedianDepthMeters(int sinkId)
+{
+    StereoDepthNode* p_Node = FindStereoDepthNode(m_Sinks, sinkId);
+    return p_Node == nullptr ? 0.0 : p_Node->GetLastMedianDepthMeters();
 }
 
 int Manager::CreateObjectDetectionSink(ObjectDetectionProvider provider)

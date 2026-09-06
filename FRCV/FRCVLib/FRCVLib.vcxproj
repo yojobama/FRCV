@@ -68,7 +68,7 @@
     so the WSL x64 configuration never needs the RKNN SDK installed.
   -->
   <PropertyGroup Label="FeatureFlags">
-    <FrcvCommonDefines>FRCV_WITH_ONNX;FRCV_WITH_NT4;FRCV_WITH_WEBRTC;FRCV_WITH_VULKAN_APRILTAG</FrcvCommonDefines>
+    <FrcvCommonDefines>FRCV_WITH_ONNX;FRCV_WITH_NT4;FRCV_WITH_WEBRTC;FRCV_WITH_VULKAN_APRILTAG;FRCV_WITH_CODEC_STEREO</FrcvCommonDefines>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='ARM64'">
     <FrcvPlatformDefines>FRCV_WITH_RKNN</FrcvPlatformDefines>
@@ -117,6 +117,15 @@
     <ClInclude Include="VkApriltagBackend.h" />
     <ClInclude Include="WebRTCSink.h" />
     <ClInclude Include="YoloPostProcess.h" />
+    <ClInclude Include="IStereoRoleReceiver.h" />
+    <ClInclude Include="StereoDepthBackendKind.h" />
+    <ClInclude Include="StereoFrameOutput.h" />
+    <ClInclude Include="StereoCalibrationResult.h" />
+    <ClInclude Include="StereoCalibrator.h" />
+    <ClInclude Include="IStereoDepthBackend.h" />
+    <ClInclude Include="SgbmStereoBackend.h" />
+    <ClInclude Include="CodecStereoBackend.h" />
+    <ClInclude Include="StereoDepthNode.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApriltagDetection.cpp" />
@@ -127,6 +136,11 @@
     <ClCompile Include="CpuApriltagBackend.cpp" />
     <ClCompile Include="ISource.cpp" />
     <ClCompile Include="ImageFileSource.cpp" />
+    <ClCompile Include="StereoCalibrationResult.cpp" />
+    <ClCompile Include="StereoCalibrator.cpp" />
+    <ClCompile Include="SgbmStereoBackend.cpp" />
+    <ClCompile Include="CodecStereoBackend.cpp" />
+    <ClCompile Include="StereoDepthNode.cpp" />
     <ClCompile Include="ISink.cpp" />
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="Manager.cpp" />
@@ -170,7 +184,7 @@
   -->
   <PropertyGroup>
     <PreBuildEvent>
-      <Command>swig -c++ -csharp -DFRCV_WITH_ONNX -DFRCV_WITH_NT4 -DFRCV_WITH_WEBRTC -DFRCV_WITH_VULKAN_APRILTAG -outdir ..\Server\FRCVCore -o swig_wrap.cxx swig.i</Command>
+      <Command>swig -c++ -csharp -DFRCV_WITH_ONNX -DFRCV_WITH_NT4 -DFRCV_WITH_WEBRTC -DFRCV_WITH_VULKAN_APRILTAG -DFRCV_WITH_CODEC_STEREO -outdir ..\Server\FRCVCore -o swig_wrap.cxx swig.i</Command>
     </PreBuildEvent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
@@ -178,26 +192,44 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include;/usr/local/include/apriltag;../third_party/vkapriltag/apriltags_vulkan/library/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include;/usr/local/include/apriltag;../third_party/vkapriltag/apriltags_vulkan/library/include;../third_party/codec-stereo/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CppLanguageStandard>c++20</CppLanguageStandard>
       <PreprocessorDefinitions>$(FrcvCommonDefines);$(FrcvPlatformDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>/usr/local/lib/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;opencv_dnn;opencv_objdetect;avcodec;avformat;avutil;swscale;pthread;ntcore;wpiutil;onnxruntime;vulkan;datachannel;%(LibraryDependencies)</LibraryDependencies>
-      <AdditionalDependencies>../third_party/vkapriltag/apriltags_vulkan/build/library/libvkapriltag.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_dnn;opencv_objdetect;avcodec;avformat;avutil;swscale;pthread;ntcore;wpiutil;onnxruntime;vulkan;datachannel;m;%(LibraryDependencies)</LibraryDependencies>
+      <AdditionalDependencies>../third_party/vkapriltag/apriltags_vulkan/build/library/libvkapriltag.a;../third_party/codec-stereo/build/libcodec_stereo.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <!--
+        opencv_calib3d is passed here via AdditionalOptions, not LibraryDependencies, bracketed
+        in the linker's "no as needed"/"as needed" flags (see below) - confirmed necessary the
+        hard way while implementing stereo depth (STEREO_IMPLEMENTATION_PLAN.md ss10.2): this
+        machine's /usr/local carries
+        both an OpenCV 5.0 install (opencv_core et al - what everything else here links against)
+        AND a separate, older OpenCV 4.15 build providing opencv_calib3d (stereoCalibrate/
+        stereoRectify/StereoSGBM aren't present in the 5.0 libs under this layout). Without
+        forcing it non-as-needed, the linker silently drops the dependency and those three
+        symbols come back undefined at load time. m above is codec_stereo's own PUBLIC link
+        dependency (its CMakeLists.txt: target_link_libraries(codec_stereo PUBLIC m) on UNIX) -
+        a plain static-archive link doesn't propagate that the way CMake's own target-based
+        linking would, so it has to be listed explicitly here too.
+      -->
+      <AdditionalOptions>-Wl,--no-as-needed -lopencv_calib3d -Wl,--as-needed %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='ARM64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include;/usr/local/include/apriltag;../third_party/vkapriltag/apriltags_vulkan/library/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>/usr/local/include;/usr/local/include/opencv5;/usr/local/include/opencv4;/usr/include/opencv4;/usr/include;/usr/local/include/apriltag;../third_party/vkapriltag/apriltags_vulkan/library/include;../third_party/codec-stereo/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <CppLanguageStandard>c++20</CppLanguageStandard>
       <PreprocessorDefinitions>$(FrcvCommonDefines);$(FrcvPlatformDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>/usr/local/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_calib3d;opencv_dnn;opencv_objdetect;avcodec;avformat;avutil;swscale;pthread;ntcore;wpiutil;onnxruntime;vulkan;datachannel;%(LibraryDependencies)</LibraryDependencies>
-      <AdditionalDependencies>../third_party/vkapriltag/apriltags_vulkan/build/library/libvkapriltag.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <!-- rockchip_mpp is ARM64-only (the Pi's own MPP SDK), needed by codec-stereo's
+           rkmpp_hwenc backend. See the x64 group's comment above re: opencv_calib3d and m. -->
+      <LibraryDependencies>apriltag;opencv_core;opencv_videoio;opencv_imgcodecs;opencv_imgproc;opencv_dnn;opencv_objdetect;avcodec;avformat;avutil;swscale;pthread;ntcore;wpiutil;onnxruntime;vulkan;datachannel;m;rockchip_mpp;%(LibraryDependencies)</LibraryDependencies>
+      <AdditionalDependencies>../third_party/vkapriltag/apriltags_vulkan/build/library/libvkapriltag.a;../third_party/codec-stereo/build/libcodec_stereo.a;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>-Wl,--no-as-needed -lopencv_calib3d -Wl,--as-needed %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

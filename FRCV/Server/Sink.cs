@@ -21,6 +21,10 @@ namespace Server
         NetworkTablesSink,
         [Description("WebRTCSink")]
         WebRTCSink,
+        [Description("StereoCalibrationSink")]
+        StereoCalibrationSink,
+        [Description("StereoDepthSink")]
+        StereoDepthSink,
     }
 
     public class Sink
@@ -31,7 +35,13 @@ namespace Server
         private string name { get; set; }
         
         private Source? source;
-        
+        // the "right" source for a stereo sink (StereoCalibrationSink/StereoDepthSink) -
+        // ordinary sinks only ever bind one source, but a stereo node's ISink side has
+        // maxSources=2 with a fixed left/right meaning (see BindStereoSources /
+        // IStereoRoleReceiver.h). `Source` above holds the left source for a stereo sink;
+        // this holds the right one. Null for every non-stereo sink type.
+        private Source? source2;
+
         // properties for the sink
 
         public SinkType Type
@@ -70,6 +80,12 @@ namespace Server
         {
             get => source;
             set => source = value;
+        }
+
+        public Source? Source2
+        {
+            get => source2;
+            set => source2 = value;
         }
 
         public Sink(int id, string name, SinkType type, Source? source = null)

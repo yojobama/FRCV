@@ -5,6 +5,9 @@
 #include "IDetectionBackend.h"
 #include "IApriltagBackend.h"
 #include "CalibrationBoardType.h"
+#include "StereoCalibrationResult.h"
+#include "StereoDepthBackendKind.h"
+#include "StereoFrameOutput.h"
 %}
 
 %include "std_string.i"
@@ -42,8 +45,11 @@
 %include "IDetectionBackend.h"
 %include "IApriltagBackend.h"
 %include "CalibrationBoardType.h"
+%include "StereoDepthBackendKind.h"
+%include "StereoFrameOutput.h"
 %include "Manager.h"
 %include "CameraCalibrationResult.h"
+%include "StereoCalibrationResult.h"
 %include "Logger.h"
 
 namespace std {

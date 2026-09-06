@@ -42,7 +42,11 @@ void CameraFrameSource::CaptureFrame()
     if (capture.isOpened()) {
         cv::Mat mat;
         capture >> mat;
-		SetLatestResult(SourceResult(std::nullopt, mat));
+        // stamped the instant the read returns, not when SetLatestResult later publishes it -
+        // the two can be an arbitrary amount of time apart once the sink processing thread is
+        // busy, and stereo pairing needs the real capture instant to gate on skew correctly
+        uint64_t captureTimeUs = SourceResult::NowUs();
+		SetLatestResult(SourceResult(std::nullopt, mat, captureTimeUs));
      }
     m_Logger->EnterLog(LogLevel::Error, "camera is closed, not capturing a frame");
 }

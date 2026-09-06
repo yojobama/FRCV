@@ -17,6 +17,8 @@ risks/decisions. This file is the quick-start.
 - **`reactproject1/`** — the React/Vite WebUI.
 - **`third_party/vkapriltag/`** — git submodule; Vulkan-compute AprilTag detection
   (`git submodule update --init` after cloning).
+- **`third_party/codec-stereo/`** — git submodule; stereo depth via hardware video-encoder
+  motion vectors (see `STEREO_IMPLEMENTATION_PLAN.md`).
 
 ## Building
 
@@ -51,6 +53,7 @@ Set as MSBuild preprocessor defines in `FRCVLib.vcxproj` (`FrcvCommonDefines` /
 | `FRCV_WITH_WEBRTC` | on, all platforms | Needs `libdatachannel` (install-deps.sh `--with-webrtc`) |
 | `FRCV_WITH_VULKAN_APRILTAG` | on, all platforms | Needs the `vkapriltag` submodule + a Vulkan compute device; falls back to CPU automatically if none is found |
 | `FRCV_WITH_RKNN` | ARM64 only | The Orange Pi's NPU; not yet implemented for object detection (throws) |
+| `FRCV_WITH_CODEC_STEREO` | on, all platforms | Needs the `codec-stereo` submodule (install-deps.sh builds it by default, unconditionally); `STEREO_BACKEND_SGBM` remains available without this flag |
 
 ## Deploying to the Orange Pi
 
@@ -93,6 +96,34 @@ output) over WebRTC (`libdatachannel` + ffmpeg `libx264`; hardware encoding via 
 the Pi is a follow-up). Signalling is plain REST (`/api/webrtcSink/*`), not a persistent
 WebSocket — FRCV uses non-trickle ICE on its side, so one offer/answer/candidate exchange over
 ordinary HTTP requests is enough.
+
+## Stereo depth
+
+See `STEREO_IMPLEMENTATION_PLAN.md` for the full design (disparity-window derivation, sign
+convention, accuracy expectations, and the risks around camera synchronization worth reading
+before buying stereo hardware). Two nodes: `StereoCalibrationSink` and `StereoDepthSink`, both
+bound to a left/right camera pair via `PATCH /api/stereoCalibrationSink/{id}/bind` or
+`.../stereoDepthSink/{id}/bind` (`leftSourceId`/`rightSourceId`) — the ordinary single-source
+`/api/sink/bind` doesn't apply here, since getting left/right backwards silently flips the sign
+of every disparity.
+
+Calibrate first: `POST /api/stereoCalibrationSink/create` (default 6x9 checkerboard, 25mm
+squares — ChArUco isn't supported for stereo yet), bind both cameras, call
+`.../saveDetection` for each pair with the board visible to both eyes (need at least 8),
+then `.../run`. Check the returned `epipolarRms`, not `stereoRms` — gate real use at < 0.5px,
+since that's what predicts whether the depth node will actually produce dense output. Results
+persist to `stereoCalibrations.json`, keyed by both cameras' device paths + resolution.
+
+Then `POST /api/stereoDepthSink/create` with a backend (`STEREO_BACKEND_SGBM` always available;
+`STEREO_BACKEND_CODEC_LAVC`/`STEREO_BACKEND_CODEC_RKMPP_HWENC` need `FRCV_WITH_CODEC_STEREO`,
+on by default — see the feature-flag table above), a depth range, and the calibration result
+from above, then bind the same two cameras. `GET .../stats` returns the last pair's valid
+fraction and median depth; the full per-block grid is in `/api/sink/getResult`'s JSON.
+
+**Not implemented in this pass**: the WebUI (queued behind the existing WebUI catch-up per
+`IMPLEMENTATION_PLAN.md` phase 8), and `DepthFusionNode` (fusing a detection's bounding box with
+the depth grid for a real-world distance — `STEREO_IMPLEMENTATION_PLAN.md` ss10.4). Both are
+usable purely via REST today.
 
 ## Known gaps
 

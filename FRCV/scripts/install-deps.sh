@@ -435,6 +435,74 @@ build_vkapriltag() {
 }
 
 # ---------------------------------------------------------------------------
+# 5c. codec-stereo (phase 10) — builds the third_party/codec-stereo submodule's static library.
+# ---------------------------------------------------------------------------
+# Unlike --with-webrtc/--with-nt4, this runs unconditionally: its dependencies (a C compiler,
+# libavcodec/libavutil/libavformat with libx264 encode support) are already required/installed
+# for other reasons in this script, so there's no separate opt-in cost to gate behind a flag.
+# See STEREO_IMPLEMENTATION_PLAN.md ss10.1 for the full rationale behind each cmake flag below.
+build_codec_stereo() {
+    log "codec-stereo (stereo depth via hardware video-encoder motion vectors)"
+
+    local repo_root
+    repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    local src="$repo_root/third_party/codec-stereo"
+    local build_dir="$src/build"
+    local lib_path="$build_dir/libcodec_stereo.a"
+
+    if [[ ! -d "$src" ]]; then
+        fail "third_party/codec-stereo submodule not found - run: git submodule update --init"
+        return 1
+    fi
+
+    if [[ -f "$lib_path" ]]; then
+        log "libcodec_stereo.a already built"
+    elif [[ "$CHECK_ONLY" -eq 1 ]]; then
+        note_missing "libcodec_stereo.a not built yet ($lib_path)"
+    else
+        # CS_ENABLE_RKMPP (the buggy KEY_MOTION_INFO readback backend) is deliberately never
+        # enabled here - see StereoDepthBackendKind.h. CS_ENABLE_RKMPP_HWENC (aarch64 only) reads
+        # the same real bitstream lavc_sw already validates, sidestepping those defects entirely.
+        local extra_flags=()
+        if [[ "$ARCH" == "aarch64" ]]; then
+            if pkg-config --exists rockchip_mpp 2>/dev/null; then
+                extra_flags+=(-DCS_ENABLE_RKMPP_HWENC=ON)
+            else
+                warn "rockchip_mpp not found - building codec-stereo without CS_ENABLE_RKMPP_HWENC; the Pi's hardware backend will be unavailable until it's installed and this is rerun"
+            fi
+        fi
+
+        mkdir -p "$build_dir"
+        (
+            cd "$build_dir"
+            # -DCMAKE_POSITION_INDEPENDENT_CODE=ON: codec-stereo's own CMakeLists doesn't set
+            # this (it's a default-STATIC add_library), and libcodec_stereo.a goes into
+            # libFRCVLib.so - confirmed the hard way (relocation R_X86_64_32S ... can not be
+            # used when making a shared object) before adding this flag.
+            #
+            # -DCS_BUILD_HARNESS=OFF: its harness pkg-configs the system opencv4 package, which
+            # collides with this project's own OpenCV 5.0 build under /usr/local (its own
+            # CMakeLists carries a comment about exactly this) - not needed for FRCVLib anyway.
+            cmake -S . -B . -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+                -DCS_BUILD_PIPELINE=ON -DCS_BUILD_TOOLS=ON -DCS_BUILD_TESTS=ON \
+                -DCS_BUILD_HARNESS=OFF -DCS_ENABLE_REF_SAD=ON -DCS_ENABLE_LAVC=ON \
+                "${extra_flags[@]}"
+            cmake --build . --parallel "$JOBS"
+        )
+
+        if [[ ! -f "$lib_path" ]]; then
+            fail "codec-stereo build finished but $lib_path is missing - something changed in its CMakeLists"
+            return 1
+        fi
+
+        # cheap, genuine correctness check of the backend on the machine that will actually run
+        # it - not a substitute for STEREO_IMPLEMENTATION_PLAN.md ss10.6's own verification plan,
+        # but catches a broken build immediately rather than at first real use.
+        ( cd "$build_dir" && ctest --output-on-failure ) || warn "codec-stereo's own test suite failed - see the log above"
+    fi
+}
+
+# ---------------------------------------------------------------------------
 # 6. WebRTC (phase 6) — libdatachannel, opt-in via --with-webrtc
 # ---------------------------------------------------------------------------
 build_webrtc() {
@@ -610,6 +678,7 @@ build_apriltag
 install_ffmpeg
 install_vulkan
 build_vkapriltag || warn "vkapriltag build failed - see the log above; the CPU AprilTag backend remains the fallback"
+build_codec_stereo || warn "codec-stereo build failed - see the log above; stereo depth (STEREO_BACKEND_CODEC_*) will be unavailable, STEREO_BACKEND_SGBM is unaffected"
 # these three are optional/best-effort integrations (WebRTC, NT4, RKNN) - a failure partway
 # through one of them (a bad ref, a flaky download) should not, under `set -e`, take down a
 # run that otherwise succeeded; ONNX Runtime stays unconditional since --with-* doesn't gate it

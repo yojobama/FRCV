@@ -14,6 +14,9 @@
 #include "IDetectionBackend.h"
 #include "IApriltagBackend.h"
 #include "CalibrationBoardType.h"
+#include "StereoCalibrationResult.h"
+#include "StereoDepthBackendKind.h"
+#include "StereoFrameOutput.h"
 
 using namespace std;
 
@@ -127,6 +130,49 @@ public:
 	// transferring the calibration data so the detector can compute the real-world tag location
 	int CreateApriltagDetectorFromCalibrator(int calibratorId, double tagSize /* in METERS you filthy Americans! */);
 	int CreateApriltagDetectorFromCalibrator(int id, int calibratorId, double tagSize /* in METERS you filthy Americans! */);
+
+	// --- Stereo depth (phase 10) - see STEREO_IMPLEMENTATION_PLAN.md ---
+	//
+	// StereoCalibrator: same "primitives only" discipline as CameraCalibrator above -
+	// StereoCalibrator.h pulls in <opencv2/calib3d.hpp> and must not reach swig.i. ChArUco is
+	// not supported (see StereoCalibrator.h), so unlike CreateCameraCalibrator there is no
+	// marker size / dictionary parameter here.
+	int CreateStereoCalibrator();
+	int CreateStereoCalibrator(int id);
+	int CreateStereoCalibrator(CalibrationBoardType boardType, int rows, int cols, float squareSizeMeters);
+	int CreateStereoCalibrator(int id, CalibrationBoardType boardType, int rows, int cols, float squareSizeMeters);
+
+	// binds two sources as the explicit left/right roles of a stereo sink (StereoCalibrator or
+	// StereoDepthNode) - ordinary BindSourceToSink is bind-order only and getting left/right
+	// backwards silently flips the sign of every disparity, so this both binds (via the normal
+	// ISink::BindSource path) AND records the roles explicitly by source ID. See
+	// IStereoRoleReceiver.h / STEREO_IMPLEMENTATION_PLAN.md P2.
+	bool BindStereoSources(int sinkId, int leftSourceId, int rightSourceId);
+
+	bool SaveStereoCalibrationDetection(int calibratorId);
+	int GetStereoCalibrationPairCount(int calibratorId);
+	bool RemoveStereoCalibrationPair(int calibratorId, int index);
+	void ClearStereoCalibrationPairs(int calibratorId);
+	// runs cv::stereoCalibrate + cv::stereoRectify over every saved pair; throws if fewer than 8
+	// pairs have been saved. Also returned by GetStereoCalibrationResult afterwards.
+	StereoCalibrationResult RunStereoCalibration(int calibratorId);
+	StereoCalibrationResult GetStereoCalibrationResult(int calibratorId);
+
+	// StereoDepthNode: bind with BindStereoSources, same as StereoCalibrator. `calibration` is
+	// normally the result of RunStereoCalibration on a StereoCalibrator sink - fetch it via
+	// GetStereoCalibrationResult and pass it straight through.
+	int CreateStereoDepthNode(StereoDepthBackendKind backend, StereoCalibrationResult calibration,
+		double minDepthMeters, double maxDepthMeters, int maxSkewUs, StereoFrameOutput frameOutput);
+	int CreateStereoDepthNode(int id, StereoDepthBackendKind backend, StereoCalibrationResult calibration,
+		double minDepthMeters, double maxDepthMeters, int maxSkewUs, StereoFrameOutput frameOutput);
+	// which backend actually ended up running (e.g. "lavc_sw", "rkmpp_hwenc", "sgbm")
+	string GetStereoDepthBackendName(int sinkId);
+	// fraction of blocks that came back valid in the most recently processed pair, and their
+	// median depth in meters - the summary stats a WebUI/NT4 caller actually wants, not the
+	// full per-block grid (see GetSinkResult's JSON for the rest - STEREO_IMPLEMENTATION_PLAN.md
+	// ss10.3 "Outputs").
+	double GetStereoDepthValidFraction(int sinkId);
+	double GetStereoDepthMedianDepthMeters(int sinkId);
 
 	int CreateRecordingSink(int sourceId);
 

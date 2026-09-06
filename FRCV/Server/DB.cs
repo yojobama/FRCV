@@ -82,7 +82,13 @@ namespace Server
                     // (created above) before rebinding.
                     foreach (var sink in sinks)
                     {
-                        if (sink.Source != null)
+                        if (sink.Source != null && sink.Source2 != null)
+                        {
+                            // stereo sink (StereoCalibrationSink/StereoDepthSink) - Source is the
+                            // left role, Source2 the right one; see Sink.Source2's own comment
+                            SinkManager.Instance.BindStereoSourcesToSink(sink.Id, sink.Source.Id, sink.Source2.Id);
+                        }
+                        else if (sink.Source != null)
                         {
                             SinkManager.Instance.BindSourceToSink(sink.Id, sink.Source.Id);
                         }
@@ -100,7 +106,12 @@ namespace Server
                     // is safe now that ISource/ISink::Toggle are idempotent.
                     foreach (var sink in sinks)
                     {
-                        if (sink.Type != SinkType.CameraCalibrationSink && sink.Type != SinkType.WebRTCSink)
+                        // StereoCalibrationSink is interactive/operator-driven like
+                        // CameraCalibrationSink - excluded for the same reason. StereoDepthSink
+                        // is meant to run unattended (like ApriltagSink/ObjectDetectionSink), so
+                        // it's not excluded here.
+                        if (sink.Type != SinkType.CameraCalibrationSink && sink.Type != SinkType.WebRTCSink
+                            && sink.Type != SinkType.StereoCalibrationSink)
                         {
                             SinkManager.Instance.EnableSinkById(sink.Id);
                         }

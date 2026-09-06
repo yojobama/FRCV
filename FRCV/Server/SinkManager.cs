@@ -132,6 +132,15 @@ namespace Server
                         id = ManagerWrapper.Instance.CreateCameraCalibrator(id.Value);
                         sinks.Add(new Sink(id.Value, name, SinkType.CameraCalibrationSink));
                         break;
+                    case "stereocalibrationsink":
+                        id = ManagerWrapper.Instance.CreateStereoCalibrator(id.Value);
+                        sinks.Add(new Sink(id.Value, name, SinkType.StereoCalibrationSink));
+                        break;
+                    // StereoDepthSink is deliberately NOT restorable through this generic path -
+                    // same gap as WebRTCSink/NetworkTablesSink above: it needs a backend,
+                    // calibration result and depth range that this signature has no room for.
+                    // DB.Load() re-creating it as a no-op (id stays unset) matches those sinks'
+                    // existing behavior rather than introducing a new one.
                 }
                 return id.GetValueOrDefault(-1);
             }
@@ -151,6 +160,10 @@ namespace Server
                     case "cameracalibration":
                         id = ManagerWrapper.Instance.CreateCameraCalibrator();
                         sinks.Add(new Sink(id.Value, name, SinkType.CameraCalibrationSink));
+                        break;
+                    case "stereocalibrationsink":
+                        id = ManagerWrapper.Instance.CreateStereoCalibrator();
+                        sinks.Add(new Sink(id.Value, name, SinkType.StereoCalibrationSink));
                         break;
                 }
 
@@ -301,6 +314,108 @@ namespace Server
             return ManagerWrapper.Instance.GetNetworkTablesSinkStatus(sinkId);
         }
 
+        // --- Stereo depth (phase 10) - see STEREO_IMPLEMENTATION_PLAN.md ---
+
+        public int AddStereoCalibrationSink(string name)
+        {
+            int id = ManagerWrapper.Instance.CreateStereoCalibrator();
+            sinks.Add(new Sink(id, name, SinkType.StereoCalibrationSink));
+            DB.Instance.Save();
+            return id;
+        }
+
+        // explicit board config - default is a 6x9 checkerboard, 25mm squares, matching
+        // CreateStereoCalibrator()'s own native default (ChArUco isn't supported for stereo -
+        // see StereoCalibrator.h - so unlike CameraCalibrator there's no marker size/dictionary
+        // parameter here)
+        public int AddStereoCalibrationSinkWithBoard(string name, CalibrationBoardType boardType, int rows, int cols, float squareSizeMeters)
+        {
+            int id = ManagerWrapper.Instance.CreateStereoCalibrator(boardType, rows, cols, squareSizeMeters);
+            sinks.Add(new Sink(id, name, SinkType.StereoCalibrationSink));
+            DB.Instance.Save();
+            return id;
+        }
+
+        // binds the explicit left/right roles of a stereo sink (StereoCalibrationSink or
+        // StereoDepthSink) - ordinary BindSourceToSink is bind-order only and has no left/right
+        // notion at all, so getting the two backwards would silently flip the sign of every
+        // disparity (see BindStereoSources' own comment in Manager.h/IStereoRoleReceiver.h).
+        public void BindStereoSourcesToSink(int sinkId, int leftSourceId, int rightSourceId)
+        {
+            var sink = sinks.FirstOrDefault(s => s.Id == sinkId);
+            if (sink == null) throw new ArgumentException($"no sink with id {sinkId}");
+
+            Source ResolveSource(int sourceId)
+            {
+                Source? s = SourceManager.Instance.GetSourceById(sourceId);
+                if (s == null) {
+                    // dual-role sink acting as its own source - see BindSourceToSink's own
+                    // DualRoleSinkTypes comment
+                    var sourceSink = sinks.FirstOrDefault(sk => sk.Id == sourceId && DualRoleSinkTypes.Contains(sk.Type));
+                    if (sourceSink != null) s = new Source(sourceSink.Id, sourceSink.Name, SourceType.SinkOutput);
+                }
+                if (s == null) throw new Exception($"no source (or dual-role sink) with id {sourceId}");
+                return s;
+            }
+
+            Source left = ResolveSource(leftSourceId);
+            Source right = ResolveSource(rightSourceId);
+
+            bool ok = ManagerWrapper.Instance.BindStereoSources(sinkId, leftSourceId, rightSourceId);
+            if (!ok) throw new Exception($"BindStereoSources failed for sink {sinkId}");
+
+            sink.Source = left;
+            sink.Source2 = right;
+
+            // same reasoning as BindSourceToSink: only a "real" SourceManager-tracked source has
+            // its own enable/disable lifecycle to kick off here
+            if (SourceManager.Instance.GetSourceById(leftSourceId) != null) SourceManager.Instance.EnableSourceById(leftSourceId);
+            if (SourceManager.Instance.GetSourceById(rightSourceId) != null) SourceManager.Instance.EnableSourceById(rightSourceId);
+
+            DB.Instance.Save();
+        }
+
+        public bool SaveStereoCalibrationDetection(int calibratorSinkId) =>
+            ManagerWrapper.Instance.SaveStereoCalibrationDetection(calibratorSinkId);
+
+        public int GetStereoCalibrationPairCount(int calibratorSinkId) =>
+            ManagerWrapper.Instance.GetStereoCalibrationPairCount(calibratorSinkId);
+
+        public bool RemoveStereoCalibrationPair(int calibratorSinkId, int index) =>
+            ManagerWrapper.Instance.RemoveStereoCalibrationPair(calibratorSinkId, index);
+
+        public void ClearStereoCalibrationPairs(int calibratorSinkId) =>
+            ManagerWrapper.Instance.ClearStereoCalibrationPairs(calibratorSinkId);
+
+        // explicitly runs cv::stereoCalibrate + cv::stereoRectify over every pair saved so far,
+        // and persists the result (keyed by both cameras' device paths + resolution) if the
+        // sink is bound to two real camera sources.
+        public StereoCalibrationResult RunStereoCalibration(int calibratorSinkId)
+        {
+            var result = ManagerWrapper.Instance.RunStereoCalibration(calibratorSinkId);
+            StereoCalibrationManager.Instance.SaveResult(calibratorSinkId, result);
+            return result;
+        }
+
+        public StereoCalibrationResult GetStereoCalibrationResult(int calibratorSinkId) =>
+            ManagerWrapper.Instance.GetStereoCalibrationResult(calibratorSinkId);
+
+        // creates a StereoDepthNode bound to nothing yet - bind its left/right sources with
+        // BindStereoSourcesToSink afterwards. `calibration` is normally the result of
+        // RunStereoCalibration/GetStereoCalibrationResult on a StereoCalibrationSink.
+        public int AddStereoDepthSink(string name, StereoDepthBackendKind backend, StereoCalibrationResult calibration,
+            double minDepthMeters, double maxDepthMeters, int maxSkewUs, StereoFrameOutput frameOutput)
+        {
+            int id = ManagerWrapper.Instance.CreateStereoDepthNode(backend, calibration, minDepthMeters, maxDepthMeters, maxSkewUs, frameOutput);
+            sinks.Add(new Sink(id, name, SinkType.StereoDepthSink));
+            DB.Instance.Save();
+            return id;
+        }
+
+        public string GetStereoDepthBackendName(int sinkId) => ManagerWrapper.Instance.GetStereoDepthBackendName(sinkId);
+        public double GetStereoDepthValidFraction(int sinkId) => ManagerWrapper.Instance.GetStereoDepthValidFraction(sinkId);
+        public double GetStereoDepthMedianDepthMeters(int sinkId) => ManagerWrapper.Instance.GetStereoDepthMedianDepthMeters(sinkId);
+
         // update results
         private void updateResults()
         {
@@ -430,7 +545,8 @@ namespace Server
         // list never tracked these though - only real camera/video/image sources - so binding to
         // one used to look up a null Source here and NullReferenceException on the line below.
         private static readonly HashSet<SinkType> DualRoleSinkTypes = new HashSet<SinkType> {
-            SinkType.ApriltagSink, SinkType.ObjectDetectionSink, SinkType.CameraCalibrationSink
+            SinkType.ApriltagSink, SinkType.ObjectDetectionSink, SinkType.CameraCalibrationSink,
+            SinkType.StereoCalibrationSink, SinkType.StereoDepthSink
         };
 
         public void BindSourceToSink(int sinkId, int sourceId)

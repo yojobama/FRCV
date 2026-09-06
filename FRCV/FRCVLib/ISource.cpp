@@ -59,6 +59,11 @@ void ISource::SetLatestResult(SourceResult result)
 {
 	{
 		std::lock_guard<std::mutex> guard(m_ResultLock); // Use RAII for mutex locking
+		result.producedTimeUs = SourceResult::NowUs();
+		// a producer that didn't pass an explicit capture timestamp (the two-arg SourceResult
+		// constructor) gets producedTimeUs standing in for captureTimeUs too - see SourceResult.h
+		if (result.captureTimeUs == 0) result.captureTimeUs = result.producedTimeUs;
+		result.frameNumber = m_FrameCount + 1; // matches the m_FrameCount++ below
 		m_LatestResult = result;
 		// m_FrameCount is what ISink::ProcessingThreadLoop actually checks to decide whether a
 		// source has anything new (source->GetCurrentFrameCount() != lastFrameCount) - it needs

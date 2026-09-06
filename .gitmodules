@@ -1,3 +1,6 @@
 [submodule "FRCV/third_party/vkapriltag"]
 	path = FRCV/third_party/vkapriltag
 	url = https://github.com/yojobama/vkapriltag.git
+[submodule "FRCV/third_party/codec-stereo"]
+	path = FRCV/third_party/codec-stereo
+	url = https://github.com/yojobama/codec-stereo.git
