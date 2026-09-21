@@ -13,7 +13,7 @@ namespace Server
     // (SinkManager.BindSourceToSink/BindStereoSourcesToSink/AttachDepthFusionSource,
     // ISink::maxSources, IStereoRoleReceiver) with no single reflectable source of truth, so this
     // is hand-authored and kept in sync deliberately, the same way SinkType's own enum already is.
-    public record NodeTypeCapability(
+    public record struct NodeTypeCapability(
         string TypeName,
         string Category,              // "source" | "sink"
         string DisplayName,

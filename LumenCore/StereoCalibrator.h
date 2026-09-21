@@ -53,6 +53,13 @@ public:
 	bool RemovePair(int index);
 	void ClearPairs();
 
+	// ROADMAP.md Phase 8a/8d: same reasoning as CameraCalibrator's own GetSnapshotCorners - one
+	// eye's corner points for one saved pair, flattened as [x0,y0,x1,y1,...]. Empty if index is
+	// out of range or eye isn't "left"/"right".
+	std::vector<double> GetPairCorners(int index, const std::string& eye) const;
+	int GetFrameWidth() const;
+	int GetFrameHeight() const;
+
 	// runs cv::stereoCalibrate + cv::stereoRectify over every saved pair; throws if fewer than 8
 	// pairs have been saved (stereo extrinsics have more DOF than a single-eye calibration, so
 	// the same "too few views is actively misleading" argument from CameraCalibrator applies

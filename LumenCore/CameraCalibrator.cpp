@@ -93,6 +93,32 @@ void CameraCalibrator::ClearSnapshots()
 	m_ImgPoints.clear();
 }
 
+std::vector<double> CameraCalibrator::GetSnapshotCorners(int index) const
+{
+	std::lock_guard<std::mutex> lock(m_DetectionMutex);
+	if (index < 0 || static_cast<size_t>(index) >= m_ImgPoints.size()) return {};
+
+	std::vector<double> flattened;
+	flattened.reserve(m_ImgPoints[index].size() * 2);
+	for (const cv::Point2f& corner : m_ImgPoints[index]) {
+		flattened.push_back(corner.x);
+		flattened.push_back(corner.y);
+	}
+	return flattened;
+}
+
+int CameraCalibrator::GetFrameWidth() const
+{
+	std::lock_guard<std::mutex> lock(m_DetectionMutex);
+	return frameSize.width;
+}
+
+int CameraCalibrator::GetFrameHeight() const
+{
+	std::lock_guard<std::mutex> lock(m_DetectionMutex);
+	return frameSize.height;
+}
+
 void CameraCalibrator::ProcessCheckerboard(const cv::Mat& gray, cv::Mat& displayFrame)
 {
 	cv::Size patternSize(m_BoardConfig.cols, m_BoardConfig.rows);

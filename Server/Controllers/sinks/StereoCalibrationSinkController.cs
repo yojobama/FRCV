@@ -1,6 +1,7 @@
 using EmbedIO;
 using EmbedIO.Routing;
 using EmbedIO.WebApi;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Server.Controllers.sinks
@@ -83,6 +84,23 @@ namespace Server.Controllers.sinks
         public Task<StereoCalibrationResultDto> GetResult(int id)
         {
             return Task.FromResult(StereoCalibrationResultDto.From(SinkManager.Instance.GetStereoCalibrationResult(id)));
+        }
+
+        // GET: every saved pair's detected corner points for one eye, for the calibration
+        // wizard's live coverage heatmap (ROADMAP.md Phase 8d).
+        [Route(HttpVerbs.Get, "/stereoCalibrationSink/{id}/coverage")]
+        public Task<CalibrationCoverageDto> GetCoverage(int id, [QueryField] string eye)
+        {
+            int count = SinkManager.Instance.GetStereoCalibrationPairCount(id);
+            var pairs = new double[count][];
+            for (int i = 0; i < count; i++)
+            {
+                pairs[i] = ManagerWrapper.Instance.GetStereoCalibrationPairCorners(id, i, eye).ToArray();
+            }
+            return Task.FromResult(new CalibrationCoverageDto(
+                ManagerWrapper.Instance.GetStereoCalibrationFrameWidth(id),
+                ManagerWrapper.Instance.GetStereoCalibrationFrameHeight(id),
+                pairs));
         }
     }
 }

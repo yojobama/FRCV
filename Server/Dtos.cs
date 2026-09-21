@@ -12,7 +12,7 @@ namespace Server
     // - both are surprises a reflection-driven OpenAPI generator (see Server/OpenApi) would bake
     // straight into the generated TypeScript client. Map once at the controller boundary instead.
 
-    public record CameraModeDto(int Width, int Height, double Fps, FrameFormat PixelFormat, bool IsNative)
+    public record struct CameraModeDto(int Width, int Height, double Fps, FrameFormat PixelFormat, bool IsNative)
     {
         public static CameraModeDto From(CameraMode mode) =>
             new(mode.width, mode.height, mode.fps, mode.pixelFormat, mode.isNative);
@@ -31,14 +31,14 @@ namespace Server
         }
     }
 
-    public record CameraHardwareInfoDto(string Name, string Path)
+    public record struct CameraHardwareInfoDto(string Name, string Path)
     {
         public static CameraHardwareInfoDto From(CameraHardwareInfo info) => new(info.name, info.path);
 
         public CameraHardwareInfo ToNative() => new() { name = Name, path = Path };
     }
 
-    public record CameraCalibrationResultDto(
+    public record struct CameraCalibrationResultDto(
         double Fx, double Fy, double Cx, double Cy, double Rms,
         double[] DistCoeffs, int ImageWidth, int ImageHeight)
     {
@@ -54,7 +54,7 @@ namespace Server
         }
     }
 
-    public record StoredCalibrationDto(string CameraPath, CameraCalibrationResultDto Result, long CalibratedAtUnixMs)
+    public record struct StoredCalibrationDto(string CameraPath, CameraCalibrationResultDto Result, long CalibratedAtUnixMs)
     {
         // deliberately NOT touching StoredCalibration/CalibrationManager's own on-disk shape -
         // that JSON is already persisted (calibrations.json) with the raw SWIG field names, and
@@ -64,7 +64,7 @@ namespace Server
             new(stored.CameraPath, CameraCalibrationResultDto.From(stored.Result), stored.CalibratedAtUnixMs);
     }
 
-    public record StereoCalibrationResultDto(
+    public record struct StereoCalibrationResultDto(
         CameraCalibrationResultDto Left, CameraCalibrationResultDto Right,
         double[] R, double[] T, double[] E, double[] F,
         double[] R1, double[] R2, double[] P1, double[] P2, double[] Q,
@@ -123,13 +123,20 @@ namespace Server
         };
     }
 
-    public record StereoDepthStatsDto(double ValidFraction, double MedianDepthMeters);
+    public record struct StereoDepthStatsDto(double ValidFraction, double MedianDepthMeters);
+
+    // ROADMAP.md Phase 8d: every saved snapshot/pair's detected corner points, for the
+    // calibration wizard's live coverage heatmap - which region of the frame still needs more
+    // checkerboard coverage. Each entry in Snapshots is one snapshot's corners flattened as
+    // [x0,y0,x1,y1,...] (SWIG has no vector<vector<double>> binding - see
+    // CameraCalibrator::GetSnapshotCorners' own comment).
+    public record struct CalibrationCoverageDto(int FrameWidth, int FrameHeight, double[][] Snapshots);
 
     // NetworkTablesSink::GetConnectionStatus()/WebRTCSink::GetConnectionStatus() both return an
     // nlohmann::json object serialized to a std::string - the SWIG boundary can only express that
     // as a C# string, so the two controllers used to hand it back as Task<string> and the webui
     // had to JSON.parse() it a second time. Parse it once here into a real typed object instead.
-    public record NetworkTablesStatusDto(bool Connected, string Identity, string RootTable, int? TeamNumber, string? ServerAddress)
+    public record struct NetworkTablesStatusDto(bool Connected, string Identity, string RootTable, int? TeamNumber, string? ServerAddress)
     {
         public static NetworkTablesStatusDto Parse(string json)
         {
@@ -144,7 +151,7 @@ namespace Server
         }
     }
 
-    public record WebRtcStatusDto(bool Connected, int IceState, bool GatheringComplete)
+    public record struct WebRtcStatusDto(bool Connected, int IceState, bool GatheringComplete)
     {
         public static WebRtcStatusDto Parse(string json)
         {

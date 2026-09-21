@@ -747,6 +747,24 @@ void Manager::ClearCameraCalibrationSnapshots(int calibratorId)
 	if (p_Calibrator != nullptr) p_Calibrator->ClearSnapshots();
 }
 
+vector<double> Manager::GetCameraCalibrationSnapshotCorners(int calibratorId, int index)
+{
+	CameraCalibrator* p_Calibrator = FindCalibrator(m_Sinks, calibratorId);
+	return p_Calibrator == nullptr ? vector<double>() : p_Calibrator->GetSnapshotCorners(index);
+}
+
+int Manager::GetCameraCalibrationFrameWidth(int calibratorId)
+{
+	CameraCalibrator* p_Calibrator = FindCalibrator(m_Sinks, calibratorId);
+	return p_Calibrator == nullptr ? 0 : p_Calibrator->GetFrameWidth();
+}
+
+int Manager::GetCameraCalibrationFrameHeight(int calibratorId)
+{
+	CameraCalibrator* p_Calibrator = FindCalibrator(m_Sinks, calibratorId);
+	return p_Calibrator == nullptr ? 0 : p_Calibrator->GetFrameHeight();
+}
+
 bool Manager::SaveCameraCalibrationBoardDetection(int calibratorId)
 {
 	CameraCalibrator* p_Calibrator = FindCalibrator(m_Sinks, calibratorId);
@@ -862,6 +880,24 @@ void Manager::ClearStereoCalibrationPairs(int calibratorId)
 {
     StereoCalibrator* p_Calibrator = FindStereoCalibrator(m_Sinks, calibratorId);
     if (p_Calibrator != nullptr) p_Calibrator->ClearPairs();
+}
+
+vector<double> Manager::GetStereoCalibrationPairCorners(int calibratorId, int index, string eye)
+{
+    StereoCalibrator* p_Calibrator = FindStereoCalibrator(m_Sinks, calibratorId);
+    return p_Calibrator == nullptr ? vector<double>() : p_Calibrator->GetPairCorners(index, eye);
+}
+
+int Manager::GetStereoCalibrationFrameWidth(int calibratorId)
+{
+    StereoCalibrator* p_Calibrator = FindStereoCalibrator(m_Sinks, calibratorId);
+    return p_Calibrator == nullptr ? 0 : p_Calibrator->GetFrameWidth();
+}
+
+int Manager::GetStereoCalibrationFrameHeight(int calibratorId)
+{
+    StereoCalibrator* p_Calibrator = FindStereoCalibrator(m_Sinks, calibratorId);
+    return p_Calibrator == nullptr ? 0 : p_Calibrator->GetFrameHeight();
 }
 
 StereoCalibrationResult Manager::RunStereoCalibration(int calibratorId)

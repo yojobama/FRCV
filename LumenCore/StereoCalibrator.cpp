@@ -169,6 +169,38 @@ void StereoCalibrator::ClearPairs()
 	m_RightImgPoints.clear();
 }
 
+std::vector<double> StereoCalibrator::GetPairCorners(int index, const std::string& eye) const
+{
+	std::lock_guard<std::mutex> lock(m_DetectionMutex);
+
+	const std::vector<std::vector<cv::Point2f>>* points = nullptr;
+	if (eye == "left") points = &m_LeftImgPoints;
+	else if (eye == "right") points = &m_RightImgPoints;
+	else return {};
+
+	if (index < 0 || static_cast<size_t>(index) >= points->size()) return {};
+
+	std::vector<double> flattened;
+	flattened.reserve((*points)[index].size() * 2);
+	for (const cv::Point2f& corner : (*points)[index]) {
+		flattened.push_back(corner.x);
+		flattened.push_back(corner.y);
+	}
+	return flattened;
+}
+
+int StereoCalibrator::GetFrameWidth() const
+{
+	std::lock_guard<std::mutex> lock(m_DetectionMutex);
+	return m_FrameSize.width;
+}
+
+int StereoCalibrator::GetFrameHeight() const
+{
+	std::lock_guard<std::mutex> lock(m_DetectionMutex);
+	return m_FrameSize.height;
+}
+
 StereoCalibrationResult StereoCalibrator::RunCalibration()
 {
 	// stereo extrinsics have more DOF than a single-eye calibration, and the same "too few views

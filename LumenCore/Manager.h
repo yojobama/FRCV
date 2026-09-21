@@ -158,6 +158,14 @@ public:
 	bool RemoveCameraCalibrationSnapshot(int calibratorId, int index);
 	void ClearCameraCalibrationSnapshots(int calibratorId);
 
+	// ROADMAP.md Phase 8a/8d: coverage-heatmap data for the calibration wizard - one saved
+	// snapshot's corner points, flattened [x0,y0,x1,y1,...]; empty if calibratorId doesn't exist
+	// or index is out of range. GetCameraCalibrationFrameWidth/Height are 0 until at least one
+	// snapshot has been saved.
+	vector<double> GetCameraCalibrationSnapshotCorners(int calibratorId, int index);
+	int GetCameraCalibrationFrameWidth(int calibratorId);
+	int GetCameraCalibrationFrameHeight(int calibratorId);
+
 	// saves the checkerboard corners detected in the CameraCalibrator's latest frame as a calibration
 	// snapshot to be used in the calibration phase. returns false if no board was detected yet.
 	bool SaveCameraCalibrationBoardDetection(int calibratorId);
@@ -189,6 +197,11 @@ public:
 	int GetStereoCalibrationPairCount(int calibratorId);
 	bool RemoveStereoCalibrationPair(int calibratorId, int index);
 	void ClearStereoCalibrationPairs(int calibratorId);
+
+	// same reasoning as GetCameraCalibrationSnapshotCorners - eye must be "left" or "right".
+	vector<double> GetStereoCalibrationPairCorners(int calibratorId, int index, string eye);
+	int GetStereoCalibrationFrameWidth(int calibratorId);
+	int GetStereoCalibrationFrameHeight(int calibratorId);
 	// runs cv::stereoCalibrate + cv::stereoRectify over every saved pair; throws if fewer than 8
 	// pairs have been saved. Also returned by GetStereoCalibrationResult afterwards.
 	StereoCalibrationResult RunStereoCalibration(int calibratorId);

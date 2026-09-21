@@ -31,5 +31,5 @@ namespace Server.Controllers
         }
     }
 
-    public record NodeTypesResponse(NodeTypeCapability[] Sources, NodeTypeCapability[] Sinks);
+    public record struct NodeTypesResponse(NodeTypeCapability[] Sources, NodeTypeCapability[] Sinks);
 }

@@ -83,5 +83,22 @@ namespace Server.Controllers.sinks
         {
             return Task.FromResult(CalibrationManager.Instance.GetAll().Select(StoredCalibrationDto.From).ToList());
         }
+
+        // GET: every saved snapshot's detected corner points, for the calibration wizard's live
+        // coverage heatmap (ROADMAP.md Phase 8d).
+        [Route(HttpVerbs.Get, "/cameraCalibrationSink/{id}/coverage")]
+        public Task<CalibrationCoverageDto> GetCoverage(int id)
+        {
+            int count = SinkManager.Instance.GetCameraCalibrationSnapshotCount(id);
+            var snapshots = new double[count][];
+            for (int i = 0; i < count; i++)
+            {
+                snapshots[i] = ManagerWrapper.Instance.GetCameraCalibrationSnapshotCorners(id, i).ToArray();
+            }
+            return Task.FromResult(new CalibrationCoverageDto(
+                ManagerWrapper.Instance.GetCameraCalibrationFrameWidth(id),
+                ManagerWrapper.Instance.GetCameraCalibrationFrameHeight(id),
+                snapshots));
+        }
     }
 }

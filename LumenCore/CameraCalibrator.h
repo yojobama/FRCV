@@ -46,6 +46,18 @@ public:
 	bool RemoveSnapshot(int index);
 	void ClearSnapshots();
 
+	// ROADMAP.md Phase 8a/8d: the detected corner points for one saved snapshot, flattened as
+	// [x0,y0,x1,y1,...] - SWIG has no vector<vector<double>> binding registered (would need its
+	// own %template, unused anywhere else in this project), so the REST layer loops
+	// 0..GetSnapshotCount()-1 itself calling this once per index rather than fetching every
+	// snapshot in one call. Empty if index is out of range. Feeds the calibration wizard's live
+	// coverage heatmap - which region of the frame still needs more checkerboard coverage.
+	std::vector<double> GetSnapshotCorners(int index) const;
+	// the resolution GetSnapshotCorners' points are in - 0,0 if no snapshot has been saved yet
+	// (frameSize is only set by SaveBoardDetection, matching RunCalibration's own use of it).
+	int GetFrameWidth() const;
+	int GetFrameHeight() const;
+
 private:
 	void Process(std::vector<SourceResult> results) override;
 	void ProcessCheckerboard(const cv::Mat& gray, cv::Mat& displayFrame);
