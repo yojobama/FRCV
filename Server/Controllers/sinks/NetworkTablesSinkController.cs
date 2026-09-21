@@ -10,7 +10,7 @@ namespace Server.Controllers.sinks
         // POST: Create a NetworkTables sink that connects via team number
         [Route(HttpVerbs.Post, "/networkTablesSink/createForTeam")]
         public Task<int> CreateForTeam([QueryField] string name, [QueryField] int teamNumber,
-            [QueryField] string rootTable = "FRCV", [QueryField] string clientIdentity = "FRCV")
+            [QueryField] string rootTable = "lumenvision", [QueryField] string clientIdentity = "lumenvision")
         {
             int sinkId = SinkManager.Instance.AddNetworkTablesSinkForTeam(name, teamNumber, rootTable, clientIdentity);
             return Task.FromResult(sinkId);
@@ -19,7 +19,7 @@ namespace Server.Controllers.sinks
         // POST: Create a NetworkTables sink that connects to an explicit server address (bench testing)
         [Route(HttpVerbs.Post, "/networkTablesSink/createForServer")]
         public Task<int> CreateForServer([QueryField] string name, [QueryField] string serverAddress,
-            [QueryField] int port = 0, [QueryField] string rootTable = "FRCV", [QueryField] string clientIdentity = "FRCV")
+            [QueryField] int port = 0, [QueryField] string rootTable = "lumenvision", [QueryField] string clientIdentity = "lumenvision")
         {
             int sinkId = SinkManager.Instance.AddNetworkTablesSinkForServer(name, serverAddress, port, rootTable, clientIdentity);
             return Task.FromResult(sinkId);

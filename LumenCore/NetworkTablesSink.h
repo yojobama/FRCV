@@ -11,8 +11,14 @@ struct NetworkTablesConfig {
 	std::optional<unsigned int> teamNumber;
 	std::string serverAddress; // used when teamNumber is not set
 	unsigned int port = 0;     // 0 = NT4 default port
-	std::string clientIdentity = "FRCV";
-	std::string rootTable = "FRCV";
+	// independent literals, not one copied into the other: sharing a single default (as this
+	// struct used to) means two coprocessors on one robot silently register the same NT4 client
+	// identity if neither is customized. A real per-device default (hostname-derived, or similar)
+	// is a vendordep-phase concern, not a rename - these are the same plain defaults the REST
+	// controllers already pass explicitly, so in practice this struct's own initializers are only
+	// reached by a caller that default-constructs NetworkTablesConfig directly.
+	std::string clientIdentity = "lumenvision";
+	std::string rootTable = "lumenvision";
 };
 
 // Terminal sink (produces nothing, so it is never also registered as an ISource): publishes

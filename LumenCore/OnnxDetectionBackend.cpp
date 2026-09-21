@@ -5,7 +5,7 @@
 #include <sstream>
 
 OnnxDetectionBackend::OnnxDetectionBackend()
-	: m_Env(ORT_LOGGING_LEVEL_WARNING, "FRCV")
+	: m_Env(ORT_LOGGING_LEVEL_WARNING, "LumenVision")
 	, m_MemoryInfo(Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault))
 {
 }

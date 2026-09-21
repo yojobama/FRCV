@@ -193,14 +193,14 @@ export class ApiService {
   }
 
   // NetworkTables Sink Controller routes
-  async createNetworkTablesSinkForTeam(name: string, teamNumber: number, rootTable = 'FRCV', clientIdentity = 'FRCV'): Promise<number> {
+  async createNetworkTablesSinkForTeam(name: string, teamNumber: number, rootTable = 'lumenvision', clientIdentity = 'lumenvision'): Promise<number> {
     const params = new URLSearchParams({ name, teamNumber: String(teamNumber), rootTable, clientIdentity });
     const response = await fetch(`${this.baseUrl}/networkTablesSink/createForTeam?${params.toString()}`, { method: 'POST' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }
 
-  async createNetworkTablesSinkForServer(name: string, serverAddress: string, port = 0, rootTable = 'FRCV', clientIdentity = 'FRCV'): Promise<number> {
+  async createNetworkTablesSinkForServer(name: string, serverAddress: string, port = 0, rootTable = 'lumenvision', clientIdentity = 'lumenvision'): Promise<number> {
     const params = new URLSearchParams({ name, serverAddress, port: String(port), rootTable, clientIdentity });
     const response = await fetch(`${this.baseUrl}/networkTablesSink/createForServer?${params.toString()}`, { method: 'POST' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -224,7 +224,7 @@ export class ApiService {
     return response.json();
   }
 
-  // Blocks briefly server-side for ICE gathering (non-trickle on FRCV's side). Returned as a
+  // Blocks briefly server-side for ICE gathering (non-trickle on LumenVision's side). Returned as a
   // raw text/plain body, not JSON - SDP is full of literal \r\n line endings that EmbedIO's
   // default string auto-serialization does not escape, which makes response.json() fail with
   // "Bad control character in string literal" (confirmed the hard way).

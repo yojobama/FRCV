@@ -623,7 +623,7 @@ const Header: React.FC<{
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Target className="w-8 h-8 text-blue-600" />
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">FRCV Dashboard</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">LumenVision</h1>
           </div>
           <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${
             systemStats.serverStatus === 'online' 
@@ -1062,16 +1062,29 @@ function App() {
   const [showAddSink, setShowAddSink] = useState(false);
   const [settings, setSettingsState] = useState<SettingsType>(() => {
     try {
-      const saved = localStorage.getItem('frcvSettings');
+      // one-time migration from the old FRCV-branded key: rewrite rootTable only when it's
+      // still exactly the old default ('FRCV') - an operator who deliberately set a real team
+      // root table must not have it silently overwritten, but a browser that's never been
+      // touched (still on the old default) should land on the new default, not stay pinned to
+      // 'FRCV' forever just because a faithful read-through preserved it.
+      const legacy = localStorage.getItem('frcvSettings');
+      if (legacy) {
+        const parsed = JSON.parse(legacy);
+        if (parsed?.nt4?.rootTable === 'FRCV') parsed.nt4.rootTable = 'lumenvision';
+        localStorage.setItem('lumenSettings', JSON.stringify(parsed));
+        localStorage.removeItem('frcvSettings');
+        return { ...parsed, serverUrl: window.location.origin };
+      }
+      const saved = localStorage.getItem('lumenSettings');
       if (saved) return { ...JSON.parse(saved), serverUrl: window.location.origin };
     } catch { /* ignore malformed/unavailable localStorage, fall through to defaults */ }
-    return { serverUrl: window.location.origin, refreshInterval: 5, nt4: { mode: 'team', rootTable: 'FRCV' } };
+    return { serverUrl: window.location.origin, refreshInterval: 5, nt4: { mode: 'team', rootTable: 'lumenvision' } };
   });
   // NT4 connection details are worth remembering across reloads (they're per-robot, not
   // per-session) - persisted the same way darkMode already is.
   const setSettings = (next: SettingsType) => {
     setSettingsState(next);
-    try { localStorage.setItem('frcvSettings', JSON.stringify(next)); } catch { /* ignore */ }
+    try { localStorage.setItem('lumenSettings', JSON.stringify(next)); } catch { /* ignore */ }
   };
   const [cfgSource, setCfgSource] = useState<Source|null>(null);
   const [cfgSink, setCfgSink] = useState<Sink|null>(null);
@@ -1138,7 +1151,7 @@ function App() {
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4">
             <RefreshCw className="w-32 h-32 text-blue-600" />
           </div>
-          <p className="text-gray-600 dark:text-gray-400 text-lg">Loading FRCV Dashboard...</p>
+          <p className="text-gray-600 dark:text-gray-400 text-lg">Loading LumenVision...</p>
           <p className="text-gray-500 dark:text-gray-500 text-sm mt-2">Connecting to {settings.serverUrl}</p>
         </div>
       </div>
