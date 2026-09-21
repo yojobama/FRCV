@@ -39,13 +39,23 @@ ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string i
 	m_DetectionInfo.cy = cameraCalibrationResult.cy;
 	m_HasCalibration = cameraCalibrationResult.fx > 0.0 && cameraCalibrationResult.fy > 0.0;
 
-	if (cameraCalibrationResult.HasDistortion()) {
-		m_HasDistortion = true;
+	// m_CameraMatrix must exist whenever m_HasCalibration does - multi-tag PnP (ROADMAP.md
+	// Phase 7) needs real intrinsics regardless of whether this particular calibration happened
+	// to fit non-zero distortion coefficients. Previously this was only built inside the
+	// HasDistortion() branch, leaving m_CameraMatrix empty for an otherwise-valid calibration
+	// with zero-fit distortion - a real gap, not just an edge case multi-tag PnP happened to
+	// need fixed anyway.
+	if (m_HasCalibration) {
 		m_CameraMatrix = (cv::Mat_<double>(3, 3) <<
 			cameraCalibrationResult.fx, 0, cameraCalibrationResult.cx,
 			0, cameraCalibrationResult.fy, cameraCalibrationResult.cy,
 			0, 0, 1);
+	}
+	if (cameraCalibrationResult.HasDistortion()) {
+		m_HasDistortion = true;
 		m_DistCoeffs = cv::Mat(cameraCalibrationResult.distCoeffs, true /* copy */);
+	} else {
+		m_DistCoeffs = cv::Mat::zeros(5, 1, CV_64F);
 	}
 
 	m_Logger = logger;
@@ -60,6 +70,53 @@ std::string ApriltagDetector::GetBackendName() const
 	return m_Backend->Name();
 }
 
+nlohmann::json ApriltagDetector::SolveMultiTagPnP(
+	const std::vector<cv::Point3d>& objectPoints, const std::vector<cv::Point2d>& imagePoints,
+	const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs, int tagCount)
+{
+	// requires at least 2 tags - a single tag's own correspondences alone are exactly what the
+	// per-tag estimate_tag_pose path already computes; solvePnP over one tag's 4 (coplanar)
+	// corners would just reproduce the same estimate, not a more robust one, for the cost of a
+	// second pose solve.
+	if (tagCount < 2) return nullptr;
+
+	cv::Mat rvec, tvec;
+	bool solved = cv::solvePnP(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvec, tvec);
+	if (!solved) return nullptr;
+
+	cv::Mat fieldToCameraRotation;
+	cv::Rodrigues(rvec, fieldToCameraRotation);
+
+	// solvePnP's own (rvec, tvec) map FIELD points INTO camera frame (p_camera = R*p_field + t)
+	// - the camera's own pose IN FIELD frame (what a robot program actually wants: "where am I")
+	// is the inverse of that.
+	cv::Mat cameraRotationInField = fieldToCameraRotation.t();
+	cv::Mat cameraTranslationInField = -cameraRotationInField * tvec;
+
+	std::vector<cv::Point2d> reprojected;
+	cv::projectPoints(objectPoints, rvec, tvec, cameraMatrix, distCoeffs, reprojected);
+	double squaredErrorSum = 0.0;
+	for (size_t p = 0; p < reprojected.size(); p++) {
+		double dx = reprojected[p].x - imagePoints[p].x;
+		double dy = reprojected[p].y - imagePoints[p].y;
+		squaredErrorSum += dx * dx + dy * dy;
+	}
+	double reprojectionErrorPixels = std::sqrt(squaredErrorSum / reprojected.size());
+
+	return {
+		{"x", cameraTranslationInField.at<double>(0)},
+		{"y", cameraTranslationInField.at<double>(1)},
+		{"z", cameraTranslationInField.at<double>(2)},
+		{"R", {
+			{cameraRotationInField.at<double>(0,0), cameraRotationInField.at<double>(0,1), cameraRotationInField.at<double>(0,2)},
+			{cameraRotationInField.at<double>(1,0), cameraRotationInField.at<double>(1,1), cameraRotationInField.at<double>(1,2)},
+			{cameraRotationInField.at<double>(2,0), cameraRotationInField.at<double>(2,1), cameraRotationInField.at<double>(2,2)}
+		}},
+		{"tagCount", tagCount},
+		{"reprojErrPixels", reprojectionErrorPixels}
+	};
+}
+
 void ApriltagDetector::Process(std::vector<SourceResult> results)
 {
 	for (const SourceResult& result : results)
@@ -68,8 +125,11 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 		{
 			if (m_DriverMode) {
 				// still streams video (matches PhotonVision's own driver-mode behaviour) - just
-				// skips the actual detection call and NT4 publish, the expensive part.
-				SetLatestResult(SourceResult(nlohmann::json(std::vector<nlohmann::json>{}), result.frame->AsBgr()));
+				// skips the actual detection call and NT4 publish, the expensive part. Keeps the
+				// same {"tags":[...],"multiTag":...} envelope as the real detection path below
+				// (both empty/null) so NetworkTablesSink clears tags/* AND multitag/* to "0 tags"
+				// rather than leaving stale data from before driver mode was enabled.
+				SetLatestResult(SourceResult(nlohmann::json{{"tags", nlohmann::json::array()}, {"multiTag", nullptr}}, result.frame->AsBgr()));
 				continue;
 			}
 
@@ -84,6 +144,14 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 			cv::Mat colouredFrame = result.frame->AsBgr().clone();
 
 			std::vector<nlohmann::json> jsonVector;
+
+			// ROADMAP.md Phase 7 (multi-tag PnP): accumulated across every tag this frame that
+			// has both a real detection AND a known field pose, then solved once, jointly, after
+			// the per-tag loop below - see the loop body for why this is more robust than any
+			// one tag's own single-tag pose.
+			std::vector<cv::Point3d> multiTagObjectPoints;
+			std::vector<cv::Point2d> multiTagImagePoints;
+			int multiTagCount = 0;
 
 			for (int i = 0; i < zarray_size(detections); i++) {
 				apriltag_detection_t* detection;
@@ -106,6 +174,38 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 						{detection->p[3][0], detection->p[3][1]}
 					}}
 				};
+
+				// Multi-tag PnP accumulation: this tag's 4 corners, in FIELD-frame 3D (its known
+				// field pose composed with its 4 local corners) paired with the SAME corners'
+				// real (distorted) image pixels - cv::solvePnP takes distCoeffs directly, so
+				// these stay undistorted-uncorrected here, matching multiTagObjectPoints/
+				// multiTagImagePoints being fed straight into one solvePnP call below rather than
+				// through the separate undistortPoints path the single-tag estimate uses.
+				//
+				// The local corner order/convention below (halfSize,halfSize / -halfSize,halfSize
+				// / -halfSize,-halfSize / halfSize,-halfSize matched to detection->p[0..3], local
+				// +Z as the tag's outward normal) is NOT guessed - it was empirically verified
+				// against apriltag.c's own homography_project corner-assignment loop (confirmed
+				// by reading apriltag.c directly) and cross-checked against the real
+				// estimate_tag_pose() on synthetic on-axis AND rotated/off-axis test cases,
+				// recovering the exact known ground-truth pose in both.
+				AprilTagFieldPose fieldPose;
+				if (m_HasCalibration && m_FieldLayout.TryGetTagPose(detection->id, fieldPose)) {
+					double halfSize = m_DetectionInfo.tagsize / 2.0;
+					cv::Vec3d localCorners[4] = {
+						{-halfSize,  halfSize, 0},
+						{ halfSize,  halfSize, 0},
+						{ halfSize, -halfSize, 0},
+						{-halfSize, -halfSize, 0},
+					};
+					cv::Vec3d fieldTranslation(fieldPose.translation.x, fieldPose.translation.y, fieldPose.translation.z);
+					for (int corner = 0; corner < 4; corner++) {
+						cv::Vec3d fieldPoint = fieldPose.rotation * localCorners[corner] + fieldTranslation;
+						multiTagObjectPoints.emplace_back(fieldPoint[0], fieldPoint[1], fieldPoint[2]);
+						multiTagImagePoints.emplace_back(detection->p[corner][0], detection->p[corner][1]);
+					}
+					multiTagCount++;
+				}
 
 				// estimate_tag_pose has no way to report "these intrinsics are degenerate" - given
 				// fx=fy=0 (no calibration attached yet) it still returns, but pose.R/pose.t come
@@ -192,7 +292,10 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 
 			m_Backend->ReleaseResult(detections);
 
-			SetLatestResult(SourceResult(nlohmann::json(jsonVector), colouredFrame));
+			nlohmann::json multiTagJson = SolveMultiTagPnP(
+				multiTagObjectPoints, multiTagImagePoints, m_CameraMatrix, m_DistCoeffs, multiTagCount);
+
+			SetLatestResult(SourceResult(nlohmann::json{{"tags", jsonVector}, {"multiTag", multiTagJson}}, colouredFrame));
 		}
 	}
 }

@@ -24,6 +24,7 @@ add_executable(LumenCoreTests
     test_roi_source.cpp
     test_driver_mode.cpp
     test_snapshot.cpp
+    test_multitag_pnp.cpp
 )
 
 if(LUMEN_WITH_RKNN)

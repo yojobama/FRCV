@@ -50,6 +50,11 @@ TEST_CASE("ApriltagDetector's driver mode skips detection but still republishes 
 	REQUIRE(result.frame.has_value());
 	REQUIRE_FALSE(result.frame->empty());
 	REQUIRE(result.json.has_value());
-	REQUIRE(result.json->is_array());
-	REQUIRE(result.json->empty()); // no detections published while driver mode is on
+	// {"tags": [...], "multiTag": ...} - ApriltagDetector's real published envelope (ROADMAP.md
+	// Phase 7's multi-tag PnP), not a bare array - both empty/null while driver mode is on.
+	REQUIRE(result.json->is_object());
+	REQUIRE(result.json->contains("tags"));
+	REQUIRE((*result.json)["tags"].is_array());
+	REQUIRE((*result.json)["tags"].empty()); // no detections published while driver mode is on
+	REQUIRE((*result.json)["multiTag"].is_null());
 }

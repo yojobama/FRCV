@@ -86,6 +86,13 @@ public:
 	void SetDriverMode(int sinkId, bool enabled);
 	bool GetDriverMode(int sinkId);
 
+	// ROADMAP.md Phase 7 (multi-tag PnP) - loads a WPILib-format AprilTagFieldLayout JSON file
+	// onto an ApriltagDetector sink; throws if sinkId isn't one. Once loaded, every frame with
+	// 2+ simultaneously-visible tags that have known field poses gets a single, jointly-solved
+	// field-relative camera pose published alongside the existing per-tag detections.
+	bool LoadFieldLayout(int sinkId, string jsonPath);
+	int GetFieldLayoutTagCount(int sinkId);
+
 	// ROADMAP.md Phase 7 (snapshots) - saves sourceId's most recently published frame to a file
 	// (format inferred from the extension, via cv::imwrite - .png/.jpg/etc). Returns false if
 	// sourceId has never published a frame yet or the write itself fails (a bad path, an

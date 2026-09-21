@@ -2,6 +2,7 @@
 #include "ISink.h"
 #include "ISource.h"
 #include "IApriltagBackend.h"
+#include "AprilTagFieldLayout.h"
 #include <apriltag/apriltag_pose.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/calib3d.hpp> // cv::undistortPoints - not pulled in by <opencv2/opencv.hpp> alone
@@ -32,6 +33,26 @@ public:
 	// are untouched, so this needs no rewiring - the node graph topology stays exactly as bound.
 	void SetDriverMode(bool enabled) { m_DriverMode = enabled; }
 	bool GetDriverMode() const { return m_DriverMode; }
+
+	// ROADMAP.md Phase 7 (multi-tag PnP): loads a WPILib-format AprilTagFieldLayout JSON file
+	// (the same one a robot program's own WPILib code already loads). Once set, Process()
+	// combines every currently-visible tag with a known field pose into one solvePnP call,
+	// publishing a single field-relative camera pose alongside the existing per-tag detections -
+	// more robust than any one tag's own single-tag estimate, especially at range/oblique angle.
+	// Returns false (and leaves multi-tag PnP disabled) on any load failure.
+	bool LoadFieldLayout(const std::string& jsonPath) { return m_FieldLayout.LoadFromFile(jsonPath); }
+	size_t GetFieldLayoutTagCount() const { return m_FieldLayout.size(); }
+
+	// The actual multi-tag PnP solve, factored out as a public static method so it's directly
+	// unit-testable against synthetic correspondences (rendering real AprilTag bitmaps through
+	// the full detector pipeline just to exercise this math would be a much heavier test for no
+	// more real coverage of the part that's actually at risk of a bug: the PnP/inversion math
+	// itself, not tag detection, which already has its own coverage). Returns a null json if
+	// tagCount < 2 or solvePnP itself fails; see ApriltagDetector.cpp for the full field-to-
+	// camera convention this returns.
+	static nlohmann::json SolveMultiTagPnP(
+		const std::vector<cv::Point3d>& objectPoints, const std::vector<cv::Point2d>& imagePoints,
+		const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs, int tagCount);
 private:
 	void Process(std::vector<SourceResult> results) override;
 
@@ -56,4 +77,6 @@ private:
 	bool m_HasCalibration = false;
 
 	bool m_DriverMode = false;
+
+	AprilTagFieldLayout m_FieldLayout;
 };

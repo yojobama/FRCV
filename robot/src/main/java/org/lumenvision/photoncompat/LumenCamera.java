@@ -2,11 +2,13 @@ package org.lumenvision.photoncompat;
 
 import edu.wpi.first.networktables.DoubleArraySubscriber;
 import edu.wpi.first.networktables.DoubleArrayTopic;
+import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Robot-side client for one LumenVision coprocessor node, mirroring photonlib's PhotonCamera
@@ -17,7 +19,9 @@ import java.util.List;
  * <rootTable>/<sourceName>/tags/*}: parallel DoubleArray topics {@code ids}, {@code x}, {@code
  * y}, {@code z}, and the tag's row-major 3x3 rotation matrix flattened into {@code r0}..{@code
  * r8} - see NetworkTablesSink.cpp and LumenTrackedTarget for why the raw matrix, not a derived
- * Euler/quaternion representation, crosses NT4.
+ * Euler/quaternion representation, crosses NT4. Also reads the sibling {@code
+ * <rootTable>/<sourceName>/multitag/*} scalars (ROADMAP.md Phase 7) - see
+ * {@link #getMultiTagResult()}.
  */
 public class LumenCamera {
     private final DoubleArraySubscriber idsSub;
@@ -25,6 +29,13 @@ public class LumenCamera {
     private final DoubleArraySubscriber ySub;
     private final DoubleArraySubscriber zSub;
     private final DoubleArraySubscriber[] rSub = new DoubleArraySubscriber[9];
+
+    private final DoubleSubscriber multiTagXSub;
+    private final DoubleSubscriber multiTagYSub;
+    private final DoubleSubscriber multiTagZSub;
+    private final DoubleSubscriber[] multiTagRSub = new DoubleSubscriber[9];
+    private final DoubleSubscriber multiTagTagCountSub;
+    private final DoubleSubscriber multiTagReprojErrSub;
 
     /**
      * @param instance the NetworkTableInstance to read from - an explicit parameter (not always
@@ -37,20 +48,35 @@ public class LumenCamera {
      *     string that appears as a subtable under {@code rootTable} in the NT4 tree.
      */
     public LumenCamera(NetworkTableInstance instance, String rootTable, String sourceName) {
-        NetworkTable table = instance.getTable(rootTable + "/" + sourceName + "/tags");
+        NetworkTable sourceTable = instance.getTable(rootTable + "/" + sourceName);
+        NetworkTable tagsTable = sourceTable.getSubTable("tags");
+        NetworkTable multiTagTable = sourceTable.getSubTable("multitag");
 
-        idsSub = subscribe(table, "ids");
-        xSub = subscribe(table, "x");
-        ySub = subscribe(table, "y");
-        zSub = subscribe(table, "z");
+        idsSub = subscribeArray(tagsTable, "ids");
+        xSub = subscribeArray(tagsTable, "x");
+        ySub = subscribeArray(tagsTable, "y");
+        zSub = subscribeArray(tagsTable, "z");
         for (int i = 0; i < 9; i++) {
-            rSub[i] = subscribe(table, "r" + i);
+            rSub[i] = subscribeArray(tagsTable, "r" + i);
         }
+
+        multiTagXSub = subscribeScalar(multiTagTable, "x");
+        multiTagYSub = subscribeScalar(multiTagTable, "y");
+        multiTagZSub = subscribeScalar(multiTagTable, "z");
+        for (int i = 0; i < 9; i++) {
+            multiTagRSub[i] = subscribeScalar(multiTagTable, "r" + i);
+        }
+        multiTagTagCountSub = subscribeScalar(multiTagTable, "tagCount");
+        multiTagReprojErrSub = subscribeScalar(multiTagTable, "reprojErrPixels");
     }
 
-    private static DoubleArraySubscriber subscribe(NetworkTable table, String name) {
+    private static DoubleArraySubscriber subscribeArray(NetworkTable table, String name) {
         DoubleArrayTopic topic = table.getDoubleArrayTopic(name);
         return topic.subscribe(new double[0]);
+    }
+
+    private static DoubleSubscriber subscribeScalar(NetworkTable table, String name) {
+        return table.getDoubleTopic(name).subscribe(0.0);
     }
 
     /**
@@ -98,5 +124,27 @@ public class LumenCamera {
         double timestampSeconds = idsSub.getLastChange() / 1_000_000.0;
 
         return new LumenPipelineResult(targets, timestampSeconds);
+    }
+
+    /**
+     * The coprocessor's own multi-tag PnP result (ROADMAP.md Phase 7), if one has been published
+     * this frame. Empty when fewer than 2 simultaneously-visible tags have known field poses (no
+     * field layout loaded on the coprocessor sink, or fewer than 2 of the tags currently in
+     * frame are in it) - {@code multitag/tagCount} is the coprocessor's own explicit signal for
+     * this (NetworkTablesSink.cpp publishes 0 there specifically so this doesn't have to guess
+     * "stale data" from an unpublished topic apart from "no result this frame").
+     */
+    public Optional<LumenMultiTagResult> getMultiTagResult() {
+        int tagCount = (int) multiTagTagCountSub.get();
+        if (tagCount < 2) return Optional.empty();
+
+        double[] rotationRowMajor = new double[9];
+        for (int i = 0; i < 9; i++) {
+            rotationRowMajor[i] = multiTagRSub[i].get();
+        }
+
+        return Optional.of(new LumenMultiTagResult(
+                multiTagXSub.get(), multiTagYSub.get(), multiTagZSub.get(),
+                rotationRowMajor, tagCount, multiTagReprojErrSub.get()));
     }
 }

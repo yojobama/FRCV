@@ -3,6 +3,7 @@ using EmbedIO.Routing;
 using EmbedIO.WebApi;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -48,5 +49,32 @@ namespace Server.Controllers.sinks
         }
 
         // --?-- PATCH: Apriltag Family Type;
+
+        // POST: upload a WPILib-format AprilTagFieldLayout JSON body (the same file a robot
+        // program's own WPILib code already loads) and enable multi-tag PnP on this sink -
+        // ROADMAP.md Phase 7. Written to a fixed directory (not a caller-supplied path), same
+        // reasoning as /source/snapshot. Returns the number of tags actually loaded, or -1 if
+        // the body wasn't a valid field layout.
+        [Route(HttpVerbs.Post, "/apriltagSink/fieldLayout")]
+        public async Task<int> SetFieldLayout([QueryField] int sinkId)
+        {
+            using var reader = new StreamReader(HttpContext.OpenRequestStream());
+            string json = await reader.ReadToEndAsync();
+
+            string layoutDir = Path.Combine(AppContext.BaseDirectory, "fieldLayouts");
+            Directory.CreateDirectory(layoutDir);
+            string path = Path.Combine(layoutDir, $"sink-{sinkId}.json");
+            await File.WriteAllTextAsync(path, json);
+
+            bool ok = ManagerWrapper.Instance.LoadFieldLayout(sinkId, path);
+            return ok ? ManagerWrapper.Instance.GetFieldLayoutTagCount(sinkId) : -1;
+        }
+
+        // GET: how many tags this sink's currently-loaded field layout has (0 if none loaded)
+        [Route(HttpVerbs.Get, "/apriltagSink/fieldLayoutTagCount")]
+        public Task<int> GetFieldLayoutTagCount([QueryField] int sinkId)
+        {
+            return Task.FromResult(ManagerWrapper.Instance.GetFieldLayoutTagCount(sinkId));
+        }
     }
 }

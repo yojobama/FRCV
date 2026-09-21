@@ -12,6 +12,7 @@ include(UseSWIG)
 set(LUMEN_CORE_SOURCES
     ApriltagDetection.cpp
     ApriltagDetector.cpp
+    AprilTagFieldLayout.cpp
     CameraCalibrationResult.cpp
     CameraCalibrator.cpp
     CameraSource.cpp

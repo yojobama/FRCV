@@ -482,6 +482,36 @@ bool Manager::GetDriverMode(int sinkId)
     throw std::runtime_error("GetDriverMode: sink id=" + std::to_string(sinkId) + " does not support driver mode");
 }
 
+bool Manager::LoadFieldLayout(int sinkId, string jsonPath)
+{
+    auto sinkIt = m_Sinks.find(sinkId);
+    if (sinkIt == m_Sinks.end()) {
+        throw std::runtime_error("LoadFieldLayout: no sink with id=" + std::to_string(sinkId));
+    }
+    auto apriltagDetector = std::dynamic_pointer_cast<ApriltagDetector>(sinkIt->second);
+    if (!apriltagDetector) {
+        throw std::runtime_error("LoadFieldLayout: sink id=" + std::to_string(sinkId) + " is not an ApriltagDetector");
+    }
+    bool ok = apriltagDetector->LoadFieldLayout(jsonPath);
+    m_Logger->EnterLog(ok
+        ? "LoadFieldLayout: loaded " + std::to_string(apriltagDetector->GetFieldLayoutTagCount()) + " tag(s) from " + jsonPath
+        : "LoadFieldLayout: failed to load " + jsonPath);
+    return ok;
+}
+
+int Manager::GetFieldLayoutTagCount(int sinkId)
+{
+    auto sinkIt = m_Sinks.find(sinkId);
+    if (sinkIt == m_Sinks.end()) {
+        throw std::runtime_error("GetFieldLayoutTagCount: no sink with id=" + std::to_string(sinkId));
+    }
+    auto apriltagDetector = std::dynamic_pointer_cast<ApriltagDetector>(sinkIt->second);
+    if (!apriltagDetector) {
+        throw std::runtime_error("GetFieldLayoutTagCount: sink id=" + std::to_string(sinkId) + " is not an ApriltagDetector");
+    }
+    return static_cast<int>(apriltagDetector->GetFieldLayoutTagCount());
+}
+
 bool Manager::SaveSnapshot(int sourceId, string path)
 {
     auto sourceIt = m_Sources.find(sourceId);
