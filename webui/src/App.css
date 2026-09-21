@@ -38,7 +38,7 @@
 }
 
 .read-the-docs {
-  colour: #888;
+  color: #888;
 }
 
 /* Custom CSS variables for theme colours */
@@ -84,7 +84,7 @@
   --border-colour: var(--gray-200);
 }
 
-/* Custom animations for FRCV Dashboard */
+/* Custom animations for LumenVision */
 @keyframes pulse-slow {
   0%, 100% { 
     opacity: 1; 
@@ -174,7 +174,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.7);
-  colour: white;
+  color: white;
   font-size: 0.875rem;
 }
 
@@ -223,7 +223,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-colour: currentcolour;
+  background-color: currentColor;
   animation: pulse-slow 2s infinite;
 }
 
@@ -339,7 +339,7 @@
   
   body {
     background: white !important;
-    colour: black !important;
+    color: black !important;
   }
   
   .card {

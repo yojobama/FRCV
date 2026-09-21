@@ -9,9 +9,9 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Platform)'=='ARM64'">
     <!-- hostname or IP of the Orange Pi -->
-    <RemoteTarget>192.168.55.138</RemoteTarget>
-    <RemoteUserName>ubuntu</RemoteUserName>
-    <RemoteRootDir>/home/ubuntu/frcv-remote-build</RemoteRootDir>
+    <RemoteTarget>192.168.55.139</RemoteTarget>
+    <RemoteUserName>photon</RemoteUserName>
+    <RemoteRootDir>/home/photon/lumenvision-remote-build</RemoteRootDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)'=='x64'">
     <!-- WSL distro name as shown by `wsl -l -v` -->

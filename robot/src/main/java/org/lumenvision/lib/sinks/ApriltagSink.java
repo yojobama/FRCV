@@ -1,9 +1,9 @@
-package frcv.sinks;
+package org.lumenvision.lib.sinks;
 
 import edu.wpi.first.apriltag.AprilTagDetection;
-import frcv.FRCVSink;
+import org.lumenvision.lib.LumenSink;
 
-public class ApriltagSink extends FRCVSink<AprilTagDetection> {
+public class ApriltagSink extends LumenSink<AprilTagDetection> {
     public ApriltagSink() {
         super();
     }

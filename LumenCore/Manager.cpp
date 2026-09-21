@@ -44,7 +44,7 @@ Manager::Manager(string logFile)
 
 Manager::Manager()
 {
-    m_Logger = std::make_shared<Logger>("FRCVLog.txt");
+    m_Logger = std::make_shared<Logger>("LumenVision.log");
     m_Logger->EnterLog("Manager constructed");
 	m_SystemMonitor = new SystemMonitor(1000); // 1 second interval
     m_SystemMonitor->StartMonitoring();

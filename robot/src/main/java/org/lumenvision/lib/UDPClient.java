@@ -1,4 +1,4 @@
-package frcv;
+package org.lumenvision.lib;
 
 import java.net.DatagramSocket;
 import java.net.Inet4Address;

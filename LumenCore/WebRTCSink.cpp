@@ -29,10 +29,10 @@ WebRTCSink::WebRTCSink(std::shared_ptr<Logger> logger, std::string id, WebRTCSin
 
 	Description::Video video("video", Description::Direction::SendOnly);
 	video.addH264Codec(H264_PAYLOAD_TYPE);
-	video.addSSRC(kSsrcValue, "frcv-video");
+	video.addSSRC(kSsrcValue, "lumen-video");
 	m_Track = m_PeerConnection->addTrack(video);
 
-	auto rtpConfig = std::make_shared<RtpPacketizationConfig>(kSsrcValue, "frcv-video", H264_PAYLOAD_TYPE, H264RtpPacketizer::ClockRate);
+	auto rtpConfig = std::make_shared<RtpPacketizationConfig>(kSsrcValue, "lumen-video", H264_PAYLOAD_TYPE, H264RtpPacketizer::ClockRate);
 	auto packetizer = std::make_shared<H264RtpPacketizer>(NalUnit::Separator::StartSequence, rtpConfig);
 	m_SrReporter = std::make_shared<RtcpSrReporter>(rtpConfig);
 	packetizer->addToChain(m_SrReporter);

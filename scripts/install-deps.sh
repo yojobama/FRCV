@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
-# FRCV dependency installer.
+# LumenVision dependency installer.
 #
-# Run this ON THE MACHINE THAT COMPILES FRCVLib: inside the WSL2 "Ubuntu" distro for the local
+# Run this ON THE MACHINE THAT COMPILES LumenCore: inside the WSL2 "Ubuntu" distro for the local
 # dev inner loop, or over SSH on the Orange Pi for the ARM64/Remote_GCC configuration. There is
 # no CMake/Linux-native build in this project — Visual Studio drives both toolchains remotely;
 # this script only prepares the machine underneath VS.
@@ -51,7 +51,21 @@ done
 
 ARCH="$(uname -m)"           # x86_64 or aarch64
 PREFIX=/usr/local
-BUILD_ROOT="${FRCV_BUILD_ROOT:-$HOME/.frcv-build}"
+BUILD_ROOT="${LUMEN_BUILD_ROOT:-${FRCV_BUILD_ROOT:-$HOME/.lumen-build}}"
+if [[ -n "${FRCV_BUILD_ROOT:-}" ]]; then
+    printf '\033[1;33m!!  %s\033[0m\n' "FRCV_BUILD_ROOT is deprecated - use LUMEN_BUILD_ROOT" >&2
+fi
+# Migrate an existing ~/.frcv-build cache rather than rebuilding everything from scratch under
+# the new default name. A plain `mv` is NOT enough on its own: most of what's under here is
+# CMake build trees (opencv-5.0.0/build/CMakeCache.txt and friends), and those embed absolute
+# source/binary paths - not relocatable. The symlink left behind at the old path is what keeps
+# those absolute paths resolving, so a stale build tree doesn't silently trigger a full rebuild
+# the next time this script (or anything else still pointed at the old path) runs.
+if [[ ! -e "$BUILD_ROOT" && -d "$HOME/.frcv-build" && ! -L "$HOME/.frcv-build" ]]; then
+    printf '\n\033[1;36m==> %s\033[0m\n' "migrating dependency cache: $HOME/.frcv-build -> $BUILD_ROOT"
+    mv "$HOME/.frcv-build" "$BUILD_ROOT"
+    ln -s "$BUILD_ROOT" "$HOME/.frcv-build"
+fi
 mkdir -p "$BUILD_ROOT"
 
 log()  { printf '\n\033[1;36m==> %s\033[0m\n' "$*"; }
@@ -130,7 +144,7 @@ install_base() {
     require_cmd swig swig
     require_cmd rsync
 
-    # mDNS hostname (frcv.local) so teams don't have to chase the Pi's DHCP-assigned IP -
+    # mDNS hostname (lumenvision.local) so teams don't have to chase the Pi's DHCP-assigned IP -
     # ubuntu-rockchip ships avahi-daemon already, but enable it explicitly rather than assume so
     apt_install avahi-daemon
     if [[ "$CHECK_ONLY" -eq 0 ]]; then
@@ -157,7 +171,7 @@ build_opencv() {
     # OpenCV 5.0 renamed both its pkg-config module and its header install directory from
     # opencv4 to opencv5 (confirmed by actually building it: headers land under
     # /usr/local/include/opencv5, module is `opencv5`, NOT `opencv4`) - if this ever changes
-    # again in a later 5.x release, this is the line to update, along with FRCVLib.vcxproj's
+    # again in a later 5.x release, this is the line to update, along with LumenCore.vcxproj's
     # AdditionalIncludeDirectories.
     if pkg-config --exists opencv5 2>/dev/null; then
         local installed_ver
@@ -382,7 +396,7 @@ EOF
         note_missing "vulkaninfo (from vulkan-tools)"
     fi
 
-    warn "if a panvk/lavapipe ICD later appears (e.g. from a mesa update), pin VK_ICD_FILENAMES=$icd_json in frcv.service so the wrong driver is never silently selected (see phase 9)"
+    warn "if a panvk/lavapipe ICD later appears (e.g. from a mesa update), pin VK_ICD_FILENAMES=$icd_json in lumenvision.service so the wrong driver is never silently selected (see phase 9)"
 }
 
 # ---------------------------------------------------------------------------
@@ -393,7 +407,7 @@ EOF
 # build - confirmed by actually building both. build_apriltag() above installs exactly that
 # patched build as the system's only /usr/local apriltag for this reason, so this function
 # builds vkapriltag itself, letting FetchContent grab its own private copy for the build only
-# (that private copy is never installed or linked into FRCVLib - only libvkapriltag.a is).
+# (that private copy is never installed or linked into LumenCore - only libvkapriltag.a is).
 build_vkapriltag() {
     log "vkapriltag (Vulkan AprilTag detection submodule)"
 
@@ -421,7 +435,7 @@ build_vkapriltag() {
     (
         cd "$build_dir"
         # -fPIC: vkapriltag's own CMakeLists doesn't set POSITION_INDEPENDENT_CODE, but
-        # libvkapriltag.a must go into FRCVLib's shared library - confirmed the hard way
+        # libvkapriltag.a must go into LumenCore's shared library - confirmed the hard way
         # (`recompile with -fPIC` at final link time) before adding this.
         cmake -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
             -DVKAPRILTAG_BUILD_APPS=OFF -DVKAPRILTAG_BUILD_TOOLS=OFF ..
@@ -477,12 +491,12 @@ build_codec_stereo() {
             cd "$build_dir"
             # -DCMAKE_POSITION_INDEPENDENT_CODE=ON: codec-stereo's own CMakeLists doesn't set
             # this (it's a default-STATIC add_library), and libcodec_stereo.a goes into
-            # libFRCVLib.so - confirmed the hard way (relocation R_X86_64_32S ... can not be
+            # libLumenCore.so - confirmed the hard way (relocation R_X86_64_32S ... can not be
             # used when making a shared object) before adding this flag.
             #
             # -DCS_BUILD_HARNESS=OFF: its harness pkg-configs the system opencv4 package, which
             # collides with this project's own OpenCV 5.0 build under /usr/local (its own
-            # CMakeLists carries a comment about exactly this) - not needed for FRCVLib anyway.
+            # CMakeLists carries a comment about exactly this) - not needed for LumenCore anyway.
             cmake -S . -B . -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
                 -DCS_BUILD_PIPELINE=ON -DCS_BUILD_TOOLS=ON -DCS_BUILD_TESTS=ON \
                 -DCS_BUILD_HARNESS=OFF -DCS_ENABLE_REF_SAD=ON -DCS_ENABLE_LAVC=ON \
@@ -670,7 +684,7 @@ fetch_rknn() {
 # ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
-log "FRCV dependency check/install — arch=$ARCH, check-only=$CHECK_ONLY, jobs=$JOBS"
+log "LumenVision dependency check/install — arch=$ARCH, check-only=$CHECK_ONLY, jobs=$JOBS"
 
 install_base
 build_opencv

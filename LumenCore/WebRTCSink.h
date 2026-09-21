@@ -33,9 +33,9 @@ struct WebRTCSinkConfig {
 // Uses non-trickle ICE: CreateOffer() blocks (bounded by a timeout) until this peer's own
 // candidate gathering completes, then returns one complete SDP with every local candidate
 // already embedded. This trades a little offer latency for a REST-friendly signalling flow -
-// no persistent connection is needed on the FRCV side beyond the C# server's own request
+// no persistent connection is needed on the LumenVision side beyond the C# server's own request
 // lifetime, at the cost of not being usable across a p2p link with asymmetric NAT needing
-// trickle. Fine for this project's use case (client and FRCV are on the same LAN).
+// trickle. Fine for this project's use case (client and LumenVision are on the same LAN).
 class WebRTCSink : public ISink {
 public:
 	WebRTCSink(std::shared_ptr<Logger> logger, std::string id, WebRTCSinkConfig config);

@@ -61,7 +61,7 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
         }
       };
 
-      // WebRTCSink uses non-trickle ICE on FRCV's side (see WebRTCSinkController) - it gathers
+      // WebRTCSink uses non-trickle ICE on LumenVision's side (see WebRTCSinkController) - it gathers
       // its own candidates internally before ever returning an offer. The browser's candidates
       // still trickle one at a time here, starting as soon as setLocalDescription() is called
       // below - which is BEFORE the answer has been POSTed to the server. Sending a candidate

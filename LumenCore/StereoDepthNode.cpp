@@ -68,7 +68,7 @@ StereoDepthNode::StereoDepthNode(std::shared_ptr<Logger> logger, std::string id,
 		m_Backend = std::make_unique<CodecStereoBackend>(cfg);
 #else
 		throw std::runtime_error(
-			"StereoDepthNode: a codec-stereo backend was requested but FRCV was built without "
+			"StereoDepthNode: a codec-stereo backend was requested but LumenVision was built without "
 			"LUMEN_WITH_CODEC_STEREO. Use STEREO_BACKEND_SGBM, or rebuild with the flag set - see "
 			"STEREO_IMPLEMENTATION_PLAN.md ss10.1.");
 #endif

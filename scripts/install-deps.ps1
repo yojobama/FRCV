@@ -21,7 +21,7 @@
 
 .EXAMPLE
   ./scripts/install-deps.ps1 -Target wsl -Check
-  ./scripts/install-deps.ps1 -Target pi -HostName 192.168.55.138 -User ubuntu
+  ./scripts/install-deps.ps1 -Target pi -HostName 192.168.55.139 -User photon
 #>
 param(
     [ValidateSet('wsl', 'pi')]
@@ -29,8 +29,8 @@ param(
 
     [string]$WslDistro = 'Ubuntu',
 
-    [string]$HostName = '192.168.55.138',
-    [string]$User = 'ubuntu',
+    [string]$HostName = '192.168.55.139',
+    [string]$User = 'photon',
 
     [switch]$Check,
 
@@ -51,7 +51,7 @@ Write-Host "==> Checking Windows-side prerequisites" -ForegroundColor Cyan
 
 if (-not (Test-CommandExists 'swig')) {
     Write-Warning "swig.exe not found on PATH. Server.csproj's pre-build step needs it to " +
-        "regenerate the C# bindings (FRCVCore) after any change to FRCVLib's public API. " +
+        "regenerate the C# bindings (Interop) after any change to LumenCore's public API. " +
         "Install SWIG for Windows and add it to PATH: https://www.swig.org/download.html"
 } else {
     Write-Host "    swig: $(Get-Command swig | Select-Object -ExpandProperty Source)"
@@ -89,7 +89,7 @@ elseif ($Target -eq 'pi') {
     $passthroughArgs += $Args
     $remoteArgs = ($passthroughArgs -join ' ')
 
-    $remoteDir = "/home/$User/frcv-install"
+    $remoteDir = "/home/$User/lumenvision-install"
     Write-Host "==> Copying install-deps.sh to $($User)@$($HostName):$remoteDir" -ForegroundColor Cyan
     ssh "$User@$HostName" "mkdir -p $remoteDir"
     scp (Join-Path $repoRoot $scriptRelPath) "${User}@${HostName}:$remoteDir/install-deps.sh"

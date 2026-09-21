@@ -1,4 +1,4 @@
-package frcv;
+package org.lumenvision.lib;
 
 public class Manager {
     static Manager instance;

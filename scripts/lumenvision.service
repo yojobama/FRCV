@@ -1,34 +1,41 @@
 [Unit]
-Description=FRCV vision coprocessor server
+Description=LumenVision vision coprocessor server
 After=network-online.target
 Wants=network-online.target
+# PhotonVision and LumenVision both want exclusive access to the same V4L2 camera device(s) and
+# compete for CPU/NPU - let systemd enforce that only one runs at a time rather than relying on
+# an operator to remember to stop one first. See scripts/pi-mode.sh.
+Conflicts=photonvision.service
 
 [Service]
 Type=simple
-User=frcv
-Group=frcv
+User=lumen
+Group=lumen
 # supplementary groups for /dev/dri (Vulkan/rkmpp) and /dev/mpp_service (rkmpp encode) access -
-# the deploy script adds the frcv user to both; see IMPLEMENTATION_PLAN.md phase 9
+# the deploy script adds the lumen user to both; see docs/history/IMPLEMENTATION_PLAN.md phase 9
 SupplementaryGroups=video render
 
-WorkingDirectory=/opt/frcv
-ExecStart=/opt/frcv/Server
+WorkingDirectory=/opt/lumenvision
+ExecStart=/opt/lumenvision/Server
 Restart=always
 RestartSec=2
 
-# libFRCVLib.so lives next to the published Server binary (Server.csproj copies it there via
+# libLumenCore.so lives next to the published Server binary (Server.csproj copies it there via
 # its Content/CopyToOutputDirectory item), so the default rpath already resolves it - this is
 # only needed if that ever changes to a separate directory.
-Environment=LD_LIBRARY_PATH=/opt/frcv
+Environment=LD_LIBRARY_PATH=/opt/lumenvision
 
-# pins the Vulkan driver so a future mesa/panvk package appearing on the system can never be
+# Pins the Vulkan driver so a future mesa/panvk package appearing on the system can never be
 # silently selected over the libmali ICD install-deps.sh registers (see phase 5 item 0 and
-# phase 9 in IMPLEMENTATION_PLAN.md)
-Environment=VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/libmali-gbm.json
+# phase 9 in docs/history/IMPLEMENTATION_PLAN.md). Verified against the actual bench board
+# (Armbian/PhotonVision image, Mali-G610): its real ICD file is mali.json, NOT the
+# libmali-gbm.json name the ubuntu-rockchip image used - install-deps.sh should discover and
+# write the real path here rather than this being hand-maintained per image.
+Environment=VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/mali.json
 
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=frcv
+SyslogIdentifier=lumenvision
 
 [Install]
 WantedBy=multi-user.target

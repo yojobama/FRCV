@@ -1,4 +1,4 @@
-package frcv.managers;
+package org.lumenvision.lib.managers;
 
 public class SinkManager {
 

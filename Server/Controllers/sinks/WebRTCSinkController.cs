@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Server.Controllers.sinks
 {
-    // REST-based WebRTC signalling. WebRTCSink uses non-trickle ICE on FRCV's side (it blocks
+    // REST-based WebRTC signalling. WebRTCSink uses non-trickle ICE on LumenVision's side (it blocks
     // internally until its own candidate gathering completes before returning an offer), so no
     // persistent connection is needed here beyond each request's own lifetime; the browser's own
     // candidates (which most browsers still trickle one at a time) are added as they arrive via
