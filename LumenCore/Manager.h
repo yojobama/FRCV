@@ -187,25 +187,30 @@ public:
 
 	int CreateRecordingSink(int sourceId);
 
-#ifdef LUMEN_WITH_NT4
 	// terminal sink: bind any JSON-producing source (ApriltagDetector, CameraCalibrator, future
 	// ObjectDetectionSink) to it and it publishes onto the configured NT4 server. Deliberately
 	// takes only primitive parameters rather than a config struct straight from
 	// NetworkTablesSink.h — that header pulls in ntcore's C++ API, which SWIG (parsing this file
 	// for the C# bindings) is not expected to handle, so it must never appear in this header.
+	//
+	// Declared unconditionally (not #ifdef LUMEN_WITH_NT4) even though the implementation is:
+	// a build with NT4 compiled out must still export these symbols so every configuration
+	// generates the SAME C# API from swig.i (see cmake/LumenFeatures.cmake's LUMEN_SWIG_DEFINES
+	// vs LUMEN_ENABLED_DEFINES split) - the alternative is two builds silently exposing
+	// different methods, which is worse than one build where calling a disabled one throws a
+	// clear "not compiled into this build" error. See Manager.cpp / GetEnabledFeatures().
 	int CreateNetworkTablesSinkForTeam(int teamNumber, string rootTable, string clientIdentity);
 	int CreateNetworkTablesSinkForTeam(int id, int teamNumber, string rootTable, string clientIdentity);
 	int CreateNetworkTablesSinkForServer(string serverAddress, int port, string rootTable, string clientIdentity);
 	int CreateNetworkTablesSinkForServer(int id, string serverAddress, int port, string rootTable, string clientIdentity);
 	bool IsNetworkTablesSinkConnected(int sinkId);
 	string GetNetworkTablesSinkStatus(int sinkId);
-#endif
 
-#ifdef LUMEN_WITH_WEBRTC
 	// terminal sink: bind any single frame-producing node (raw camera, or a detector's
 	// annotated output) and it encodes+streams it over WebRTC. Deliberately takes only
 	// primitive parameters - WebRTCSink.h pulls in libdatachannel's C++ API, which (like
-	// NetworkTablesSink's ntcore) must never reach swig.i.
+	// NetworkTablesSink's ntcore) must never reach swig.i. Declared unconditionally for the
+	// same reason as the NT4 methods above.
 	int CreateWebRTCSink(int bitrateKbps, int fps, string encoderName);
 	int CreateWebRTCSink(int id, int bitrateKbps, int fps, string encoderName);
 	// non-trickle ICE: blocks until this peer's candidate gathering completes (bounded by a
@@ -215,7 +220,12 @@ public:
 	void WebRTCAddIceCandidate(int sinkId, string candidate, string mid);
 	bool IsWebRTCSinkConnected(int sinkId);
 	string GetWebRTCSinkStatus(int sinkId);
-#endif
+
+	// which LUMEN_WITH_* backends this build actually has compiled in (e.g. {"ONNX", "NT4",
+	// "VULKAN_APRILTAG"}) - lets the WebUI grey out unavailable options instead of discovering
+	// them by a failed request, and is the runtime counterpart to the SWIG-surface-stays-constant
+	// design above: the API always exists, this is how a caller finds out what actually works.
+	vector<string> GetEnabledFeatures();
 
 	// stops and removes a node; also unbinds it from any sink that referenced it as a source
 	bool DeleteSink(int sinkId);

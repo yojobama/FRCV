@@ -1,0 +1,208 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "installDir": "${sourceDir}/out/install/${presetName}"
+        },
+        {
+            "name": "windows-base",
+            "hidden": true,
+            "inherits": "base",
+            "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
+            "generator": "Ninja Multi-Config",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "cl",
+                "CMAKE_CXX_COMPILER": "cl",
+                "LUMEN_WITH_WEBRTC": "OFF",
+                "LUMEN_WITH_RKNN": "OFF"
+            },
+            "environment": {
+                "comment": "Pinning cl explicitly matters: MinGW's g++/ninja are ahead of any MSVC cl.exe on PATH on this machine, and an unqualified Ninja preset would silently build with the wrong compiler and the wrong ABI - confirmed by checking `Get-Command g++`/`Get-Command cl` directly. This preset still needs to be launched from an environment where cl.exe's own INCLUDE/LIB/PATH are already set (a Developer PowerShell, VS's integrated terminal, or after vcvars64.bat) - see windows-x64-vs below for a preset that doesn't require that."
+            }
+        },
+        {
+            "name": "windows-x64-debug",
+            "displayName": "Windows x64 Debug (Ninja)",
+            "inherits": "windows-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "windows-x64-release",
+            "displayName": "Windows x64 Release (Ninja)",
+            "inherits": "windows-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "windows-x64-vs",
+            "displayName": "Windows x64 (Visual Studio generator)",
+            "inherits": "base",
+            "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
+            "generator": "Visual Studio 18 2026",
+            "architecture": "x64",
+            "cacheVariables": {
+                "LUMEN_WITH_WEBRTC": "OFF",
+                "LUMEN_WITH_RKNN": "OFF"
+            },
+            "vendor": {
+                "comment": "The Visual Studio generator sources its own vcvars internally - use this preset (over the windows-x64-{debug,release} Ninja ones) from a plain PowerShell/CI runner that hasn't already activated a Developer environment."
+            }
+        },
+        {
+            "name": "linux-base",
+            "hidden": true,
+            "inherits": "base",
+            "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" },
+            "generator": "Ninja Multi-Config",
+            "cacheVariables": {
+                "FETCHCONTENT_TRY_FIND_PACKAGE_MODE": "ALWAYS"
+            },
+            "vendor": {
+                "comment": "Enforces 'exactly one apriltag in the system' at configure time (ROADMAP.md Phase A2's stated goal) rather than by hand discipline: vkapriltag's FetchContent_MakeAvailable(apriltag) resolves to the SAME installed apriltag::apriltag LumenCore/CMakeLists.txt finds, instead of a second private copy with identical (patched v3.4.5) content at a different path - which otherwise produces real 'redefinition of struct quad' compiler errors the moment a single translation unit reaches both (ApriltagDetector.cpp does, once LUMEN_WITH_VULKAN_APRILTAG is on: its own #include <apriltag/apriltag.h> resolves via the system install's implicit default search path regardless of this setting, while vkapriltag's headers pull in whatever FetchContent actually populated). Needed a one-line local fix to vkapriltag's own library/CMakeLists.txt:41 to work (target_compile_options() can't be called on an ALIAS target, which is what 'apriltag' becomes once this resolves to the installed package rather than a fresh build) - worth upstreaming."
+            }
+        },
+        {
+            "name": "wsl-x64-debug",
+            "displayName": "WSL x64 Debug",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": [ "Linux" ],
+                    "wslDistribution": "Ubuntu"
+                }
+            }
+        },
+        {
+            "name": "wsl-x64-release",
+            "displayName": "WSL x64 Release",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioSettings/CMake/1.0": {
+                    "hostOS": [ "Linux" ],
+                    "wslDistribution": "Ubuntu"
+                }
+            }
+        },
+        {
+            "name": "pi-arm64-debug",
+            "displayName": "Orange Pi ARM64 Debug (remote)",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "LUMEN_WITH_RKNN": "OFF"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
+                    "sourceDir": "$env{HOME}/.vs/$ms{projectDirName}",
+                    "copySources": true,
+                    "copyBuildOutput": true,
+                    "rsyncCommandArgs": [ "-t", "--delete-after" ]
+                }
+            }
+        },
+        {
+            "name": "pi-arm64-release",
+            "displayName": "Orange Pi ARM64 Release (remote)",
+            "inherits": "linux-base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "LUMEN_WITH_RKNN": "OFF"
+            },
+            "vendor": {
+                "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
+                    "sourceDir": "$env{HOME}/.vs/$ms{projectDirName}",
+                    "copySources": true,
+                    "copyBuildOutput": true,
+                    "rsyncCommandArgs": [ "-t", "--delete-after" ]
+                }
+            }
+        },
+        {
+            "name": "ci-base",
+            "hidden": true,
+            "inherits": "base",
+            "vendor": {
+                "comment": "CI must never inherit a dev default - every LUMEN_WITH_* is set explicitly rather than left to cmake/LumenFeatures.cmake's defaults, so a flag's default flipping doesn't silently change what CI covers."
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "LUMEN_WITH_ONNX": "ON",
+                "LUMEN_WITH_NT4": "ON",
+                "LUMEN_WITH_WEBRTC": "ON",
+                "LUMEN_WITH_VULKAN_APRILTAG": "ON",
+                "LUMEN_WITH_CODEC_STEREO": "ON",
+                "LUMEN_WITH_RKNN": "OFF",
+                "LUMEN_BUILD_TESTS": "ON"
+            }
+        },
+        {
+            "name": "ci-linux-x64",
+            "displayName": "CI: Linux x64",
+            "inherits": [ "linux-base", "ci-base" ]
+        },
+        {
+            "name": "ci-linux-arm64",
+            "displayName": "CI: Linux ARM64",
+            "inherits": [ "linux-base", "ci-base" ],
+            "cacheVariables": {
+                "LUMEN_WITH_RKNN": "ON"
+            }
+        },
+        {
+            "name": "ci-windows-x64",
+            "displayName": "CI: Windows x64",
+            "inherits": [ "windows-base", "ci-base" ],
+            "cacheVariables": {
+                "LUMEN_WITH_WEBRTC": "OFF",
+                "LUMEN_WITH_RKNN": "OFF"
+            }
+        }
+    ],
+    "buildPresets": [
+        { "name": "windows-x64-debug",   "configurePreset": "windows-x64-debug",   "configuration": "Debug" },
+        { "name": "windows-x64-release", "configurePreset": "windows-x64-release", "configuration": "Release" },
+        { "name": "windows-x64-vs",      "configurePreset": "windows-x64-vs",      "configuration": "Debug" },
+        { "name": "wsl-x64-debug",       "configurePreset": "wsl-x64-debug",       "configuration": "Debug" },
+        { "name": "wsl-x64-release",     "configurePreset": "wsl-x64-release",     "configuration": "Release" },
+        { "name": "pi-arm64-debug",      "configurePreset": "pi-arm64-debug",      "configuration": "Debug" },
+        { "name": "pi-arm64-release",    "configurePreset": "pi-arm64-release",    "configuration": "Release" },
+        { "name": "ci-linux-x64",        "configurePreset": "ci-linux-x64",        "configuration": "Release" },
+        { "name": "ci-linux-arm64",      "configurePreset": "ci-linux-arm64",      "configuration": "Release" },
+        { "name": "ci-windows-x64",      "configurePreset": "ci-windows-x64",      "configuration": "Release" }
+    ],
+    "testPresets": [
+        {
+            "name": "wsl-x64-debug",
+            "configurePreset": "wsl-x64-debug",
+            "configuration": "Debug",
+            "filter": { "exclude": { "label": "hitl" } }
+        },
+        {
+            "name": "ci-linux-x64",
+            "configurePreset": "ci-linux-x64",
+            "configuration": "Release",
+            "filter": { "exclude": { "label": "hitl" } }
+        },
+        {
+            "name": "pi-arm64-release",
+            "configurePreset": "pi-arm64-release",
+            "configuration": "Release",
+            "vendor": {
+                "comment": "The only preset that runs hitl-labelled tests - see ROADMAP.md Phase A3/Phase 5."
+            }
+        }
+    ]
+}

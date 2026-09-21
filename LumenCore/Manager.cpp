@@ -832,6 +832,15 @@ int Manager::CreateRecordingSink(int sourceId)
     return id;
 }
 
+// Bodies only - see Manager.h's comment on why these methods are DECLARED unconditionally.
+// #ifdef'd per logical group rather than per function: every symbol below is defined in both
+// branches (so linking/SWIG-wrapping never sees a missing entry point), the LUMEN_WITH_NT4
+// branch is the real implementation, and the #else branch is what a caller actually gets when
+// this build doesn't have NT4 compiled in - Create throws a clear, catchable error (swig.i's
+// global %exception block turns it into a System.ApplicationException, i.e. an ordinary HTTP
+// 500 with a real message); the query methods degrade to the same "nothing here" answer they'd
+// already give for a sink id that simply doesn't exist, since a disabled build can never have
+// created one in the first place.
 #ifdef LUMEN_WITH_NT4
 int Manager::CreateNetworkTablesSinkForTeam(int teamNumber, string rootTable, string clientIdentity)
 {
@@ -901,8 +910,29 @@ string Manager::GetNetworkTablesSinkStatus(int sinkId)
 
     return p_NtSink->GetConnectionStatus();
 }
+#else
+int Manager::CreateNetworkTablesSinkForTeam(int, string, string)
+{
+    throw std::runtime_error("NetworkTables (NT4) support is not compiled into this build of LumenCore");
+}
+int Manager::CreateNetworkTablesSinkForTeam(int, int, string, string)
+{
+    throw std::runtime_error("NetworkTables (NT4) support is not compiled into this build of LumenCore");
+}
+int Manager::CreateNetworkTablesSinkForServer(string, int, string, string)
+{
+    throw std::runtime_error("NetworkTables (NT4) support is not compiled into this build of LumenCore");
+}
+int Manager::CreateNetworkTablesSinkForServer(int, string, int, string, string)
+{
+    throw std::runtime_error("NetworkTables (NT4) support is not compiled into this build of LumenCore");
+}
+bool Manager::IsNetworkTablesSinkConnected(int) { return false; }
+string Manager::GetNetworkTablesSinkStatus(int) { return "{}"; }
 #endif
 
+// Same "declared unconditionally, #ifdef'd body per logical group" pattern as the NT4 block
+// above - see its comment.
 #ifdef LUMEN_WITH_WEBRTC
 int Manager::CreateWebRTCSink(int bitrateKbps, int fps, string encoderName)
 {
@@ -967,6 +997,29 @@ string Manager::GetWebRTCSinkStatus(int sinkId)
     auto sink = FindWebRTCSink(m_Sinks, sinkId);
     return sink ? sink->GetConnectionStatus() : "{}";
 }
+#else
+int Manager::CreateWebRTCSink(int, int, string)
+{
+    throw std::runtime_error("WebRTC support is not compiled into this build of LumenCore");
+}
+int Manager::CreateWebRTCSink(int, int, int, string)
+{
+    throw std::runtime_error("WebRTC support is not compiled into this build of LumenCore");
+}
+string Manager::WebRTCCreateOffer(int)
+{
+    throw std::runtime_error("WebRTC support is not compiled into this build of LumenCore");
+}
+void Manager::WebRTCSetAnswer(int, string)
+{
+    throw std::runtime_error("WebRTC support is not compiled into this build of LumenCore");
+}
+void Manager::WebRTCAddIceCandidate(int, string, string)
+{
+    throw std::runtime_error("WebRTC support is not compiled into this build of LumenCore");
+}
+bool Manager::IsWebRTCSinkConnected(int) { return false; }
+string Manager::GetWebRTCSinkStatus(int) { return "{}"; }
 #endif
 
 void Manager::StartAllSources()
@@ -1210,5 +1263,35 @@ int Manager::GetCpuTemperature()
 int Manager::GetDiskUsage()
 {
     return m_SystemMonitor->GetDiskUsage();
+}
+
+// Every LUMEN_WITH_* backend this specific .so/.dll was actually built with - the runtime
+// counterpart to the SWIG surface always existing regardless (see Manager.h's comment on
+// GetEnabledFeatures and the NT4/WebRTC #ifdef blocks above). Kept as one function with a
+// literal list rather than generated from cmake/LumenFeatures.cmake, since the two are
+// necessarily out of sync anyway: this reports what THIS translation unit was compiled with,
+// which is the only thing that's actually true at run time.
+vector<string> Manager::GetEnabledFeatures()
+{
+    vector<string> features;
+#ifdef LUMEN_WITH_ONNX
+    features.push_back("ONNX");
+#endif
+#ifdef LUMEN_WITH_NT4
+    features.push_back("NT4");
+#endif
+#ifdef LUMEN_WITH_WEBRTC
+    features.push_back("WEBRTC");
+#endif
+#ifdef LUMEN_WITH_VULKAN_APRILTAG
+    features.push_back("VULKAN_APRILTAG");
+#endif
+#ifdef LUMEN_WITH_CODEC_STEREO
+    features.push_back("CODEC_STEREO");
+#endif
+#ifdef LUMEN_WITH_RKNN
+    features.push_back("RKNN");
+#endif
+    return features;
 }
 

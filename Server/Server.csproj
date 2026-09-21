@@ -8,34 +8,42 @@
     <Configurations>Debug;Release;LocalCheck</Configurations>
 
     <!--
-      LumenCore is built by Visual Studio's WSL2/Remote_GCC toolset (see LumenCore.vcxproj), not
-      by MSBuild's normal C# build graph, so it is consumed as a prebuilt native library rather
+      LumenCore is built by CMake (see /CMakeLists.txt, /CMakePresets.json, LumenCore/CMakeLists.txt),
+      not by MSBuild's normal C# build graph, so it is consumed as a prebuilt native library rather
       than via <ProjectReference> — that also lets Server build/publish (e.g. `dotnet publish -r
-      linux-arm64`) without a C++ toolchain on the machine, as long as the .so already exists.
-      Override LumenCorePlatform/LumenCoreConfiguration (e.g. -p:LumenCorePlatform=ARM64) to pick
-      up a build produced by a different LumenCore configuration than the one implied by
-      $(Configuration).
+      linux-arm64`) without a C++ toolchain on the machine, as long as the library already exists.
+      Override LumenCorePreset directly (e.g. -p:LumenCorePreset=pi-arm64-release) to pick up a
+      build produced by a different preset than the one inferred below.
     -->
     <!--
-      Server.csproj is always built as "Any CPU" - the .sln maps every Server
-      Debug|ARM64/Release|ARM64 solution configuration to Server's own Debug|Any CPU /
-      Release|Any CPU (a C# project has no real notion of ARM64 vs x64), so $(Platform) inside
-      this project is never ARM64 even when the solution's active platform is ARM64 for
-      deploying to the Orange Pi. LumenCorePlatform must therefore be inferred from something
-      that *does* carry the intended target architecture: $(RuntimeIdentifier), which VS's SSH
-      remote debug/publish target sets to linux-arm64 when deploying to an ARM64 SSH target (and
-      which `dotnet publish -r` sets directly). Confirmed the hard way: deploying to the Orange
-      Pi without this silently picked up the x64 (WSL2-built) libLumenCore.so instead of an
-      ARM64 one, which was then copied into the app's output and pushed to the ARM64 device,
-      where the x86-64 ELF cannot be dlopen()'d - producing a DllNotFoundException at runtime
-      ("...or one of its dependencies... module could not be found") with no build-time warning
-      at all.
+      $(RuntimeIdentifier), not $(OS), decides which preset to look for - and RID must be checked
+      FIRST, with $(OS) only as a last-resort fallback when RID gives no signal at all. $(OS) is
+      the BUILD HOST, not the target: deploy.ps1 runs `dotnet publish -r linux-arm64` FROM WINDOWS,
+      where $(OS)=='Windows_NT' - keying off $(OS) first there would resolve to the Windows preset
+      and bundle a Windows-built LumenCore.dll into a linux-arm64 publish. That is exactly the
+      DllNotFoundException class of bug this project already hit once with the old LumenCorePlatform
+      property (deploying to the Orange Pi silently picked up the x64/WSL2-built library instead of
+      an ARM64 one - an x86-64 ELF cannot be dlopen()'d on aarch64, and there was no build-time
+      warning at all, only a runtime failure on the deployed device).
     -->
-    <LumenCorePlatform Condition="'$(LumenCorePlatform)'=='' And '$(RuntimeIdentifier)'=='linux-arm64'">ARM64</LumenCorePlatform>
-    <LumenCorePlatform Condition="'$(LumenCorePlatform)'==''">x64</LumenCorePlatform>
-    <LumenCoreConfiguration Condition="'$(LumenCoreConfiguration)'==''">$(Configuration)</LumenCoreConfiguration>
-    <LumenCoreConfiguration Condition="'$(LumenCoreConfiguration)'=='LocalCheck'">Debug</LumenCoreConfiguration>
-    <LumenCoreBuildDir>..\LumenCore\bin\$(LumenCorePlatform)\$(LumenCoreConfiguration)</LumenCoreBuildDir>
+    <LumenCorePresetBase Condition="'$(LumenCorePresetBase)'=='' And '$(RuntimeIdentifier)'=='linux-arm64'">pi-arm64</LumenCorePresetBase>
+    <LumenCorePresetBase Condition="'$(LumenCorePresetBase)'=='' And '$(RuntimeIdentifier)'=='linux-x64'">wsl-x64</LumenCorePresetBase>
+    <LumenCorePresetBase Condition="'$(LumenCorePresetBase)'=='' And $([MSBuild]::ValueOrDefault('$(RuntimeIdentifier)', '').StartsWith('win'))">windows-x64</LumenCorePresetBase>
+    <LumenCorePresetBase Condition="'$(LumenCorePresetBase)'=='' And '$(OS)'=='Windows_NT'">windows-x64</LumenCorePresetBase>
+    <LumenCorePresetBase Condition="'$(LumenCorePresetBase)'==''">wsl-x64</LumenCorePresetBase>
+
+    <!-- CMakePresets.json's preset names are lowercase ("wsl-x64-debug"); the multi-config
+         generators' own per-configuration output subdirectory is title-case ("Debug"/"Release"),
+         matching exactly what cmake's own build/config options expect - both are needed, for the
+         preset name and the stage subdirectory respectively. LocalCheck maps to Debug, same as
+         the old LumenCoreConfiguration property did. -->
+    <LumenCoreConfigLower Condition="'$(Configuration)'=='Release'">release</LumenCoreConfigLower>
+    <LumenCoreConfigLower Condition="'$(Configuration)'!='Release'">debug</LumenCoreConfigLower>
+    <LumenCoreConfigTitle Condition="'$(Configuration)'=='Release'">Release</LumenCoreConfigTitle>
+    <LumenCoreConfigTitle Condition="'$(Configuration)'!='Release'">Debug</LumenCoreConfigTitle>
+
+    <LumenCorePreset Condition="'$(LumenCorePreset)'==''">$(LumenCorePresetBase)-$(LumenCoreConfigLower)</LumenCorePreset>
+    <LumenCoreStageDir>$(MSBuildThisFileDirectory)..\out\build\$(LumenCorePreset)\stage\$(LumenCoreConfigTitle)</LumenCoreStageDir>
   </PropertyGroup>
 
   <ItemGroup>
@@ -49,21 +57,27 @@
   </ItemGroup>
 
   <!--
+    Globs the CMake stage directory rather than hardcoding one filename (libLumenCore.so vs
+    LumenCore.dll, plus every DLL it transitively depends on - OpenCV, ONNX Runtime, ntcore,
+    ffmpeg, libdatachannel - which LumenCore/CMakeLists.txt's own POST_BUILD step already copies
+    next to it on Windows, since Windows has no rpath/LD_LIBRARY_PATH equivalent). This is what
+    keeps this list from needing to be kept in sync by hand on the C# side as dependencies change.
+
     CopyToOutputDirectory must be Always, not PreserveNewest: PreserveNewest only compares file
-    timestamps, and libLumenCore.so is copied to the SAME output filename regardless of which
-    LumenCorePlatform it came from. Building ARM64 (for an Orange Pi deploy) and then switching
-    back to a plain x64 build (e.g. for local WSL2 debugging) without a clean lands an x64-newer
-    source next to an already-copied ARM64 output file that's newer still (from the earlier
-    build) - PreserveNewest sees the destination as "already newest" and skips the copy,
-    silently leaving the wrong-architecture .so in the output directory. Confirmed the hard way:
-    reproduced exactly this (a stale ARM64 libLumenCore.so left in Server/bin/Debug/net10.0
-    after an x64-only `dotnet build`), which is indistinguishable at runtime from the
-    DllNotFoundException this project hit for the opposite mismatch (x64 .so deployed to an
-    ARM64 device).
+    timestamps, and the native library is copied to the SAME output filename regardless of which
+    preset it came from. Building pi-arm64-release (for an Orange Pi deploy) and then switching
+    back to wsl-x64-debug (for local debugging) without a clean lands a newer wsl source next to
+    an already-copied pi-arm64 output that's newer still (from the earlier build) - PreserveNewest
+    sees the destination as "already newest" and skips the copy, silently leaving the
+    wrong-architecture library in the output directory. Confirmed the hard way in the previous,
+    single-file version of this same problem.
   -->
   <ItemGroup>
-    <Content Include="$(LumenCoreBuildDir)\libLumenCore.so" Condition="Exists('$(LumenCoreBuildDir)\libLumenCore.so')">
-      <Link>libLumenCore.so</Link>
+    <LumenCoreStageFiles Include="$(LumenCoreStageDir)\*.so;$(LumenCoreStageDir)\*.dll" Condition="Exists('$(LumenCoreStageDir)')" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="@(LumenCoreStageFiles)">
+      <Link>%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -71,7 +85,7 @@
   <!--
     The React WebUI (webui) is a separate npm/Vite project, not part of this C# build graph -
     `npm run build` there produces webui\dist, which Program.cs serves as static files from a
-    "wwwroot" folder next to Server.dll. Guarded on Exists() the same way as libLumenCore.so
+    "wwwroot" folder next to Server.dll. Guarded on Exists() the same way as the native library
     above: a machine that hasn't built the WebUI yet still builds and runs Server fine
     (Program.cs falls back to API-only with a warning), rather than failing the build over a
     separate project's output.
@@ -87,67 +101,57 @@
   </ItemGroup>
 
   <!--
-    A missing/wrong-architecture libLumenCore.so is otherwise silent at build time (the Content
-    item above just has no match) and only surfaces as a runtime DllNotFoundException on
-    whatever machine ends up running Server.dll - a much harder place to diagnose it, especially
-    once it's been deployed to a remote target. Fail the build instead.
+    Builds LumenCore via CMake before Server itself, so a plain `dotnet build` in this directory
+    still "just works" the way it always has, without requiring a separate manual CMake step or
+    routing everything through Visual Studio's own CMake integration first. Mirrors the role the
+    old RunSwig target played (it silently regenerated bindings before each build) but invokes
+    CMake instead of swig directly - CMake now owns the SWIG invocation (LumenCore/CMakeLists.txt).
+
+    Skipped gracefully, with a warning rather than a hard failure, when cmake isn't on PATH or the
+    preset has never been configured (no CMakeCache.txt yet) - a machine that only runs an
+    already-published server has no reason to need a C++ toolchain at all. CheckLumenCoreExists
+    below is what turns a genuinely missing native library into a hard, clearly-worded failure;
+    this target's job is only to build one that's known to be configured already.
   -->
-  <Target Name="CheckLumenCoreExists" BeforeTargets="Build;Publish">
-    <Error Text="libLumenCore.so not found at '$(LumenCoreBuildDir)\libLumenCore.so' (LumenCorePlatform=$(LumenCorePlatform), LumenCoreConfiguration=$(LumenCoreConfiguration)). Build LumenCore for that platform/configuration first, or override -p:LumenCorePlatform=/-p:LumenCoreConfiguration=."
-           Condition="!Exists('$(LumenCoreBuildDir)\libLumenCore.so')" />
+  <Target Name="BuildLumenCore" BeforeTargets="BeforeBuild">
+    <Exec Command="where cmake" Condition="'$(OS)'=='Windows_NT'" ContinueOnError="true" StandardOutputImportance="low" StandardErrorImportance="low">
+      <Output TaskParameter="ExitCode" PropertyName="CMakeCheckExitCode" />
+    </Exec>
+    <Exec Command="command -v cmake" Condition="'$(OS)'!='Windows_NT'" ContinueOnError="true" StandardOutputImportance="low" StandardErrorImportance="low">
+      <Output TaskParameter="ExitCode" PropertyName="CMakeCheckExitCode" />
+    </Exec>
+    <PropertyGroup>
+      <LumenCoreConfigured>false</LumenCoreConfigured>
+      <LumenCoreConfigured Condition="Exists('$(MSBuildThisFileDirectory)..\out\build\$(LumenCorePreset)\CMakeCache.txt')">true</LumenCoreConfigured>
+    </PropertyGroup>
+    <Exec Command="cmake --build --preset $(LumenCorePreset)"
+          WorkingDirectory="$(MSBuildThisFileDirectory).."
+          Condition="'$(CMakeCheckExitCode)'=='0' And '$(LumenCoreConfigured)'=='true'" />
+    <Warning Text="cmake not found on PATH; using whatever LumenCore build already exists for preset '$(LumenCorePreset)'."
+             Condition="'$(CMakeCheckExitCode)'!='0'" />
+    <Warning Text="Preset '$(LumenCorePreset)' has never been configured (no CMakeCache.txt under out/build/$(LumenCorePreset)) - run `cmake --preset $(LumenCorePreset)` first. Using whatever build already exists, if any."
+             Condition="'$(CMakeCheckExitCode)'=='0' And '$(LumenCoreConfigured)'!='true'" />
   </Target>
 
   <!--
-    Regenerates the SWIG C# bindings from LumenCore's public API before each build. Skipped when
-    swig isn't on PATH so a machine that only runs the published server (no dev toolchain) isn't
-    forced to have it installed; the checked-in Interop sources are then whatever was last
-    generated on a dev machine.
-
-    Two things this needs beyond just invoking swig:
-    - Interop is cleared first. SWIG only ever adds/overwrites files for types that still
-      exist; a type removed from swig.i (as happened when Frame/FrameSpec were dropped) leaves
-      its old wrapper .cs files behind as stale dead code otherwise.
-    - The generated .cs files are added to @(Compile) explicitly via an ItemGroup *inside this
-      target*. SDK-style projects capture the implicit **/*.cs glob once, at project evaluation
-      time, before any target runs — a file swig creates during this same build (e.g. the first
-      time a new %template is added) would otherwise silently not compile until a second build.
+    A missing/wrong-architecture native library, or C# bindings that were generated by a
+    DIFFERENT configure than the one that built it, are otherwise silent at build time (the
+    Content item above just has no match) and only surface as a runtime DllNotFoundException or
+    EntryPointNotFoundException on whatever machine ends up running Server.dll - a much harder
+    place to diagnose it, especially once it's been deployed to a remote target. Fail the build
+    instead, checking both: that the library exists, and that the Interop bindings next to it
+    came from an actual CMake configure (the .swig-stamp LumenCore/CMakeLists.txt writes) rather
+    than, say, a stale checked-out copy from a different preset entirely.
   -->
-  <Target Name="RunSwig" BeforeTargets="BeforeBuild">
-    <!--
-      `where` is a Windows-only command (cmd.exe); on Linux/WSL the Exec task still runs
-      through a shell, but `where` simply doesn't exist there (exit 127) - confirmed the hard
-      way: building on Linux with swig genuinely installed still reported "swig not found",
-      because the check itself was Windows-only, not because swig was actually missing. Use
-      $(OS) (built into MSBuild; 'Windows_NT' on Windows, unset/different on Unix) to pick the
-      right probe.
-    -->
-    <Exec Command="where swig" Condition="'$(OS)'=='Windows_NT'" ContinueOnError="true" StandardOutputImportance="low" StandardErrorImportance="low">
-      <Output TaskParameter="ExitCode" PropertyName="SwigCheckExitCode" />
-    </Exec>
-    <Exec Command="command -v swig" Condition="'$(OS)'!='Windows_NT'" ContinueOnError="true" StandardOutputImportance="low" StandardErrorImportance="low">
-      <Output TaskParameter="ExitCode" PropertyName="SwigCheckExitCode" />
-    </Exec>
-    <ItemGroup Condition="'$(SwigCheckExitCode)'=='0'">
-      <_StaleSwigOutput Include="Interop\*.cs" />
-    </ItemGroup>
-    <Delete Files="@(_StaleSwigOutput)" Condition="'$(SwigCheckExitCode)'=='0'" />
-    <!--
-      -D flags here must mirror LumenCore.vcxproj's LumenCommonDefines - SWIG runs its own
-      preprocessor pass over swig.i/Manager.h independent of the actual C++ compiler, so an
-      #ifdef-guarded API (e.g. the NT4 methods) needs the same defines here or SWIG silently
-      skips generating C# bindings for it even though the .so was built with it enabled.
-      LUMEN_WITH_RKNN is deliberately excluded: it never appears in Manager.h's guarded surface
-      today, and it's ARM64-only, so this (host-side) swig invocation shouldn't imply it's
-      available.
-
-      Forward slashes in the paths below, not backslashes: this Exec runs through a POSIX shell
-      on Linux, where a literal backslash is not a path separator.
-    -->
-    <Exec Command="swig -c++ -csharp -DLUMEN_WITH_ONNX -DLUMEN_WITH_NT4 -DLUMEN_WITH_WEBRTC -DLUMEN_WITH_VULKAN_APRILTAG -DLUMEN_WITH_CODEC_STEREO -outdir ./Interop ../LumenCore/swig.i" Condition="'$(SwigCheckExitCode)'=='0'" />
-    <Warning Text="swig not found on PATH; using whatever bindings already exist in Interop\." Condition="'$(SwigCheckExitCode)'!='0'" />
+  <Target Name="CheckLumenCoreExists" BeforeTargets="Build;Publish">
     <ItemGroup>
-      <Compile Include="Interop\*.cs" Exclude="@(Compile)" />
+      <_LumenCoreNativeLib Include="$(LumenCoreStageDir)\libLumenCore.so" Condition="Exists('$(LumenCoreStageDir)\libLumenCore.so')" />
+      <_LumenCoreNativeLib Include="$(LumenCoreStageDir)\LumenCore.dll" Condition="Exists('$(LumenCoreStageDir)\LumenCore.dll')" />
     </ItemGroup>
+    <Error Text="LumenCore native library not found under '$(LumenCoreStageDir)' for preset '$(LumenCorePreset)'. Build it first: cmake --preset $(LumenCorePreset) &amp;&amp; cmake --build --preset $(LumenCorePreset) - or override -p:LumenCorePreset=/-p:LumenCorePresetBase=."
+           Condition="'@(_LumenCoreNativeLib)'==''" />
+    <Error Text="Server/Interop/.swig-stamp not found - the C# bindings next to the native library above were never generated by an actual CMake configure. Run: cmake --preset $(LumenCorePreset)"
+           Condition="!Exists('$(MSBuildThisFileDirectory)Interop\.swig-stamp')" />
   </Target>
 
 </Project>

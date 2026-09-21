@@ -28,6 +28,7 @@ compile_commands.json
 swig_wrap.cxx
 **/FRCVCore/*.cs
 **/Interop/*.cs
+.swig-stamp
 
 # Node / web
 node_modules/
