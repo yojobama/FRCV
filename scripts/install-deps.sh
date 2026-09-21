@@ -343,7 +343,11 @@ install_ffmpeg() {
 # ---------------------------------------------------------------------------
 install_vulkan() {
     log "Vulkan development packages"
-    apt_install libvulkan-dev vulkan-tools glslang-tools spirv-tools
+    # glslc (from the separate `glslc` package, not glslang-tools) is required by vkapriltag's
+    # own CMakeLists.txt (find_package(Vulkan COMPONENTS glslangValidator glslc)) - without it,
+    # configuring the submodule fails outright ("missing components: glslc"). Confirmed the hard
+    # way: glslang-tools alone (which provides glslangValidator) is not enough.
+    apt_install libvulkan-dev vulkan-tools glslang-tools spirv-tools glslc
 
     if [[ "$ARCH" != "aarch64" ]]; then
         return 0
@@ -497,7 +501,7 @@ build_codec_stereo() {
             # -DCS_BUILD_HARNESS=OFF: its harness pkg-configs the system opencv4 package, which
             # collides with this project's own OpenCV 5.0 build under /usr/local (its own
             # CMakeLists carries a comment about exactly this) - not needed for LumenCore anyway.
-            cmake -S . -B . -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+            cmake -S .. -B . -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
                 -DCS_BUILD_PIPELINE=ON -DCS_BUILD_TOOLS=ON -DCS_BUILD_TESTS=ON \
                 -DCS_BUILD_HARNESS=OFF -DCS_ENABLE_REF_SAD=ON -DCS_ENABLE_LAVC=ON \
                 "${extra_flags[@]}"
