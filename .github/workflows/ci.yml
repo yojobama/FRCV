@@ -1,0 +1,59 @@
+name: CI
+
+# Linux x64 only for now. Windows and ARM64 CI are deliberately deferred, not forgotten:
+#   - Windows: install-deps' Windows-side equivalent is OpenCV built from source (confirmed the
+#     hard way this took well over an hour on a real dev machine); GitHub-hosted windows-latest
+#     runners have no ready equivalent of the /usr/local cache below (no single prefix vcpkg and
+#     a from-source build can both land in), and doing this properly needs either a hosted OpenCV
+#     binary artifact or vcpkg binary caching - real design work, not a small addition here.
+#   - ARM64: GitHub offers no free ARM64 Linux runner. The natural fix is a self-hosted runner
+#     registered ON the Orange Pi bench board itself (it already has the full pi-arm64-release
+#     dependency stack built and verified) - that needs a repo-owner action (Settings > Actions >
+#     Runners > New self-hosted runner, generating a registration token) this workflow can't do
+#     on its own.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  linux-x64:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # install-deps.sh's own idempotency checks (pkg-config version checks, header-existence
+      # checks) already skip re-building anything found here, so a cache hit turns a 1-2 hour
+      # from-source OpenCV build into a no-op - keyed on the script's own contents so any change
+      # to it (a version bump, a new flag) invalidates the cache rather than silently reusing a
+      # stale build.
+      - name: Cache dependency build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.lumen-build
+            /usr/local/include
+            /usr/local/lib
+            /usr/local/bin
+          key: lumen-deps-linux-x64-${{ hashFiles('scripts/install-deps.sh') }}
+          restore-keys: |
+            lumen-deps-linux-x64-
+
+      - name: Install/build dependencies
+        run: ./scripts/install-deps.sh --with-nt4 --with-webrtc
+
+      - name: Configure
+        run: cmake --preset ci-linux-x64
+
+      - name: Build
+        run: cmake --build --preset ci-linux-x64
+
+      # `--output-on-failure`: bare ctest only prints a pass/fail summary line per test, not
+      # WHY one failed - useless for diagnosing a CI-only failure with no interactive access to
+      # the runner. No tests exist yet (ROADMAP.md Phase 5), so this currently passes vacuously;
+      # it activates automatically once that phase adds Catch2/GoogleTest targets, no workflow
+      # change needed then.
+      - name: Test
+        run: ctest --preset ci-linux-x64 --output-on-failure

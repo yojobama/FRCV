@@ -75,9 +75,60 @@ namespace Server.Controllers.sources
             return Task.FromResult(cameraHardwareInfoArray);
         }
 
-        // ---------------------------------------
-        // add all sorts of things like exposure and stuff that may matter to some people
-        // (look at photonvision for examples, they more or less mastered this craft)
-        // ---------------------------------------
+        // GET: every capture mode this camera actually advertises (ROADMAP.md Phase 3b).
+        [Route(HttpVerbs.Get, "/cameraSource/{id}/modes")]
+        public Task<CameraMode[]> GetModes(int id)
+        {
+            return Task.FromResult(ManagerWrapper.Instance.GetCameraModes(id).ToArray());
+        }
+
+        // GET: what the device is actually running right now - check isNative after a /mode PATCH
+        // to see whether the request was honoured exactly or silently substituted (both V4L2 and
+        // Media Foundation do this - see CameraMode's own comment).
+        [Route(HttpVerbs.Get, "/cameraSource/{id}/currentMode")]
+        public Task<CameraMode> GetCurrentMode(int id)
+        {
+            return Task.FromResult(ManagerWrapper.Instance.GetCameraCurrentMode(id));
+        }
+
+        // PATCH: request an explicit capture mode. Returns whether the underlying ioctl/API call
+        // itself succeeded - NOT whether the device honoured it exactly; re-GET /currentMode
+        // afterwards for that.
+        [Route(HttpVerbs.Patch, "/cameraSource/{id}/mode")]
+        public Task<bool> SetMode(int id, [JsonData] CameraMode mode)
+        {
+            return Task.FromResult(ManagerWrapper.Instance.SetCameraMode(id, mode));
+        }
+
+        // PATCH: exposure/gain control - a fixed short exposure is what actually makes AprilTags
+        // detect reliably on a moving robot. Call autoExposure=false before exposureAbsolute for
+        // the exposure value to actually take effect on most UVC hardware.
+        [Route(HttpVerbs.Patch, "/cameraSource/{id}/exposure")]
+        public Task<bool> SetExposure(int id, [QueryField] int exposureAbsolute)
+        {
+            return Task.FromResult(ManagerWrapper.Instance.SetCameraExposure(id, exposureAbsolute));
+        }
+
+        [Route(HttpVerbs.Patch, "/cameraSource/{id}/autoExposure")]
+        public Task<bool> SetAutoExposure(int id, [QueryField] bool enabled)
+        {
+            return Task.FromResult(ManagerWrapper.Instance.SetCameraAutoExposure(id, enabled));
+        }
+
+        [Route(HttpVerbs.Patch, "/cameraSource/{id}/gain")]
+        public Task<bool> SetGain(int id, [QueryField] int gain)
+        {
+            return Task.FromResult(ManagerWrapper.Instance.SetCameraGain(id, gain));
+        }
+
+        // POST: split this camera's frame into a fixed crop, published as its own independent
+        // source (ROADMAP.md Phase 3d) - the side-by-side/top-bottom stereo building block. Call
+        // this twice against one side-by-side camera (left half, right half) to get two ordinary
+        // sources bindable into a stereo sink exactly like two real cameras.
+        [Route(HttpVerbs.Post, "/cameraSource/{id}/roi")]
+        public Task<int> CreateRoi(int id, [QueryField] int x, [QueryField] int y, [QueryField] int width, [QueryField] int height)
+        {
+            return Task.FromResult(ManagerWrapper.Instance.CreateRoiSource(id, x, y, width, height));
+        }
     }
 }

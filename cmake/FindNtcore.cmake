@@ -52,14 +52,32 @@ find_package_handle_standard_args(Ntcore
 )
 
 if(NTCORE_FOUND AND NOT TARGET Ntcore::ntcore)
-    add_library(Ntcore::ntcore INTERFACE IMPORTED)
+    if(WIN32)
+        # See FindOnnxRuntime.cmake's identical comment: a plain INTERFACE target linking the
+        # .lib paths (the Linux-style approach below) leaves $<TARGET_RUNTIME_DLLS:...> with no
+        # runtime .dll to find - ntcore.dll/wpinet.dll/wpiutil.dll never made it next to
+        # LumenCore.dll until each got its own real SHARED IMPORTED target.
+        foreach(_lib NTCORE WPINET WPIUTIL)
+            get_filename_component(_dir "${${_lib}_LIBRARY}" DIRECTORY)
+            get_filename_component(_name "${${_lib}_LIBRARY}" NAME_WE)
+            add_library(Ntcore::${_lib} SHARED IMPORTED)
+            set_target_properties(Ntcore::${_lib} PROPERTIES
+                IMPORTED_IMPLIB "${${_lib}_LIBRARY}"
+                IMPORTED_LOCATION "${_dir}/${_name}.dll"
+            )
+        endforeach()
+        add_library(Ntcore::ntcore INTERFACE IMPORTED)
+        target_link_libraries(Ntcore::ntcore INTERFACE Ntcore::NTCORE Ntcore::WPINET Ntcore::WPIUTIL)
+    else()
+        add_library(Ntcore::ntcore INTERFACE IMPORTED)
+        # Order matters for a plain (non-CMake-target) linker line on Linux: ntcore depends on
+        # wpiutil/wpinet, so they must come after it. Harmless on Windows either way.
+        target_link_libraries(Ntcore::ntcore INTERFACE
+            "${NTCORE_LIBRARY}" "${WPINET_LIBRARY}" "${WPIUTIL_LIBRARY}"
+        )
+    endif()
     target_include_directories(Ntcore::ntcore INTERFACE
         "${NTCORE_INCLUDE_DIR}" "${WPINET_INCLUDE_DIR}" "${WPIUTIL_INCLUDE_DIR}"
-    )
-    # Order matters for a plain (non-CMake-target) linker line on Linux: ntcore depends on
-    # wpiutil/wpinet, so they must come after it. Harmless on Windows either way.
-    target_link_libraries(Ntcore::ntcore INTERFACE
-        "${NTCORE_LIBRARY}" "${WPINET_LIBRARY}" "${WPIUTIL_LIBRARY}"
     )
 endif()
 

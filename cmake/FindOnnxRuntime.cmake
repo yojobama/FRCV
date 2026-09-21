@@ -30,9 +30,24 @@ find_package_handle_standard_args(OnnxRuntime
 )
 
 if(ONNXRUNTIME_FOUND AND NOT TARGET OnnxRuntime::onnxruntime)
-    add_library(OnnxRuntime::onnxruntime INTERFACE IMPORTED)
+    if(WIN32)
+        # A plain INTERFACE target linking the .lib path (the Linux-style approach below)
+        # leaves CMake with no idea a runtime .dll exists at all - $<TARGET_RUNTIME_DLLS:...>
+        # (LumenCore/CMakeLists.txt's POST_BUILD copy step) only enumerates DLLs from targets
+        # that carry IMPORTED_LOCATION, so onnxruntime.dll silently never made it next to
+        # LumenCore.dll until this was declared as a real SHARED IMPORTED target instead -
+        # confirmed missing the first time this was run natively on Windows.
+        get_filename_component(_onnxruntime_lib_dir "${ONNXRUNTIME_LIBRARY}" DIRECTORY)
+        add_library(OnnxRuntime::onnxruntime SHARED IMPORTED)
+        set_target_properties(OnnxRuntime::onnxruntime PROPERTIES
+            IMPORTED_IMPLIB "${ONNXRUNTIME_LIBRARY}"
+            IMPORTED_LOCATION "${_onnxruntime_lib_dir}/onnxruntime.dll"
+        )
+    else()
+        add_library(OnnxRuntime::onnxruntime INTERFACE IMPORTED)
+        target_link_libraries(OnnxRuntime::onnxruntime INTERFACE "${ONNXRUNTIME_LIBRARY}")
+    endif()
     target_include_directories(OnnxRuntime::onnxruntime INTERFACE "${ONNXRUNTIME_INCLUDE_DIR}")
-    target_link_libraries(OnnxRuntime::onnxruntime INTERFACE "${ONNXRUNTIME_LIBRARY}")
 endif()
 
 mark_as_advanced(ONNXRUNTIME_INCLUDE_DIR ONNXRUNTIME_LIBRARY)

@@ -13,8 +13,15 @@ void ObjectDetectionSink::Process(std::vector<SourceResult> results)
 	for (const SourceResult& result : results) {
 		if (!result.frame.has_value()) continue;
 
-		const cv::Mat& sourceFrame = result.frame.value();
-		if (sourceFrame.empty() || !m_Backend) continue;
+		if (result.frame->empty() || !m_Backend) continue;
+		const cv::Mat& sourceFrame = result.frame->AsBgr();
+
+		if (m_DriverMode) {
+			// still streams video (matches PhotonVision's own driver-mode behaviour) - skips
+			// the actual inference call, the expensive part.
+			SetLatestResult(SourceResult(nlohmann::json(std::vector<nlohmann::json>{}), sourceFrame));
+			continue;
+		}
 
 		std::vector<ObjectDetection> detections = m_Backend->Infer(sourceFrame);
 

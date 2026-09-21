@@ -3,6 +3,9 @@
 #include "YoloPostProcess.h"
 #include <fstream>
 #include <sstream>
+#ifdef _WIN32
+#include <filesystem>
+#endif
 
 OnnxDetectionBackend::OnnxDetectionBackend()
 	: m_Env(ORT_LOGGING_LEVEL_WARNING, "LumenVision")
@@ -21,7 +24,18 @@ bool OnnxDetectionBackend::Load(const DetectionBackendConfig& config)
 	options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
 
 	try {
+		// Ort::Session's model-path parameter is ORTCHAR_T, which ONNX Runtime defines as
+		// wchar_t on Windows (its own file APIs are wide-string based) and char everywhere
+		// else - confirmed the hard way (error C2665: no overload takes a const char*)
+		// building this natively on Windows for the first time. config.modelPath stays
+		// std::string (UTF-8) at the LumenCore API boundary on every platform; only widen it
+		// at this ONNX Runtime call site itself.
+#ifdef _WIN32
+		std::wstring wideModelPath = std::filesystem::path(config.modelPath).wstring();
+		m_Session = std::make_unique<Ort::Session>(m_Env, wideModelPath.c_str(), options);
+#else
 		m_Session = std::make_unique<Ort::Session>(m_Env, config.modelPath.c_str(), options);
+#endif
 	} catch (const Ort::Exception&) {
 		return false;
 	}

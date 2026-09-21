@@ -5,6 +5,7 @@
 #include "CameraCalibrationResult.h"
 #include "StereoCalibrationResult.h"
 #include "CalibrationBoardType.h"
+#include "StereoPairer.h"
 
 #include <opencv2/calib3d.hpp>
 #include <mutex>
@@ -69,10 +70,9 @@ private:
 
 	std::string m_LeftSourceId, m_RightSourceId;
 
-	// per-eye "most recent frame not yet paired" slot - see STEREO_IMPLEMENTATION_PLAN.md P1:
-	// ISink::ProcessingThreadLoop only hands Process() the sources whose frame count changed
-	// since the last pass, so two free-running cameras routinely deliver one eye at a time.
-	std::optional<SourceResult> m_PendingLeft, m_PendingRight;
+	// constructed once SetStereoRoles() supplies real source ids (StereoPairer.h - shared with
+	// StereoDepthNode, which duplicated this exact pairing logic before ROADMAP.md Phase 3d).
+	std::optional<StereoPairer> m_Pairer;
 
 	mutable std::mutex m_DetectionMutex;
 	bool m_LastPairFound = false;

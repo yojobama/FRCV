@@ -195,7 +195,7 @@ void WebRTCSink::Process(std::vector<SourceResult> results)
 {
 	for (const SourceResult& result : results) {
 		if (result.frame.has_value() && !result.frame.value().empty()) {
-			EncodeAndSend(result.frame.value());
+			EncodeAndSend(result.frame->AsBgr());
 		}
 	}
 }

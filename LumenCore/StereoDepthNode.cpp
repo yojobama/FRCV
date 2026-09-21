@@ -81,6 +81,7 @@ void StereoDepthNode::SetStereoRoles(const std::string& leftSourceId, const std:
 {
 	m_LeftSourceId = leftSourceId;
 	m_RightSourceId = rightSourceId;
+	m_Pairer.emplace(leftSourceId, rightSourceId, m_MaxSkewUs);
 }
 
 std::string StereoDepthNode::GetBackendName() const
@@ -202,22 +203,13 @@ void StereoDepthNode::RunSignSelfCheckIfNeeded(const cv::Mat& rectLeftGray)
 
 void StereoDepthNode::Process(std::vector<SourceResult> results)
 {
-	for (auto& r : results) {
-		if (r.sourceId == m_LeftSourceId) m_PendingLeft = r;
-		else if (r.sourceId == m_RightSourceId) m_PendingRight = r;
-	}
-	if (!m_PendingLeft.has_value() || !m_PendingRight.has_value()) return;
+	if (!m_Pairer.has_value()) return; // SetStereoRoles hasn't run yet
 
-	int64_t skewUs = std::llabs((int64_t)m_PendingLeft->captureTimeUs - (int64_t)m_PendingRight->captureTimeUs);
-	if (skewUs > m_MaxSkewUs) {
-		if (m_PendingLeft->captureTimeUs < m_PendingRight->captureTimeUs) m_PendingLeft.reset();
-		else m_PendingRight.reset();
-		return;
-	}
+	StereoPairer::FeedResult feed = m_Pairer->Feed(results);
+	if (feed.outcome != StereoPairer::Outcome::Paired) return;
 
-	SourceResult left = *m_PendingLeft, right = *m_PendingRight;
-	m_PendingLeft.reset();
-	m_PendingRight.reset();
+	int64_t skewUs = feed.skewUs;
+	SourceResult left = feed.pair->first, right = feed.pair->second;
 
 	if (!left.frame.has_value() || !right.frame.has_value() || left.frame->empty() || right.frame->empty()) {
 		if (m_Logger) m_Logger->EnterLog(LogLevel::Error, "StereoDepthNode: blank frame in a paired stereo result.");
@@ -239,9 +231,11 @@ void StereoDepthNode::Process(std::vector<SourceResult> results)
 
 	// gray first, THEN remap - remapping one channel instead of three is a straight 3x saving on
 	// the most expensive fixed cost in this path, and codec-stereo/SGBM only need luma anyway.
-	cv::Mat grayLeft, grayRight, rectLeft, rectRight;
-	cv::cvtColor(*left.frame, grayLeft, cv::COLOR_BGR2GRAY);
-	cv::cvtColor(*right.frame, grayRight, cv::COLOR_BGR2GRAY);
+	// AsGray() is free when the source Frame is already GRAY8/NV12-tagged instead of paying for
+	// a cvtColor here every time.
+	const cv::Mat& grayLeft = left.frame->AsGray();
+	const cv::Mat& grayRight = right.frame->AsGray();
+	cv::Mat rectLeft, rectRight;
 	cv::remap(grayLeft, rectLeft, m_MapLx, m_MapLy, cv::INTER_LINEAR);
 	cv::remap(grayRight, rectRight, m_MapRx, m_MapRy, cv::INTER_LINEAR);
 
@@ -300,7 +294,7 @@ void StereoDepthNode::Process(std::vector<SourceResult> results)
 	cv::Mat outFrame;
 	if (m_FrameOutput == STEREO_FRAME_RECTIFIED_LEFT) {
 		cv::Mat colorRectLeft;
-		cv::remap(*left.frame, colorRectLeft, m_MapLx, m_MapLy, cv::INTER_LINEAR);
+		cv::remap(left.frame->AsBgr(), colorRectLeft, m_MapLx, m_MapLy, cv::INTER_LINEAR);
 		outFrame = colorRectLeft(cv::Rect(0, 0, m_CropW, m_CropH)).clone();
 	} else {
 		cv::Mat depthGrid(rows, cols, CV_32F, depth.data());
@@ -319,7 +313,7 @@ void StereoDepthNode::Process(std::vector<SourceResult> results)
 
 		if (m_FrameOutput == STEREO_FRAME_DEPTH_OVERLAY) {
 			cv::Mat colorRectLeft;
-			cv::remap(*left.frame, colorRectLeft, m_MapLx, m_MapLy, cv::INTER_LINEAR);
+			cv::remap(left.frame->AsBgr(), colorRectLeft, m_MapLx, m_MapLy, cv::INTER_LINEAR);
 			cv::Mat cropped = colorRectLeft(cv::Rect(0, 0, m_CropW, m_CropH));
 			cv::addWeighted(cropped, 0.5, upscaled, 0.5, 0.0, outFrame);
 		} else {

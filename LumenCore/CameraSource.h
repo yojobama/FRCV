@@ -1,33 +1,37 @@
 #pragma once
 #include "ISource.h"
-#include <vector>
+#include "CameraMode.h"
+#include <memory>
 #include <string>
-#include <dirent.h>
-#include <sys/ioctl.h>
-#include <linux/videodev2.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <cstring>
+#include <vector>
 
-namespace cv {
-	class VideoCapture;
-};
+class ICameraBackend;
 
-class CameraFrameSource : public ISource 
+class CameraFrameSource : public ISource
 {
 public:
 	CameraFrameSource(std::string devicePath, std::shared_ptr<Logger> logger, std::string m_ID);
 	CameraFrameSource(std::string devicePath, std::string deviceName, std::shared_ptr<Logger> logger, std::string m_ID);
-	
+
 	~CameraFrameSource();
-	
+
 	std::string getDevicePath();
 	std::string getDeviceName();
 	void changeDeviceName(std::string newName);
 
+	// Pass-throughs to whichever ICameraBackend this source actually opened (V4L2 on Linux,
+	// OpenCV everywhere else - see the .cpp) - Manager's own camera-mode/exposure methods delegate
+	// here rather than reaching into m_Backend directly, since that member is private to this class.
+	std::vector<CameraMode> GetAvailableModes();
+	CameraMode GetCurrentMode();
+	bool SetMode(const CameraMode& mode);
+	bool SetExposure(int exposureAbsolute);
+	bool SetAutoExposure(bool enabled);
+	bool SetGain(int gain);
+
 private:
 	void CaptureFrame() override;
-	cv::VideoCapture capture;
+	std::unique_ptr<ICameraBackend> m_Backend;
 	std::string m_DevicePath;
 	std::string m_DeviceName;
 };

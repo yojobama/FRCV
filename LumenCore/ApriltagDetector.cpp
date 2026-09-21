@@ -66,14 +66,22 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 	{
 		if (result.frame.has_value())
 		{
-			const cv::Mat& sourceFrame = result.frame.value();
-			cv::Mat gray = cv::Mat(sourceFrame.rows, sourceFrame.cols, CV_8UC1);
-			cv::cvtColor(sourceFrame, gray, cv::COLOR_BGR2GRAY);
+			if (m_DriverMode) {
+				// still streams video (matches PhotonVision's own driver-mode behaviour) - just
+				// skips the actual detection call and NT4 publish, the expensive part.
+				SetLatestResult(SourceResult(nlohmann::json(std::vector<nlohmann::json>{}), result.frame->AsBgr()));
+				continue;
+			}
+
+			// AsGray() is free for a GRAY8/NV12-tagged Frame (no conversion needed) instead of
+			// always paying for a cvtColor here - the whole point of Frame carrying a format
+			// tag (ROADMAP.md Phase 3).
+			const cv::Mat& gray = result.frame->AsGray();
 
 			m_Logger->EnterLog("detecting apriltags using backend=" + m_Backend->Name());
 			zarray_t* detections = m_Backend->Detect(gray);
 
-			cv::Mat colouredFrame = sourceFrame.clone();
+			cv::Mat colouredFrame = result.frame->AsBgr().clone();
 
 			std::vector<nlohmann::json> jsonVector;
 
@@ -128,13 +136,24 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 					apriltag_pose_t pose;
 					double err = estimate_tag_pose(&m_DetectionInfo, &pose);
 
+					// R is row-major 3x3 (pose.R->data[i*3+j], confirmed against
+					// apriltag_pose.h/matd_t's own layout) - published whole, not decomposed into
+					// Euler angles here: WPILib's Rotation3d has its own constructor taking a
+					// rotation matrix directly (edu.wpi.first.math.geometry.Rotation3d(Matrix<N3,
+					// N3>)), so the robot-side vendordep (Phase 7) can build a Transform3d from
+					// this with no lossy intermediate representation or convention mismatch to
+					// get wrong on this end. No rotation published meant no Transform3d, no pose
+					// ambiguity handling, no pose estimator - the actual reason a team would
+					// switch to this vendordep at all.
 					detectionJson["pose"] = {
 						{"x", pose.t->data[0]},
 						{"y", pose.t->data[1]},
 						{"z", pose.t->data[2]},
-						//{"yaw", pose.R->data[0]},
-						//{"pitch", pose.R->data[1]},
-						//{"roll", pose.R->data[2]}
+						{"R", {
+							{pose.R->data[0], pose.R->data[1], pose.R->data[2]},
+							{pose.R->data[3], pose.R->data[4], pose.R->data[5]},
+							{pose.R->data[6], pose.R->data[7], pose.R->data[8]}
+						}}
 					};
 
 					// estimate_tag_pose allocates pose.R/pose.t and documents that freeing them is

@@ -167,8 +167,7 @@ void CameraCalibrator::ProcessCharuco(const cv::Mat& gray, cv::Mat& displayFrame
 
 void CameraCalibrator::Process(std::vector<SourceResult> results)
 {
-	const cv::Mat& frame = results[0].frame.value();
-	cv::Mat gray;
+	const Frame& frame = results[0].frame.value();
 
 	if (frame.empty()) {
 		m_Logger->EnterLog(LogLevel::Error, "CameraCalibrator: Blank frame grabbed.");
@@ -176,8 +175,8 @@ void CameraCalibrator::Process(std::vector<SourceResult> results)
 	}
 
 	// Create a copy to draw overlays onto without corrupting raw capture data
-	cv::Mat displayFrame = frame.clone();
-	cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
+	cv::Mat displayFrame = frame.AsBgr().clone();
+	const cv::Mat& gray = frame.AsGray();
 
 	if (m_BoardConfig.type == BOARD_CHARUCO) {
 		ProcessCharuco(gray, displayFrame);

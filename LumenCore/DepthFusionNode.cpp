@@ -29,7 +29,7 @@ void DepthFusionNode::Process(std::vector<SourceResult> results)
 	double fx = calibration.rectifiedFx, cx = calibration.rectifiedCx, cy = calibration.rectifiedCy;
 
 	cv::Mat annotatedFrame;
-	if (results[0].frame.has_value() && !results[0].frame->empty()) annotatedFrame = results[0].frame->clone();
+	if (results[0].frame.has_value() && !results[0].frame->empty()) annotatedFrame = results[0].frame->AsBgr().clone();
 
 	std::vector<nlohmann::json> fused;
 

@@ -14,12 +14,17 @@ namespace Server.Controllers.sinks
     internal class WebRTCSinkController : WebApiController
     {
         // POST: create a WebRTCSink. Bind it afterwards (PATCH /sink/bind) to the node whose
-        // frames should be streamed.
+        // frames should be streamed. encoderName defaults to null (not the literal "libx264") so
+        // an unset caller gets whatever this actual build/board prefers - ManagerWrapper's own
+        // GetPreferredWebRTCEncoder() probes real hardware encoder availability rather than
+        // assuming Windows/WSL vs. the Orange Pi from the platform alone (a C# default parameter
+        // must be a compile-time constant, so that probe can't just be the parameter default).
         [Route(HttpVerbs.Post, "/webrtcSink/create")]
         public Task<int> Create([QueryField] string name, [QueryField] int bitrateKbps = 4000,
-            [QueryField] int fps = 30, [QueryField] string encoderName = "libx264")
+            [QueryField] int fps = 30, [QueryField] string? encoderName = null)
         {
-            int sinkId = SinkManager.Instance.AddWebRTCSink(name, bitrateKbps, fps, encoderName);
+            string resolvedEncoderName = encoderName ?? ManagerWrapper.Instance.GetPreferredWebRTCEncoder();
+            int sinkId = SinkManager.Instance.AddWebRTCSink(name, bitrateKbps, fps, resolvedEncoderName);
             return Task.FromResult(sinkId);
         }
 
@@ -58,6 +63,16 @@ namespace Server.Controllers.sinks
         public Task<string> GetStatus([QueryField] int sinkId)
         {
             return Task.FromResult(SinkManager.Instance.GetWebRTCSinkStatus(sinkId));
+        }
+
+        // GET: which encoder /webrtcSink/create would pick if encoderName is left unset -
+        // "h264_rkmpp" on a board with the real hardware ffmpeg build, "libx264" everywhere
+        // else. Lets a settings UI show what will actually run instead of discovering it only
+        // after creating a sink.
+        [Route(HttpVerbs.Get, "/webrtcSink/preferredEncoder")]
+        public Task<string> GetPreferredEncoder()
+        {
+            return Task.FromResult(ManagerWrapper.Instance.GetPreferredWebRTCEncoder());
         }
     }
 }

@@ -261,10 +261,12 @@ namespace Server
         }
 
         // creates a WebRTCSink; bind it (BindSourceToSink) to any single frame-producing node -
-        // a raw camera, or a detector's annotated output - to stream that stage
-        public int AddWebRTCSink(string name, int bitrateKbps = 4000, int fps = 30, string encoderName = "libx264")
+        // a raw camera, or a detector's annotated output - to stream that stage. encoderName
+        // defaults to null (resolved to GetPreferredWebRTCEncoder() below), not a hardcoded
+        // "libx264" - see WebRTCSinkController.Create's own comment for why.
+        public int AddWebRTCSink(string name, int bitrateKbps = 4000, int fps = 30, string? encoderName = null)
         {
-            int id = ManagerWrapper.Instance.CreateWebRTCSink(bitrateKbps, fps, encoderName);
+            int id = ManagerWrapper.Instance.CreateWebRTCSink(bitrateKbps, fps, encoderName ?? ManagerWrapper.Instance.GetPreferredWebRTCEncoder());
             sinks.Add(new Sink(id, name, SinkType.WebRTCSink));
             DB.Instance.Save();
             return id;

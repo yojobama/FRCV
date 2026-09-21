@@ -8,6 +8,19 @@
 #include "StereoCalibrationResult.h"
 #include "StereoDepthBackendKind.h"
 #include "StereoFrameOutput.h"
+
+// On Windows, Manager.h transitively pulls in <windows.h> via NetworkTablesSink.h's WPILib
+// (wpinet) headers, which #defines GetMessage as a macro (GetMessageA/W) - textually rewriting
+// every later reference to Log::GetMessage() in SWIG's own generated code below this block
+// (error C2039 "'GetMessageA' is not a member of 'Log'": the *declaration* in Logger.h parsed
+// fine, since it came before this point, but every *call site* SWIG emits afterward did not).
+// NOMINMAX/WIN32_LEAN_AND_MEAN (see LumenCore/CMakeLists.txt) don't cover this - GetMessage
+// lives in winuser.h, which stays included either way. Undoing it here, after every header this
+// block includes has had its chance to define it, is the one point guaranteed to run before any
+// of SWIG's own generated code does.
+#ifdef GetMessage
+#undef GetMessage
+#endif
 %}
 
 %include "std_string.i"
@@ -47,6 +60,8 @@
 %include "CalibrationBoardType.h"
 %include "StereoDepthBackendKind.h"
 %include "StereoFrameOutput.h"
+%include "FrameFormat.h"
+%include "CameraMode.h"
 %include "Manager.h"
 %include "CameraCalibrationResult.h"
 %include "StereoCalibrationResult.h"
@@ -58,5 +73,6 @@ namespace std {
     %template(VectorString) vector<string>;
     %template(VectorLog) vector<Log>;
     %template(VectorCameraHardwareInfo) vector<CameraHardwareInfo>;
+    %template(VectorCameraMode) vector<CameraMode>;
     %template(UniquePtrLog) unique_ptr<Log>;
 }

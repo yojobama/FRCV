@@ -99,5 +99,23 @@ namespace Server.Controllers.sinks
             }
             return Task.FromResult(sinks);
         }
+
+        // PATCH: toggle driver mode on a detection sink (ApriltagDetector/ObjectDetectionSink) -
+        // ROADMAP.md Phase 7. Still streams video, just skips the actual detection/NT4 publish
+        // work - throws (404-equivalent via EmbedIO's own exception handling) if SinkID doesn't
+        // support it, matching /sink/bind's own error-propagation style below.
+        [Route(HttpVerbs.Patch, "/sink/driverMode")]
+        public Task SetDriverMode([QueryField] int SinkID, [QueryField] bool Enabled)
+        {
+            ManagerWrapper.Instance.SetDriverMode(SinkID, Enabled);
+            return Task.CompletedTask;
+        }
+
+        // GET: whether a detection sink currently has driver mode enabled
+        [Route(HttpVerbs.Get, "/sink/driverMode")]
+        public Task<bool> GetDriverMode([QueryField] int SinkID)
+        {
+            return Task.FromResult(ManagerWrapper.Instance.GetDriverMode(SinkID));
+        }
     }
 }

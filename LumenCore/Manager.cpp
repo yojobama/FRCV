@@ -7,13 +7,16 @@
 #include "StereoDepthNode.h"
 #include "DepthFusionNode.h"
 #include "IStereoRoleReceiver.h"
-#include "RecordSink.h"
 #include "CameraSource.h"
+#include "RoiSource.h"
 #include "SystemMonitor.h"
 #include "ISink.h"
 #include "ObjectDetectionSink.h"
 #ifdef LUMEN_WITH_ONNX
 #include "OnnxDetectionBackend.h"
+#endif
+#ifdef LUMEN_WITH_RKNN
+#include "RknnDetectionBackend.h"
 #endif
 #ifdef LUMEN_WITH_NT4
 #include "NetworkTablesSink.h"
@@ -25,13 +28,15 @@
 #include <cstring>
 #include <cctype>
 #include <stdexcept>
+#ifdef __linux__
 #include <sys/ioctl.h>
 #include <linux/videodev2.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <dirent.h>
+#endif
 #include <cstring>
 #include <iostream>
-#include <dirent.h>
 #include <opencv2/opencv.hpp>
 
 Manager::Manager(string logFile)
@@ -96,6 +101,7 @@ std::vector<std::string> Manager::GetAvailableVideoEncoders()
     throw std::runtime_error("GetAvailableVideoEncoders not implemented yet");
 }
 
+#ifdef __linux__
 vector<CameraHardwareInfo> Manager::EnumerateAvailableCameras()
 {
     m_Logger->EnterLog("EnumerateAvailableCameras called");
@@ -110,53 +116,76 @@ vector<CameraHardwareInfo> Manager::EnumerateAvailableCameras()
     struct dirent* p_Entry;
     while ((p_Entry = readdir(p_Dir)) != nullptr) {
         // Check if name starts with "video"
-        if (strncmp(p_Entry->d_name, "video", 5) == 0) {
-            // Check if the rest is an even number
-            const char* p_NumPart = p_Entry->d_name + 5;
-            char* p_EndPtr;
-            long num = strtol(p_NumPart, &p_EndPtr, 10);
-            if (*p_NumPart != '\0' && *p_EndPtr == '\0' && num % 2 == 0) {
-                std::string devicePath = std::string(p_VideoDir) + p_Entry->d_name;
-                int fd = open(devicePath.c_str(), O_RDONLY);
-                if (fd < 0) {
-                    m_Logger->EnterLog("Failed to open device: " + devicePath);
+        if (strncmp(p_Entry->d_name, "video", 5) != 0) continue;
+
+        std::string devicePath = std::string(p_VideoDir) + p_Entry->d_name;
+        int fd = open(devicePath.c_str(), O_RDONLY);
+        if (fd < 0) {
+            m_Logger->EnterLog("Failed to open device: " + devicePath);
             continue;
         }
-                struct v4l2_capability cap;
-                std::string deviceName = devicePath;
-                if (ioctl(fd, VIDIOC_QUERYCAP, &cap) == 0) {
-                    std::string rawName = reinterpret_cast<char*>(cap.card);
-                    std::string formattedName;
-                    for (char c : rawName) {
-                        if (isalnum(static_cast<unsigned char>(c))) {
-                            formattedName += c;
-                        }
-                        else if (c == ' ' || c == '-' || c == '.') {
-                            formattedName += '_';
-                        }
-                    }
-                    size_t start = formattedName.find_first_not_of('_');
-                    size_t end = formattedName.find_last_not_of('_');
-                    if (start != std::string::npos && end != std::string::npos) {
-                        formattedName = formattedName.substr(start, end - start + 1);
-                    }
-                    deviceName = formattedName;
-                }
-                close(fd);
 
-                cameras.push_back(
-                    CameraHardwareInfo{
-            .name = deviceName,
-            .path = devicePath
-                    }
-                );
-        m_Logger->EnterLog("Camera found: " + deviceName + " at " + devicePath);
+        struct v4l2_capability cap;
+        if (ioctl(fd, VIDIOC_QUERYCAP, &cap) != 0) {
+            close(fd);
+            continue;
+        }
+
+        // A real capability check, replacing the old "even device numbers only" heuristic (a
+        // UVC capture-vs-metadata-node artefact, not a general rule - see ROADMAP.md Phase 3's
+        // note that it can legitimately hide devices like the RK3588's own rkisp/rkcif nodes).
+        // V4L2_CAP_DEVICE_CAPS, when set, means cap.capabilities is the UNION across every node a
+        // multi-function device exposes - the per-node truth is in cap.device_caps instead.
+        __u32 effectiveCaps = (cap.capabilities & V4L2_CAP_DEVICE_CAPS) ? cap.device_caps : cap.capabilities;
+        if (!(effectiveCaps & V4L2_CAP_VIDEO_CAPTURE) || !(effectiveCaps & V4L2_CAP_STREAMING)) {
+            close(fd);
+            continue;
+        }
+
+        // and at least one enumerable capture format - a device that passes the capability bits
+        // but advertises zero formats isn't something this project can actually open.
+        v4l2_fmtdesc fmtDesc{};
+        fmtDesc.index = 0;
+        fmtDesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        if (ioctl(fd, VIDIOC_ENUM_FMT, &fmtDesc) != 0) {
+            close(fd);
+            continue;
+        }
+
+        std::string rawName = reinterpret_cast<char*>(cap.card);
+        std::string formattedName;
+        for (char c : rawName) {
+            if (isalnum(static_cast<unsigned char>(c))) {
+                formattedName += c;
+            }
+            else if (c == ' ' || c == '-' || c == '.') {
+                formattedName += '_';
             }
         }
+        size_t start = formattedName.find_first_not_of('_');
+        size_t end = formattedName.find_last_not_of('_');
+        std::string deviceName = (start != std::string::npos && end != std::string::npos)
+            ? formattedName.substr(start, end - start + 1)
+            : devicePath;
+        close(fd);
+
+        cameras.push_back(CameraHardwareInfo{ .name = deviceName, .path = devicePath });
+        m_Logger->EnterLog("Camera found: " + deviceName + " at " + devicePath);
     }
     closedir(p_Dir);
     return cameras;
 }
+#else
+// LUMEN_TODO(windows-camera-enumeration): a real Media Foundation-backed enumerator is
+// ROADMAP.md Phase 3's CameraEnumerator work (its own PIMPL, its own design pass) - not
+// reasonable to improvise inline here. Stubbed empty for now so the rest of LumenCore (and the
+// P/Invoke boundary that depends on this symbol existing) builds and runs natively on Windows.
+vector<CameraHardwareInfo> Manager::EnumerateAvailableCameras()
+{
+    m_Logger->EnterLog("EnumerateAvailableCameras: not yet implemented on Windows (ROADMAP.md Phase 3)");
+    return vector<CameraHardwareInfo>();
+}
+#endif
 
 bool Manager::BindStereoSources(int sinkId, int leftSourceId, int rightSourceId) {
     m_Logger->EnterLog("BindStereoSources called with sinkId=" + std::to_string(sinkId) +
@@ -314,6 +343,161 @@ int Manager::CreateCameraSource(CameraHardwareInfo info, int id)
     m_Logger->EnterLog("CameraFrameSource created with id=" + std::to_string(id));
 
     return id;
+}
+
+vector<CameraMode> Manager::GetCameraModes(int sourceId)
+{
+    auto sourceIt = m_Sources.find(sourceId);
+    if (sourceIt == m_Sources.end()) {
+        throw std::runtime_error("GetCameraModes: no source with id=" + std::to_string(sourceId));
+    }
+    auto p_CameraSource = std::dynamic_pointer_cast<CameraFrameSource>(sourceIt->second);
+    if (!p_CameraSource) {
+        throw std::runtime_error("GetCameraModes: source id=" + std::to_string(sourceId) + " is not a camera source");
+    }
+    return p_CameraSource->GetAvailableModes();
+}
+
+CameraMode Manager::GetCameraCurrentMode(int sourceId)
+{
+    auto sourceIt = m_Sources.find(sourceId);
+    if (sourceIt == m_Sources.end()) {
+        throw std::runtime_error("GetCameraCurrentMode: no source with id=" + std::to_string(sourceId));
+    }
+    auto p_CameraSource = std::dynamic_pointer_cast<CameraFrameSource>(sourceIt->second);
+    if (!p_CameraSource) {
+        throw std::runtime_error("GetCameraCurrentMode: source id=" + std::to_string(sourceId) + " is not a camera source");
+    }
+    return p_CameraSource->GetCurrentMode();
+}
+
+bool Manager::SetCameraMode(int sourceId, CameraMode mode)
+{
+    auto sourceIt = m_Sources.find(sourceId);
+    if (sourceIt == m_Sources.end()) {
+        throw std::runtime_error("SetCameraMode: no source with id=" + std::to_string(sourceId));
+    }
+    auto p_CameraSource = std::dynamic_pointer_cast<CameraFrameSource>(sourceIt->second);
+    if (!p_CameraSource) {
+        throw std::runtime_error("SetCameraMode: source id=" + std::to_string(sourceId) + " is not a camera source");
+    }
+    bool applied = p_CameraSource->SetMode(mode);
+    m_Logger->EnterLog("SetCameraMode sourceId=" + std::to_string(sourceId) +
+        " requested " + std::to_string(mode.width) + "x" + std::to_string(mode.height) +
+        "@" + std::to_string(mode.fps) + " -> ioctl " + (applied ? "ok" : "FAILED"));
+    return applied;
+}
+
+bool Manager::SetCameraExposure(int sourceId, int exposureAbsolute)
+{
+    auto sourceIt = m_Sources.find(sourceId);
+    if (sourceIt == m_Sources.end()) {
+        throw std::runtime_error("SetCameraExposure: no source with id=" + std::to_string(sourceId));
+    }
+    auto p_CameraSource = std::dynamic_pointer_cast<CameraFrameSource>(sourceIt->second);
+    if (!p_CameraSource) {
+        throw std::runtime_error("SetCameraExposure: source id=" + std::to_string(sourceId) + " is not a camera source");
+    }
+    return p_CameraSource->SetExposure(exposureAbsolute);
+}
+
+bool Manager::SetCameraAutoExposure(int sourceId, bool enabled)
+{
+    auto sourceIt = m_Sources.find(sourceId);
+    if (sourceIt == m_Sources.end()) {
+        throw std::runtime_error("SetCameraAutoExposure: no source with id=" + std::to_string(sourceId));
+    }
+    auto p_CameraSource = std::dynamic_pointer_cast<CameraFrameSource>(sourceIt->second);
+    if (!p_CameraSource) {
+        throw std::runtime_error("SetCameraAutoExposure: source id=" + std::to_string(sourceId) + " is not a camera source");
+    }
+    return p_CameraSource->SetAutoExposure(enabled);
+}
+
+bool Manager::SetCameraGain(int sourceId, int gain)
+{
+    auto sourceIt = m_Sources.find(sourceId);
+    if (sourceIt == m_Sources.end()) {
+        throw std::runtime_error("SetCameraGain: no source with id=" + std::to_string(sourceId));
+    }
+    auto p_CameraSource = std::dynamic_pointer_cast<CameraFrameSource>(sourceIt->second);
+    if (!p_CameraSource) {
+        throw std::runtime_error("SetCameraGain: source id=" + std::to_string(sourceId) + " is not a camera source");
+    }
+    return p_CameraSource->SetGain(gain);
+}
+
+int Manager::CreateRoiSource(int upstreamSourceId, int x, int y, int width, int height)
+{
+    m_Logger->EnterLog("CreateRoiSource called with upstreamSourceId=" + std::to_string(upstreamSourceId) +
+        " roi=(" + std::to_string(x) + "," + std::to_string(y) + "," + std::to_string(width) + "," + std::to_string(height) + ")");
+
+    if (m_Sources.find(upstreamSourceId) == m_Sources.end()) {
+        throw std::runtime_error("CreateRoiSource: no source with id=" + std::to_string(upstreamSourceId));
+    }
+
+    int id = GenerateUUID();
+    auto p_RoiSource = std::make_shared<RoiSource>(m_Logger, std::to_string(id), cv::Rect(x, y, width, height));
+
+    // RoiSource is both an ISink (consumes the upstream frame) and an ISource (produces the
+    // cropped one) - registered in both maps for the same reason ApriltagDetector is.
+    m_Sinks.emplace(id, p_RoiSource);
+    m_Sources.emplace(id, p_RoiSource);
+
+    BindSourceToSink(upstreamSourceId, id);
+
+    m_Logger->EnterLog("RoiSource created with id=" + std::to_string(id));
+    return id;
+}
+
+void Manager::SetDriverMode(int sinkId, bool enabled)
+{
+    auto sinkIt = m_Sinks.find(sinkId);
+    if (sinkIt == m_Sinks.end()) {
+        throw std::runtime_error("SetDriverMode: no sink with id=" + std::to_string(sinkId));
+    }
+    if (auto apriltagDetector = std::dynamic_pointer_cast<ApriltagDetector>(sinkIt->second)) {
+        apriltagDetector->SetDriverMode(enabled);
+        return;
+    }
+    if (auto objectDetectionSink = std::dynamic_pointer_cast<ObjectDetectionSink>(sinkIt->second)) {
+        objectDetectionSink->SetDriverMode(enabled);
+        return;
+    }
+    throw std::runtime_error("SetDriverMode: sink id=" + std::to_string(sinkId) + " does not support driver mode");
+}
+
+bool Manager::GetDriverMode(int sinkId)
+{
+    auto sinkIt = m_Sinks.find(sinkId);
+    if (sinkIt == m_Sinks.end()) {
+        throw std::runtime_error("GetDriverMode: no sink with id=" + std::to_string(sinkId));
+    }
+    if (auto apriltagDetector = std::dynamic_pointer_cast<ApriltagDetector>(sinkIt->second)) {
+        return apriltagDetector->GetDriverMode();
+    }
+    if (auto objectDetectionSink = std::dynamic_pointer_cast<ObjectDetectionSink>(sinkIt->second)) {
+        return objectDetectionSink->GetDriverMode();
+    }
+    throw std::runtime_error("GetDriverMode: sink id=" + std::to_string(sinkId) + " does not support driver mode");
+}
+
+bool Manager::SaveSnapshot(int sourceId, string path)
+{
+    auto sourceIt = m_Sources.find(sourceId);
+    if (sourceIt == m_Sources.end()) {
+        throw std::runtime_error("SaveSnapshot: no source with id=" + std::to_string(sourceId));
+    }
+
+    SourceResult result = sourceIt->second->GetLatestResult();
+    if (!result.frame.has_value() || result.frame->empty()) {
+        m_Logger->EnterLog(LogLevel::Warning, "SaveSnapshot: source id=" + std::to_string(sourceId) + " has no frame yet");
+        return false;
+    }
+
+    bool ok = cv::imwrite(path, result.frame->AsBgr());
+    m_Logger->EnterLog(ok ? "SaveSnapshot: wrote " + path : "SaveSnapshot: cv::imwrite failed for " + path);
+    return ok;
 }
 
 int Manager::CreateVideoFileSource(string path, int fps)
@@ -798,8 +982,14 @@ int Manager::CreateObjectDetectionSink(int id, ObjectDetectionProvider provider,
             backend = std::make_shared<OnnxDetectionBackend>();
             break;
 #endif
+#ifdef LUMEN_WITH_RKNN
         case RKNN:
-            throw std::runtime_error("RKNN object detection backend is not implemented yet - use ONNX");
+            backend = std::make_shared<RknnDetectionBackend>();
+            break;
+#else
+        case RKNN:
+            throw std::runtime_error("RKNN object detection backend is not compiled into this build (LUMEN_WITH_RKNN is off)");
+#endif
         default:
             throw std::runtime_error("unknown ObjectDetectionProvider");
     }
@@ -816,19 +1006,6 @@ int Manager::CreateObjectDetectionSink(int id, ObjectDetectionProvider provider,
     m_Sources.emplace(id, p_Sink);
 
     m_Logger->EnterLog("ObjectDetectionSink created with id=" + std::to_string(id) + " using backend=" + backend->Name());
-    return id;
-}
-
-int Manager::CreateRecordingSink(int sourceId)
-{
-    int id = GenerateUUID();
-
-    // TODO: generate the path to the video file, an empty string will couse a faliure
-
-    /*RecordSink* p_RecordSink = new RecordSink(m_Logger, "");
-
-    m_Sinks.emplace(id, p_RecordSink);*/
-
     return id;
 }
 
@@ -997,6 +1174,16 @@ string Manager::GetWebRTCSinkStatus(int sinkId)
     auto sink = FindWebRTCSink(m_Sinks, sinkId);
     return sink ? sink->GetConnectionStatus() : "{}";
 }
+
+string Manager::GetPreferredWebRTCEncoder()
+{
+    // a real runtime probe, not a platform guess - upstream FFmpeg's own --enable-rkmpp is
+    // decode-only (confirmed the hard way, see cmake/LumenFFmpeg.cmake), so even on
+    // Linux/aarch64 this build's ffmpeg might be plain upstream rather than the
+    // nyanmisaka/ffmpeg-rockchip fork that actually implements the h264_rkmpp encoder.
+    if (avcodec_find_encoder_by_name("h264_rkmpp")) return "h264_rkmpp";
+    return "libx264";
+}
 #else
 int Manager::CreateWebRTCSink(int, int, string)
 {
@@ -1020,6 +1207,7 @@ void Manager::WebRTCAddIceCandidate(int, string, string)
 }
 bool Manager::IsWebRTCSinkConnected(int) { return false; }
 string Manager::GetWebRTCSinkStatus(int) { return "{}"; }
+string Manager::GetPreferredWebRTCEncoder() { return "libx264"; }
 #endif
 
 void Manager::StartAllSources()
@@ -1129,8 +1317,8 @@ string Manager::GetSinkResult(int sinkId)
     }
 
     // a sink's result is only meaningful when it is also a source (ApriltagDetector,
-    // CameraCalibrator, future ObjectDetectionSink); terminal sinks (RecordSink, and in future
-    // NetworkTablesSink/WebRTCSink) consume results but don't produce any of their own
+    // CameraCalibrator, ObjectDetectionSink); terminal sinks (NetworkTablesSink, WebRTCSink)
+    // consume results but don't produce any of their own
     ISource* p_AsSource = dynamic_cast<ISource*>(sink->second.get());
     if (p_AsSource == nullptr) {
         return "{}";

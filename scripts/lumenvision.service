@@ -27,10 +27,14 @@ Environment=LD_LIBRARY_PATH=/opt/lumenvision
 
 # Pins the Vulkan driver so a future mesa/panvk package appearing on the system can never be
 # silently selected over the libmali ICD install-deps.sh registers (see phase 5 item 0 and
-# phase 9 in docs/history/IMPLEMENTATION_PLAN.md). Verified against the actual bench board
-# (Armbian/PhotonVision image, Mali-G610): its real ICD file is mali.json, NOT the
-# libmali-gbm.json name the ubuntu-rockchip image used - install-deps.sh should discover and
-# write the real path here rather than this being hand-maintained per image.
+# phase 9 in docs/history/IMPLEMENTATION_PLAN.md). This default matches the Armbian/PhotonVision
+# bench board (Mali-G610, ICD file mali.json) - but it is only ever a same-image-as-last-time
+# guess, never a cross-image guarantee (the ubuntu-rockchip image install-deps.sh originally
+# targeted uses libmali-gbm.json instead, a different real path). install-deps.sh's
+# install_vulkan() discovers the ICD actually registered on the board it's run on and writes a
+# systemd drop-in (/etc/systemd/system/lumenvision.service.d/10-vulkan-icd.conf) that overrides
+# this line with the real path - re-run it after imaging a different board rather than hand-
+# editing this file.
 Environment=VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/mali.json
 
 StandardOutput=journal

@@ -23,6 +23,15 @@ public:
 	// was asked for and no usable device was found (falls back to CPU rather than failing to
 	// construct at all; see phase 5 item 5 in the implementation plan)
 	std::string GetBackendName() const;
+
+	// ROADMAP.md Phase 7 (driver mode): when true, Process() skips the actual detection call and
+	// NT4 publish entirely and just republishes the raw camera frame - matching PhotonVision's
+	// own driver-mode semantics (the driver station still sees live video, but the coprocessor
+	// stops spending CPU/NPU time on vision processing while the driver is doing manual scoring/
+	// climb/whatever doesn't need tag tracking). Downstream bindings (WebRTCSink in particular)
+	// are untouched, so this needs no rewiring - the node graph topology stays exactly as bound.
+	void SetDriverMode(bool enabled) { m_DriverMode = enabled; }
+	bool GetDriverMode() const { return m_DriverMode; }
 private:
 	void Process(std::vector<SourceResult> results) override;
 
@@ -45,4 +54,6 @@ private:
 	// the heap (confirmed by reproducing standalone: crashes on pose.t->data[0]). Pose estimation
 	// must be skipped entirely without valid intrinsics, not merely "best-effort".
 	bool m_HasCalibration = false;
+
+	bool m_DriverMode = false;
 };

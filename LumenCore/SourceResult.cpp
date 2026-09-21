@@ -3,16 +3,16 @@
 
 SourceResult::SourceResult()
 {
-	frame = std::optional<cv::Mat>();
+	frame = std::optional<Frame>();
 	json = std::optional<nlohmann::json>();
 }
 
-SourceResult::SourceResult(std::optional<nlohmann::json> json, std::optional<cv::Mat> frame)
+SourceResult::SourceResult(std::optional<nlohmann::json> json, std::optional<Frame> frame)
 	: json(json), frame(frame)
 {
 }
 
-SourceResult::SourceResult(std::optional<nlohmann::json> json, std::optional<cv::Mat> frame, uint64_t captureTimeUs)
+SourceResult::SourceResult(std::optional<nlohmann::json> json, std::optional<Frame> frame, uint64_t captureTimeUs)
 	: json(json), frame(frame), captureTimeUs(captureTimeUs)
 {
 }

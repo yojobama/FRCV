@@ -16,6 +16,7 @@ set(LUMEN_CORE_SOURCES
     CameraCalibrator.cpp
     CameraSource.cpp
     CpuApriltagBackend.cpp
+    Frame.cpp
     ISource.cpp
     ImageFileSource.cpp
     StereoCalibrationResult.cpp
@@ -31,7 +32,8 @@ set(LUMEN_CORE_SOURCES
     ObjectDetection.cpp
     ObjectDetectionSink.cpp
     OnnxDetectionBackend.cpp
-    RecordSink.cpp
+    OpenCvCameraBackend.cpp
+    RoiSource.cpp
     SourceResult.cpp
     SystemMonitor.cpp
     VideoFileSource.cpp
@@ -39,6 +41,21 @@ set(LUMEN_CORE_SOURCES
     WebRTCSink.cpp
     YoloPostProcess.cpp
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # <linux/videodev2.h> and friends - genuinely Linux-only, unlike most of this project's C++,
+    # which is confirmed portable (see this file's own header comment / ROADMAP.md's "ground
+    # truth" section). MediaFoundationCameraBackend is the Windows equivalent (ROADMAP.md Phase 3,
+    # not yet written); OpenCvCameraBackend remains the cross-platform fallback either way.
+    list(APPEND LUMEN_CORE_SOURCES V4l2CameraBackend.cpp)
+endif()
+
+if(LUMEN_WITH_RKNN)
+    # guarded here (not just by its own #ifdef LUMEN_WITH_RKNN) so the file isn't even compiled -
+    # and <rknn_api.h> isn't even searched for - on a configure where LumenFeatures.cmake has
+    # already refused this flag outright (anything but aarch64).
+    list(APPEND LUMEN_CORE_SOURCES RknnDetectionBackend.cpp)
+endif()
 
 # --- SWIG source properties -------------------------------------------------------------------
 # Generated C# lands directly in Server/Interop/ (gitignored, regenerated every configure/build -
@@ -56,7 +73,24 @@ set_property(SOURCE swig.i PROPERTY USE_TARGET_INCLUDE_DIRECTORIES ON)
 # (LUMEN_SWIG_DEFINES), not just what's enabled for this configure. See that file's own comment
 # for why: this is what keeps every preset generating the identical C# API regardless of which
 # backends are actually compiled in.
-set_property(SOURCE swig.i PROPERTY COMPILE_DEFINITIONS ${LUMEN_SWIG_DEFINES})
+# CMake's SWIG dependency tracking only follows swig.i itself and anything brought in via a
+# %include directive - it has no visibility into the plain #include lines inside swig.i's own
+# %{ %} preamble block, so editing Manager.h (or any of these) alone did NOT re-trigger "Swig
+# compile swig.i for csharp" - confirmed the hard way (a deleted method stayed callable from a
+# stale generated wrapper after editing only Manager.h, with ninja reporting nothing to redo).
+# Declaring them here explicitly is what actually fixes that, not just documents it.
+set_property(SOURCE swig.i PROPERTY DEPENDS
+    Manager.h
+    CameraCalibrationResult.h
+    IDetectionBackend.h
+    IApriltagBackend.h
+    CalibrationBoardType.h
+    StereoCalibrationResult.h
+    StereoDepthBackendKind.h
+    StereoFrameOutput.h
+    CameraMode.h
+    FrameFormat.h
+)
 
 swig_add_library(LumenCore
     TYPE SHARED
@@ -83,11 +117,26 @@ set_target_properties(LumenCore PROPERTIES
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
 )
+# CXX_STANDARD above only sets how LumenCore's OWN sources are compiled - it does not propagate
+# to anything linking against it (ISource.h/ISink.h's std::jthread members are C++20, and those
+# are public headers). target_compile_features PUBLIC is what actually makes a consumer (tests/,
+# ROADMAP.md Phase 5) inherit the requirement - confirmed the hard way ("'jthread' in namespace
+# 'std' does not name a type... only available from C++20 onwards" compiling a test that just
+# includes ISource.h, on a compiler whose default standard is older than C++20).
+target_compile_features(LumenCore PUBLIC cxx_std_20)
 
 target_compile_definitions(LumenCore PRIVATE ${LUMEN_ENABLED_DEFINES})
 
 if(MSVC)
-    target_compile_options(LumenCore PRIVATE /W3 /permissive-)
+    # NOMINMAX/WIN32_LEAN_AND_MEAN: without these, <windows.h> (pulled in transitively by
+    # WPILib/ONNX Runtime headers) defines max/min and GetMessage as macros, breaking
+    # std::max/std::min call sites (error C2589) and Log::GetMessage() (error C2039 -
+    # "GetMessageA is not a member of Log", the macro rewriting the call before the compiler
+    # ever sees the real name) throughout this codebase - confirmed the hard way building this
+    # target natively on Windows for the first time. /utf-8: WPILib's bundled fmt statically
+    # asserts on it (fmt/base.h's Unicode support check).
+    target_compile_definitions(LumenCore PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+    target_compile_options(LumenCore PRIVATE /W3 /permissive- /utf-8)
 else()
     target_compile_options(LumenCore PRIVATE -Wall -Wextra -Wno-unused-parameter)
 endif()
@@ -106,9 +155,26 @@ find_package(OpenCV 5.0 REQUIRED CONFIG
     COMPONENTS core imgproc imgcodecs videoio dnn objdetect calib stereo geometry
 )
 find_package(Threads REQUIRED)
+# Declared explicitly rather than left implicit: on Linux this has always resolved silently via
+# apt's nlohmann-json3-dev dropping its header under /usr/include (the compiler's own default
+# search path, found with no CMake involvement at all), which is why nothing here referenced it
+# before. That has no Windows equivalent - confirmed the hard way (SourceResult.h's #include
+# <nlohmann/json.hpp> failing outright under MSVC) - so this is a real portability fix, not a
+# Windows-only workaround: a package installed via apt's or vcpkg's own CMake config now, on
+# every platform.
+find_package(nlohmann_json 3 REQUIRED CONFIG)
 
-target_link_libraries(LumenCore PRIVATE ${OpenCV_LIBS} Threads::Threads)
-target_include_directories(LumenCore PRIVATE ${OpenCV_INCLUDE_DIRS})
+# PUBLIC, not PRIVATE, for OpenCV and nlohmann_json specifically: SourceResult.h - a header
+# every consumer of this target includes, not an implementation detail - itself #includes
+# <opencv2/opencv.hpp> and <nlohmann/json.hpp> directly, so their usage requirements (include
+# dirs, and for OpenCV, the libraries too - cv::Mat's own methods aren't all header-only inline)
+# are genuinely part of this target's public interface. Confirmed the hard way: tests/
+# (ROADMAP.md Phase 5) linking LumenCore PRIVATE here got "opencv2/opencv.hpp: No such file or
+# directory" the first time it included SourceResult.h. Threads stays PRIVATE - pthread usage is
+# purely internal, nothing public leaks it.
+target_link_libraries(LumenCore PUBLIC ${OpenCV_LIBS} nlohmann_json::nlohmann_json)
+target_link_libraries(LumenCore PRIVATE Threads::Threads)
+target_include_directories(LumenCore PUBLIC ${OpenCV_INCLUDE_DIRS})
 
 # SgbmStereoBackend (STEREO_BACKEND_SGBM) is pure OpenCV with no feature flag guarding it at
 # all - it is always available, on every platform, regardless of which optional backends below
@@ -244,9 +310,14 @@ endif()
 # Server.csproj globs this directory rather than hardcoding one filename (see its own comments)
 # precisely so this list doesn't have to be kept in sync by hand on the C# side.
 if(WIN32)
+    # LUMEN_FFMPEG_RUNTIME_DLLS (LumenFFmpeg.cmake): pkg-config-discovered targets carry no
+    # IMPORTED_LOCATION on Windows, so $<TARGET_RUNTIME_DLLS:...> alone can't find these -
+    # folded into the same copy command rather than a second one so Server.csproj's directory
+    # glob only has to watch one place.
     add_custom_command(TARGET LumenCore POST_BUILD
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
                 "$<TARGET_RUNTIME_DLLS:LumenCore>"
+                ${LUMEN_FFMPEG_RUNTIME_DLLS}
                 "$<TARGET_FILE_DIR:LumenCore>"
         COMMAND_EXPAND_LISTS
     )

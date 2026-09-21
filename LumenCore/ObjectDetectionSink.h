@@ -13,9 +13,15 @@ public:
 	// CPU-vs-Vulkan backend distinction either
 	ObjectDetectionSink(std::shared_ptr<Logger> logger, std::string id, std::shared_ptr<IDetectionBackend> backend);
 
+	// ROADMAP.md Phase 7 (driver mode) - see ApriltagDetector's own identical accessor for the
+	// full rationale; same semantics here (skip inference, keep streaming raw video).
+	void SetDriverMode(bool enabled) { m_DriverMode = enabled; }
+	bool GetDriverMode() const { return m_DriverMode; }
+
 private:
 	void Process(std::vector<SourceResult> results) override;
 
 	std::shared_ptr<IDetectionBackend> m_Backend;
 	std::shared_ptr<Logger> m_Logger;
+	bool m_DriverMode = false;
 };

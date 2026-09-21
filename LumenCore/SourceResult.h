@@ -5,21 +5,29 @@
 #include <optional>
 #include <memory>
 #include <cstdint>
+#include "Frame.h"
 
 class SourceResult
 {
 public:
 	SourceResult();
-	SourceResult(std::optional<nlohmann::json> json, std::optional<cv::Mat> frame);
+	// Frame's own constructor is implicit from cv::Mat (assumes BGR24), so a bare cv::Mat argument
+	// already converts to std::optional<Frame> in one user-defined conversion - every existing
+	// producer (ImageFileSource, VideoFileSource, ApriltagDetector, ObjectDetectionSink,
+	// StereoDepthNode, DepthFusionNode, OpenCvCameraBackend) keeps compiling unchanged through
+	// this single overload. A parallel std::optional<cv::Mat> overload was tried and removed: cv::Mat
+	// is reachable via one user-defined conversion to EITHER optional<cv::Mat> or optional<Frame>,
+	// so keeping both made every such call ambiguous.
+	SourceResult(std::optional<nlohmann::json> json, std::optional<Frame> frame);
 	// same as above, plus an explicit capture timestamp - use this overload when the producer
 	// knows the real moment the frame was captured (e.g. CameraFrameSource, immediately after
 	// cv::VideoCapture::read() returns) rather than letting ISource::SetLatestResult's
 	// publish-time fallback stand in for it. Needed by anything that must pair frames from two
 	// independent sources (StereoCalibrator/StereoDepthNode) - publish time alone can't tell two
 	// free-running cameras' frames apart from ones that are actually far apart in time.
-	SourceResult(std::optional<nlohmann::json> json, std::optional<cv::Mat> frame, uint64_t captureTimeUs);
+	SourceResult(std::optional<nlohmann::json> json, std::optional<Frame> frame, uint64_t captureTimeUs);
 	std::optional<nlohmann::json> json;
-	std::optional<cv::Mat> frame;
+	std::optional<Frame> frame;
 
 	// which bound source this result came from, filled in by ISink::ProcessingThreadLoop
 	// (not by the producing ISource itself, which has no reason to know its own ID at

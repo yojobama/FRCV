@@ -11,12 +11,17 @@ ISink::ISink(std::shared_ptr<Logger> p_Logger, int maxSources, bool requireJson,
 ISink::~ISink()
 {
     *m_AliveFlag = false;
-}
-
-void* ISink::InvokeProcessingThread(void* p_Reference)
-{
-    ((ISink*)p_Reference)->ProcessingThreadLoop();
-    return nullptr;
+    // previously a no-op beyond the alive flag: the processing thread outlived this object
+    // with nothing to stop it (see ISource::~ISource, the same bug).
+    if (m_Thread.joinable()) {
+        m_ShouldTerminate = true;
+        {
+            std::lock_guard<std::mutex> guard(m_WakeMutex);
+            m_DataAvailable = true;
+        }
+        m_WakeCV.notify_one();
+        m_Thread.join();
+    }
 }
 
 void ISink::Toggle(bool toggle)
@@ -27,11 +32,11 @@ void ISink::Toggle(bool toggle)
 
     if (toggle) {
         m_ShouldTerminate = false;
-        pthread_create(&m_Thread, NULL, InvokeProcessingThread, this);
+        m_Thread = std::jthread([this] { ProcessingThreadLoop(); });
 		m_ToggleState = true;
     }
     else {
-        if (m_Thread) {
+        if (m_Thread.joinable()) {
             m_ShouldTerminate = true;
             {
                 // wake the loop immediately so it observes m_ShouldTerminate instead of
@@ -40,7 +45,7 @@ void ISink::Toggle(bool toggle)
                 m_DataAvailable = true;
             }
             m_WakeCV.notify_one();
-            pthread_join(m_Thread, NULL);
+            m_Thread.join();
 			m_ToggleState = false;
         }
     }
@@ -76,7 +81,7 @@ void ISink::ProcessingThreadLoop()
         std::vector<SourceResult> sources;
         for (auto& sourcePair : m_Sources) {
             auto& source = sourcePair.first;
-            int& lastFrameCount = sourcePair.second;
+            uint64_t& lastFrameCount = sourcePair.second;
 
             if (source->GetCurrentFrameCount() != lastFrameCount) {
                 lastFrameCount = source->GetCurrentFrameCount();
@@ -91,7 +96,6 @@ void ISink::ProcessingThreadLoop()
         }
     }
     m_ShouldTerminate = false;
-	pthread_exit(NULL);
 }
 
 std::string ISink::GetID()

@@ -28,8 +28,11 @@ namespace Server
                     m.WithController<StereoCalibrationSinkController>();
                     m.WithController<StereoDepthSinkController>();
                     m.WithController<DepthFusionSinkController>();
-                    // RecordingSinkController is intentionally not registered yet: recording
-                    // sink creation is still a bare `throw new NotImplementedException()`.
+                    // RecordingSinkController/RecordSink were deleted outright rather than left
+                    // half-implemented (ROADMAP.md Phase 0's own "implement or delete" decision):
+                    // the C++ side never initialized its VideoWriter, Manager::CreateRecordingSink
+                    // never actually registered a sink, and the controller only ever threw
+                    // NotImplementedException - nothing real to keep.
                     // sources
                     m.WithController<SourceController>();
                     m.WithController<ImageFileSourceController>();

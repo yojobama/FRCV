@@ -15,22 +15,15 @@ SystemMonitor::~SystemMonitor()
 void SystemMonitor::StartMonitoring()
 {
     m_ThreadWantedAlive = true;
-    pthread_create(&m_MonitorThread, nullptr, s_StartMonitorThread, this);
+    m_MonitorThread = std::jthread([this] { m_MonitorThreadLoop(); });
 }
 
 void SystemMonitor::StopMonitoring()
 {
     m_ThreadWantedAlive = false;
-    if (m_MonitorThread) {
-        pthread_join(m_MonitorThread, nullptr); // Wait for the thread to finish
-        m_MonitorThread = 0; // Reset the thread ID
+    if (m_MonitorThread.joinable()) {
+        m_MonitorThread.join(); // Wait for the thread to finish
 	}
-}
-
-void* SystemMonitor::s_StartMonitorThread(void* arg)
-{
-	static_cast<SystemMonitor*>(arg)->m_MonitorThreadLoop();
-    return nullptr;
 }
 
 void SystemMonitor::m_MonitorThreadLoop()
@@ -59,9 +52,10 @@ void SystemMonitor::m_MonitorThreadLoop()
     }
 }
 
+#ifdef __linux__
 CPU_STATS SystemMonitor::m_ReadCPUData()
 {
-    CPU_STATS result;
+    CPU_STATS result{};
     std::ifstream proc_stat("/proc/stat");
 
     if (proc_stat.good())
@@ -83,6 +77,16 @@ CPU_STATS SystemMonitor::m_ReadCPUData()
 
     return result;
 }
+#else
+// LUMEN_TODO(windows-system-monitor): /proc/stat has no Windows equivalent - a real
+// implementation belongs on GetSystemTimes(). Stubbed at zero rather than left unbuilt, since
+// SystemMonitor isn't gated behind a LUMEN_WITH_* flag (unlike NT4/WebRTC/etc - see Manager.cpp)
+// and the REST endpoints that read it must still return something on every platform.
+CPU_STATS SystemMonitor::m_ReadCPUData()
+{
+    return CPU_STATS{};
+}
+#endif
 
 int SystemMonitor::m_GetVal(const std::string& target, const std::string& content)
 {
@@ -117,6 +121,7 @@ float SystemMonitor::m_GetCPUUsage(const CPU_STATS& first, const CPU_STATS& seco
     return active_time / total_time;
 }
 
+#ifdef __linux__
 float SystemMonitor::m_GetDiskUsage(const std::string& disk)
 {
     struct statvfs diskData;
@@ -131,9 +136,19 @@ float SystemMonitor::m_GetDiskUsage(const std::string& disk)
 
     return result;
 }
+#else
+// LUMEN_TODO(windows-system-monitor): statvfs has no Windows equivalent - a real implementation
+// belongs on GetDiskFreeSpaceExW(). See m_ReadCPUData for why this is stubbed rather than
+// left unbuilt.
+float SystemMonitor::m_GetDiskUsage(const std::string&)
+{
+    return 0.0f;
+}
+#endif
 
 int SystemMonitor::m_FindThermalZoneIndex()
 {
+#ifdef __linux__
     int result = 0;
     bool stop = false;
     // 20 must stop anyway
@@ -158,6 +173,10 @@ int SystemMonitor::m_FindThermalZoneIndex()
         thermal_file.close();
     }
     return result;
+#else
+    // LUMEN_TODO(windows-system-monitor): /sys/class/thermal has no Windows equivalent.
+    return 0;
+#endif
 }
 
 int SystemMonitor::m_GetThermalZoneTemperature(int index)
@@ -183,9 +202,10 @@ int SystemMonitor::m_GetThermalZoneTemperature(int index)
     return result;
 }
 
+#ifdef __linux__
 MEMORY_STATS SystemMonitor::m_ReadMemoryData()
 {
-    MEMORY_STATS result;
+    MEMORY_STATS result{};
     std::ifstream proc_meminfo("/proc/meminfo");
 
     if (proc_meminfo.good())
@@ -204,6 +224,20 @@ MEMORY_STATS SystemMonitor::m_ReadMemoryData()
 
     return result;
 }
+#else
+// LUMEN_TODO(windows-system-monitor): /proc/meminfo has no Windows equivalent - a real
+// implementation belongs on GlobalMemoryStatusEx(). total_memory=1 avoids a get_memory_usage()
+// divide-by-zero (see SystemMonitor.h) while still reporting 0% used.
+MEMORY_STATS SystemMonitor::m_ReadMemoryData()
+{
+    MEMORY_STATS result{};
+    result.total_memory = 1;
+    result.available_memory = 1;
+    result.total_swap = 1;
+    result.free_swap = 1;
+    return result;
+}
+#endif
 
 // get ram usage in megabytes
 int SystemMonitor::GetRAMUsage()

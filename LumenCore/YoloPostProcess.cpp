@@ -1,6 +1,8 @@
 #include "YoloPostProcess.h"
 #include <opencv2/dnn.hpp>
 #include <algorithm>
+#include <cmath>
+#include <limits>
 
 namespace YoloPostProcess {
 
@@ -70,6 +72,18 @@ std::vector<ObjectDetection> DecodeAndNms(
 		classIds.push_back(bestClassId);
 	}
 
+	return NmsAndBuildDetections(boxesForNms, scores, classIds, labels, letterbox, confThreshold, nmsThreshold);
+}
+
+std::vector<ObjectDetection> NmsAndBuildDetections(
+	const std::vector<cv::Rect>& boxesForNms,
+	const std::vector<float>& scores,
+	const std::vector<int>& classIds,
+	const std::vector<std::string>& labels,
+	const LetterboxInfo& letterbox,
+	float confThreshold,
+	float nmsThreshold)
+{
 	std::vector<int> keptIndices;
 	cv::dnn::NMSBoxes(boxesForNms, scores, confThreshold, nmsThreshold, keptIndices);
 
@@ -101,6 +115,89 @@ std::vector<ObjectDetection> DecodeAndNms(
 	}
 
 	return detections;
+}
+
+namespace {
+	inline float Sigmoid(float x)
+	{
+		return 1.0f / (1.0f + std::exp(-x));
+	}
+}
+
+std::vector<ObjectDetection> DecodeDflMultiScaleAndNms(
+	const std::vector<DflScaleOutput>& scales,
+	int regMax,
+	int numClasses,
+	const std::vector<std::string>& labels,
+	const LetterboxInfo& letterbox,
+	float confThreshold,
+	float nmsThreshold)
+{
+	std::vector<cv::Rect> boxesForNms;
+	std::vector<float> scores;
+	std::vector<int> classIds;
+
+	for (const DflScaleOutput& scale : scales) {
+		const int gridH = scale.gridH, gridW = scale.gridW, stride = scale.stride;
+		const int cellCount = gridH * gridW;
+
+		for (int gy = 0; gy < gridH; gy++) {
+			for (int gx = 0; gx < gridW; gx++) {
+				int cell = gy * gridW + gx;
+
+				int bestClassId = -1;
+				float bestLogit = -std::numeric_limits<float>::infinity();
+				for (int c = 0; c < numClasses; c++) {
+					float logit = scale.clsData[c * cellCount + cell];
+					if (logit > bestLogit) {
+						bestLogit = logit;
+						bestClassId = c;
+					}
+				}
+				float bestScore = Sigmoid(bestLogit);
+				if (bestScore < confThreshold) continue;
+
+				// DFL: each of the 4 sides (left, top, right, bottom - ultralytics' own
+				// regression order) is a softmax distribution over regMax discrete bins:
+				// distance = sum(bin_index * softmax(logits)[bin_index]), i.e. the distribution's
+				// expected value, not an argmax - this is the whole point of DFL over a plain
+				// regression head (a continuous estimate from a discrete distribution).
+				float distance[4];
+				for (int side = 0; side < 4; side++) {
+					const float* binLogits = scale.boxData + static_cast<size_t>(side) * regMax * cellCount;
+
+					float maxLogit = -std::numeric_limits<float>::infinity();
+					for (int b = 0; b < regMax; b++) maxLogit = std::max(maxLogit, binLogits[b * cellCount + cell]);
+
+					float sumExp = 0.0f;
+					std::vector<float> expVals(regMax);
+					for (int b = 0; b < regMax; b++) {
+						expVals[b] = std::exp(binLogits[b * cellCount + cell] - maxLogit);
+						sumExp += expVals[b];
+					}
+
+					float expected = 0.0f;
+					for (int b = 0; b < regMax; b++) expected += b * (expVals[b] / sumExp);
+					distance[side] = expected;
+				}
+
+				float cx = (gx + 0.5f) * stride;
+				float cy = (gy + 0.5f) * stride;
+				float x1 = cx - distance[0] * stride;
+				float y1 = cy - distance[1] * stride;
+				float x2 = cx + distance[2] * stride;
+				float y2 = cy + distance[3] * stride;
+
+				boxesForNms.emplace_back(
+					static_cast<int>(std::round(x1)), static_cast<int>(std::round(y1)),
+					static_cast<int>(std::round(x2 - x1)), static_cast<int>(std::round(y2 - y1)));
+				scores.push_back(bestScore);
+				classIds.push_back(bestClassId);
+			}
+		}
+	}
+
+	return NmsAndBuildDetections(boxesForNms, scores, classIds, labels, letterbox, confThreshold, nmsThreshold);
 }
 
 }

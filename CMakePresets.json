@@ -18,10 +18,14 @@
                 "CMAKE_C_COMPILER": "cl",
                 "CMAKE_CXX_COMPILER": "cl",
                 "LUMEN_WITH_WEBRTC": "OFF",
-                "LUMEN_WITH_RKNN": "OFF"
+                "LUMEN_WITH_RKNN": "OFF",
+                "FETCHCONTENT_TRY_FIND_PACKAGE_MODE": "ALWAYS"
             },
             "environment": {
                 "comment": "Pinning cl explicitly matters: MinGW's g++/ninja are ahead of any MSVC cl.exe on PATH on this machine, and an unqualified Ninja preset would silently build with the wrong compiler and the wrong ABI - confirmed by checking `Get-Command g++`/`Get-Command cl` directly. This preset still needs to be launched from an environment where cl.exe's own INCLUDE/LIB/PATH are already set (a Developer PowerShell, VS's integrated terminal, or after vcvars64.bat) - see windows-x64-vs below for a preset that doesn't require that."
+            },
+            "vendor": {
+                "comment": "FETCHCONTENT_TRY_FIND_PACKAGE_MODE=ALWAYS matches linux-base's rationale (see there) plus a Windows-specific reason: without it, vkapriltag's own FetchContent_MakeAvailable(apriltag) builds a *fresh* apriltag from source with library/CMakeLists.txt:43's unconditional target_compile_options(apriltag PRIVATE -std=gnu17) - a GCC/Clang-only flag cl.exe rejects outright. With this mode on, that resolves to the apriltag installed via apriltagConfig.cmake instead (an ALIAS target), which the local ALIASED_TARGET guard already skips the flag for."
             }
         },
         {
@@ -102,7 +106,7 @@
             "inherits": "linux-base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Debug",
-                "LUMEN_WITH_RKNN": "OFF"
+                "LUMEN_WITH_RKNN": "ON"
             },
             "vendor": {
                 "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
@@ -119,7 +123,7 @@
             "inherits": "linux-base",
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release",
-                "LUMEN_WITH_RKNN": "OFF"
+                "LUMEN_WITH_RKNN": "ON"
             },
             "vendor": {
                 "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {

@@ -33,10 +33,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_subdirectory(LumenCore)
 
-# Off by default and the tests/ subdirectory doesn't exist yet - this is ROADMAP.md Phase A3/
-# Phase 5 work (a real Catch2/ctest suite replacing the dead tests-legacy/ tree). The option
-# exists now so presets can turn it on later without another CMakeLists.txt change.
-option(LUMEN_BUILD_TESTS "Build the ctest suite (tests/) - not yet implemented, see ROADMAP.md Phase 5" OFF)
+# Off by default (a real Catch2/ctest suite, tests/, replacing the dead pre-CMake UnitTests
+# tree - see ROADMAP.md Phase 5); every ci-* preset turns it on explicitly.
+option(LUMEN_BUILD_TESTS "Build the ctest suite (tests/)" OFF)
 if(LUMEN_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)

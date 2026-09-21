@@ -29,6 +29,7 @@ void StereoCalibrator::SetStereoRoles(const std::string& leftSourceId, const std
 {
 	m_LeftSourceId = leftSourceId;
 	m_RightSourceId = rightSourceId;
+	m_Pairer.emplace(leftSourceId, rightSourceId, m_MaxSkewUs);
 }
 
 void StereoCalibrator::SetPriorIntrinsics(const CameraCalibrationResult& left, const CameraCalibrationResult& right)
@@ -59,29 +60,19 @@ bool StereoCalibrator::DetectCheckerboard(const cv::Mat& gray, std::vector<cv::P
 
 void StereoCalibrator::Process(std::vector<SourceResult> results)
 {
-	for (auto& r : results) {
-		if (r.sourceId == m_LeftSourceId) m_PendingLeft = r;
-		else if (r.sourceId == m_RightSourceId) m_PendingRight = r;
-	}
+	if (!m_Pairer.has_value()) return; // SetStereoRoles hasn't run yet
 
-	if (!m_PendingLeft.has_value() || !m_PendingRight.has_value()) return;
-
-	int64_t skewUs = std::llabs((int64_t)m_PendingLeft->captureTimeUs - (int64_t)m_PendingRight->captureTimeUs);
-
-	if (skewUs > m_MaxSkewUs) {
-		// drop the older half and wait for its replacement rather than pairing a stale frame -
-		// see STEREO_IMPLEMENTATION_PLAN.md P1
+	StereoPairer::FeedResult feed = m_Pairer->Feed(results);
+	if (feed.outcome == StereoPairer::Outcome::WaitingForEye) return;
+	if (feed.outcome == StereoPairer::Outcome::DroppedForSkew) {
 		std::lock_guard<std::mutex> lock(m_DetectionMutex);
-		m_LastSkewUs = skewUs;
+		m_LastSkewUs = feed.skewUs;
 		m_LastPairFound = false;
-		if (m_PendingLeft->captureTimeUs < m_PendingRight->captureTimeUs) m_PendingLeft.reset();
-		else m_PendingRight.reset();
 		return;
 	}
 
-	SourceResult left = *m_PendingLeft, right = *m_PendingRight;
-	m_PendingLeft.reset();
-	m_PendingRight.reset();
+	int64_t skewUs = feed.skewUs;
+	SourceResult left = feed.pair->first, right = feed.pair->second;
 
 	if (!left.frame.has_value() || !right.frame.has_value() ||
 		left.frame->empty() || right.frame->empty()) {
@@ -89,9 +80,8 @@ void StereoCalibrator::Process(std::vector<SourceResult> results)
 		return;
 	}
 
-	cv::Mat grayLeft, grayRight;
-	cv::cvtColor(*left.frame, grayLeft, cv::COLOR_BGR2GRAY);
-	cv::cvtColor(*right.frame, grayRight, cv::COLOR_BGR2GRAY);
+	const cv::Mat& grayLeft = left.frame->AsGray();
+	const cv::Mat& grayRight = right.frame->AsGray();
 
 	std::vector<cv::Point2f> leftCorners, rightCorners;
 	std::vector<cv::Point3f> leftObjPoints, rightObjPoints;
@@ -113,8 +103,8 @@ void StereoCalibrator::Process(std::vector<SourceResult> results)
 	}
 
 	// side-by-side display: each eye annotated with its own detection state
-	cv::Mat displayLeft = left.frame->clone();
-	cv::Mat displayRight = right.frame->clone();
+	cv::Mat displayLeft = left.frame->AsBgr().clone();
+	cv::Mat displayRight = right.frame->AsBgr().clone();
 	cv::Size patternSize(m_BoardConfig.cols, m_BoardConfig.rows);
 	if (foundLeft) cv::drawChessboardCorners(displayLeft, patternSize, leftCorners, true);
 	if (foundRight) cv::drawChessboardCorners(displayRight, patternSize, rightCorners, true);

@@ -1,12 +1,14 @@
 #pragma once
-#include <pthread.h>
 #include <string>
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#ifdef __linux__
 #include <sys/statvfs.h>
+#endif
 #include <mutex>
+#include <thread>
 
 struct CPU_STATS {
     int user;
@@ -67,8 +69,7 @@ private:
 
 	// thread management
 	bool m_ThreadWantedAlive;
-    pthread_t m_MonitorThread; 
-	static void* s_StartMonitorThread(void* arg);
+    std::jthread m_MonitorThread;
 	void m_MonitorThreadLoop();
 
 	// methods for reading system data

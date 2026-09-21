@@ -4,12 +4,12 @@
 #include <vector>
 #include "ISource.h"
 #include <string>
-#include <pthread.h>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
 #include <memory>
+#include <thread>
 #include "SourceResult.h"
 
 class ISink
@@ -31,13 +31,12 @@ protected:
 private:
     std::shared_ptr<Logger> m_Logger;
 
-    static void* InvokeProcessingThread(void* p_Reference);
     void ProcessingThreadLoop();
     // called (via a listener registered on each bound source) whenever any bound source
     // publishes a new result; wakes ProcessingThreadLoop instead of it polling frame counts
     void NotifyDataAvailable();
 
-    pthread_t m_Thread = 0;
+    std::jthread m_Thread;
     std::atomic<bool> m_ShouldTerminate{ false };
 
     std::mutex m_WakeMutex;
@@ -56,6 +55,10 @@ private:
     bool m_RequireFrame;
     int m_MaxSources;
 
-    std::vector<std::pair<std::shared_ptr<ISource>, int>> m_Sources;
+    // uint64_t, matching ISource::GetCurrentFrameCount()'s return type exactly - this used to be
+    // a plain int compared against a uint64_t, which silently truncated (rather than failing to
+    // compile) once a source passed roughly 2^31 frames, and could then compare unequal to the
+    // real count forever afterward.
+    std::vector<std::pair<std::shared_ptr<ISource>, uint64_t>> m_Sources;
 };
 

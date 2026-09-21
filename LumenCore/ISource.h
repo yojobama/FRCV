@@ -7,8 +7,8 @@
 #include <condition_variable>
 #include <functional>
 #include <mutex>
-#include <pthread.h>
 #include <queue>
+#include <thread>
 #include <vector>
 
 class ISource
@@ -30,17 +30,27 @@ public:
 	void AddResultListener(std::function<void()> listener);
 protected:
 	void SetLatestResult(SourceResult result);
-	uint64_t m_FrameCount = 0;
+	// Written under m_ResultLock (in SetLatestResult) but read WITHOUT it by
+	// GetCurrentFrameCount(), called cross-thread from ISink::ProcessingThreadLoop - a plain
+	// uint64_t here was a genuine data race (undefined behaviour, not just "usually fine"),
+	// confirmed as a real bug worth fixing rather than a false-positive tidiness concern.
+	std::atomic<uint64_t> m_FrameCount{ 0 };
 	virtual void CaptureFrame(); // TODO: think about: should this be removed?
+	// Invoked once each, at the very start/end of the capture thread's lifetime (not per-frame).
+	// A default no-op here so every existing subclass keeps compiling unchanged; real camera
+	// backends override these for state that must live on the capture thread itself - MF's
+	// CoInitializeEx/MFStartup (COM apartment + thread-local state), V4L2's STREAMON/STREAMOFF.
+	// Bolting this on after backends exist would need a thread-local workaround instead.
+	virtual void OnCaptureThreadStart() {}
+	virtual void OnCaptureThreadStop() {}
 	std::shared_ptr<Logger> m_Logger;
 	bool m_DoNotLoadCaptureThread = false;
 private:
 	SourceResult m_LatestResult;
 
-	static void* SourceThreadStart(void* p_Reference);
 	void SourceThreadProc();
 	std::mutex m_ResultLock;
-	pthread_t m_Thread = 0;
+	std::jthread m_Thread;
 	std::atomic<bool> m_ShouldTerminate{ false };
 	bool m_ToggleState = false;
 

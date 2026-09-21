@@ -6,6 +6,7 @@
 #include "StereoCalibrationResult.h"
 #include "StereoDepthBackendKind.h"
 #include "StereoFrameOutput.h"
+#include "StereoPairer.h"
 
 #include <memory>
 #include <optional>
@@ -65,7 +66,7 @@ private:
 	StereoFrameOutput m_FrameOutput;
 
 	std::string m_LeftSourceId, m_RightSourceId;
-	std::optional<SourceResult> m_PendingLeft, m_PendingRight;
+	std::optional<StereoPairer> m_Pairer;
 
 	// rectification maps, built once (or rebuilt if the source resolution changes - a
 	// calibration is only valid at the exact resolution it was computed at)

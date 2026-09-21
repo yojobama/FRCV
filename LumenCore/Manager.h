@@ -4,7 +4,6 @@
 #include <map>
 #include <random>
 #include <chrono>
-#include <pthread.h>
 #include <memory>
 
 #include "ISink.h"
@@ -17,6 +16,7 @@
 #include "StereoCalibrationResult.h"
 #include "StereoDepthBackendKind.h"
 #include "StereoFrameOutput.h"
+#include "CameraMode.h"
 
 using namespace std;
 
@@ -62,6 +62,35 @@ public:
 	// functions to create frame sources
 	int CreateCameraSource(CameraHardwareInfo info);
 	int CreateCameraSource(CameraHardwareInfo info, int id);
+
+	// Explicit resolution/fps/exposure control (ROADMAP.md Phase 3b) - throws if sourceId isn't a
+	// camera source at all, since that's a caller bug, not a routine failure the way an
+	// unsupported hardware control (a false return) is.
+	vector<CameraMode> GetCameraModes(int sourceId);
+	CameraMode GetCameraCurrentMode(int sourceId);
+	bool SetCameraMode(int sourceId, CameraMode mode);
+	bool SetCameraExposure(int sourceId, int exposureAbsolute);
+	bool SetCameraAutoExposure(int sourceId, bool enabled);
+	bool SetCameraGain(int sourceId, int gain);
+
+	// splits one upstream source's frames into a fixed rectangular crop, zero-copy (ROADMAP.md
+	// Phase 3d) - the building block for side-by-side/top-bottom stereo: create two of these
+	// against the same upstream camera (one per eye's half), then bind each one into
+	// StereoCalibrator/StereoDepthNode exactly like two independent cameras. Binds itself to
+	// upstreamSourceId automatically; throws if upstreamSourceId doesn't exist.
+	int CreateRoiSource(int upstreamSourceId, int x, int y, int width, int height);
+
+	// ROADMAP.md Phase 7 (driver mode) - throws if sinkId isn't a detection sink that actually
+	// supports it (ApriltagDetector/ObjectDetectionSink today), since that's a caller bug, not a
+	// routine failure.
+	void SetDriverMode(int sinkId, bool enabled);
+	bool GetDriverMode(int sinkId);
+
+	// ROADMAP.md Phase 7 (snapshots) - saves sourceId's most recently published frame to a file
+	// (format inferred from the extension, via cv::imwrite - .png/.jpg/etc). Returns false if
+	// sourceId has never published a frame yet or the write itself fails (a bad path, an
+	// unwritable directory); throws only if sourceId doesn't exist at all.
+	bool SaveSnapshot(int sourceId, string path);
 	int CreateVideoFileSource(string path, int fps);
 	int CreateVideoFileSource(string path, int fps, int id);
 	int CreateImageFileSource(string path);
@@ -185,8 +214,6 @@ public:
 	int CreateDepthFusionNode(int id);
 	bool SetDepthFusionDepthNode(int fusionSinkId, int depthNodeSourceId);
 
-	int CreateRecordingSink(int sourceId);
-
 	// terminal sink: bind any JSON-producing source (ApriltagDetector, CameraCalibrator, future
 	// ObjectDetectionSink) to it and it publishes onto the configured NT4 server. Deliberately
 	// takes only primitive parameters rather than a config struct straight from
@@ -213,6 +240,12 @@ public:
 	// same reason as the NT4 methods above.
 	int CreateWebRTCSink(int bitrateKbps, int fps, string encoderName);
 	int CreateWebRTCSink(int id, int bitrateKbps, int fps, string encoderName);
+	// "h264_rkmpp" if this build's ffmpeg actually has it (real RK3588 hardware encode via
+	// nyanmisaka/ffmpeg-rockchip - see ROADMAP.md Phase 6 and cmake/LumenFFmpeg.cmake's own
+	// comment on why upstream FFmpeg's --enable-rkmpp is decode-only), else "libx264" - a real
+	// runtime probe (avcodec_find_encoder_by_name), not a platform guess, so this stays correct
+	// even on a Linux/aarch64 build that happens not to have the hardware ffmpeg build installed.
+	string GetPreferredWebRTCEncoder();
 	// non-trickle ICE: blocks until this peer's candidate gathering completes (bounded by a
 	// timeout inside WebRTCSink), then returns one complete SDP offer
 	string WebRTCCreateOffer(int sinkId);

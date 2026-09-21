@@ -45,8 +45,3 @@ data.json
 # Third-party: vkapriltag and codec-stereo are git submodules (tracked as a reference, not
 # ignored); only their build output is ignored, matching the rest of this file's
 # [Bb]in/[Oo]bj/build/ rules.
-
-# Local machine-specific MSBuild overrides (RemoteRootDir, SSH targets, etc.) - still needed
-# until the CMake migration removes the MSBuild toolchain entirely and this file goes with it;
-# Local.props.example (tracked, no secrets) is a different filename and is unaffected.
-Local.props

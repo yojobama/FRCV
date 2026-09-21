@@ -10,6 +10,11 @@ ISource::ISource(std::shared_ptr<Logger> p_Logger, std::string m_ID)
 
 ISource::~ISource()
 {
+	// previously a no-op: the capture thread outlived this object with nothing to stop it.
+	if (m_Thread.joinable()) {
+		m_ShouldTerminate = true;
+		m_Thread.join();
+	}
 }
 
 std::string ISource::GetID()
@@ -28,12 +33,12 @@ void ISource::Toggle(bool threadWantedAlive)
 
 	if (threadWantedAlive) {
 		m_ShouldTerminate = false;
-		pthread_create(&m_Thread, NULL, SourceThreadStart, this);
+		m_Thread = std::jthread([this] { SourceThreadProc(); });
 		m_ToggleState = true;
 	} else {
-		if (m_Thread) {
+		if (m_Thread.joinable()) {
 			m_ShouldTerminate = true;
-			pthread_join(m_Thread, NULL); // Wait for the thread to terminate
+			m_Thread.join(); // Wait for the thread to terminate
 			m_ToggleState = false;
 		}
 	}
@@ -109,17 +114,13 @@ SourceResult ISource::GetLatestResult()
 	return m_LatestResult;
 }
 
-void* ISource::SourceThreadStart(void* p_Reference)
-{
-	((ISource*)p_Reference)->SourceThreadProc();
-	return NULL;
-}
-
 void ISource::SourceThreadProc()
 {
+	OnCaptureThreadStart();
 	while (!m_ShouldTerminate) {
 		CaptureFrame();
 	}
+	OnCaptureThreadStop();
 	m_ShouldTerminate = false;
 }
 

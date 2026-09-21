@@ -2,6 +2,7 @@
 using EmbedIO.WebApi;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -44,6 +45,22 @@ namespace Server.Controllers.sources
         {
             SourceManager.Instance.DeleteSource(SourceID);
             return Task.CompletedTask;
+        }
+
+        // POST: save this source's most recently published frame to disk (ROADMAP.md Phase 7).
+        // fileName only, not a full path - resolved under a fixed snapshots/ directory (created
+        // on first use) rather than a caller-supplied path, so this can't be used to write
+        // somewhere unintended on the coprocessor's filesystem. Returns false if the source has
+        // never published a frame yet.
+        [Route(EmbedIO.HttpVerbs.Post, "/source/snapshot")]
+        public Task<bool> SaveSnapshot([QueryField] int SourceID, [QueryField] string fileName)
+        {
+            string snapshotDir = Path.Combine(AppContext.BaseDirectory, "snapshots");
+            Directory.CreateDirectory(snapshotDir);
+            string safeFileName = Path.GetFileName(fileName); // strips any directory components a caller tried to sneak in
+            string fullPath = Path.Combine(snapshotDir, safeFileName);
+            bool saved = ManagerWrapper.Instance.SaveSnapshot(SourceID, fullPath);
+            return Task.FromResult(saved);
         }
     }
 }
