@@ -73,16 +73,16 @@ namespace Server.Controllers.sinks
         // STEREO_IMPLEMENTATION_PLAN.md ss10.2; stereoRms alone does not predict codec-stereo
         // density/validity the way epipolarRms does.
         [Route(HttpVerbs.Post, "/stereoCalibrationSink/{id}/run")]
-        public Task<StereoCalibrationResult> RunCalibration(int id)
+        public Task<StereoCalibrationResultDto> RunCalibration(int id)
         {
-            return Task.FromResult(SinkManager.Instance.RunStereoCalibration(id));
+            return Task.FromResult(StereoCalibrationResultDto.From(SinkManager.Instance.RunStereoCalibration(id)));
         }
 
         // GET: retrieve the last calibration result computed by this sink
         [Route(HttpVerbs.Get, "/stereoCalibrationSink/{id}/result")]
-        public Task<StereoCalibrationResult> GetResult(int id)
+        public Task<StereoCalibrationResultDto> GetResult(int id)
         {
-            return Task.FromResult(SinkManager.Instance.GetStereoCalibrationResult(id));
+            return Task.FromResult(StereoCalibrationResultDto.From(SinkManager.Instance.GetStereoCalibrationResult(id)));
         }
     }
 }

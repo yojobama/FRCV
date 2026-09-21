@@ -1,6 +1,8 @@
 using EmbedIO;
 using EmbedIO.Routing;
 using EmbedIO.WebApi;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Server.Controllers.sinks
@@ -62,24 +64,24 @@ namespace Server.Controllers.sinks
         // persists the result (keyed by the bound camera's device path + resolution) if the
         // sink is bound to a camera source.
         [Route(HttpVerbs.Post, "/cameraCalibrationSink/{id}/run")]
-        public Task<CameraCalibrationResult> RunCalibration(int id)
+        public Task<CameraCalibrationResultDto> RunCalibration(int id)
         {
-            return Task.FromResult(SinkManager.Instance.RunCameraCalibration(id));
+            return Task.FromResult(CameraCalibrationResultDto.From(SinkManager.Instance.RunCameraCalibration(id)));
         }
 
         // GET: Retrieve the last calibration result computed by a camera calibration sink
         // (does NOT run calibration - call POST .../run first)
         [Route(HttpVerbs.Get, "/cameraCalibrationSink/{id}/result")]
-        public Task<CameraCalibrationResult> GetResult(int id)
+        public Task<CameraCalibrationResultDto> GetResult(int id)
         {
-            return Task.FromResult(SinkManager.Instance.GetCameraCalibrationResult(id));
+            return Task.FromResult(CameraCalibrationResultDto.From(SinkManager.Instance.GetCameraCalibrationResult(id)));
         }
 
         // GET: every calibration result ever saved to disk, across all cameras
         [Route(HttpVerbs.Get, "/cameraCalibrationSink/savedResults")]
-        public Task<List<StoredCalibration>> GetSavedResults()
+        public Task<List<StoredCalibrationDto>> GetSavedResults()
         {
-            return Task.FromResult(CalibrationManager.Instance.GetAll());
+            return Task.FromResult(CalibrationManager.Instance.GetAll().Select(StoredCalibrationDto.From).ToList());
         }
     }
 }

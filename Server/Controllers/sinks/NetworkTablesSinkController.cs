@@ -25,11 +25,11 @@ namespace Server.Controllers.sinks
             return Task.FromResult(sinkId);
         }
 
-        // GET: NT4 connection status for a given sink ({"connected":bool,"identity":...,...})
+        // GET: NT4 connection status for a given sink
         [Route(HttpVerbs.Get, "/networkTablesSink/status")]
-        public Task<string> GetStatus([QueryField] int sinkId)
+        public Task<NetworkTablesStatusDto> GetStatus([QueryField] int sinkId)
         {
-            return Task.FromResult(SinkManager.Instance.GetNetworkTablesSinkStatus(sinkId));
+            return Task.FromResult(NetworkTablesStatusDto.Parse(SinkManager.Instance.GetNetworkTablesSinkStatus(sinkId)));
         }
     }
 }

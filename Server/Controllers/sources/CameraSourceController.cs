@@ -36,9 +36,9 @@ namespace Server.Controllers.sources
 
         // POST: Create a camera source from a specified camera;
         [Route(EmbedIO.HttpVerbs.Post, "/cameraSource/create")]
-        public Task<int> Create([JsonData] CameraHardwareInfo hardwareInfo, [QueryField] string name = "default")
+        public Task<int> Create([JsonData] CameraHardwareInfoDto hardwareInfo, [QueryField] string name = "default")
         {
-            int sourceId = SourceManager.Instance.InitializeCameraSource(hardwareInfo, name);
+            int sourceId = SourceManager.Instance.InitializeCameraSource(hardwareInfo.ToNative(), name);
             return Task.FromResult(sourceId);
         }
 
@@ -59,10 +59,10 @@ namespace Server.Controllers.sources
 
         // GET: All available camers that have not yet been turns into a source;
         [Route(HttpVerbs.Get, "/cameraSource/getNotRegistered")]
-        public Task<CameraHardwareInfo[]> GetNotRegistered()
+        public Task<CameraHardwareInfoDto[]> GetNotRegistered()
         {
             CameraHardwareInfo[] cameraHardwareInfoArray = ManagerWrapper.Instance.EnumerateAvailableCameras().ToArray();
-            
+
             foreach (var item in SourceManager.Instance.GetAllSourceIds())
             {
                 Source source = SourceManager.Instance.GetSourceById(item);
@@ -72,32 +72,32 @@ namespace Server.Controllers.sources
                 }
             }
 
-            return Task.FromResult(cameraHardwareInfoArray);
+            return Task.FromResult(cameraHardwareInfoArray.Select(CameraHardwareInfoDto.From).ToArray());
         }
 
         // GET: every capture mode this camera actually advertises (ROADMAP.md Phase 3b).
         [Route(HttpVerbs.Get, "/cameraSource/{id}/modes")]
-        public Task<CameraMode[]> GetModes(int id)
+        public Task<CameraModeDto[]> GetModes(int id)
         {
-            return Task.FromResult(ManagerWrapper.Instance.GetCameraModes(id).ToArray());
+            return Task.FromResult(ManagerWrapper.Instance.GetCameraModes(id).Select(CameraModeDto.From).ToArray());
         }
 
         // GET: what the device is actually running right now - check isNative after a /mode PATCH
         // to see whether the request was honoured exactly or silently substituted (both V4L2 and
         // Media Foundation do this - see CameraMode's own comment).
         [Route(HttpVerbs.Get, "/cameraSource/{id}/currentMode")]
-        public Task<CameraMode> GetCurrentMode(int id)
+        public Task<CameraModeDto> GetCurrentMode(int id)
         {
-            return Task.FromResult(ManagerWrapper.Instance.GetCameraCurrentMode(id));
+            return Task.FromResult(CameraModeDto.From(ManagerWrapper.Instance.GetCameraCurrentMode(id)));
         }
 
         // PATCH: request an explicit capture mode. Returns whether the underlying ioctl/API call
         // itself succeeded - NOT whether the device honoured it exactly; re-GET /currentMode
         // afterwards for that.
         [Route(HttpVerbs.Patch, "/cameraSource/{id}/mode")]
-        public Task<bool> SetMode(int id, [JsonData] CameraMode mode)
+        public Task<bool> SetMode(int id, [JsonData] CameraModeDto mode)
         {
-            return Task.FromResult(ManagerWrapper.Instance.SetCameraMode(id, mode));
+            return Task.FromResult(ManagerWrapper.Instance.SetCameraMode(id, mode.ToNative()));
         }
 
         // PATCH: exposure/gain control - a fixed short exposure is what actually makes AprilTags

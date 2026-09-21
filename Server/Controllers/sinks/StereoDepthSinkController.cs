@@ -15,9 +15,9 @@ namespace Server.Controllers.sinks
         public Task<int> Create([QueryField] string name, [QueryField] StereoDepthBackendKind backend,
             [QueryField] double minDepthMeters, [QueryField] double maxDepthMeters,
             [QueryField] int maxSkewUs, [QueryField] StereoFrameOutput frameOutput,
-            [JsonData] StereoCalibrationResult calibration)
+            [JsonData] StereoCalibrationResultDto calibration)
         {
-            int sinkId = SinkManager.Instance.AddStereoDepthSink(name, backend, calibration, minDepthMeters, maxDepthMeters, maxSkewUs, frameOutput);
+            int sinkId = SinkManager.Instance.AddStereoDepthSink(name, backend, calibration.ToNative(), minDepthMeters, maxDepthMeters, maxSkewUs, frameOutput);
             return Task.FromResult(sinkId);
         }
 
@@ -40,13 +40,11 @@ namespace Server.Controllers.sinks
         // in /sink/getResult's JSON (capped in size, see StereoDepthNode's own "Outputs" note),
         // not here.
         [Route(HttpVerbs.Get, "/stereoDepthSink/{id}/stats")]
-        public Task<object> GetStats(int id)
+        public Task<StereoDepthStatsDto> GetStats(int id)
         {
-            return Task.FromResult<object>(new
-            {
-                validFraction = SinkManager.Instance.GetStereoDepthValidFraction(id),
-                medianDepthMeters = SinkManager.Instance.GetStereoDepthMedianDepthMeters(id),
-            });
+            return Task.FromResult(new StereoDepthStatsDto(
+                SinkManager.Instance.GetStereoDepthValidFraction(id),
+                SinkManager.Instance.GetStereoDepthMedianDepthMeters(id)));
         }
     }
 }

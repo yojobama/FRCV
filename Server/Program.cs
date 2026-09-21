@@ -2,9 +2,6 @@
 using EmbedIO.Files;
 using EmbedIO.WebApi;
 using EmbedIO.Cors;
-using Server.Controllers;
-using Server.Controllers.sources;
-using Server.Controllers.sinks;
 
 namespace Server
 {
@@ -18,32 +15,20 @@ namespace Server
                 .WithCors("*", "*", "*")
                 .WithWebApi("/api", m =>
                 {
-                    // sinks
-                    m.WithController<SinkController>();
-                    m.WithController<ApriltagSinkController>();
-                    m.WithController<CameraCalibrationSinkController>();
-                    m.WithController<NetworkTablesSinkController>();
-                    m.WithController<ObjectDetectionSinkController>();
-                    m.WithController<WebRTCSinkController>();
-                    m.WithController<StereoCalibrationSinkController>();
-                    m.WithController<StereoDepthSinkController>();
-                    m.WithController<DepthFusionSinkController>();
                     // RecordingSinkController/RecordSink were deleted outright rather than left
                     // half-implemented (ROADMAP.md Phase 0's own "implement or delete" decision):
                     // the C++ side never initialized its VideoWriter, Manager::CreateRecordingSink
                     // never actually registered a sink, and the controller only ever threw
                     // NotImplementedException - nothing real to keep.
-                    // sources
-                    m.WithController<SourceController>();
-                    m.WithController<ImageFileSourceController>();
-                    m.WithController<VideoFileSourceController>();
-                    m.WithController<CameraSourceController>();
-                    m.WithController<PipelineProfileController>();
-                    // models
-                    m.WithController<ModelController>();
-                    // others
-                    m.WithController<UDPController>();
-                    m.WithController<DeviceController>();
+                    //
+                    // Registered from RegisteredControllers.All (not one m.WithController<T>()
+                    // call per type) so this list and Server/OpenApi's generated document can
+                    // never drift apart - a controller reachable here is exactly a controller
+                    // documented there, and vice versa.
+                    foreach (var controllerType in RegisteredControllers.All)
+                    {
+                        m.WithController(controllerType);
+                    }
                 });
 
             // Serves the built React WebUI (npm run build in reactproject1, copied into

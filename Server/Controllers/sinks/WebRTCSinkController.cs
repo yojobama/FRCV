@@ -58,11 +58,11 @@ namespace Server.Controllers.sinks
             return Task.CompletedTask;
         }
 
-        // GET: connection status ({"connected":bool,"iceState":...,"gatheringComplete":bool})
+        // GET: connection status
         [Route(HttpVerbs.Get, "/webrtcSink/status")]
-        public Task<string> GetStatus([QueryField] int sinkId)
+        public Task<WebRtcStatusDto> GetStatus([QueryField] int sinkId)
         {
-            return Task.FromResult(SinkManager.Instance.GetWebRTCSinkStatus(sinkId));
+            return Task.FromResult(WebRtcStatusDto.Parse(SinkManager.Instance.GetWebRTCSinkStatus(sinkId)));
         }
 
         // GET: which encoder /webrtcSink/create would pick if encoderName is left unset -
