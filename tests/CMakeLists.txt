@@ -1,0 +1,74 @@
+#[[
+  ROADMAP.md Phase 5: a real ctest suite, replacing the dead pre-CMake UnitTests tree (which
+  compiled one file with every line commented out - zero actual coverage; not worth porting).
+
+  Catch2 via FetchContent rather than an installed system package: keeps the test toolchain
+  identical across WSL/Windows/the Pi with no extra install-deps.sh step, matching how OpenCV/
+  apriltag/etc. are already handled for this project's other dependencies where a matching
+  version isn't reliably available as a distro package.
+]]
+
+include(FetchContent)
+FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG v3.7.1
+)
+FetchContent_MakeAvailable(Catch2)
+
+add_executable(LumenCoreTests
+    test_source_result.cpp
+    test_source_sink_lifecycle.cpp
+    test_yolo_postprocess.cpp
+    test_camera_v4l2_hitl.cpp
+    test_roi_source.cpp
+    test_driver_mode.cpp
+    test_snapshot.cpp
+)
+
+if(LUMEN_WITH_RKNN)
+    # only buildable at all where RknnDetectionBackend.h itself has real content - see that
+    # header's own #ifdef LUMEN_WITH_RKNN guard. LumenCore's own LUMEN_WITH_RKNN compile
+    # definition is PRIVATE to its own target (deliberately - see LumenCore/CMakeLists.txt), so a
+    # test including RknnDetectionBackend.h directly needs the same define applied here too, or
+    # the #ifdef silently strips the header's entire contents for this translation unit.
+    target_sources(LumenCoreTests PRIVATE test_rknn_detection_hitl.cpp)
+    target_compile_definitions(LumenCoreTests PRIVATE LUMEN_WITH_RKNN)
+endif()
+
+if(LUMEN_WITH_CODEC_STEREO)
+    # same PRIVATE-compile-definition situation as LUMEN_WITH_RKNN above - CodecStereoBackend.h's
+    # own #ifdef LUMEN_WITH_CODEC_STEREO guard needs this define visible to the test's own
+    # translation unit too. No extra include dir/link needed: CodecStereoBackend.h only forward-
+    # declares cs_context (never includes codec-stereo's own cs.h), and the actual cs_* calls
+    # live inside CodecStereoBackend.cpp, already compiled into LumenCore itself.
+    target_sources(LumenCoreTests PRIVATE test_codec_stereo_rkmpp_hitl.cpp)
+    target_compile_definitions(LumenCoreTests PRIVATE LUMEN_WITH_CODEC_STEREO)
+endif()
+
+target_link_libraries(LumenCoreTests PRIVATE
+    LumenCore
+    Catch2::Catch2WithMain
+)
+
+# LumenCore's own headers aren't installed anywhere (this project has no `cmake --install` step
+# in its normal workflow - see LumenCore/CMakeLists.txt's packaging comment) so tests include
+# them straight from the source tree, the same way LumenCore/CMakeLists.txt itself does.
+target_include_directories(LumenCoreTests PRIVATE "${CMAKE_SOURCE_DIR}/LumenCore")
+
+# an absolute path, not a relative one - catch_discover_tests' default WORKING_DIRECTORY is the
+# test executable's own output directory, not this source directory, so a relative path to
+# data/coco_80_labels.txt would silently fail to resolve.
+target_compile_definitions(LumenCoreTests PRIVATE LUMEN_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+
+if(MSVC)
+    target_compile_definitions(LumenCoreTests PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+    target_compile_options(LumenCoreTests PRIVATE /utf-8)
+endif()
+
+# Catch2's own CMake integration module (Catch.cmake, providing catch_discover_tests) isn't on
+# CMAKE_MODULE_PATH by default when pulled in via FetchContent rather than find_package/install -
+# it ships under the fetched source tree's own extras/ directory.
+list(APPEND CMAKE_MODULE_PATH "${catch2_SOURCE_DIR}/extras")
+include(Catch)
+catch_discover_tests(LumenCoreTests)
