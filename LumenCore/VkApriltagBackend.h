@@ -1,5 +1,5 @@
 #pragma once
-#ifdef FRCV_WITH_VULKAN_APRILTAG
+#ifdef LUMEN_WITH_VULKAN_APRILTAG
 
 #include "IApriltagBackend.h"
 #include <vkapriltag/TagDecoder.h>
@@ -48,4 +48,4 @@ private:
 	std::unique_ptr<apriltag_vulkan::TagDecoder> m_TagDecoder;
 };
 
-#endif // FRCV_WITH_VULKAN_APRILTAG
+#endif // LUMEN_WITH_VULKAN_APRILTAG

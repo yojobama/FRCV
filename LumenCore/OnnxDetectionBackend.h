@@ -1,5 +1,5 @@
 #pragma once
-#ifdef FRCV_WITH_ONNX
+#ifdef LUMEN_WITH_ONNX
 
 #include "IDetectionBackend.h"
 #include <onnxruntime_cxx_api.h>
@@ -31,4 +31,4 @@ private:
 	std::string m_OutputName;
 };
 
-#endif // FRCV_WITH_ONNX
+#endif // LUMEN_WITH_ONNX

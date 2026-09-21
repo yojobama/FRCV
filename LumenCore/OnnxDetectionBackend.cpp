@@ -1,4 +1,4 @@
-#ifdef FRCV_WITH_ONNX
+#ifdef LUMEN_WITH_ONNX
 #include "OnnxDetectionBackend.h"
 #include "YoloPostProcess.h"
 #include <fstream>
@@ -101,4 +101,4 @@ std::vector<ObjectDetection> OnnxDetectionBackend::Infer(const cv::Mat& bgrFrame
 		m_Config.confThreshold, m_Config.nmsThreshold);
 }
 
-#endif // FRCV_WITH_ONNX
+#endif // LUMEN_WITH_ONNX

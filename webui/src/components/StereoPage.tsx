@@ -228,7 +228,7 @@ const StereoDepthCard: React.FC<{
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">2. Stereo Depth</h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
         Pick a calibration that's actually been run, a backend, and a depth range. STEREO_BACKEND_SGBM always works;
-        the codec-stereo backends need <code>FRCV_WITH_CODEC_STEREO</code> (on by default).
+        the codec-stereo backends need <code>LUMEN_WITH_CODEC_STEREO</code> (on by default).
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">

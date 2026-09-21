@@ -187,7 +187,7 @@ public:
 
 	int CreateRecordingSink(int sourceId);
 
-#ifdef FRCV_WITH_NT4
+#ifdef LUMEN_WITH_NT4
 	// terminal sink: bind any JSON-producing source (ApriltagDetector, CameraCalibrator, future
 	// ObjectDetectionSink) to it and it publishes onto the configured NT4 server. Deliberately
 	// takes only primitive parameters rather than a config struct straight from
@@ -201,7 +201,7 @@ public:
 	string GetNetworkTablesSinkStatus(int sinkId);
 #endif
 
-#ifdef FRCV_WITH_WEBRTC
+#ifdef LUMEN_WITH_WEBRTC
 	// terminal sink: bind any single frame-producing node (raw camera, or a detector's
 	// annotated output) and it encodes+streams it over WebRTC. Deliberately takes only
 	// primitive parameters - WebRTCSink.h pulls in libdatachannel's C++ API, which (like

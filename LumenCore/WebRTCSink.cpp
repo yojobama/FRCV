@@ -1,4 +1,4 @@
-#ifdef FRCV_WITH_WEBRTC
+#ifdef LUMEN_WITH_WEBRTC
 #include "WebRTCSink.h"
 #include <nlohmann/json.hpp>
 #include <stdexcept>
@@ -200,4 +200,4 @@ void WebRTCSink::Process(std::vector<SourceResult> results)
 	}
 }
 
-#endif // FRCV_WITH_WEBRTC
+#endif // LUMEN_WITH_WEBRTC

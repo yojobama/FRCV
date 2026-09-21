@@ -1,5 +1,5 @@
 #pragma once
-#ifdef FRCV_WITH_NT4
+#ifdef LUMEN_WITH_NT4
 
 #include "ISink.h"
 #include <networktables/NetworkTableInstance.h>
@@ -50,4 +50,4 @@ private:
 	uint64_t m_Heartbeat = 0;
 };
 
-#endif // FRCV_WITH_NT4
+#endif // LUMEN_WITH_NT4

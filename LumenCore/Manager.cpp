@@ -12,13 +12,13 @@
 #include "SystemMonitor.h"
 #include "ISink.h"
 #include "ObjectDetectionSink.h"
-#ifdef FRCV_WITH_ONNX
+#ifdef LUMEN_WITH_ONNX
 #include "OnnxDetectionBackend.h"
 #endif
-#ifdef FRCV_WITH_NT4
+#ifdef LUMEN_WITH_NT4
 #include "NetworkTablesSink.h"
 #endif
-#ifdef FRCV_WITH_WEBRTC
+#ifdef LUMEN_WITH_WEBRTC
 #include "WebRTCSink.h"
 #endif
 
@@ -793,7 +793,7 @@ int Manager::CreateObjectDetectionSink(int id, ObjectDetectionProvider provider,
 
     std::shared_ptr<IDetectionBackend> backend;
     switch (provider) {
-#ifdef FRCV_WITH_ONNX
+#ifdef LUMEN_WITH_ONNX
         case ONNX:
             backend = std::make_shared<OnnxDetectionBackend>();
             break;
@@ -832,7 +832,7 @@ int Manager::CreateRecordingSink(int sourceId)
     return id;
 }
 
-#ifdef FRCV_WITH_NT4
+#ifdef LUMEN_WITH_NT4
 int Manager::CreateNetworkTablesSinkForTeam(int teamNumber, string rootTable, string clientIdentity)
 {
     int id = GenerateUUID();
@@ -903,7 +903,7 @@ string Manager::GetNetworkTablesSinkStatus(int sinkId)
 }
 #endif
 
-#ifdef FRCV_WITH_WEBRTC
+#ifdef LUMEN_WITH_WEBRTC
 int Manager::CreateWebRTCSink(int bitrateKbps, int fps, string encoderName)
 {
     int id = GenerateUUID();

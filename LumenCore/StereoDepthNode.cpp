@@ -1,6 +1,6 @@
 #include "StereoDepthNode.h"
 #include "SgbmStereoBackend.h"
-#ifdef FRCV_WITH_CODEC_STEREO
+#ifdef LUMEN_WITH_CODEC_STEREO
 #include "CodecStereoBackend.h"
 #include <codec_stereo/cs_util.h> // cs_shift_gray8 - sign self-check
 #endif
@@ -55,7 +55,7 @@ StereoDepthNode::StereoDepthNode(std::shared_ptr<Logger> logger, std::string id,
 		int numDisparities = (int)std::ceil(dNear - minDisparity) + 16;
 		m_Backend = std::make_unique<SgbmStereoBackend>(blockW, blockH, minDisparity, numDisparities);
 	} else {
-#ifdef FRCV_WITH_CODEC_STEREO
+#ifdef LUMEN_WITH_CODEC_STEREO
 		CodecStereoBackend::Config cfg;
 		cfg.kind = backend;
 		cfg.blockW = blockW; cfg.blockH = blockH;
@@ -69,7 +69,7 @@ StereoDepthNode::StereoDepthNode(std::shared_ptr<Logger> logger, std::string id,
 #else
 		throw std::runtime_error(
 			"StereoDepthNode: a codec-stereo backend was requested but FRCV was built without "
-			"FRCV_WITH_CODEC_STEREO. Use STEREO_BACKEND_SGBM, or rebuild with the flag set - see "
+			"LUMEN_WITH_CODEC_STEREO. Use STEREO_BACKEND_SGBM, or rebuild with the flag set - see "
 			"STEREO_IMPLEMENTATION_PLAN.md ss10.1.");
 #endif
 	}
@@ -172,7 +172,7 @@ void StereoDepthNode::EnsureRectifyMaps(const cv::Size& sourceSize)
 
 void StereoDepthNode::RunSignSelfCheckIfNeeded(const cv::Mat& rectLeftGray)
 {
-#ifdef FRCV_WITH_CODEC_STEREO
+#ifdef LUMEN_WITH_CODEC_STEREO
 	if (m_SignCheckDone || m_BackendKind == STEREO_BACKEND_SGBM) { m_SignCheckDone = true; return; }
 
 	// synthesize a known 16px shift (left point at x visible in "right" at x+16, matching this

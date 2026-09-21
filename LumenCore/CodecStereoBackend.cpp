@@ -1,4 +1,4 @@
-#ifdef FRCV_WITH_CODEC_STEREO
+#ifdef LUMEN_WITH_CODEC_STEREO
 #include "CodecStereoBackend.h"
 #include <codec_stereo/cs.h>
 #include <stdexcept>
@@ -93,4 +93,4 @@ bool CodecStereoBackend::Compute(const cv::Mat& rectLeft, const cv::Mat& rectRig
 
 	return true;
 }
-#endif // FRCV_WITH_CODEC_STEREO
+#endif // LUMEN_WITH_CODEC_STEREO

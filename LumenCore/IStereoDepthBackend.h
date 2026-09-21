@@ -6,7 +6,7 @@
 // Shared invalid-cell marker for every backend's disparity output, deliberately matching
 // codec-stereo's own CS_DISPARITY_INVALID (cs.h) so StereoDepthNode's gating/rendering code is
 // identical regardless of which backend produced a given cell - and so this header doesn't need
-// to depend on cs.h (only CodecStereoBackend.cpp, built under FRCV_WITH_CODEC_STEREO, does).
+// to depend on cs.h (only CodecStereoBackend.cpp, built under LUMEN_WITH_CODEC_STEREO, does).
 #define STEREO_DISPARITY_INVALID (-1.0f)
 
 // Detection-only-style backend abstraction, same shape as IApriltagBackend/IDetectionBackend:

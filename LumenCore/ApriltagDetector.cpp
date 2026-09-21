@@ -2,7 +2,7 @@
 #include "ApriltagDetection.h"
 #include "CameraCalibrationResult.h"
 #include "CpuApriltagBackend.h"
-#ifdef FRCV_WITH_VULKAN_APRILTAG
+#ifdef LUMEN_WITH_VULKAN_APRILTAG
 #include "VkApriltagBackend.h"
 #endif
 
@@ -13,7 +13,7 @@ ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string i
 	if (logger) logger->EnterLog("ApriltagDetector constructed");
 
 	if (backendKind == APRILTAG_BACKEND_VULKAN) {
-#ifdef FRCV_WITH_VULKAN_APRILTAG
+#ifdef LUMEN_WITH_VULKAN_APRILTAG
 		try {
 			m_Backend = std::make_unique<VkApriltagBackend>(frameWidth, frameHeight);
 		} catch (const std::exception& e) {
@@ -25,7 +25,7 @@ ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string i
 		}
 #else
 		if (logger) logger->EnterLog(LogLevel::Warning,
-			"Vulkan AprilTag backend requested but FRCV_WITH_VULKAN_APRILTAG was not compiled in, falling back to CPU");
+			"Vulkan AprilTag backend requested but LUMEN_WITH_VULKAN_APRILTAG was not compiled in, falling back to CPU");
 		m_Backend = std::make_unique<CpuApriltagBackend>();
 #endif
 	} else {

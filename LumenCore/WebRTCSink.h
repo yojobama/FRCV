@@ -1,5 +1,5 @@
 #pragma once
-#ifdef FRCV_WITH_WEBRTC
+#ifdef LUMEN_WITH_WEBRTC
 
 #include "ISink.h"
 #include <rtc/rtc.hpp>
@@ -75,4 +75,4 @@ private:
 	int64_t m_FrameCounter = 0;
 };
 
-#endif // FRCV_WITH_WEBRTC
+#endif // LUMEN_WITH_WEBRTC

@@ -1,4 +1,4 @@
-#ifdef FRCV_WITH_VULKAN_APRILTAG
+#ifdef LUMEN_WITH_VULKAN_APRILTAG
 #include "VkApriltagBackend.h"
 #include <apriltag/tag36h11.h>
 
@@ -54,4 +54,4 @@ void VkApriltagBackend::ReleaseResult(zarray_t* /*detections*/)
 	// intentionally empty - see header
 }
 
-#endif // FRCV_WITH_VULKAN_APRILTAG
+#endif // LUMEN_WITH_VULKAN_APRILTAG

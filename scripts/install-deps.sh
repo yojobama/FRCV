@@ -236,7 +236,7 @@ build_opencv() {
 # backend and vkapriltag's VkApriltagBackend - and only the patched build exports the two
 # symbols (quad_decode_index, reconcile_detections) VkApriltagBackend needs. So there must be
 # exactly one apriltag in the system, and it must be this patched one; apt's package and a
-# vanilla source build are both wrong for this project once FRCV_WITH_VULKAN_APRILTAG is in play.
+# vanilla source build are both wrong for this project once LUMEN_WITH_VULKAN_APRILTAG is in play.
 APRILTAG_TAG="${APRILTAG_TAG:-v3.4.5}"
 
 build_apriltag() {

@@ -1,4 +1,4 @@
-#ifdef FRCV_WITH_NT4
+#ifdef LUMEN_WITH_NT4
 #include "NetworkTablesSink.h"
 
 namespace {
@@ -91,4 +91,4 @@ void NetworkTablesSink::Process(std::vector<SourceResult> results)
 	rootTable->PutNumber("heartbeat", static_cast<double>(m_Heartbeat++));
 }
 
-#endif // FRCV_WITH_NT4
+#endif // LUMEN_WITH_NT4

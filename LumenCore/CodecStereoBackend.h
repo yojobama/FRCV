@@ -1,5 +1,5 @@
 #pragma once
-#ifdef FRCV_WITH_CODEC_STEREO
+#ifdef LUMEN_WITH_CODEC_STEREO
 #include "IStereoDepthBackend.h"
 #include "StereoDepthBackendKind.h"
 #include <cstdint>
@@ -44,4 +44,4 @@ private:
 	Config m_Cfg;
 	cs_context* m_Ctx = nullptr;
 };
-#endif // FRCV_WITH_CODEC_STEREO
+#endif // LUMEN_WITH_CODEC_STEREO
