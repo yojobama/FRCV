@@ -25,6 +25,9 @@ namespace Server
                     m.WithController<NetworkTablesSinkController>();
                     m.WithController<ObjectDetectionSinkController>();
                     m.WithController<WebRTCSinkController>();
+                    m.WithController<StereoCalibrationSinkController>();
+                    m.WithController<StereoDepthSinkController>();
+                    m.WithController<DepthFusionSinkController>();
                     // RecordingSinkController is intentionally not registered yet: recording
                     // sink creation is still a bare `throw new NotImplementedException()`.
                     // sources
