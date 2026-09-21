@@ -1,0 +1,25 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+    "configurePresets": [
+        {
+            "name": "my-windows-x64-debug",
+            "displayName": "My machine: Windows x64 Debug",
+            "inherits": "windows-x64-debug",
+            "cacheVariables": {
+                "OnnxRuntime_ROOT": "C:/deps/onnxruntime-win-x64-1.20.0",
+                "WPILIB_ROOT": "C:/deps/wpilib-2025.3.2-windowsx86-64"
+            }
+        },
+        {
+            "name": "my-pi-arm64-release",
+            "displayName": "My machine: Orange Pi ARM64 Release",
+            "inherits": "pi-arm64-release",
+            "vendor": {
+                "microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
+                    "sshCommand": "ssh photon@192.168.55.139"
+                }
+            }
+        }
+    ]
+}
