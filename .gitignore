@@ -1,11 +1,11 @@
 # Visual Studio
-/FRCV/.vs/
-/.vs/
+.vs/
 
 # Build outputs
-/FRCV/**/[Bb]in/
-/FRCV/**/[Oo]bj/
-/FRCV/**/build/
+[Bb]in/
+[Oo]bj/
+build/
+out/
 *.user
 *.suo
 *.pdb
@@ -13,25 +13,39 @@
 *.exp
 *.so
 *.so.*
+*.dll
+*.lib
 
-# SWIG-generated (regenerated at build time)
-/FRCV/FRCVLib/swig_wrap.cxx
-/FRCV/Server/FRCVCore/*.cs
+# CMake
+CMakeUserPresets.json
+compile_commands.json
+.cache/
+
+# SWIG-generated (regenerated at build time). Unrooted and matched by directory name rather
+# than a full path rooted at the repo root: FRCVLib/FRCVCore are the pre-rename locations,
+# LumenCore/Interop the post-rename ones - keeping both patterns means this file stays correct
+# across the directory-flattening rename commit instead of needing to change in lockstep with it.
+swig_wrap.cxx
+**/FRCVCore/*.cs
+**/Interop/*.cs
 
 # Node / web
-/FRCV/reactproject1/node_modules/
-/FRCV/reactproject1/dist/
-/FRCV/reactproject1/C:npm-cache
+node_modules/
+/**/reactproject1/dist/
+/**/webui/dist/
+C:npm-cache
 
 # Runtime data
-/FRCV/Server/data.json
-/FRCV/Server/models/
-/FRCV/Server/*.log
-/FRCV/Server/*Log.txt
-/FRCV/**/DBLog.txt
+data.json
+/**/Server/models/
+*.log
+*Log.txt
 
-# Third-party: vkapriltag is a git submodule (tracked as a reference, not ignored);
-# only its build output is ignored, matching the rest of this file's [Bb]in/[Oo]bj/build/ rules.
+# Third-party: vkapriltag and codec-stereo are git submodules (tracked as a reference, not
+# ignored); only their build output is ignored, matching the rest of this file's
+# [Bb]in/[Oo]bj/build/ rules.
 
-# Local machine-specific MSBuild overrides (RemoteRootDir, SSH targets, etc.)
-/FRCV/**/Local.props
+# Local machine-specific MSBuild overrides (RemoteRootDir, SSH targets, etc.) - still needed
+# until the CMake migration removes the MSBuild toolchain entirely and this file goes with it;
+# Local.props.example (tracked, no secrets) is a different filename and is unaffected.
+Local.props
