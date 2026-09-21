@@ -61,6 +61,45 @@ public class LumenCoprocessorControl {
     }
 
     /**
+     * Switches which pipeline profile is running for a camera source - the coprocessor-side
+     * equivalent of PhotonVision's {@code setPipelineIndex}. Tears down whatever detection sink
+     * (AprilTag or object detection) is currently bound to that source and rebuilds it from the
+     * chosen profile's own settings; any WebRTC preview or NT4 publishing bound to that same
+     * source's detection output keeps working across the switch without needing to be re-bound
+     * (ROADMAP.md Phase 7 - see the coprocessor's own SourceManager.ActivateProfile).
+     *
+     * @param sourceId the coprocessor-side camera source id (not a sink id)
+     * @param profileIndex a profile index previously returned by creating a profile via the
+     *     coprocessor's own {@code POST /source/profiles/apriltag} or {@code
+     *     /source/profiles/objectDetection}
+     * @return true if the request round-tripped successfully; false on any network/HTTP failure
+     */
+    public boolean setPipelineIndex(int sourceId, int profileIndex) {
+        return sendPatch("/source/profiles/activate?sourceId=" + sourceId + "&index=" + profileIndex);
+    }
+
+    /**
+     * The currently active pipeline profile index for a camera source, or -1 if none has ever
+     * been activated, or on any network/HTTP failure (indistinguishable from "none activated" -
+     * callers needing to tell those apart should catch the underlying exception via a
+     * lower-level HTTP call instead, matching {@link #getDriverMode(int)}'s own note).
+     */
+    public int getPipelineIndex(int sourceId) {
+        try {
+            HttpRequest request =
+                    HttpRequest.newBuilder(URI.create(baseUrl + "/source/profiles/active?sourceId=" + sourceId))
+                            .GET()
+                            .timeout(Duration.ofSeconds(2))
+                            .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return response.statusCode() == 200 ? Integer.parseInt(response.body().trim()) : -1;
+        } catch (IOException | InterruptedException | NumberFormatException e) {
+            if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+            return -1;
+        }
+    }
+
+    /**
      * Saves a source's most recently published frame to a file on the coprocessor itself (not
      * transferred to the robot - this is for post-match/pit review, not something a robot
      * program should poll during a match).

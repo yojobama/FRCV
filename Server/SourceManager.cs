@@ -173,5 +173,120 @@ namespace Server
         {
             return ManagerWrapper.Instance.IsSourceActive(sourceId);
         }
+
+        // ROADMAP.md Phase 7: pipeline profiles - see PipelineProfile.cs for the design this
+        // implements. Index is assigned once and never reused after a delete, matching
+        // PhotonVision's own pipelineIndex semantics (a robot program's stored index must keep
+        // meaning the same profile even after an unrelated one is removed).
+        public int AddApriltagProfile(int sourceId, string name, double tagSize, int? calibratorSinkId,
+            ApriltagBackendKind backend, int frameWidth, int frameHeight, bool driverMode)
+        {
+            Source source = GetSourceById(sourceId) ?? throw new ArgumentException($"no source with id {sourceId}");
+            int index = source.Profiles.Count == 0 ? 0 : source.Profiles.Max(p => p.Index) + 1;
+            source.Profiles.Add(new PipelineProfile
+            {
+                Index = index,
+                Name = name,
+                Kind = DetectionSinkKind.ApriltagSink,
+                TagSize = tagSize,
+                CalibratorSinkId = calibratorSinkId,
+                Backend = backend,
+                FrameWidth = frameWidth,
+                FrameHeight = frameHeight,
+                DriverMode = driverMode
+            });
+            DB.Instance.Save();
+            return index;
+        }
+
+        public int AddObjectDetectionProfile(int sourceId, string name, int modelId)
+        {
+            Source source = GetSourceById(sourceId) ?? throw new ArgumentException($"no source with id {sourceId}");
+            int index = source.Profiles.Count == 0 ? 0 : source.Profiles.Max(p => p.Index) + 1;
+            source.Profiles.Add(new PipelineProfile
+            {
+                Index = index,
+                Name = name,
+                Kind = DetectionSinkKind.ObjectDetectionSink,
+                ModelId = modelId
+            });
+            DB.Instance.Save();
+            return index;
+        }
+
+        public void DeleteProfile(int sourceId, int index)
+        {
+            Source source = GetSourceById(sourceId) ?? throw new ArgumentException($"no source with id {sourceId}");
+            if (source.ActiveProfileIndex == index)
+                throw new InvalidOperationException("cannot delete the active profile - activate a different one first");
+            source.Profiles.RemoveAll(p => p.Index == index);
+            DB.Instance.Save();
+        }
+
+        public List<PipelineProfile> GetProfiles(int sourceId)
+        {
+            Source source = GetSourceById(sourceId) ?? throw new ArgumentException($"no source with id {sourceId}");
+            return source.Profiles;
+        }
+
+        // writes a field layout JSON onto one profile (not the sink it may currently be running
+        // as - see PipelineProfile.FieldLayoutPath's own comment on why this is profile-scoped),
+        // and if that profile happens to be the active one, applies it to the live sink
+        // immediately so a caller doesn't have to reactivate the same index just to pick it up.
+        public void SetProfileFieldLayout(int sourceId, int index, string path)
+        {
+            Source source = GetSourceById(sourceId) ?? throw new ArgumentException($"no source with id {sourceId}");
+            PipelineProfile profile = source.Profiles.FirstOrDefault(p => p.Index == index)
+                ?? throw new ArgumentException($"source {sourceId} has no profile at index {index}");
+            profile.FieldLayoutPath = path;
+            DB.Instance.Save();
+
+            if (source.ActiveProfileIndex == index && source.ActiveDetectionSinkId.HasValue)
+                ManagerWrapper.Instance.LoadFieldLayout(source.ActiveDetectionSinkId.Value, path);
+        }
+
+        // Tears down whatever detection sink is currently running for this source (if any) and
+        // recreates it from the chosen profile's settings, AT THE SAME sink id
+        // (source.ActiveDetectionSinkId) once one has ever been assigned. Preserving that id is
+        // what lets a WebRTC preview or NetworkTablesSink stay configured against "this source's
+        // detection output" across a switch rather than needing to be re-pointed every time a
+        // profile changes - but Manager::DeleteSink natively unbinds every other sink from the
+        // one it deletes (it walks m_Sinks and calls UnbindSource on each), so those downstream
+        // bindings are captured before the delete and explicitly re-established after the
+        // replacement sink comes up at the same id.
+        public void ActivateProfile(int sourceId, int profileIndex)
+        {
+            Source source = GetSourceById(sourceId) ?? throw new ArgumentException($"no source with id {sourceId}");
+            PipelineProfile profile = source.Profiles.FirstOrDefault(p => p.Index == profileIndex)
+                ?? throw new ArgumentException($"source {sourceId} has no profile at index {profileIndex}");
+
+            List<int> downstreamSinkIds = source.ActiveDetectionSinkId.HasValue
+                ? SinkManager.Instance.GetSinksBoundToSource(source.ActiveDetectionSinkId.Value)
+                : new List<int>();
+
+            int? explicitId = source.ActiveDetectionSinkId;
+            if (explicitId.HasValue)
+                SinkManager.Instance.DeleteSink(explicitId.Value);
+
+            string sinkName = $"{source.Name} - {profile.Name}";
+            int sinkId = SinkManager.Instance.CreateOrReplaceDetectionSinkForProfile(sinkName, profile, explicitId);
+
+            SinkManager.Instance.BindSourceToSink(sinkId, sourceId);
+            foreach (int downstreamId in downstreamSinkIds)
+            {
+                SinkManager.Instance.BindSourceToSink(downstreamId, sinkId);
+            }
+            SinkManager.Instance.EnableSinkById(sinkId);
+
+            source.ActiveDetectionSinkId = sinkId;
+            source.ActiveProfileIndex = profileIndex;
+            DB.Instance.Save();
+        }
+
+        public int GetActiveProfileIndex(int sourceId)
+        {
+            Source source = GetSourceById(sourceId) ?? throw new ArgumentException($"no source with id {sourceId}");
+            return source.ActiveProfileIndex;
+        }
     }
 }

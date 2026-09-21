@@ -116,7 +116,16 @@ namespace Server
             {
                 switch (type)
                 {
-                    case "ApriltagSink":
+                    // "apriltagsink" is what DB.Load() actually passes (SinkType.ApriltagSink.
+                    // ToString(), lowercased) - it was missing here entirely (the "ApriltagSink"
+                    // label above never matches anything post-ToLowerInvariant()), which meant
+                    // every plain ApriltagSink silently failed to come back after a restart -
+                    // confirmed the hard way while verifying ROADMAP.md Phase 7's pipeline
+                    // profiles, which reconstruct correctly regardless since ActivateProfile
+                    // creates its own sink directly rather than going through this switch, but a
+                    // profile-less ApriltagSink had no such path. "apriltag"/"apritlag" kept for
+                    // whatever REST callers already pass the short form.
+                    case "apriltagsink":
                     case "apriltag":
                     case "apritlag": // backward-compatibility for misspelling
                         id = ManagerWrapper.Instance.CreateApriltagDetector(id.Value);
@@ -152,7 +161,9 @@ namespace Server
             {
                 switch (type)
                 {
+                    case "apriltagsink":
                     case "apriltag":
+                    case "apritlag":
                         id = ManagerWrapper.Instance.CreateApriltagDetector();
                         sinks.Add(new Sink(id.Value, name, SinkType.ApriltagSink));
                         break;
@@ -292,6 +303,69 @@ namespace Server
             sinks.Add(new Sink(id, name, SinkType.ObjectDetectionSink));
             DB.Instance.Save();
             return id;
+        }
+
+        // ROADMAP.md Phase 7 (pipeline profiles): (re)creates the one detection sink a
+        // PipelineProfile describes, applying every setting that has no live mutator on the
+        // native side (tag size, calibration, backend selection, model choice) at construction
+        // time and everything else (field layout, driver mode) via its own setter immediately
+        // after. When explicitId is set, creates at that exact id via the Manager overloads that
+        // accept one explicitly - used by SourceManager.ActivateProfile to preserve a source's
+        // ActiveDetectionSinkId across a profile switch, so nothing downstream needs rebinding
+        // by id (see that method's own comment on why bindings still need re-establishing even
+        // so - deleting the old sink at that id unbinds them natively regardless).
+        public int CreateOrReplaceDetectionSinkForProfile(string name, PipelineProfile profile, int? explicitId)
+        {
+            int id;
+            switch (profile.Kind)
+            {
+                case DetectionSinkKind.ApriltagSink:
+                    CameraCalibrationResult calibration = profile.CalibratorSinkId.HasValue
+                        ? ManagerWrapper.Instance.GetCameraCalibrationResult(profile.CalibratorSinkId.Value)
+                        : new CameraCalibrationResult();
+                    double tagSize = profile.TagSize ?? 0.1651;
+                    ApriltagBackendKind backend = profile.Backend ?? ApriltagBackendKind.APRILTAG_BACKEND_CPU;
+                    id = explicitId.HasValue
+                        ? ManagerWrapper.Instance.CreateApriltagDetector(explicitId.Value, calibration, tagSize,
+                            backend, profile.FrameWidth, profile.FrameHeight)
+                        : ManagerWrapper.Instance.CreateApriltagDetector(calibration, tagSize,
+                            backend, profile.FrameWidth, profile.FrameHeight);
+                    sinks.Add(new Sink(id, name, SinkType.ApriltagSink));
+
+                    if (!string.IsNullOrEmpty(profile.FieldLayoutPath))
+                        ManagerWrapper.Instance.LoadFieldLayout(id, profile.FieldLayoutPath);
+                    ManagerWrapper.Instance.SetDriverMode(id, profile.DriverMode);
+                    break;
+
+                case DetectionSinkKind.ObjectDetectionSink:
+                    if (!profile.ModelId.HasValue)
+                        throw new ArgumentException("ObjectDetectionSink profile has no ModelId set");
+                    var model = ModelManager.Instance.GetModel(profile.ModelId.Value);
+                    if (model == null) throw new ArgumentException($"no model with id {profile.ModelId.Value}");
+
+                    id = explicitId.HasValue
+                        ? ManagerWrapper.Instance.CreateObjectDetectionSink(explicitId.Value, ObjectDetectionProvider.ONNX,
+                            model.ModelPath, model.LabelsPath, model.Variant, model.ConfThreshold, model.NmsThreshold, model.InputSize)
+                        : ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX,
+                            model.ModelPath, model.LabelsPath, model.Variant, model.ConfThreshold, model.NmsThreshold, model.InputSize);
+                    sinks.Add(new Sink(id, name, SinkType.ObjectDetectionSink));
+                    break;
+
+                default:
+                    throw new ArgumentException($"unknown pipeline profile kind {profile.Kind}");
+            }
+
+            DB.Instance.Save();
+            return id;
+        }
+
+        // every sink currently bound (as its source) to sourceId - used by
+        // SourceManager.ActivateProfile to find the downstream sinks (WebRTC preview,
+        // NetworkTablesSink, etc.) that were reading a detection sink's output before it gets
+        // torn down and recreated, so they can be rebound afterwards.
+        public List<int> GetSinksBoundToSource(int sourceId)
+        {
+            return sinks.Where(s => s.Source != null && s.Source.Id == sourceId).Select(s => s.Id).ToList();
         }
 
         // creates a NetworkTablesSink that connects to a server via team number (e.g. 1234 ->

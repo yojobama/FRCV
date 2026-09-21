@@ -30,6 +30,16 @@ namespace Server
         public CameraHardwareInfo? CameraHardwareInfo { get; set; } // Optional camera hardware info for camera sources
         public int? Fps { get; set; } // Optional frames per second for camera sources
         public string? FilePath { get; set; } // Optional file path for image or video sources
+
+        // ROADMAP.md Phase 7: pipeline profiles - see PipelineProfile.cs for the full design.
+        // ActiveDetectionSinkId is the stable sink id every profile activation reuses (created
+        // fresh the first time a profile is ever activated for this source, then torn down and
+        // recreated in place on every subsequent switch) so downstream bindings never have to
+        // change. ActiveProfileIndex is -1 when no profile has been activated yet.
+        public List<PipelineProfile> Profiles { get; set; } = new List<PipelineProfile>();
+        public int ActiveProfileIndex { get; set; } = -1;
+        public int? ActiveDetectionSinkId { get; set; }
+
         public SourceType Type
         {
             get { return type; }

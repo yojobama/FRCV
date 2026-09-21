@@ -70,6 +70,18 @@ namespace Server
                                 SourceManager.Instance.InitializeCameraSource(source.CameraHardwareInfo, id: source.Id);
                                 break;
                         }
+
+                        // InitializeXxxSource above builds its OWN fresh Source object (native
+                        // creation always needs to run regardless of what's in the JSON), so the
+                        // pipeline-profile fields deserialized onto this loop's own `source`
+                        // never reach SourceManager's copy unless copied across explicitly here.
+                        Source restored = SourceManager.Instance.GetSourceById(source.Id);
+                        if (restored != null)
+                        {
+                            restored.Profiles = source.Profiles ?? new List<PipelineProfile>();
+                            restored.ActiveProfileIndex = source.ActiveProfileIndex;
+                            restored.ActiveDetectionSinkId = source.ActiveDetectionSinkId;
+                        }
                     }
                     foreach (var sink in sinks)
                     {
@@ -119,6 +131,31 @@ namespace Server
                             && sink.Type != SinkType.StereoCalibrationSink)
                         {
                             SinkManager.Instance.EnableSinkById(sink.Id);
+                        }
+                    }
+
+                    // ROADMAP.md Phase 7 (pipeline profiles): the loops above already recreated
+                    // a source's ActiveDetectionSinkId generically (it's a perfectly ordinary
+                    // entry in the persisted `sinks` list), but AddSink has no notion of a
+                    // profile's own settings - tag size, calibration, field layout and driver
+                    // mode would all silently come back at their defaults after a restart
+                    // otherwise. ActivateProfile deletes and properly recreates it from the
+                    // profile's real settings; the brief double-creation is harmless (once at
+                    // startup) and reusing ActivateProfile here is what keeps this in sync with
+                    // the exact same downstream-rebinding logic a live profile switch uses,
+                    // rather than a second, easy-to-drift copy of it.
+                    foreach (var source in sources)
+                    {
+                        if (source.ActiveProfileIndex >= 0 && source.Profiles.Any(p => p.Index == source.ActiveProfileIndex))
+                        {
+                            try
+                            {
+                                SourceManager.Instance.ActivateProfile(source.Id, source.ActiveProfileIndex);
+                            }
+                            catch (Exception ex)
+                            {
+                                logger.EnterLog($"Failed to reactivate pipeline profile {source.ActiveProfileIndex} for source {source.Id}: {ex.Message}");
+                            }
                         }
                     }
 

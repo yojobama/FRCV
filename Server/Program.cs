@@ -38,6 +38,7 @@ namespace Server
                     m.WithController<ImageFileSourceController>();
                     m.WithController<VideoFileSourceController>();
                     m.WithController<CameraSourceController>();
+                    m.WithController<PipelineProfileController>();
                     // models
                     m.WithController<ModelController>();
                     // others
