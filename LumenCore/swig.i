@@ -1,4 +1,4 @@
-%module libFRCVLib
+%module LumenCore
 %{
 #include "Manager.h"
 #include "CameraCalibrationResult.h"
