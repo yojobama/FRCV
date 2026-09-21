@@ -1,11 +1,16 @@
-# FRCV — Next-Cycle Roadmap
+# LumenVision — Next-Cycle Roadmap
 
-Companion to `IMPLEMENTATION_PLAN.md` (phases 1–9, mostly landed) and
-`STEREO_IMPLEMENTATION_PLAN.md` (phase 10). Those two describe how the current system was
-built. This one covers the six things that come next, plus the three cross-cutting decisions
-(name, build system, on-board planning) that have to be settled before or alongside them.
+Companion to `docs/history/IMPLEMENTATION_PLAN.md` (phases 1–9, mostly landed) and
+`docs/history/STEREO_IMPLEMENTATION_PLAN.md` (phase 10). Those two describe how the current
+system was built. This one covers the six things that come next, plus the three cross-cutting
+decisions (name, build system, on-board planning) that have to be settled before or alongside
+them.
 
-Written 2026-09-21, against `feature/stereo-vision` @ `6d403cf`.
+Written 2026-09-21, against `feature/stereo-vision` @ `6d403cf`. **Update:** the name is
+settled (Phase A1, below, is done — the project is now LumenVision, see `docs/RENAME.md` for
+the identifier-by-identifier record) and the CMake/Windows-port work (Phase A2) is under way; a
+much more detailed, hazard-by-hazard plan for both covers ground this document's Phase A only
+sketches.
 
 ---
 
@@ -14,7 +19,7 @@ Written 2026-09-21, against `feature/stereo-vision` @ `6d403cf`.
 The six requested items are not six independent work streams. Three of them
 — **side-by-side stereo cameras (4)**, **requesting a specific capture resolution (5)** and
 **stopping the waste of treating `cv::Mat` as the universal currency (6)** — are all blocked on
-the same missing piece: **FRCV has no capture layer.** `CameraFrameSource` is 52 lines that do
+the same missing piece: **LumenVision has no capture layer.** `CameraFrameSource` is 52 lines that do
 `cv::VideoCapture(devicePath, cv::CAP_V4L2)` and `capture >> mat`. It never calls
 `set(CAP_PROP_FRAME_WIDTH/HEIGHT/FPS/FOURCC)`, never enumerates what the device can do, and hands
 downstream nodes a CPU-side BGR `cv::Mat` that the V4L2 backend produced by decoding MJPEG and
@@ -42,51 +47,68 @@ Two more structural facts worth stating up front, because the plan is ordered ar
 Everything else is cheaper after these. None of them are features; all three are the kind of
 work that gets more expensive the longer it waits.
 
-### A1. Settle the name, then rename once *(see Q2)*
+### A1. Settle the name, then rename once — ✅ DONE
 
-**Do this before the vendordep exists, not after.** Once a team has
-`implementation 'org.<name>:<name>-java:2026.1.0'` in their `build.gradle` and
-`/FRCV/<node>` hardcoded in their dashboard layouts, renaming costs every user a migration.
-Before that point it costs one afternoon.
+Named **LumenVision**. Done before the vendordep exists rather than after, since once a team has
+`implementation 'org.lumenvision:lumenvision-java:2026.1.0'` in their `build.gradle` and
+`/lumenvision/<node>` hardcoded in their dashboard layouts, renaming would cost every user a
+migration.
 
-Surface area of a rename: repo name · `FRCVLib`/`Server` project names · the `frcv` Java package
-in `RobotSideJava` · NT root table default (`FRCV`) · mDNS hostname (`frcv.local`) · systemd unit
-(`frcv.service`) · `/opt/frcv` · `FRCV_WITH_*` preprocessor flags · `libFRCVLib.so` ·
-`calibrations.json`/`stereoCalibrations.json` and their sibling config · maven group id · the
-`FRCV_BUILD_ROOT` env var in `install-deps.sh`.
+Full surface covered: repo layout flattened and renamed (`LumenCore`/`Server`/`webui`/`robot`),
+the `frcv` Java package moved to `org.lumenvision.lib`, the NT4 root table and client identity
+(now two independent literals, not one shared default — see `docs/RENAME.md`), the systemd unit
+(`lumenvision.service`, user/group `lumen`, `/opt/lumenvision`), the SWIG module and every
+`FRCV_WITH_*` flag (→ `LUMEN_WITH_*`), `libFRCVLib.so` → `libLumenCore.so`, the dependency cache
+(`LUMEN_BUILD_ROOT`, migrated from `~/.frcv-build` with a back-symlink rather than a bare `mv`,
+since most of what's cached there is non-relocatable CMake build trees). `calibrations.json`/
+`stereoCalibrations.json` were checked and don't carry the name — nothing to do there. The full
+old→new identifier table is in `docs/RENAME.md`.
 
-Effort: **S** (1 day), and it only ever gets bigger.
+Not done as part of the rename, deliberately: the Pi's own hostname stays `photonvision.local`
+(the board keeps the PhotonVision image; an avahi alias is planned instead of a hostname change
+— tracked in Phase 4 below) and a real per-device NT4 client identity default (hostname-derived
+or similar) is left to the vendordep phase rather than invented here.
 
-### A2. Move FRCVLib to CMake + CMakePresets *(see Q3)*
+### A2. Move LumenCore to CMake + CMakePresets — in progress
 
-`FRCVLib.vcxproj` is the only component in the whole tree that is not already CMake — OpenCV,
+`LumenCore.vcxproj` is the only component in the whole tree that is not already CMake — OpenCV,
 apriltag, vkapriltag, codec-stereo, libdatachannel and ntcore are all built by `install-deps.sh`
 with `cmake -G Ninja`. The vcxproj hardcodes `/usr/local/include;...` include lists and
 `../third_party/.../libcodec_stereo.a` paths per configuration, which is exactly where blockers
 B1/B2 came from, and encodes feature flags as a semicolon-delimited MSBuild property string
-(`FrcvCommonDefines`) that has to be kept in sync by hand with *two* separate `swig` invocations
-(`FRCVLib.vcxproj:189` and `Server.csproj:143`).
+(`LumenCommonDefines`) that has to be kept in sync by hand with *two* separate `swig` invocations
+(`LumenCore.vcxproj:189` and `Server.csproj:143`).
 
 Target shape:
 
 ```
-CMakeLists.txt              # project(), option(FRCV_WITH_RKNN ...), add_subdirectory
-FRCVLib/CMakeLists.txt      # the .so, plus UseSWIG for the C# bindings
+CMakeLists.txt              # project(), option(LUMEN_WITH_RKNN ...), add_subdirectory
+LumenCore/CMakeLists.txt    # the .so, plus UseSWIG for the C# bindings
 cmake/FindRKNN.cmake  FindRockchipMPP.cmake  FindRGA.cmake
-CMakePresets.json           # wsl-x64-{debug,release}, pi-arm64-{debug,release},
-                            # linux-native, ci-arm64-container
+CMakePresets.json           # windows-x64-{debug,release}, wsl-x64-{debug,release},
+                            # pi-arm64-{debug,release}, ci-{linux,windows}-{x64,arm64}
 ```
 
-`Server.csproj` and `reactproject1` stay as they are — both are already cross-platform. Keep a
-thin `.sln` for those two if the VS muscle memory is worth it.
+`Server.csproj` and `webui` stay as they are — both are already cross-platform. Keep a slim
+`LumenVision.sln` for those two, since VS's CMake support drives the Windows/WSL/remote-SSH C++
+targets from the same `CMakePresets.json` a plain folder-open gets you.
 
 Deliverables: presets that build identically from VS-on-Windows, from `cmake --build` on any
-Linux box, and from CI; `find_package`/`pkg_check_modules` replacing every hardcoded path;
-`swig_add_library(... LANGUAGE csharp)` replacing both hand-rolled `swig` calls; a GitHub Actions
-workflow producing an arm64 `.deb` via CPack.
+Linux box, and from CI; `find_package`/`pkg_check_modules` replacing every hardcoded path (and
+fixing a real bug found along the way — the ARM64 config's `-lopencv_calib3d` "no-as-needed"
+hack links a stray OpenCV 4.15 install's `calib3d` into an otherwise-OpenCV-5 library; `find_package(OpenCV
+5.0 COMPONENTS ... calib stereo geometry)` uses OpenCV 5's real module names and removes the
+need for the hack entirely, rather than just porting it); `swig_add_library(... LANGUAGE csharp)`
+replacing both hand-rolled `swig` calls; a GitHub Actions workflow producing an arm64 `.deb` via
+CPack. This also covers the requirement that the capture layer (Phase B) build and run natively
+on Windows — the primary dev environment — which the current `ApplicationType=Linux` vcxproj
+cannot express at all; a Windows configuration needs a genuinely different project file, which
+is the concrete reason CMake is now a prerequisite rather than a nice-to-have.
 
-Effort: **M** (2–3 days incl. CI). Keep the vcxproj for one release as a fallback, then delete
-it — do not maintain both.
+Effort: **M** (2–3 days incl. CI), **L** counting the Windows port. Delete the vcxproj in the
+same commit CMake lands rather than keeping it "for one release" — once the SWIG module name
+changed, `Server.csproj` would need two parallel native-library discovery paths to support both
+side by side, for no real benefit; git history is the fallback.
 
 ### A3. Make the test project real
 
@@ -259,7 +281,7 @@ Resize, crop, colour-space conversion and YOLO letterboxing on the Rockchip 2D e
 
 ### C5. A benchmark you can quote
 
-`frcv-bench`: fixed input corpus, per-stage timing, published as a table in the README per
+`lumen-bench`: fixed input corpus, per-stage timing, published as a table in the README per
 configuration. This is also the marketing material — "we do X fps where PhotonVision does Y" is
 the argument that gets teams to switch, and you cannot make it without numbers.
 
@@ -296,14 +318,14 @@ redone after every change.
 
 PhotonVision's API is the *de facto* standard; the closer you are, the cheaper a team's switch.
 So: **mirror `photonlib`'s shape deliberately, and ship a compatibility package that makes
-migration a one-line import change.** Not a clone — FRCV has things Photon does not (per-target
+migration a one-line import change.** Not a clone — LumenVision has things Photon does not (per-target
 stereo range, a node graph) — but the 90% path should look familiar enough that a team's existing
 `RobotContainer` compiles after an import swap.
 
 ### E1. Transport and schema
 
 **NT4 only for robot-side data.** Delete the UDP prototype (`Server/UDPTransmiter.cs`,
-`Server/Controllers/UDPController.cs`, `frcv/UDPClient.java`) — two transports is two things to
+`Server/Controllers/UDPController.cs`, `org/lumenvision/lib/UDPClient.java`) — two transports is two things to
 debug at 11pm in the pit, and NT4 gets you AdvantageScope, Shuffleboard and Elastic for free.
 REST stays, for configuration from the WebUI only.
 
@@ -338,7 +360,7 @@ entirely on it:
 - The coprocessor timestamps captures with `nt::Now()` (offset-corrected against the NT4 server
   once connected), not raw wall clock, and puts that in the packet.
 - The vendordep converts to the RIO's FPGA timebase and exposes
-  `FrcvPipelineResult.getTimestampSeconds()` in exactly the units
+  `LumenPipelineResult.getTimestampSeconds()` in exactly the units
   `SwerveDrivePoseEstimator.addVisionMeasurement()` wants.
 - Expose the measured offset and a round-trip estimate in `.status`, so a bad clock is visible
   rather than silently wrong.
@@ -348,32 +370,32 @@ entirely on it:
 ```java
 package org.<name>.lib;
 
-FrcvCamera cam = new FrcvCamera("front");
-List<FrcvPipelineResult> unread = cam.getAllUnreadResults();   // the 2025+ Photon idiom
+LumenCamera cam = new LumenCamera("front");
+List<LumenPipelineResult> unread = cam.getAllUnreadResults();   // the 2025+ Photon idiom
 boolean ok = cam.isConnected();
 
-FrcvPipelineResult r = unread.get(unread.size() - 1);
+LumenPipelineResult r = unread.get(unread.size() - 1);
 r.hasTargets();  r.getTargets();  r.getBestTarget();
 r.getTimestampSeconds();          // FPGA timebase
 r.getMultiTagResult();            // Optional<MultiTargetPNPResult>
 
-FrcvTrackedTarget t = r.getBestTarget();
+LumenTrackedTarget t = r.getBestTarget();
 t.getYaw(); t.getPitch(); t.getArea(); t.getSkew();
 t.getFiducialId();  t.getDetectedObjectClassId();  t.getDetectedObjectConfidence();
 t.getBestCameraToTarget();        // Transform3d
 t.getAlternateCameraToTarget();  t.getPoseAmbiguity();
 t.getDetectedCorners();
-// FRCV-only, and the reason a team would choose it:
+// LumenVision-only, and the reason a team would choose it:
 t.getStereoDistanceMeters();      // OptionalDouble, from DepthFusionNode
 t.getStereoTranslation();         // Optional<Translation3d>
 
-FrcvPoseEstimator est = new FrcvPoseEstimator(
+LumenPoseEstimator est = new LumenPoseEstimator(
     fieldLayout, PoseStrategy.MULTI_TAG_PNP_ON_COPROCESSOR, robotToCamera);
 Optional<EstimatedRobotPose> pose = est.update(r);
 
-FrcvUtils.calculateDistanceToTargetMeters(...);   // same signatures as PhotonUtils
-FrcvUtils.estimateCameraToTargetTranslation(...);
-FrcvUtils.getYawToPose(...);  FrcvUtils.getDistanceToPose(...);
+LumenUtils.calculateDistanceToTargetMeters(...);   // same signatures as PhotonUtils
+LumenUtils.estimateCameraToTargetTranslation(...);
+LumenUtils.getYawToPose(...);  LumenUtils.getDistanceToPose(...);
 
 cam.setPipelineIndex(1);  cam.setDriverMode(true);  cam.takeInputSnapshot();
 cam.getCameraMatrix();    // Optional<Matrix<N3,N3>>
@@ -389,7 +411,7 @@ squatting someone else's namespace is not okay.)
 loud, unmissable DriverStation warning on mismatch. The single most common support question in
 FRC vision is "I updated one side and not the other."
 
-### E3. What the vendordep forces FRCV to grow
+### E3. What the vendordep forces LumenVision to grow
 
 - **Rotation in the AprilTag result.** `ApriltagDetector.cpp` publishes only `pose.t`
   (translation); the rotation lines are commented out. A `Transform3d` needs `pose.R`, and
@@ -399,7 +421,7 @@ FRC vision is "I updated one side and not the other."
 - **Multi-tag PnP on the coprocessor.** `cv::solvePnP` over all visible tags against the field
   layout in one shot — materially more accurate than averaging single-tag poses, and it is what
   `MULTI_TAG_PNP_ON_COPROCESSOR` means. Needs the season's `AprilTagFieldLayout` JSON on the Pi.
-- **Pipeline profiles.** `setPipelineIndex` has no meaning in FRCV today — there is a node graph,
+- **Pipeline profiles.** `setPipelineIndex` has no meaning in LumenVision today — there is a node graph,
   not a list of pipelines. Add named **profiles**: a saved graph configuration, switchable at
   runtime, indexed for NT compatibility. Teams genuinely need this ("tag mode" in auto, "game
   piece mode" in teleop), and it maps cleanly onto the profiles UI in Phase F.
@@ -416,7 +438,7 @@ FRC vision is "I updated one side and not the other."
   love it (grab the vendordep from the device you are already looking at).
 - C++ vendordep second (`cppDependencies`, headers plus a static lib, no JNI either).
 - Python / RobotPy third.
-- Simulation (a `VisionSystemSim` equivalent) fourth — design `FrcvCamera` to take an injected
+- Simulation (a `VisionSystemSim` equivalent) fourth — design `LumenCamera` to take an injected
   `NetworkTableInstance` now, so it can slot in later without an API break.
 
 Phase E effort: **L** (10–15 days for Java, schema and profiles; C++ and sim on top).

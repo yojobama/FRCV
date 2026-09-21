@@ -1,5 +1,8 @@
 # FRCV WebRTC Video Streaming Implementation
 
+> Written when this project was called FRCV. Left in its original FRCV-branded prose rather
+> than rewritten - see `docs/RENAME.md` for the old->new identifier table and why.
+
 ## Overview
 This implementation adds WebRTC video streaming capability to the FRCV system, allowing real-time streaming of sink preview images with H.264 encoding.
 

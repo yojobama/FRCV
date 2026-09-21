@@ -1,5 +1,8 @@
 # FRCV — Implementation Plan
 
+> Written when this project was called FRCV. Left in its original FRCV-branded prose rather
+> than rewritten - see `docs/RENAME.md` for the old->new identifier table and why.
+
 Target hardware: **Orange Pi 5 / 5 Plus (RK3588, aarch64)** running `ubuntu-rockchip` v2.4.0
 (Ubuntu 24.04 Server arm64), using the image's bundled `libmali` blob for Vulkan.
 Development on **Windows + Visual Studio**,

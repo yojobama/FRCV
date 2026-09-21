@@ -1,5 +1,8 @@
 # FRCV — Stereo depth (Phase 10)
 
+> Written when this project was called FRCV. Left in its original FRCV-branded prose rather
+> than rewritten - see `docs/RENAME.md` for the old->new identifier table and why.
+
 **Status:** planned, nothing implemented
 **Depends on:** `codec-stereo` (https://github.com/yojobama/codec-stereo) for disparity,
 OpenCV for stereo calibration and rectification
