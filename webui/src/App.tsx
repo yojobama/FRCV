@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
 import {
   Settings,
   Sun,
@@ -7,55 +8,40 @@ import {
   Target,
   Camera,
   BarChart3,
-  Plus,
-  X,
-  CheckCircle,
-  AlertCircle,
-  Circle,
-  MonitorSpeaker,
-  Activity,
   Wifi,
   WifiOff,
   AlertTriangle,
-  Cog,
-  XCircle,
-  StopCircle,
-  PlayCircle,
-  Settings2,
-  ExternalLink,
-  Trash2,
-  Link2,
-  Unlink,
-  ToggleLeft,
-  ToggleRight,
-  Layers
+  X,
+  Workflow,
+  Gauge,
+  Layers,
 } from 'lucide-react';
 import './App.css';
 import StereoPage from './components/StereoPage';
+import { DashboardPage } from './pages/DashboardPage';
+import { SourcesPage } from './pages/SourcesPage';
+import { SinksPage } from './pages/SinksPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { GraphPage } from './pages/GraphPage';
+import { MatchPage } from './pages/MatchPage';
 
-import type {
-  Source,
-  Sink,
-  SystemStats,
-  Settings as SettingsType,
-  Model,
-  AddSinkOptions,
-  NT4Defaults
-} from './types';
+import type { Source, Sink, SystemStats, Settings as SettingsType } from './types';
 
-import { WebRTCStream } from './components/WebRTCStream';
+import { Toast } from './components/Toast';
 import { AddSourceModal } from './components/AddSourceModal';
-import { BulkUploadComponent } from './components/BulkUploadComponent';
+import { AddSinkModal } from './components/AddSinkModal';
+import { ConfigureSourceModal, ConfigureSinkModal } from './components/ConfigureModals';
 import { useAppData, PUBLISHABLE_SINK_TYPES } from './hooks/useAppData';
-import { ApiService } from './services/ApiService';
 
 /***************************
- * Dark Mode Hook (original)
+ * Dark Mode Hook
  ***************************/
 const useDarkMode = () => {
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem('darkMode');
-    return saved ? JSON.parse(saved) : false;
+    // ROADMAP.md Phase 8b: dark by default (a change from the original light-first default) -
+    // an operator who has already set an explicit preference keeps it either way.
+    return saved ? JSON.parse(saved) : true;
   });
 
   useEffect(() => {
@@ -70,543 +56,6 @@ const useDarkMode = () => {
   return [darkMode, setDarkMode] as const;
 }
 
-/*****************
- * Toggle Switch Component
- *****************/
-const ToggleSwitch: React.FC<{ 
-  enabled: boolean; 
-  onChange: (enabled: boolean) => void;
-  disabled?: boolean;
-}> = ({ enabled, onChange, disabled = false }) => {
-  return (
-    <button
-      onClick={() => !disabled && onChange(!enabled)}
-      disabled={disabled}
-      className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-      } ${
-        enabled 
-          ? 'bg-green-600 dark:bg-green-500' 
-          : 'bg-gray-300 dark:bg-gray-600'
-      }`}
-      title={enabled ? 'Enabled - Click to disable' : 'Disabled - Click to enable'}
-    >
-      <span
-        className={`inline-block w-4 h-4 transform transition-transform bg-white rounded-full ${
-          enabled ? 'translate-x-6' : 'translate-x-1'
-        }`}
-      />
-    </button>
-  );
-};
-
-/*****************
- * Toast Component
- *****************/
-const Toast: React.FC<{ 
-  message: string; 
-  type: 'success' | 'error' | 'info'; 
-  onClose: () => void;
-}> = ({ message, type, onClose }) => {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 5000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  const getToastcolour = () => {
-    switch (type) {
-      case 'success': return 'bg-green-600';
-      case 'error': return 'bg-red-600';
-      case 'info': return 'bg-blue-600';
-      default: return 'bg-gray-600';
-    }
-  };
-
-  const getToastIcon = () => {
-    switch (type) {
-      case 'success': return <CheckCircle className="w-4 h-4" />;
-      case 'error': return <XCircle className="w-4 h-4" />;
-      case 'info': return <AlertCircle className="w-4 h-4" />;
-      default: return <Circle className="w-4 h-4" />;
-    }
-  };
-
-  return (
-    <div className={`fixed top-4 right-4 ${getToastcolour()} text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-slide-up`}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {getToastIcon()}
-          <span>{message}</span>
-        </div>
-        <button onClick={onClose} className="ml-3 text-white hover:text-gray-200">
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/****************
- * Modal Wrapper
- ****************/
-const Modal: React.FC<{ isOpen: boolean; onClose: () => void; title: string; children: React.ReactNode; wide?: boolean }> = ({
-  isOpen,
-  onClose,
-  title,
-  children,
-  wide = false
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className={`bg-white dark:bg-gray-800 rounded-lg p-6 w-full mx-4 max-h-[90vh] overflow-y-auto ${wide ? 'max-w-2xl' : 'max-w-md'}`}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Plus className="w-5 h-5" />
-            {title}
-          </h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/****************
- * Add Sink Modal
- ****************/
-const addSinkModalApi = new ApiService();
-
-const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAdd: (name: string, type: string, options?: AddSinkOptions) => void; }> = ({ isOpen, onClose, onAdd }) => {
-  const [name, setName] = useState('');
-  const [type, setType] = useState('ApriltagSink');
-
-  // AprilTag fields
-  const [tagSize, setTagSize] = useState(0.1651); // meters - 6.5" tags, FRC's usual size
-  const [apriltagBackend, setApriltagBackend] = useState(0); // 0 = CPU, 1 = Vulkan (vkapriltag)
-
-  // Object Detection fields
-  const [models, setModels] = useState<Model[]>([]);
-  const [modelsLoading, setModelsLoading] = useState(false);
-  const [modelId, setModelId] = useState<number | ''>('');
-  const [uploadingNewModel, setUploadingNewModel] = useState(false);
-  const [newModelName, setNewModelName] = useState('');
-  const [newModelVariant, setNewModelVariant] = useState(0); // 0 = YOLOv8, 1 = YOLOv11
-  const [newModelFile, setNewModelFile] = useState<File | null>(null);
-  const [newModelLabelsFile, setNewModelLabelsFile] = useState<File | null>(null);
-
-  const resetForm = () => {
-    setName('');
-    setType('ApriltagSink');
-    setTagSize(0.1651);
-    setApriltagBackend(0);
-    setModelId('');
-    setUploadingNewModel(false);
-    setNewModelName('');
-    setNewModelVariant(0);
-    setNewModelFile(null);
-    setNewModelLabelsFile(null);
-  };
-
-  // Refresh the model list every time the dialog is opened on the Object Detection type, so a
-  // model uploaded in a previous visit shows up without a full page reload.
-  useEffect(() => {
-    if (isOpen && type === 'object') {
-      setModelsLoading(true);
-      addSinkModalApi.getAllModels()
-        .then(list => {
-          setModels(list);
-          if (list.length > 0 && modelId === '') setModelId(list[0].id);
-        })
-        .catch(() => setModels([]))
-        .finally(() => setModelsLoading(false));
-    }
-  }, [isOpen, type]);
-
-  if (!isOpen) return null;
-
-  const canSubmit = (): boolean => {
-    if (!name.trim()) return false;
-    if (type === 'ApriltagSink') return tagSize > 0;
-    if (type === 'object') {
-      if (uploadingNewModel) return !!newModelName.trim() && !!newModelFile;
-      return modelId !== '';
-    }
-    return true;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!canSubmit()) return;
-
-    let options: AddSinkOptions | undefined;
-    if (type === 'ApriltagSink') {
-      options = { tagSize, backend: apriltagBackend };
-    } else if (type === 'object') {
-      options = uploadingNewModel
-        ? { newModel: { name: newModelName.trim(), variant: newModelVariant, inputSize: 640, confThreshold: 0.25, nmsThreshold: 0.45, modelFile: newModelFile!, labelsFile: newModelLabelsFile ?? undefined } }
-        : { modelId: modelId as number };
-    }
-
-    onAdd(name.trim(), type, options);
-    resetForm();
-    onClose();
-  };
-
-  return (
-    <Modal isOpen={isOpen} onClose={() => { resetForm(); onClose(); }} title="Add New Sink" wide>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Sink Name
-          </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-              placeholder="Enter sink name"
-              required
-            />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Sink Type
-          </label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-          >
-            <option value="ApriltagSink">AprilTag Detection</option>
-            <option value="calibration">Camera Calibration</option>
-            <option value="object">Object Detection (ONNX)</option>
-          </select>
-        </div>
-
-        {/* AprilTag: tag size and detector backend (CPU always available; Vulkan/vkapriltag
-            falls back to CPU automatically if the device has no usable GPU) */}
-        {type === 'ApriltagSink' && (
-          <div className="flex gap-2 p-3 border border-gray-200 dark:border-gray-700 rounded-md">
-            <div className="flex-1">
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Tag Size (meters)</label>
-              <input type="number" step="any" min="0.001" value={tagSize}
-                onChange={(e) => setTagSize(parseFloat(e.target.value) || 0.1651)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
-            </div>
-            <div className="flex-1">
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Backend</label>
-              <select value={apriltagBackend} onChange={(e) => setApriltagBackend(parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white">
-                <option value={0}>CPU (apriltag)</option>
-                <option value={1}>Vulkan (vkapriltag)</option>
-              </select>
-            </div>
-          </div>
-        )}
-
-        {/* Object Detection: pick an existing model, or upload a new one */}
-        {type === 'object' && (
-          <div className="space-y-3 p-3 border border-gray-200 dark:border-gray-700 rounded-md">
-            {!uploadingNewModel ? (
-              <>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Model</label>
-                {modelsLoading ? (
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Loading models...</div>
-                ) : models.length > 0 ? (
-                  <select
-                    value={modelId}
-                    onChange={(e) => setModelId(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-                  >
-                    {models.map(m => (
-                      <option key={m.id} value={m.id}>{m.name} ({m.variant === 1 ? 'YOLOv11' : 'YOLOv8'})</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-gray-500 dark:text-gray-400">No models uploaded yet.</div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setUploadingNewModel(true)}
-                  className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
-                >
-                  <Plus className="w-3 h-3" />Upload a new model instead
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">New Model</label>
-                  {models.length > 0 && (
-                    <button type="button" onClick={() => setUploadingNewModel(false)} className="text-blue-600 hover:text-blue-700 text-xs">
-                      Use an existing model instead
-                    </button>
-                  )}
-                </div>
-                <input
-                  type="text"
-                  value={newModelName}
-                  onChange={(e) => setNewModelName(e.target.value)}
-                  placeholder="Model name"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-                />
-                <select
-                  value={newModelVariant}
-                  onChange={(e) => setNewModelVariant(parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-                >
-                  <option value={0}>YOLOv8</option>
-                  <option value={1}>YOLOv11</option>
-                </select>
-                <div>
-                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Model weights (.onnx)</label>
-                  <input type="file" accept=".onnx" onChange={(e) => setNewModelFile(e.target.files?.[0] ?? null)}
-                    className="w-full text-sm text-gray-700 dark:text-gray-300" />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Class labels (optional, one per line)</label>
-                  <input type="file" accept=".txt" onChange={(e) => setNewModelLabelsFile(e.target.files?.[0] ?? null)}
-                    className="w-full text-sm text-gray-700 dark:text-gray-300" />
-                </div>
-              </>
-            )}
-          </div>
-        )}
-
-
-        <div className="flex justify-end space-x-3 mt-6">
-          <button type="button" onClick={() => { resetForm(); onClose(); }} className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">Cancel</button>
-          <button type="submit" disabled={!canSubmit()} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2">
-            <Plus className="w-4 h-4" />Add Sink
-          </button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-/*******************
- * Settings Modal
- *******************/
-const SettingsModal: React.FC<{ 
-  isOpen: boolean; 
-  onClose: () => void; 
-  settings: SettingsType; 
-  onSave: (settings: SettingsType) => void;
-}> = ({ isOpen, onClose, settings, onSave }) => {
-  const [localSettings, setLocalSettings] = useState(settings);
-  useEffect(()=> setLocalSettings(settings), [settings]);
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Settings">
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Server URL</label>
-          <input
-            type="text"
-            value={localSettings.serverUrl}
-            onChange={(e) => setLocalSettings({...localSettings, serverUrl: e.target.value})}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Refresh Interval (seconds)</label>
-          <input
-            type="number" min="1" max="60"
-            value={localSettings.refreshInterval}
-            onChange={(e) => setLocalSettings({...localSettings, refreshInterval: parseInt(e.target.value)})}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-          />
-        </div>
-        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">NetworkTables Connection</label>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Used by every node's "Publish to NT4" toggle - one robot only has one NT4 server to talk to.</p>
-          <div className="flex gap-4 text-sm mb-2">
-            <label className="flex items-center gap-1">
-              <input type="radio" checked={localSettings.nt4.mode === 'team'} onChange={() => setLocalSettings({...localSettings, nt4: {...localSettings.nt4, mode: 'team'}})} />Team Number
-            </label>
-            <label className="flex items-center gap-1">
-              <input type="radio" checked={localSettings.nt4.mode === 'server'} onChange={() => setLocalSettings({...localSettings, nt4: {...localSettings.nt4, mode: 'server'}})} />Server Address
-            </label>
-          </div>
-          {localSettings.nt4.mode === 'team' ? (
-            <input
-              type="number"
-              value={localSettings.nt4.teamNumber ?? ''}
-              onChange={(e) => setLocalSettings({...localSettings, nt4: {...localSettings.nt4, teamNumber: e.target.value === '' ? undefined : parseInt(e.target.value)}})}
-              placeholder="FRC team number, e.g. 1234"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white mb-2"
-            />
-          ) : (
-            <div className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={localSettings.nt4.serverAddress ?? ''}
-                onChange={(e) => setLocalSettings({...localSettings, nt4: {...localSettings.nt4, serverAddress: e.target.value}})}
-                placeholder="Server address, e.g. 10.0.0.2"
-                className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-              />
-              <input
-                type="number"
-                value={localSettings.nt4.port ?? ''}
-                onChange={(e) => setLocalSettings({...localSettings, nt4: {...localSettings.nt4, port: e.target.value === '' ? undefined : parseInt(e.target.value)}})}
-                placeholder="Port (default)"
-                className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-              />
-            </div>
-          )}
-          <input
-            type="text"
-            value={localSettings.nt4.rootTable}
-            onChange={(e) => setLocalSettings({...localSettings, nt4: {...localSettings.nt4, rootTable: e.target.value}})}
-            placeholder="Root table"
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
-          />
-        </div>
-      </div>
-      <div className="flex justify-end space-x-3 mt-6">
-        <button onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">Cancel</button>
-        <button onClick={() => { onSave(localSettings); onClose(); }} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2">
-          <CheckCircle className="w-4 h-4" />Save
-        </button>
-      </div>
-    </Modal>
-  );
-}
-
-/*******************
- * Configure Modals
- *******************/
-const ConfigureSourceModal: React.FC<{ isOpen:boolean; onClose:()=>void; source: Source|null; onRename:(name:string)=>void; onDelete:()=>void; }> = ({ isOpen, onClose, source, onRename, onDelete }) => {
-  const [name, setName] = useState(source?.name || '');
-  useEffect(()=> setName(source?.name || ''), [source]);
-  if(!isOpen || !source) return null;
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Configure Source #${source.id}`}>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name</label>
-          <input value={name} onChange={e=>setName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
-        </div>
-      </div>
-      <div className="flex justify-between mt-6">
-        <button onClick={()=> { if(confirm('Delete this source?')) { onDelete(); onClose(); } }} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-2">
-          <Trash2 className="w-4 h-4" />Delete
-        </button>
-        <div className="flex gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-400">Cancel</button>
-          <button onClick={()=> { onRename(name); onClose(); }} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-const ConfigureSinkModal: React.FC<{ isOpen:boolean; onClose:()=>void; sink: Sink|null; sources: Source[]; onRename:(name:string)=>void; onDelete:()=>void; onBind:(sourceId:number)=>void; onUnbind:(sourceId:number)=>void; }> = ({ isOpen, onClose, sink, sources, onRename, onDelete, onBind, onUnbind }) => {
-  const [name, setName] = useState(sink?.name || '');
-  const [selected, setSelected] = useState<number | ''>(sink?.sourceId ?? '');
-  const [enabled, setEnabled] = useState(sink?.isEnabled ?? false);
-    useEffect(() => { setName(sink?.name || ''); setSelected(sink?.sourceId ?? ''); setEnabled(sink?.isEnabled ?? false); }, [sink]);
-  if(!isOpen || !sink) return null;
-  const bound = sink.sourceId != null;
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Configure Sink #${sink.id}`}>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name</label>
-          <input value={name} onChange={e=>setName(e.target.value)} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Source Binding</label>
-          <div className="flex gap-2">
-            <select value={selected} onChange={e=>setSelected(e.target.value === '' ? '' : Number(e.target.value))} className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white">
-              <option value="">-- None --</option>
-              {sources.map(s => <option key={s.id} value={s.id}>{s.name} (ID {s.id})</option>)}
-            </select>
-            {bound ? (
-              <button onClick={()=> { if(sink.sourceId!=null){ onUnbind(sink.sourceId); setSelected(''); } }} className="px-3 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700 flex items-center gap-1"><Unlink className="w-4 h-4" />Unbind</button>
-            ) : (
-              <button disabled={selected===''} onClick={()=> { if(selected!==''){ onBind(Number(selected)); } }} className="px-3 py-2 bg-green-600 disabled:opacity-50 text-white rounded hover:bg-green-700 flex items-center gap-1"><Link2 className="w-4 h-4" />Bind</button>
-            )}
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Enabled</label>
-          <ToggleSwitch enabled={enabled} onChange={setEnabled} />
-        </div>
-      </div>
-      <div className="flex justify-between mt-6">
-        <button onClick={()=> { if(confirm('Delete this sink?')) { onDelete(); onClose(); } }} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-2">
-          <Trash2 className="w-4 h-4" />Delete
-        </button>
-        <div className="flex gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-gray-600 dark:text-gray-400">Cancel</button>
-          <button onClick={()=> { onRename(name); onClose(); }} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
-        </div>
-      </div>
-    </Modal>
-  );
-};
-
-/*********************
- * System Status Card
- *********************/
-const SystemStatus: React.FC<{ systemStats: SystemStats; deviceStats: any }> = ({ systemStats, deviceStats }) => (
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-all hover:shadow-lg">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sources</h3>
-          <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{systemStats.sources}</p>
-        </div>
-        <Camera className="w-10 h-10 text-blue-600" />
-      </div>
-    </div>
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-all hover:shadow-lg">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Sinks</h3>
-          <p className="text-3xl font-bold text-green-600 dark:text-green-400">{systemStats.sinks}</p>
-        </div>
-        <Target className="w-10 h-10 text-green-600" />
-      </div>
-    </div>
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-all hover:shadow-lg">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">CPU Usage</h3>
-          <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{deviceStats.cpuUsage}%</p>
-        </div>
-        <Activity className="w-10 h-10 text-purple-600" />
-      </div>
-    </div>
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-all hover:shadow-lg">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Server Status</h3>
-          <p className={`text-3xl font-bold ${
-            systemStats.serverStatus === 'online' ? 'text-green-600 dark:text-green-400' :
-            systemStats.serverStatus === 'offline' ? 'text-gray-600 dark:text-gray-400' :
-            'text-red-600 dark:text-red-400'
-          }`}>
-            {systemStats.serverStatus === 'online' ? 'Online' : 
-             systemStats.serverStatus === 'offline' ? 'Offline' : 'Error'}
-          </p>
-        </div>
-        {systemStats.serverStatus === 'online' ? 
-          <CheckCircle className="w-10 h-10 text-green-600" /> : 
-         systemStats.serverStatus === 'offline' ? 
-          <Circle className="w-10 h-10 text-gray-600" /> : 
-          <XCircle className="w-10 h-10 text-red-600" />}
-      </div>
-    </div>
-  </div>
-);
-
 /****************
  * Header & Nav
  ****************/
@@ -614,9 +63,10 @@ const Header: React.FC<{
   systemStats: SystemStats;
   darkMode: boolean;
   onToggleDarkMode: () => void;
-  onShowSettings: () => void;
   onRefresh: () => void;
-}> = ({ systemStats, darkMode, onToggleDarkMode, onShowSettings, onRefresh }) => (
+}> = ({ systemStats, darkMode, onToggleDarkMode, onRefresh }) => {
+  const navigate = useNavigate();
+  return (
   <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
     <div className="px-6 py-4">
       <div className="flex items-center justify-between">
@@ -626,27 +76,27 @@ const Header: React.FC<{
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">LumenVision</h1>
           </div>
           <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${
-            systemStats.serverStatus === 'online' 
-              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+            systemStats.serverStatus === 'online'
+              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
               : systemStats.serverStatus === 'error'
               ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
               : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
           }`}>
-            {systemStats.serverStatus === 'online' ? 
+            {systemStats.serverStatus === 'online' ?
               <>
                 <Wifi className="w-4 h-4" />Connected
-              </> : 
-             systemStats.serverStatus === 'error' ? 
+              </> :
+             systemStats.serverStatus === 'error' ?
               <>
                 <AlertTriangle className="w-4 h-4" />Error
-              </> : 
+              </> :
               <>
                 <WifiOff className="w-4 h-4" />Disconnected
               </>}
           </span>
         </div>
         <div className="flex items-center space-x-4">
-          <button onClick={onShowSettings} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600" title="Settings">
+          <button onClick={() => navigate('/settings')} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600" title="Settings">
             <Settings className="w-5 h-5" />
           </button>
           <button onClick={onToggleDarkMode} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600" title="Toggle dark mode">
@@ -659,405 +109,47 @@ const Header: React.FC<{
       </div>
     </div>
   </header>
-);
+  );
+};
 
-const Navigation: React.FC<{ currentTab: string; onTabChange: (tab: string) => void; streamingCount: number; }> = ({ currentTab, onTabChange, streamingCount }) => (
+const NAV_ITEMS = [
+  { to: '/', label: 'Dashboard', icon: BarChart3, end: true },
+  { to: '/graph', label: 'Graph', icon: Workflow, end: false },
+  { to: '/sources', label: 'Sources', icon: Camera, end: false },
+  { to: '/sinks', label: 'Sinks', icon: Target, end: false },
+  { to: '/stereo', label: 'Stereo', icon: Layers, end: false },
+  { to: '/match', label: 'Match', icon: Gauge, end: false },
+];
+
+const Navigation: React.FC<{ streamingCount: number }> = ({ streamingCount }) => (
   <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
     <div className="px-6">
       <div className="flex space-x-8">
-        {[{ id: 'dashboard', label: 'Dashboard', icon: BarChart3 },{ id: 'sources', label: 'Sources', icon: Camera },{ id: 'sinks', label: 'Sinks', icon: Target },{ id: 'stereo', label: 'Stereo', icon: Layers }].map(tab => (
-          <button key={tab.id} onClick={()=>onTabChange(tab.id)} className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colours ${currentTab===tab.id ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}`}>
-            <tab.icon className="w-4 h-4" />
-            <span>{tab.label}</span>
-            {tab.id === 'dashboard' && streamingCount > 0 && (
+        {NAV_ITEMS.map(item => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) => `flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${isActive ? 'border-blue-500 text-blue-600 dark:text-blue-400' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'}`}
+          >
+            <item.icon className="w-4 h-4" />
+            <span>{item.label}</span>
+            {item.to === '/' && streamingCount > 0 && (
               <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] h-5 flex items-center justify-center">{streamingCount}</span>
             )}
-          </button>
+          </NavLink>
         ))}
       </div>
     </div>
   </nav>
 );
 
-/*****************
- * Dashboard Page
- *****************/
-const DashboardPage: React.FC<{
-  systemStats: SystemStats;
-  deviceStats: any;
-  streamingSinks: Set<number>;
-  sources: Source[];
-  sinks: Sink[];
-  onStopAllStreams: () => void;
-  onStopStream: (id: number) => void;
-  onStreamError: (id: number, error: string) => void;
-  onTogglePreview: (node: {id:number; name:string}) => void;
-  onGoToSinks: () => void;
-  onGoToSources: () => void;
-  onStartUDP: () => void;
-  onStopUDP: () => void;
-  onToggleSink: (id: number, enabled: boolean) => void;
-}> = ({ systemStats, deviceStats, streamingSinks, sources, sinks, onStopAllStreams, onStopStream, onStreamError, onTogglePreview, onGoToSinks, onGoToSources, onStartUDP, onStopUDP, onToggleSink }) => {
-  // WebRTC/NetworkTables sinks are plumbing auto-created by the Live Preview / Publish to NT4
-  // toggles - not something the user directly created, so they're left out of this summary too.
-  const visibleSinks = sinks.filter(s => s.type !== 'webrtc' && s.type !== 'networktables');
-  return (
-  <div className="space-y-6">
-    <SystemStatus systemStats={systemStats} deviceStats={deviceStats} />
-    
-    {/* Device Stats Row */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">RAM Usage</h3>
-            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{(deviceStats.ramUsage / 1024 / 1024).toFixed(0)} MB</p>
-          </div>
-          <BarChart3 className="w-8 h-8 text-orange-600" />
-        </div>
-      </div>
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Disk Usage</h3>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{deviceStats.diskUsage}%</p>
-          </div>
-          <BarChart3 className="w-8 h-8 text-red-600" />
-        </div>
-      </div>
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">UDP Control</h3>
-            <div className="flex gap-2 mt-2">
-              <button onClick={onStartUDP} className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">Start</button>
-              <button onClick={onStopUDP} className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">Stop</button>
-            </div>
-          </div>
-          <Wifi className="w-8 h-8 text-blue-600" />
-        </div>
-      </div>
-    </div>
-
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* Sources Widget */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Camera className="w-5 h-5 text-blue-600" />Recent Sources</h2>
-          <button onClick={onGoToSources} className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">View All <ExternalLink className="w-3 h-3" /></button>
-        </div>
-        {sources.length === 0 ? (
-          <div className="text-center py-8">
-            <Camera className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-            <p className="text-gray-500 dark:text-gray-400">No sources available</p>
-            <button onClick={onGoToSources} className="mt-2 text-blue-600 hover:text-blue-700 text-sm">Add your first source</button>
-          </div>
-        ) : (
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {sources.slice(0,4).map(source => (
-              <div key={source.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${source.status==='active' ? 'bg-green-500' : source.status==='inactive' ? 'bg-gray-400' : 'bg-red-500'}`} />
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{source.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{source.type}</p>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-400">ID: {source.id}</div>
-              </div>
-            ))}
-            {sources.length > 4 && (
-              <div className="text-center pt-2">
-                <button onClick={onGoToSources} className="text-blue-600 hover:text-blue-700 text-sm">+{sources.length - 4} more sources</button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      {/* Sinks Widget */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Target className="w-5 h-5 text-green-600" />Processing Sinks</h2>
-          <button onClick={onGoToSinks} className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center gap-1">View All <ExternalLink className="w-3 h-3" /></button>
-        </div>
-        {visibleSinks.length === 0 ? (
-          <div className="text-center py-8">
-            <Target className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-            <p className="text-gray-500 dark:text-gray-400">No sinks available</p>
-            <button onClick={onGoToSinks} className="mt-2 text-blue-600 hover:text-blue-700 text-sm">Add your first sink</button>
-          </div>
-        ) : (
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            {visibleSinks.slice(0,4).map(sink => {
-              const preview = sinks.find(s => s.type === 'webrtc' && s.sourceId === sink.id);
-              const isStreaming = preview != null && streamingSinks.has(preview.id);
-              return (
-              <div key={sink.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${sink.status==='active' ? 'bg-green-500' : sink.status==='inactive' ? 'bg-gray-400' : 'bg-red-500'}`} />
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">{sink.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{sink.type}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <ToggleSwitch
-                    enabled={sink.isEnabled ?? false}
-                    onChange={(enabled) => onToggleSink(sink.id, enabled)}
-                  />
-                  {isStreaming ? (
-                    <>
-                      <span className="px-2 py-1 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded text-xs font-medium">LIVE</span>
-                      <button onClick={()=>onTogglePreview({id: sink.id, name: sink.name})} className="p-1 text-red-600 hover:text-red-700" title="Stop preview"><StopCircle className="w-4 h-4" /></button>
-                    </>
-                  ) : (
-                    <button onClick={()=>onTogglePreview({id: sink.id, name: sink.name})} className="p-1 text-green-600 hover:text-green-700" title="Start preview" disabled={sink.status==='error'}><PlayCircle className="w-4 h-4" /></button>
-                  )}
-                </div>
-              </div>
-              );
-            })}
-            {visibleSinks.length > 4 && (
-              <div className="text-center pt-2">
-                <button onClick={onGoToSinks} className="text-blue-600 hover:text-blue-700 text-sm">+{visibleSinks.length - 4} more sinks</button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-
-    {streamingSinks.size > 0 && (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Activity className="w-5 h-5" />Live Streams</h2>
-          <button onClick={onStopAllStreams} className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 flex items-center gap-1" title="Stop all streams"><StopCircle className="w-4 h-4" />Stop All Streams</button>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {Array.from(streamingSinks).map(sinkId => (
-            <WebRTCStream
-              key={sinkId}
-              sinkId={sinkId}
-              onStop={() => onStopStream(sinkId)}
-              onError={(error) => onStreamError(sinkId, error)}
-            />
-          ))}
-        </div>
-      </div>
-    )}
-    {streamingSinks.size === 0 && (
-      <div className="text-center py-12">
-        <MonitorSpeaker className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Active Streams</h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">Activate Live Preview on a node from the Sources or Sinks page to see it here.</p>
-        <button onClick={onGoToSinks} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2 mx-auto"><Target className="w-4 h-4" />Go to Sinks</button>
-      </div>
-    )}
-  </div>
-  );
-};
-
-/****************
- * Sources Page
- ****************/
-const SourcesPage: React.FC<{
-  sources: Source[];
-  sinks: Sink[];
-  streamingSinks: Set<number>;
-  loading: boolean;
-  onAddSource: () => void;
-  onConfigure:(s:Source)=>void;
-  onDelete:(id:number)=>void;
-  onTogglePreview:(node: {id:number; name:string})=>void;
-  onStreamError:(id:number, error:string)=>void;
-  onBulkVideoUpload: (files: FileList, fps?: number) => Promise<{ success: boolean; sourceIds: number[]; message: string }>;
-  onBulkImageUpload: (files: FileList) => Promise<{ success: boolean; sourceIds: number[]; message: string }>;
-}> = ({ sources, sinks, streamingSinks, loading, onAddSource, onConfigure, onDelete, onTogglePreview, onStreamError, onBulkVideoUpload, onBulkImageUpload }) => (
-  <div className="space-y-6">
-    <div className="flex justify-between items-center">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Camera className="w-6 h-6" />Video Sources</h2>
-        <p className="text-gray-600 dark:text-gray-400">Manage your video input sources</p>
-      </div>
-      <button onClick={onAddSource} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"><Plus className="w-4 h-4" />Add Source</button>
-    </div>
-
-    {/* Bulk Upload Component */}
-    <BulkUploadComponent
-      onVideoUpload={onBulkVideoUpload}
-      onImageUpload={onBulkImageUpload}
-      className="mb-6"
-    />
-
-    {sources.length === 0 && !loading ? (
-      <div className="text-center py-12">
-        <Camera className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Sources Found</h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">Add a video source to get started with processing.</p>
-        <button onClick={onAddSource} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2 mx-auto"><Plus className="w-4 h-4" />Add Your First Source</button>
-      </div>
-    ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sources.map(source => {
-          const preview = sinks.find(s => s.type === 'webrtc' && s.sourceId === source.id);
-          const isStreaming = preview != null && streamingSinks.has(preview.id);
-          return (
-          <div key={source.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-all">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-2">
-                <Camera className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{source.name}</h3>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={()=>onConfigure(source)} className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 flex items-center gap-1"><Settings2 className="w-3 h-3" />Config</button>
-                <button onClick={()=> { if(confirm('Delete source?')) onDelete(source.id); }} className="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 flex items-center gap-1"><Trash2 className="w-3 h-3" />Del</button>
-              </div>
-            </div>
-            <p className="text-gray-600 dark:text-gray-400 mb-2">Type: {source.type}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">ID: {source.id}</p>
-            {source.filePath && (
-              <p className="text-xs text-gray-400 mb-2 truncate" title={source.filePath}>Path: {source.filePath}</p>
-            )}
-            {source.fps && (
-              <p className="text-xs text-gray-400 mb-2">FPS: {source.fps}</p>
-            )}
-            <button onClick={()=>onTogglePreview({id: source.id, name: source.name})}
-              className={`w-full px-3 py-2 rounded text-sm flex items-center gap-1 justify-center mb-3 ${isStreaming ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white`}>
-              {isStreaming ? <><StopCircle className="w-4 h-4" />Stop Preview</> : <><PlayCircle className="w-4 h-4" />Live Preview</>}
-            </button>
-            {isStreaming && preview && (
-              <div className="mb-3">
-                <WebRTCStream sinkId={preview.id} onStop={()=>onTogglePreview({id: source.id, name: source.name})} onError={(error)=>onStreamError(preview.id, error)} />
-              </div>
-            )}
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-400">Updated: {source.lastUpdate?.toLocaleTimeString()}</span>
-            </div>
-          </div>
-          );
-        })}
-      </div>
-    )}
-  </div>
-);
-
-/***************
- * Sinks Page
- ***************/
-const SinksPage: React.FC<{
-  sinks: Sink[];
-  loading: boolean;
-  streamingSinks: Set<number>;
-  nt4Settings: NT4Defaults;
-  onAddSink:()=>void;
-  onTogglePreview:(node: {id:number; name:string})=>void;
-  onToggleNT4Publish:(node: {id:number; name:string}, nt4: NT4Defaults)=>void;
-  onStreamError:(id:number, error:string)=>void;
-  onConfigure:(s:Sink)=>void;
-  onDelete:(id:number)=>void;
-  onToggleSink:(id:number, enabled:boolean)=>void;
-}> = ({ sinks, loading, streamingSinks, nt4Settings, onAddSink, onTogglePreview, onToggleNT4Publish, onStreamError, onConfigure, onDelete, onToggleSink }) => {
-  // WebRTC/NetworkTables sinks are plumbing auto-created by the Live Preview / Publish to NT4
-  // toggles below - they're not something the user directly created, so they don't get their
-  // own card (that's the whole point of them not being addable sink types anymore).
-  const visibleSinks = sinks.filter(s => s.type !== 'webrtc' && s.type !== 'networktables');
-  return (
-  <div className="space-y-6">
-    <div className="flex justify-between items-center">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Target className="w-6 h-6" />Processing Sinks</h2>
-        <p className="text-gray-600 dark:text-gray-400">Manage your vision processing pipelines</p>
-      </div>
-      <button onClick={onAddSink} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2"><Plus className="w-4 h-4" />Add Sink</button>
-    </div>
-    {visibleSinks.length === 0 && !loading ? (
-      <div className="text-center py-12">
-        <Target className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Sinks Found</h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">Add a processing sink to analyze video streams.</p>
-        <button onClick={onAddSink} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2 mx-auto"><Plus className="w-4 h-4" />Add Your First Sink</button>
-      </div>
-    ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {visibleSinks.map(sink => {
-          const preview = sinks.find(s => s.type === 'webrtc' && s.sourceId === sink.id);
-          const isStreaming = preview != null && streamingSinks.has(preview.id);
-          const nt4 = sinks.find(s => s.type === 'networktables' && s.sourceId === sink.id);
-          const canPublish = PUBLISHABLE_SINK_TYPES.includes(sink.type);
-          return (
-          <div key={sink.id} className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow hover:shadow-lg transition-all">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-green-600" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{sink.name}</h3>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={()=>onConfigure(sink)} className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 flex items-center gap-1"><Settings2 className="w-3 h-3" />Config</button>
-                <button onClick={()=> { if(confirm('Delete sink?')) onDelete(sink.id); }} className="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 flex items-center gap-1"><Trash2 className="w-3 h-3" />Del</button>
-              </div>
-            </div>
-            <p className="text-gray-600 dark:text-gray-400 mb-2">Type: {sink.type}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-500 mb-4">ID: {sink.id}</p>
-            {sink.sourceId && (
-              <p className="text-xs text-blue-600 dark:text-blue-400 mb-3 flex items-center gap-1"><ExternalLink className="w-3 h-3" />Bound to Source {sink.sourceId}</p>
-            )}
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Status:</span>
-                <ToggleSwitch
-                  enabled={sink.isEnabled ?? false}
-                  onChange={(enabled) => onToggleSink(sink.id, enabled)}
-                />
-                <span className={`text-sm font-medium ${sink.isEnabled ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                  {sink.isEnabled ? 'Enabled' : 'Disabled'}
-                </span>
-              </div>
-            </div>
-            {canPublish && (
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Publish to NT4:</span>
-                  <ToggleSwitch
-                    enabled={nt4?.isEnabled ?? false}
-                    onChange={() => onToggleNT4Publish({id: sink.id, name: sink.name}, nt4Settings)}
-                  />
-                </div>
-              </div>
-            )}
-            <div className="flex gap-2 mb-4">
-              <button onClick={()=>onTogglePreview({id: sink.id, name: sink.name})}
-                className={`flex-1 px-3 py-2 rounded text-sm flex items-center gap-1 justify-center text-white ${isStreaming ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
-                disabled={sink.status==='error'}>
-                {isStreaming ? <><StopCircle className="w-4 h-4" />Stop Preview</> : <><PlayCircle className="w-4 h-4" />Live Preview</>}
-              </button>
-              <button onClick={()=>onConfigure(sink)} className="px-3 py-2 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colours" title="Configure"><Cog className="w-4 h-4" /></button>
-            </div>
-            {isStreaming && preview && (
-              <div className="mb-4">
-                <WebRTCStream
-                  sinkId={preview.id}
-                  onStop={() => onTogglePreview({id: sink.id, name: sink.name})}
-                  onError={(error) => onStreamError(preview.id, error)}
-                />
-              </div>
-            )}
-            <div className="text-xs text-gray-400">Updated: {sink.lastUpdate?.toLocaleTimeString()}</div>
-          </div>
-          );
-        })}
-      </div>
-    )}
-  </div>
-  );
-};
-
 /*******************
  * Main App
  *******************/
 function App() {
+  const navigate = useNavigate();
   const [darkMode, setDarkMode] = useDarkMode();
-  const [currentTab, setCurrentTab] = useState('dashboard');
-  const [showSettings, setShowSettings] = useState(false);
   const [showAddSource, setShowAddSource] = useState(false);
   const [showAddSink, setShowAddSink] = useState(false);
   const [settings, setSettingsState] = useState<SettingsType>(() => {
@@ -1159,10 +251,10 @@ function App() {
   }
 
   return (
-    <div className={`min-h-screen transition-colours duration-200 ${darkMode ? 'dark' : ''}`}>
+    <div className={`min-h-screen transition-colors duration-200 ${darkMode ? 'dark' : ''}`}>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Header systemStats={systemStats} darkMode={darkMode} onToggleDarkMode={toggleDarkMode} onShowSettings={()=>setShowSettings(true)} onRefresh={loadData} />
-        <Navigation currentTab={currentTab} onTabChange={setCurrentTab} streamingCount={streamingSinks.size} />
+        <Header systemStats={systemStats} darkMode={darkMode} onToggleDarkMode={toggleDarkMode} onRefresh={loadData} />
+        <Navigation streamingCount={streamingSinks.size} />
 
         {error && (
           <div className="bg-red-100 dark:bg-red-900 border-l-4 border-red-500 p-4 mx-6 mt-4 rounded">
@@ -1177,60 +269,64 @@ function App() {
         )}
 
         <main className="p-6">
-          {currentTab === 'dashboard' && (
-            <DashboardPage
-              systemStats={systemStats}
-              deviceStats={deviceStats}
-              streamingSinks={streamingSinks}
-              sources={sources}
-              sinks={sinks}
-              onStopAllStreams={()=>setStreamingSinks(new Set())}
-              onStopStream={stopStream}
-              onStreamError={handleStreamError}
-              onTogglePreview={handleTogglePreview}
-              onGoToSinks={()=>setCurrentTab('sinks')}
-              onGoToSources={()=>setCurrentTab('sources')}
-              onStartUDP={startUDPTransmission}
-              onStopUDP={stopUDPTransmission}
-              onToggleSink={handleToggleSink}
-            />
-          )}
-          {currentTab === 'sources' && (
-            <SourcesPage
-              sources={sources}
-              sinks={sinks}
-              streamingSinks={streamingSinks}
-              loading={loading}
-              onAddSource={()=>setShowAddSource(true)}
-              onConfigure={s=>setCfgSource(s)}
-              onDelete={id=>handleDeleteSource(id)}
-              onTogglePreview={handleTogglePreview}
-              onStreamError={handleStreamError}
-              onBulkVideoUpload={handleBulkVideoUpload}
-              onBulkImageUpload={handleBulkImageUpload}
-            />
-          )}
-          {currentTab === 'sinks' && (
-            <SinksPage
-              sinks={sinks}
-              loading={loading}
-              streamingSinks={streamingSinks}
-              nt4Settings={settings.nt4}
-              onAddSink={()=>setShowAddSink(true)}
-              onTogglePreview={handleTogglePreview}
-              onToggleNT4Publish={handleToggleNT4Publish}
-              onStreamError={handleStreamError}
-              onConfigure={s=>setCfgSink(s)}
-              onDelete={id=>handleDeleteSink(id)}
-              onToggleSink={handleToggleSink}
-            />
-          )}
-          {currentTab === 'stereo' && (
-            <StereoPage sources={sources} sinks={sinks} onToast={showToast} onRefresh={loadData} />
-          )}
+          <Routes>
+            <Route path="/" element={
+              <DashboardPage
+                systemStats={systemStats}
+                deviceStats={deviceStats}
+                streamingSinks={streamingSinks}
+                sources={sources}
+                sinks={sinks}
+                onStopAllStreams={()=>setStreamingSinks(new Set())}
+                onStopStream={stopStream}
+                onStreamError={handleStreamError}
+                onTogglePreview={handleTogglePreview}
+                onGoToSinks={()=>navigate('/sinks')}
+                onGoToSources={()=>navigate('/sources')}
+                onStartUDP={startUDPTransmission}
+                onStopUDP={stopUDPTransmission}
+                onToggleSink={handleToggleSink}
+              />
+            } />
+            <Route path="/graph" element={<GraphPage />} />
+            <Route path="/sources" element={
+              <SourcesPage
+                sources={sources}
+                sinks={sinks}
+                streamingSinks={streamingSinks}
+                loading={loading}
+                onAddSource={()=>setShowAddSource(true)}
+                onConfigure={s=>setCfgSource(s)}
+                onDelete={id=>handleDeleteSource(id)}
+                onTogglePreview={handleTogglePreview}
+                onStreamError={handleStreamError}
+                onBulkVideoUpload={handleBulkVideoUpload}
+                onBulkImageUpload={handleBulkImageUpload}
+              />
+            } />
+            <Route path="/sinks" element={
+              <SinksPage
+                sinks={sinks}
+                loading={loading}
+                streamingSinks={streamingSinks}
+                nt4Settings={settings.nt4}
+                onAddSink={()=>setShowAddSink(true)}
+                onTogglePreview={handleTogglePreview}
+                onToggleNT4Publish={handleToggleNT4Publish}
+                onStreamError={handleStreamError}
+                onConfigure={s=>setCfgSink(s)}
+                onDelete={id=>handleDeleteSink(id)}
+                onToggleSink={handleToggleSink}
+              />
+            } />
+            <Route path="/stereo" element={
+              <StereoPage sources={sources} sinks={sinks} onToast={showToast} onRefresh={loadData} />
+            } />
+            <Route path="/match" element={<MatchPage />} />
+            <Route path="/settings" element={<SettingsPage settings={settings} onSave={setSettings} />} />
+          </Routes>
         </main>
 
-        <SettingsModal isOpen={showSettings} onClose={()=>setShowSettings(false)} settings={settings} onSave={setSettings} />
         <AddSourceModal isOpen={showAddSource} onClose={()=>setShowAddSource(false)} onAdd={handleAddSource} />
         <AddSinkModal isOpen={showAddSink} onClose={()=>setShowAddSink(false)} onAdd={handleAddSink} />
 

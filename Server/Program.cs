@@ -3,6 +3,7 @@ using EmbedIO.Files;
 using EmbedIO.WebApi;
 using EmbedIO.Cors;
 using Server.WebSockets;
+using System.Text;
 
 namespace Server
 {
@@ -43,7 +44,26 @@ namespace Server
             string wwwrootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot");
             if (Directory.Exists(wwwrootPath))
             {
-                server = server.WithStaticFolder("/", wwwrootPath, false);
+                // ROADMAP.md Phase 8b: react-router-dom now owns real client-side routes
+                // (/graph, /sources, /match, ...) - EmbedIO's own FileModule matches by path,
+                // so a direct navigation or hard refresh on any of those returns a 404 (the
+                // Vite dev server's own history-mode fallback was hiding this during
+                // development - only caught because it was checked against a production-style
+                // build, not just `npm run dev`). HandleMappingFailed serves index.html for any
+                // unmapped GET instead, the standard SPA fallback - client-side routing then
+                // takes over as normal once React mounts.
+                server = server.WithStaticFolder("/", wwwrootPath, false, m => m.HandleMappingFailed(async (context, info) =>
+                {
+                    string indexPath = Path.Combine(wwwrootPath, "index.html");
+                    if (File.Exists(indexPath))
+                    {
+                        await context.SendStringAsync(await File.ReadAllTextAsync(indexPath), "text/html", Encoding.UTF8);
+                    }
+                    else
+                    {
+                        throw HttpException.NotFound();
+                    }
+                }));
             }
             else
             {

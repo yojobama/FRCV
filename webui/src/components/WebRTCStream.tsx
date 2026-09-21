@@ -37,12 +37,13 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
     try {
       setConnectionState('connecting');
 
-      const config = {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' }
-        ]
-      };
+      // No public STUN server by default - this stream is between the browser and a coprocessor
+      // on the same LAN (a pit/venue network), which doesn't need NAT traversal, and "fully
+      // offline, venue WiFi is hostile" (ROADMAP.md Phase 8) rules out depending on reaching the
+      // public internet for every preview to connect. iceServers stays empty rather than
+      // hardcoded to a specific public server; a future settings-driven override can populate it
+      // for the rare cross-network setup that genuinely needs one.
+      const config: RTCConfiguration = { iceServers: [] };
 
       const pc = new RTCPeerConnection(config);
       setPeerConnection(pc);
@@ -169,14 +170,14 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={toggleFullscreen}
-            className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colours flex items-center gap-1"
+            className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors flex items-center gap-1"
             title="Toggle fullscreen"
           >
             {isFullscreen ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
           </button>
           <button
             onClick={stopStream}
-            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colours flex items-center gap-1"
+            className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors flex items-center gap-1"
             title="Stop stream"
           >
             <Square className="w-3 h-3" />
