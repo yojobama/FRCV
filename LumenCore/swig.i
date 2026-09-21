@@ -27,6 +27,13 @@
 %include "std_vector.i"
 %include "std_unique_ptr.i"
 %include "exception.i"
+// ROADMAP.md Phase 8a: GetFrameCount/GetLatencyUs are the first uint64_t/int64_t return types
+// SWIG has ever had to bind in this project - without this, SWIG has no typemap for either and
+// silently falls back to generating an opaque SWIGTYPE_p_uint64_t/SWIGTYPE_p_int64_t pointer
+// wrapper instead of a real ulong/long (confirmed the hard way: it compiles fine on both sides,
+// so nothing catches it short of actually looking at the generated C#). stdint.i maps them to
+// C#'s ulong/long properly.
+%include "stdint.i"
 
 // Without this, ANY C++ exception thrown by application code (a bad model file, a missing
 // sink id, an unimplemented backend, ...) crosses the P/Invoke boundary completely uncaught and

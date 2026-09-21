@@ -1519,6 +1519,21 @@ int Manager::GetDiskUsage()
     return m_SystemMonitor->GetDiskUsage();
 }
 
+uint64_t Manager::GetFrameCount(int id)
+{
+    auto sourceIt = m_Sources.find(id);
+    return sourceIt == m_Sources.end() ? 0 : sourceIt->second->GetCurrentFrameCount();
+}
+
+int64_t Manager::GetLatencyUs(int id)
+{
+    auto sourceIt = m_Sources.find(id);
+    if (sourceIt == m_Sources.end()) return 0;
+
+    SourceResult result = sourceIt->second->GetLatestResult();
+    return static_cast<int64_t>(result.producedTimeUs) - static_cast<int64_t>(result.captureTimeUs);
+}
+
 // Every LUMEN_WITH_* backend this specific .so/.dll was actually built with - the runtime
 // counterpart to the SWIG surface always existing regardless (see Manager.h's comment on
 // GetEnabledFeatures and the NT4/WebRTC #ifdef blocks above). Kept as one function with a

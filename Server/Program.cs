@@ -2,6 +2,7 @@
 using EmbedIO.Files;
 using EmbedIO.WebApi;
 using EmbedIO.Cors;
+using Server.WebSockets;
 
 namespace Server
 {
@@ -29,7 +30,10 @@ namespace Server
                     {
                         m.WithController(controllerType);
                     }
-                });
+                })
+                // ROADMAP.md Phase 8a: the push channel replacing the webui's old polling loop -
+                // see StateChannel's own comment for what it broadcasts and why.
+                .WithModule(new StateChannel("/ws/state"));
 
             // Serves the built React WebUI (npm run build in reactproject1, copied into
             // wwwroot by Server.csproj) - registered after WithWebApi so /api/* is always

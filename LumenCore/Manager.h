@@ -312,6 +312,22 @@ public:
 	int GetCPUUsage();
 	int GetCpuTemperature();
 	int GetDiskUsage();
+
+	// ROADMAP.md Phase 8a: live per-node throughput for the /ws/state channel and Phase 8e's
+	// match view. Works for any id currently in m_Sources - a real camera/file source, or a
+	// dual-role sink acting as its own source (ApriltagDetector, ObjectDetectionSink, etc. - see
+	// the Manager::DeleteSink comment on why these share one id space). 0 for anything else
+	// (terminal sinks like NetworkTablesSink/WebRTCSink have no frame count of their own to
+	// report - they consume, not produce).
+	//
+	// FPS itself is deliberately NOT computed here: it needs two samples over a known time
+	// delta, which is exactly what the C# WS broadcast loop already does once per tick for every
+	// tracked node - duplicating that bookkeeping natively would just be a second copy to keep in
+	// sync. GetFrameCount is the raw counter; the delta is taken where it's consumed.
+	uint64_t GetFrameCount(int id);
+	// producedTimeUs - captureTimeUs of the most recent frame; 0 if id doesn't exist in
+	// m_Sources or no frame has been produced yet.
+	int64_t GetLatencyUs(int id);
 private:
 	//bool SetSinkResult(int sinkId, string result);
 
