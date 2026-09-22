@@ -1,4 +1,4 @@
-import type { CameraHardwareInfo, Model, StereoCalibrationResult, StereoDepthStats, PipelineProfile, NodeTypesResponse } from '../types';
+import type { CameraHardwareInfo, Model, StereoCalibrationResult, StereoDepthStats, PipelineProfile, NodeTypesResponse, CameraCalibrationResult, CalibrationCoverage, NetworkTablesStatus } from '../types';
 
 export class ApiService {
   // Relative to wherever this page is served from - the C# server always serves its own built
@@ -150,6 +150,58 @@ export class ApiService {
     return response.json();
   }
 
+  async createCameraCalibrationSinkWithBoard(name: string, boardType: number, rows: number, cols: number, squareSizeMeters: number): Promise<number> {
+    const params = new URLSearchParams({ name, boardType: String(boardType), rows: String(rows), cols: String(cols), squareSizeMeters: String(squareSizeMeters) });
+    const response = await fetch(`${this.baseUrl}/cameraCalibrationSink/createWithBoard?${params}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // ROADMAP.md Phase 8d: the camera calibration wizard's own capture/run/result loop - see
+  // CameraCalibrationSinkController.cs. Mirrors the stereo equivalents below field-for-field.
+  async saveCameraCalibrationDetection(sinkId: number): Promise<boolean> {
+    const response = await fetch(`${this.baseUrl}/cameraCalibrationSink/${sinkId}/saveDetection`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async getCameraCalibrationSnapshotCount(sinkId: number): Promise<number> {
+    const response = await fetch(`${this.baseUrl}/cameraCalibrationSink/${sinkId}/snapshotCount`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async clearCameraCalibrationSnapshots(sinkId: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/cameraCalibrationSink/${sinkId}/snapshots`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  async runCameraCalibration(sinkId: number): Promise<CameraCalibrationResult> {
+    const response = await fetch(`${this.baseUrl}/cameraCalibrationSink/${sinkId}/run`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async getCameraCalibrationResult(sinkId: number): Promise<CameraCalibrationResult> {
+    const response = await fetch(`${this.baseUrl}/cameraCalibrationSink/${sinkId}/result`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // the live coverage heatmap's own data source (ROADMAP.md Phase 8a/8d) - every saved
+  // snapshot's/pair's detected corner points. `eye` only matters for the stereo endpoint.
+  async getCameraCalibrationCoverage(sinkId: number): Promise<CalibrationCoverage> {
+    const response = await fetch(`${this.baseUrl}/cameraCalibrationSink/${sinkId}/coverage`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async getStereoCalibrationCoverage(sinkId: number, eye: 'left' | 'right'): Promise<CalibrationCoverage> {
+    const response = await fetch(`${this.baseUrl}/stereoCalibrationSink/${sinkId}/coverage?eye=${eye}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
   // Object Detection Sink Controller routes
   async createObjectDetectionSink(name: string, modelId: number): Promise<number> {
     const response = await fetch(`${this.baseUrl}/objectDetectionSink/create?name=${encodeURIComponent(name)}&modelId=${modelId}`, { method: 'POST' });
@@ -207,13 +259,15 @@ export class ApiService {
     return response.json();
   }
 
-  async getNetworkTablesStatus(sinkId: number): Promise<any> {
+  // ROADMAP.md Phase 8e: this used to double-JSON.parse() the response, matching what
+  // NetworkTablesSinkController.GetStatus returned before the Phase 8a DTO cleanup - it's
+  // returned a real typed NetworkTablesStatusDto since then (a plain object, not a JSON-encoded
+  // string), so the extra parse was left silently broken (throwing on an already-parsed object)
+  // until Phase 8e's match view became the first thing to actually call this.
+  async getNetworkTablesStatus(sinkId: number): Promise<NetworkTablesStatus> {
     const response = await fetch(`${this.baseUrl}/networkTablesSink/status?sinkId=${sinkId}`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    // the controller returns Task<string> - a JSON *string*, so the body is JSON-encoded JSON
-    // and needs decoding twice (matches SinkController.GetResult's same shape)
-    const text: string = await response.json();
-    return JSON.parse(text);
+    return response.json();
   }
 
   // WebRTC Sink Controller routes
@@ -249,11 +303,14 @@ export class ApiService {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
-  async getWebRTCSinkStatus(sinkId: number): Promise<any> {
+  // same fix as getNetworkTablesStatus above - WebRTCSinkController.GetStatus also returns a
+  // real WebRtcStatusDto since Phase 8a, not a double-JSON-encoded string. Nothing currently
+  // calls this (the Inspector reads WebRTC running state off the /ws/state snapshot instead),
+  // but it's a real bug regardless if left as-is for whenever something does.
+  async getWebRTCSinkStatus(sinkId: number): Promise<{ Connected: boolean; IceState: number; GatheringComplete: boolean }> {
     const response = await fetch(`${this.baseUrl}/webrtcSink/status?sinkId=${sinkId}`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const text: string = await response.json();
-    return JSON.parse(text);
+    return response.json();
   }
 
   // Stereo Calibration Sink Controller routes (phase 10 - see STEREO_IMPLEMENTATION_PLAN.md)

@@ -128,27 +128,37 @@ export interface DeviceStats {
 
 // --- Stereo depth (phase 10) - see STEREO_IMPLEMENTATION_PLAN.md ---
 
+// ROADMAP.md Phase 8a/8d: mirrors Server/Dtos.cs's CameraCalibrationResultDto/
+// StereoCalibrationResultDto field-for-field, PascalCase and all - confirmed empirically (see
+// the note by PipelineProfile above). These two interfaces were previously lowercase-first,
+// matching the RAW SWIG-serialized shape the endpoints returned before the Phase 8a DTO
+// cleanup - a real regression this introduced and StereoPage.tsx was silently broken by
+// (result.epipolarRms read as undefined) until caught and fixed here.
 export interface CameraCalibrationResult {
-  fx: number; fy: number; cx: number; cy: number; rms: number;
-  distCoeffs: number[]; imageWidth: number; imageHeight: number;
+  Fx: number; Fy: number; Cx: number; Cy: number; Rms: number;
+  DistCoeffs: number[]; ImageWidth: number; ImageHeight: number;
 }
 
-// Mirrors StereoCalibrationResult.h field-for-field. R/T/E/F/R1/R2/P1/P2/Q are flat row-major
-// arrays (see that header's own comments for each matrix's shape) - only epipolarRms,
-// baselineMeters, rectifiedFx/Cx/Cy and the two CameraCalibrationResults are actually read by
-// this WebUI; the rest is carried through opaquely to StereoDepthSink's create call.
+// R/T/E/F/R1/R2/P1/P2/Q are flat row-major arrays (see StereoCalibrationResult.h's own comments
+// for each matrix's shape) - only EpipolarRms, BaselineMeters, RectifiedFx/Cx/Cy and the two
+// CameraCalibrationResults are actually read by this WebUI; the rest is carried through opaquely
+// to StereoDepthSink's create call.
+// the real gate for real use, not stereoRms - see STEREO_IMPLEMENTATION_PLAN.md ss10.2. Shared
+// between StereoPage.tsx and the Phase 8d calibration wizards, which both need the same number.
+export const EPIPOLAR_RMS_GATE = 0.5;
+
 export interface StereoCalibrationResult {
-  left: CameraCalibrationResult;
-  right: CameraCalibrationResult;
+  Left: CameraCalibrationResult;
+  Right: CameraCalibrationResult;
   R: number[]; T: number[]; E: number[]; F: number[];
   R1: number[]; R2: number[]; P1: number[]; P2: number[]; Q: number[];
-  stereoRms: number;
-  epipolarRms: number; // the real gate for real use - see STEREO_IMPLEMENTATION_PLAN.md ss10.2. < 0.5px
-  baselineMeters: number;
-  rectifiedFx: number; rectifiedCx: number; rectifiedCy: number;
-  imageWidth: number; imageHeight: number;
-  roiLeftX: number; roiLeftY: number; roiLeftW: number; roiLeftH: number;
-  roiRightX: number; roiRightY: number; roiRightW: number; roiRightH: number;
+  StereoRms: number;
+  EpipolarRms: number; // the real gate for real use - see STEREO_IMPLEMENTATION_PLAN.md ss10.2. < 0.5px
+  BaselineMeters: number;
+  RectifiedFx: number; RectifiedCx: number; RectifiedCy: number;
+  ImageWidth: number; ImageHeight: number;
+  RoiLeftX: number; RoiLeftY: number; RoiLeftW: number; RoiLeftH: number;
+  RoiRightX: number; RoiRightY: number; RoiRightW: number; RoiRightH: number;
 }
 
 // matches StereoDepthBackendKind.h - a plain C++ enum, so the values below are its declaration
@@ -182,9 +192,19 @@ export const STEREO_FRAME_OUTPUT_LABELS: Record<number, string> = {
   2: 'Depth overlay',
 };
 
+// mirrors Server/Dtos.cs's CalibrationCoverageDto - ROADMAP.md Phase 8d's live coverage
+// heatmap. Each entry in Snapshots is one saved snapshot/pair's detected corners flattened as
+// [x0,y0,x1,y1,...] (see that DTO's own comment on why - no vector<vector<double>> SWIG binding).
+export interface CalibrationCoverage {
+  FrameWidth: number;
+  FrameHeight: number;
+  Snapshots: number[][];
+}
+
+// mirrors Server/Dtos.cs's StereoDepthStatsDto - PascalCase, see the note above.
 export interface StereoDepthStats {
-  validFraction: number;
-  medianDepthMeters: number;
+  ValidFraction: number;
+  MedianDepthMeters: number;
 }
 
 // --- ROADMAP.md Phase 7/8: pipeline profiles + the /ws/state channel + node capabilities ---
@@ -265,6 +285,16 @@ export interface WsDeviceStats {
   DiskUsagePercent: number;
   TemperatureC: number;
 }
+// mirrors Server/Dtos.cs's NetworkTablesStatusDto - ROADMAP.md Phase 8e's match view reads
+// Connected off this for each NetworkTablesSink it finds bound to a camera's detection chain.
+export interface NetworkTablesStatus {
+  Connected: boolean;
+  Identity: string;
+  RootTable: string;
+  TeamNumber: number | null;
+  ServerAddress: string | null;
+}
+
 export interface StateSnapshot {
   Sources: WsSource[];
   Sinks: WsSinkState[];

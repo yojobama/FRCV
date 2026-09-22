@@ -1,16 +1,129 @@
-import React from 'react';
-import { Gauge } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Gauge, Wifi, WifiOff, Thermometer, Cpu, HardDrive, MemoryStick } from 'lucide-react';
+import { useStateSocket } from '../hooks/useStateSocket';
+import { ApiService } from '../services/ApiService';
+import { sinkTypeName } from '../graph/model';
+import type { NetworkTablesStatus } from '../types';
 
-// ROADMAP.md Phase 8e: read-only per-camera FPS/latency/NT4-state/temperature, readable across
-// a pit. Placeholder route for now (Phase 8b's own verification bar is that /match is reachable)
-// - the real content depends on the /ws/state channel's per-node stats (Phase 8a, already
-// shipped) once the frontend has a WebSocket hook to consume it (Phase 8c/8e).
-export const MatchPage: React.FC = () => (
-  <div className="flex flex-col items-center justify-center py-24 text-center">
-    <Gauge className="w-16 h-16 mb-4 text-gray-400" />
-    <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Match View</h2>
-    <p className="text-gray-600 dark:text-gray-400 max-w-md">
-      A read-only per-camera FPS/latency/NT4/temperature view lands in ROADMAP.md Phase 8e.
-    </p>
-  </div>
-);
+const api = new ApiService();
+
+// ROADMAP.md Phase 8e: read-only per-camera FPS/latency/NT4/temperature, readable across a pit.
+// Driven by the same /ws/state channel the graph uses (Phase 8a/8c) for FPS/latency/device
+// stats; NT4 connection state is fetched separately over REST (occasional, event-driven data,
+// not something to poll at the WS channel's own ~1s cadence - matches the existing
+// driver-mode/snapshot REST-not-WS split established for LumenCoprocessorControl on the robot
+// side).
+export const MatchPage: React.FC = () => {
+  const { snapshot, connected } = useStateSocket();
+  const [nt4Status, setNt4Status] = useState<Record<number, NetworkTablesStatus>>({});
+
+  useEffect(() => {
+    if (!snapshot) return;
+    const nt4Sinks = snapshot.Sinks.filter(s => sinkTypeName(s.Sink.Type) === 'NetworkTablesSink');
+    let cancelled = false;
+    Promise.all(nt4Sinks.map(async s => {
+      try {
+        const status = await api.getNetworkTablesStatus(s.Sink.Id);
+        return [s.Sink.Id, status] as const;
+      } catch {
+        return null;
+      }
+    })).then(results => {
+      if (cancelled) return;
+      const next: Record<number, NetworkTablesStatus> = {};
+      for (const r of results) if (r) next[r[0]] = r[1];
+      setNt4Status(next);
+    });
+    return () => { cancelled = true; };
+    // re-fetch whenever the sink topology changes (NT4 sink created/removed) - the interval
+    // below covers connection-state changes to an already-existing sink.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snapshot?.Sinks.length]);
+
+  if (!snapshot) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <Gauge className="w-16 h-16 mb-4 text-gray-400" />
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Match View</h2>
+        <p className="text-gray-600 dark:text-gray-400">{connected ? 'Waiting for the first state snapshot…' : 'Connecting to the coprocessor…'}</p>
+      </div>
+    );
+  }
+
+  // for each camera source, find whichever detection sink (if any) is bound to it, and whichever
+  // NetworkTablesSink (if any) is bound to THAT detector's own output - the same dual-role-sink
+  // chain the graph editor already understands (see graph/model.ts's own comment on it).
+  const rows = snapshot.Sources.map(source => {
+    const detector = snapshot.Sinks.find(s => s.Sink.Source?.Id === source.Id);
+    const nt4Sink = detector
+      ? snapshot.Sinks.find(s => sinkTypeName(s.Sink.Type) === 'NetworkTablesSink' && s.Sink.Source?.Id === detector.Sink.Id)
+      : undefined;
+    const stats = snapshot.NodeStats[String(source.Id)];
+    const status = nt4Sink ? nt4Status[nt4Sink.Sink.Id] : undefined;
+    return { source, detector, nt4Sink, stats, status };
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2"><Gauge className="w-6 h-6" />Match View</h2>
+        <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${connected ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
+          {connected ? <Wifi className="w-4 h-4" /> : <WifiOff className="w-4 h-4" />}{connected ? 'Live' : 'Disconnected'}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center gap-3">
+          <Cpu className="w-6 h-6 text-purple-600" />
+          <div><div className="text-xs text-gray-500 dark:text-gray-400">CPU</div><div className="text-lg font-bold text-gray-900 dark:text-white">{snapshot.Device.CpuUsagePercent}%</div></div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center gap-3">
+          <MemoryStick className="w-6 h-6 text-orange-600" />
+          <div><div className="text-xs text-gray-500 dark:text-gray-400">RAM</div><div className="text-lg font-bold text-gray-900 dark:text-white">{snapshot.Device.RamUsageMb} MB</div></div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center gap-3">
+          <HardDrive className="w-6 h-6 text-red-600" />
+          <div><div className="text-xs text-gray-500 dark:text-gray-400">Disk</div><div className="text-lg font-bold text-gray-900 dark:text-white">{snapshot.Device.DiskUsagePercent}%</div></div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-center gap-3">
+          <Thermometer className="w-6 h-6 text-blue-600" />
+          <div><div className="text-xs text-gray-500 dark:text-gray-400">Temperature</div><div className="text-lg font-bold text-gray-900 dark:text-white">{snapshot.Device.TemperatureC > 0 ? `${snapshot.Device.TemperatureC}°C` : '—'}</div></div>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <table className="w-full text-sm">
+          <thead className="bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+            <tr>
+              <th className="text-left px-4 py-2">Camera</th>
+              <th className="text-left px-4 py-2">Detector</th>
+              <th className="text-left px-4 py-2">FPS</th>
+              <th className="text-left px-4 py-2">Latency</th>
+              <th className="text-left px-4 py-2">NT4</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ source, detector, stats, status }) => (
+              <tr key={source.Id} className="border-t border-gray-100 dark:border-gray-700">
+                <td className="px-4 py-3 text-gray-900 dark:text-white font-medium">{source.Name} <span className="text-gray-400 text-xs">#{source.Id}</span></td>
+                <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{detector ? `${sinkTypeName(detector.Sink.Type)} (#${detector.Sink.Id})` : '—'}</td>
+                <td className="px-4 py-3 text-gray-900 dark:text-white">{(stats?.Fps ?? 0).toFixed(1)}</td>
+                <td className="px-4 py-3 text-gray-900 dark:text-white">{((stats?.LatencyUs ?? 0) / 1000).toFixed(1)} ms</td>
+                <td className="px-4 py-3">
+                  {status ? (
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${status.Connected ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
+                      {status.Connected ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}{status.Connected ? 'Connected' : 'Disconnected'}
+                    </span>
+                  ) : <span className="text-gray-400 text-xs">not publishing</span>}
+                </td>
+              </tr>
+            ))}
+            {rows.length === 0 && (
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">No camera sources yet</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};

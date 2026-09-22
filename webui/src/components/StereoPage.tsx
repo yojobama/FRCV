@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Camera, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Camera, Wand2 } from 'lucide-react';
 import { ApiService } from '../services/ApiService';
 import type {
   Source, Sink, StereoCalibrationResult, StereoDepthStats,
@@ -7,11 +8,6 @@ import type {
 import { StereoDepthBackendKind, StereoFrameOutput, STEREO_BACKEND_LABELS, STEREO_FRAME_OUTPUT_LABELS } from '../types';
 
 const api = new ApiService();
-
-// epipolarRms is the gate that actually predicts whether a StereoDepthSink will produce dense
-// output (codec-stereo invalidates blocks by |dy|) - stereoRms alone does not. See
-// STEREO_IMPLEMENTATION_PLAN.md ss10.2.
-const EPIPOLAR_RMS_GATE = 0.5;
 
 type Props = {
   sources: Source[];
@@ -38,10 +34,15 @@ const CameraSelect: React.FC<{
   </label>
 );
 
+// ROADMAP.md Phase 8d: capture/run/result now lives in the full-screen wizard at
+// /calibrate/stereo/:sinkId (StereoCalibrationWizardPage) - "bind cameras -> capture loop -> run
+// -> result" as distinct wizard steps, with a live coverage heatmap during capture, rather than
+// one dense always-visible card. This card's job shrinks to just creating and binding the sink,
+// then handing off to the wizard.
 const StereoCalibrationCard: React.FC<{
   sources: Source[]; sinks: Sink[]; onToast: Props['onToast']; onRefresh: () => void;
-  onResultReady: (sinkId: number, result: StereoCalibrationResult) => void;
-}> = ({ sources, sinks, onToast, onRefresh, onResultReady }) => {
+}> = ({ sources, sinks, onToast, onRefresh }) => {
+  const navigate = useNavigate();
   const calibrationSinks = sinks.filter(s => s.type === 'stereocalibration');
   const [name, setName] = useState('Stereo Calibration');
   const [rows, setRows] = useState(6);
@@ -50,8 +51,6 @@ const StereoCalibrationCard: React.FC<{
   const [left, setLeft] = useState<number | ''>('');
   const [right, setRight] = useState<number | ''>('');
   const [busy, setBusy] = useState(false);
-  const [pairCounts, setPairCounts] = useState<Record<number, number>>({});
-  const [results, setResults] = useState<Record<number, StereoCalibrationResult>>({});
 
   const create = async () => {
     if (!left || !right) { onToast('Select both cameras first', 'error'); return; }
@@ -61,6 +60,7 @@ const StereoCalibrationCard: React.FC<{
       await api.bindStereoSources(id, left as number, right as number);
       onToast(`Stereo calibration sink #${id} created and bound`, 'success');
       onRefresh();
+      navigate(`/calibrate/stereo/${id}`);
     } catch (e) {
       onToast(`Failed to create stereo calibration sink: ${e}`, 'error');
     } finally {
@@ -68,42 +68,12 @@ const StereoCalibrationCard: React.FC<{
     }
   };
 
-  const capture = async (sinkId: number) => {
-    try {
-      const saved = await api.saveStereoCalibrationDetection(sinkId);
-      if (!saved) { onToast('No matched checkerboard pair available yet - check both cameras see the board', 'error'); return; }
-      const count = await api.getStereoCalibrationPairCount(sinkId);
-      setPairCounts(prev => ({ ...prev, [sinkId]: count }));
-      onToast(`Pair saved (${count} total)`, 'success');
-    } catch (e) {
-      onToast(`Failed to save pair: ${e}`, 'error');
-    }
-  };
-
-  const run = async (sinkId: number) => {
-    try {
-      const result = await api.runStereoCalibration(sinkId);
-      setResults(prev => ({ ...prev, [sinkId]: result }));
-      onResultReady(sinkId, result);
-      const ok = result.epipolarRms < EPIPOLAR_RMS_GATE;
-      onToast(`Calibration done: epipolarRms=${result.epipolarRms.toFixed(3)}px ${ok ? '(good)' : '(too high - recapture more pairs)'}`, ok ? 'success' : 'error');
-    } catch (e) {
-      onToast(`Calibration failed: ${e}`, 'error');
-    }
-  };
-
-  const clearPairs = async (sinkId: number) => {
-    await api.clearStereoCalibrationPairs(sinkId);
-    setPairCounts(prev => ({ ...prev, [sinkId]: 0 }));
-    onToast('Pairs cleared', 'info');
-  };
-
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">1. Stereo Calibration</h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        Bind two cameras, capture at least 8 checkerboard pairs, then run. Check <strong>epipolarRms</strong> below -
-        it must be under {EPIPOLAR_RMS_GATE}px for the depth node to produce useful output; stereoRms alone doesn't predict this.
+        Bind two cameras, then open the wizard to capture checkerboard pairs and run the
+        calibration.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
@@ -129,40 +99,22 @@ const StereoCalibrationCard: React.FC<{
         <CameraSelect sources={sources} value={right} onChange={setRight} label="Right camera" />
       </div>
       <button disabled={busy} onClick={create} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded text-sm font-medium">
-        Create stereo calibration sink
+        Create stereo calibration sink &amp; open wizard
       </button>
 
       {calibrationSinks.length > 0 && (
-        <div className="mt-6 space-y-3">
-          {calibrationSinks.map(sink => {
-            const result = results[sink.id];
-            const count = pairCounts[sink.id];
-            return (
-              <div key={sink.id} className="border border-gray-200 dark:border-gray-700 rounded p-4">
-                <div className="flex items-center justify-between">
-                  <div className="font-medium text-gray-900 dark:text-white">{sink.name} <span className="text-gray-400">#{sink.id}</span></div>
-                  <div className="flex gap-2">
-                    <button onClick={() => capture(sink.id)} className="px-3 py-1 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded text-xs font-medium">Capture pair</button>
-                    <button onClick={() => run(sink.id)} className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-medium">Run calibration</button>
-                    <button onClick={() => clearPairs(sink.id)} className="px-3 py-1 bg-red-100 dark:bg-red-900 hover:bg-red-200 text-red-700 dark:text-red-200 rounded text-xs font-medium"><Trash2 className="w-3 h-3 inline" /></button>
-                  </div>
-                </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  left #{sink.sourceId ?? '-'}, right #{sink.source2Id ?? '-'} · pairs saved: {count ?? '?'}
-                </div>
-                {result && (
-                  <div className="mt-2 flex items-center gap-2 text-sm">
-                    {result.epipolarRms < EPIPOLAR_RMS_GATE
-                      ? <CheckCircle className="w-4 h-4 text-green-500" />
-                      : <XCircle className="w-4 h-4 text-red-500" />}
-                    <span className="text-gray-700 dark:text-gray-300">
-                      epipolarRms={result.epipolarRms.toFixed(3)}px · stereoRms={result.stereoRms.toFixed(3)} · baseline={result.baselineMeters.toFixed(3)}m
-                    </span>
-                  </div>
-                )}
+        <div className="mt-6 space-y-2">
+          {calibrationSinks.map(sink => (
+            <div key={sink.id} className="flex items-center justify-between border border-gray-200 dark:border-gray-700 rounded p-3">
+              <div>
+                <div className="font-medium text-gray-900 dark:text-white">{sink.name} <span className="text-gray-400">#{sink.id}</span></div>
+                <div className="text-xs text-gray-500 dark:text-gray-400">left #{sink.sourceId ?? '-'}, right #{sink.source2Id ?? '-'}</div>
               </div>
-            );
-          })}
+              <button onClick={() => navigate(`/calibrate/stereo/${sink.id}`)} className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-medium flex items-center gap-1">
+                <Wand2 className="w-3 h-3" />Open wizard
+              </button>
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -171,8 +123,7 @@ const StereoCalibrationCard: React.FC<{
 
 const StereoDepthCard: React.FC<{
   sources: Source[]; sinks: Sink[]; onToast: Props['onToast']; onRefresh: () => void;
-  calibrationResults: Record<number, StereoCalibrationResult>;
-}> = ({ sources, sinks, onToast, onRefresh, calibrationResults }) => {
+}> = ({ sources, sinks, onToast, onRefresh }) => {
   const depthSinks = sinks.filter(s => s.type === 'stereodepth');
   const calibrationSinks = sinks.filter(s => s.type === 'stereocalibration');
   const [name, setName] = useState('Stereo Depth');
@@ -189,12 +140,12 @@ const StereoDepthCard: React.FC<{
 
   const create = async () => {
     if (!left || !right) { onToast('Select both cameras first', 'error'); return; }
-    let calibration = calibrationSinkId ? calibrationResults[calibrationSinkId as number] : undefined;
-    if (!calibration && calibrationSinkId) {
+    let calibration: StereoCalibrationResult | undefined;
+    if (calibrationSinkId) {
       try { calibration = await api.getStereoCalibrationResult(calibrationSinkId as number); }
       catch { /* fall through to the error below */ }
     }
-    if (!calibration || !calibration.Q?.length || calibration.baselineMeters <= 0) {
+    if (!calibration || !calibration.Q?.length || calibration.BaselineMeters <= 0) {
       onToast('Select a calibration that has actually been run (baselineMeters > 0)', 'error');
       return;
     }
@@ -291,7 +242,7 @@ const StereoDepthCard: React.FC<{
                 </div>
                 {s && (
                   <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">
-                    backend={s.backendName} · valid={(s.validFraction * 100).toFixed(0)}% · median depth={s.medianDepthMeters.toFixed(2)}m
+                    backend={s.backendName} · valid={(s.ValidFraction * 100).toFixed(0)}% · median depth={s.MedianDepthMeters.toFixed(2)}m
                   </div>
                 )}
               </div>
@@ -382,8 +333,6 @@ const DepthFusionCard: React.FC<{
 };
 
 export const StereoPage: React.FC<Props> = ({ sources, sinks, onToast, onRefresh }) => {
-  const [calibrationResults, setCalibrationResults] = useState<Record<number, StereoCalibrationResult>>({});
-
   const bindDetectorToDepthFrame = async (detectorId: number, depthSinkId: number) => {
     // the depth sink is dual-role (both ISink and ISource - see Manager.cpp), so its own id is
     // a valid bind target exactly like binding a WebRTCSink to an AprilTag detector's output
@@ -402,11 +351,8 @@ export const StereoPage: React.FC<Props> = ({ sources, sinks, onToast, onRefresh
         </p>
       </div>
 
-      <StereoCalibrationCard
-        sources={sources} sinks={sinks} onToast={onToast} onRefresh={onRefresh}
-        onResultReady={(sinkId, result) => setCalibrationResults(prev => ({ ...prev, [sinkId]: result }))}
-      />
-      <StereoDepthCard sources={sources} sinks={sinks} onToast={onToast} onRefresh={onRefresh} calibrationResults={calibrationResults} />
+      <StereoCalibrationCard sources={sources} sinks={sinks} onToast={onToast} onRefresh={onRefresh} />
+      <StereoDepthCard sources={sources} sinks={sinks} onToast={onToast} onRefresh={onRefresh} />
       <DepthFusionCard sinks={sinks} onToast={onToast} onRefresh={onRefresh} onBindDetectorToDepthFrame={bindDetectorToDepthFrame} />
     </div>
   );

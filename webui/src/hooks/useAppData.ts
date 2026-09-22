@@ -28,6 +28,24 @@ export const mapSinkType = (type: any): string => {
   }
 };
 
+// Same story as mapSinkType, for Server/Source.cs's SourceType enum: Camera=0, ImageFile=1,
+// VideoFile=2, SinkOutput=3. Found while verifying Phase 8d/8e: `source.Type || source.type ||
+// 'Unknown'` below used to treat the numeric ordinal as if it were the string field - Camera
+// (0, falsy) fell through to 'Unknown', and every other type (1/2/3, truthy) got assigned the
+// raw NUMBER as `type`, which then crashed StereoPage.tsx's `s.type?.toLowerCase()` filter
+// (confirmed live: TypeError: r.type?.toLowerCase is not a function, reproduced with a real
+// ImageFileSource bound in the graph).
+const mapSourceType = (type: any): string => {
+  if (typeof type === 'string') return type;
+  switch (type) {
+    case 0: return 'camera';
+    case 1: return 'image';
+    case 2: return 'video';
+    case 3: return 'sinkoutput';
+    default: return 'unknown';
+  }
+};
+
 export const useAppData = () => {
   const [sources, setSources] = useState<Source[]>([]);
   const [sinks, setSinks] = useState<Sink[]>([]);
@@ -79,7 +97,7 @@ export const useAppData = () => {
       const formattedSources: Source[] = allSources.map(source => ({
         id: source.Id || source.id,
         name: source.Name || source.name || `Source ${source.Id || source.id}`,
-        type: source.Type || source.type || 'Unknown',
+        type: mapSourceType(source.Type ?? source.type),
         status: 'active' as const,
         lastUpdate: new Date(),
         filePath: source.FilePath || source.filePath,

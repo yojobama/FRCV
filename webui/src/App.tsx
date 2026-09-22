@@ -24,6 +24,8 @@ import { SinksPage } from './pages/SinksPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { GraphPage } from './pages/GraphPage';
 import { MatchPage } from './pages/MatchPage';
+import { CalibrationWizardPage } from './pages/CalibrationWizardPage';
+import { StereoCalibrationWizardPage } from './pages/StereoCalibrationWizardPage';
 
 import type { Source, Sink, SystemStats, Settings as SettingsType } from './types';
 
@@ -324,6 +326,8 @@ function App() {
             } />
             <Route path="/match" element={<MatchPage />} />
             <Route path="/settings" element={<SettingsPage settings={settings} onSave={setSettings} />} />
+            <Route path="/calibrate/stereo/:sinkId" element={<StereoCalibrationWizardPage sources={sources} onToast={showToast} />} />
+            <Route path="/calibrate/:sinkId" element={<CalibrationWizardPage sources={sources} onToast={showToast} />} />
           </Routes>
         </main>
 

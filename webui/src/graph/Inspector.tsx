@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { X, Trash2, Wifi, WifiOff, Radio, Play, Square, Code, RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, Trash2, Wifi, WifiOff, Radio, Play, Square, Code, RefreshCw, Wand2 } from 'lucide-react';
 import type { PipelineNode } from './model';
 import type { WsSource, WsSink, NT4Defaults } from '../types';
 import { ApiService } from '../services/ApiService';
@@ -19,6 +20,7 @@ export const Inspector: React.FC<{
   onDeleted: () => void;
   nt4Settings: NT4Defaults;
 }> = ({ node, onClose, onToast, onDeleted, nt4Settings }) => {
+  const navigate = useNavigate();
   const { kind, raw, webrtcSink, nt4Sink, isRunning } = node.data;
   const [name, setName] = useState(node.data.label);
   const [resultJson, setResultJson] = useState<string | null>(null);
@@ -159,6 +161,18 @@ export const Inspector: React.FC<{
               <span className="text-sm text-gray-700 dark:text-gray-300">Enabled</span>
               <ToggleSwitch enabled={isRunning ?? false} onChange={toggleEnabled} />
             </div>
+
+            {/* ROADMAP.md Phase 8d: the only entry point into the calibration wizards - a
+                CameraCalibrationSink/StereoCalibrationSink had no dedicated UI at all before
+                this, only raw REST calls. */}
+            {(node.data.typeName === 'CameraCalibrationSink' || node.data.typeName === 'StereoCalibrationSink') && (
+              <button
+                onClick={() => navigate(node.data.typeName === 'StereoCalibrationSink' ? `/calibrate/stereo/${sink.Id}` : `/calibrate/${sink.Id}`)}
+                className="w-full px-3 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <Wand2 className="w-4 h-4" />Open Calibration Wizard
+              </button>
+            )}
 
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-700 dark:text-gray-300">Live Preview</span>
