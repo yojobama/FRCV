@@ -1,4 +1,4 @@
-import type { CameraHardwareInfo, Model, StereoCalibrationResult, StereoDepthStats, PipelineProfile, NodeTypesResponse, CameraCalibrationResult, CalibrationCoverage, NetworkTablesStatus } from '../types';
+import type { CameraHardwareInfo, CameraMode, Model, StereoCalibrationResult, StereoDepthStats, PipelineProfile, NodeTypesResponse, CameraCalibrationResult, CalibrationCoverage, NetworkTablesStatus } from '../types';
 
 export class ApiService {
   // Relative to wherever this page is served from - the C# server always serves its own built
@@ -50,6 +50,54 @@ export class ApiService {
   async createAllCameraSources(): Promise<void> {
     const response = await fetch(`${this.baseUrl}/cameraSource/createAll`, { method: 'POST' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  // Resolution/fps and exposure/gain control (CameraSourceController.cs) - backend-complete
+  // since ROADMAP.md Phase 3b/B3, but never had a client method or any UI until now.
+  async getCameraModes(id: number): Promise<CameraMode[]> {
+    const response = await fetch(`${this.baseUrl}/cameraSource/${id}/modes`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async getCameraCurrentMode(id: number): Promise<CameraMode> {
+    const response = await fetch(`${this.baseUrl}/cameraSource/${id}/currentMode`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // Returns whether the underlying ioctl/API call succeeded - NOT whether the device honoured
+  // it exactly (both V4L2 and Media Foundation silently substitute the nearest mode). Re-GET
+  // getCameraCurrentMode afterwards and check IsNative to see what was actually applied.
+  async setCameraMode(id: number, mode: CameraMode): Promise<boolean> {
+    const response = await fetch(`${this.baseUrl}/cameraSource/${id}/mode`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(mode)
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // exposureAbsolute is in the backend's own native units (V4L2: 100us steps). Call
+  // setCameraAutoExposure(id, false) first - most UVC hardware ignores a manual exposure value
+  // while auto-exposure is still on.
+  async setCameraExposure(id: number, exposureAbsolute: number): Promise<boolean> {
+    const response = await fetch(`${this.baseUrl}/cameraSource/${id}/exposure?exposureAbsolute=${exposureAbsolute}`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async setCameraAutoExposure(id: number, enabled: boolean): Promise<boolean> {
+    const response = await fetch(`${this.baseUrl}/cameraSource/${id}/autoExposure?enabled=${enabled}`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async setCameraGain(id: number, gain: number): Promise<boolean> {
+    const response = await fetch(`${this.baseUrl}/cameraSource/${id}/gain?gain=${gain}`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
   }
 
   // Video File Source Controller routes (/api/videoFileSource/*)

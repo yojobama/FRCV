@@ -35,6 +35,17 @@ export interface CameraHardwareInfo {
   Path: string;
 }
 
+// mirrors Server/Dtos.cs's CameraModeDto - PascalCase, see CameraCalibrationResult's note below.
+// PixelFormat is FrameFormat's ordinal (LumenCore/FrameFormat.h): 0 BGR24, 1 RGB24, 2 GRAY8,
+// 3 NV12, 4 YUYV, 5 MJPEG.
+export interface CameraMode {
+  Width: number;
+  Height: number;
+  Fps: number;
+  PixelFormat: number;
+  IsNative: boolean;
+}
+
 // An uploaded ONNX object detection model (YOLOv8/YOLOv11), as returned by /model/getAll
 export interface Model {
   id: number;

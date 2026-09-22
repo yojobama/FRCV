@@ -2,12 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Trash2, Wifi, WifiOff, Radio, Play, Square, Code, RefreshCw, Wand2 } from 'lucide-react';
 import type { PipelineNode } from './model';
-import type { WsSource, WsSink, NT4Defaults } from '../types';
+import type { WsSource, WsSink, NT4Defaults, CameraMode } from '../types';
 import { ApiService } from '../services/ApiService';
 import { ToggleSwitch } from '../components/ToggleSwitch';
 import { WebRTCStream } from '../components/WebRTCStream';
 
 const api = new ApiService();
+
+// LumenCore/FrameFormat.h's declaration order - see CameraMode's own comment in types/index.ts.
+const PIXEL_FORMAT_NAMES = ['BGR24', 'RGB24', 'GRAY8', 'NV12', 'YUYV', 'MJPEG'];
+const modeLabel = (m: CameraMode) => `${m.Width}x${m.Height} @ ${m.Fps}fps (${PIXEL_FORMAT_NAMES[m.PixelFormat] ?? m.PixelFormat})`;
+const modeKey = (m: CameraMode) => `${m.Width}x${m.Height}x${m.Fps}x${m.PixelFormat}`;
 
 // ROADMAP.md Phase 8c: right-hand inspector on node selection - live parameters, a live
 // preview (reusing WebRTCStream.tsx's connection logic as-is), the node's latest result JSON,
@@ -27,15 +32,88 @@ export const Inspector: React.FC<{
   const [showPreview, setShowPreview] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
   const [newProfileTagSize, setNewProfileTagSize] = useState(0.1651);
+  // 0 = CPU (apriltag), 1 = Vulkan (vkapriltag) - matches AddSinkModal's own convention. The
+  // backend can only be picked at creation time (ApriltagDetector::m_Backend has no setter, and
+  // there's no PATCH endpoint), so profiles are the only way to switch an existing detector
+  // between CPU/Vulkan at runtime - this dropdown was missing, so createApriltagProfile always
+  // silently created CPU profiles regardless of what the user actually wanted.
+  const [newProfileBackend, setNewProfileBackend] = useState(0);
+  const [cameraModes, setCameraModes] = useState<CameraMode[]>([]);
+  const [currentMode, setCurrentMode] = useState<CameraMode | null>(null);
+  const [autoExposure, setAutoExposure] = useState(true);
+  const [exposureValue, setExposureValue] = useState(300);
+  const [gainValue, setGainValue] = useState(0);
 
   useEffect(() => {
     setName(node.data.label);
     setResultJson(null);
     setShowPreview(false);
+    setCameraModes([]);
+    setCurrentMode(null);
   }, [node.id]);
 
   const source = kind === 'source' ? (raw as WsSource) : null;
   const sink = kind === 'sink' ? (raw as WsSink) : null;
+  const isCamera = source != null && source.Type === 0;
+
+  // Modes/current mode aren't in the /ws/state snapshot (they're a live device query, not
+  // pipeline state), so this needs its own fetch - only for camera sources, only once per
+  // selected node rather than on every WS tick.
+  useEffect(() => {
+    if (!isCamera || !source) return;
+    let cancelled = false;
+    Promise.all([api.getCameraModes(source.Id), api.getCameraCurrentMode(source.Id)])
+      .then(([modes, mode]) => {
+        if (cancelled) return;
+        setCameraModes(modes);
+        setCurrentMode(mode);
+      })
+      .catch(() => { if (!cancelled) onToast('Failed to load camera modes', 'error'); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id, isCamera]);
+
+  const changeMode = async (mode: CameraMode) => {
+    if (!source) return;
+    try {
+      await api.setCameraMode(source.Id, mode);
+      const applied = await api.getCameraCurrentMode(source.Id);
+      setCurrentMode(applied);
+      onToast(applied.IsNative ? 'Mode applied' : 'Camera substituted the nearest supported mode', applied.IsNative ? 'success' : 'info');
+    } catch {
+      onToast('Failed to set camera mode', 'error');
+    }
+  };
+
+  const changeAutoExposure = async (enabled: boolean) => {
+    if (!source) return;
+    try {
+      await api.setCameraAutoExposure(source.Id, enabled);
+      setAutoExposure(enabled);
+    } catch {
+      onToast('Auto-exposure not supported by this device', 'error');
+    }
+  };
+
+  const applyExposure = async () => {
+    if (!source) return;
+    try {
+      await api.setCameraExposure(source.Id, exposureValue);
+      onToast('Exposure applied', 'success');
+    } catch {
+      onToast('Exposure not supported by this device', 'error');
+    }
+  };
+
+  const applyGain = async () => {
+    if (!source) return;
+    try {
+      await api.setCameraGain(source.Id, gainValue);
+      onToast('Gain applied', 'success');
+    } catch {
+      onToast('Gain not supported by this device', 'error');
+    }
+  };
 
   const saveName = async () => {
     try {
@@ -117,7 +195,7 @@ export const Inspector: React.FC<{
   const createApriltagProfile = async () => {
     if (!source || !newProfileName.trim()) return;
     try {
-      await api.createApriltagProfile(source.Id, newProfileName.trim(), newProfileTagSize);
+      await api.createApriltagProfile(source.Id, newProfileName.trim(), newProfileTagSize, { backend: newProfileBackend });
       setNewProfileName('');
       onToast('Profile created', 'success');
     } catch {
@@ -154,6 +232,70 @@ export const Inspector: React.FC<{
         <div className="text-xs text-gray-500 dark:text-gray-400">
           ID: {source?.Id ?? sink?.Id} &middot; {node.data.fps.toFixed(1)} fps &middot; {(node.data.latencyUs / 1000).toFixed(1)} ms latency
         </div>
+
+        {isCamera && (
+          <div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-3">
+            <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400">Camera Controls</h4>
+
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Resolution / FPS {currentMode && !currentMode.IsNative && <span className="text-yellow-500">(substituted)</span>}
+              </label>
+              {cameraModes.length > 0 ? (
+                <select
+                  value={currentMode ? modeKey(currentMode) : ''}
+                  onChange={e => {
+                    const mode = cameraModes.find(m => modeKey(m) === e.target.value);
+                    if (mode) changeMode(mode);
+                  }}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white"
+                >
+                  {currentMode && !cameraModes.some(m => modeKey(m) === modeKey(currentMode!)) && (
+                    <option value={modeKey(currentMode)}>{modeLabel(currentMode)} (current)</option>
+                  )}
+                  {cameraModes.map(m => (
+                    <option key={modeKey(m)} value={modeKey(m)}>{modeLabel(m)}</option>
+                  ))}
+                </select>
+              ) : (
+                <p className="text-xs text-gray-400">
+                  {currentMode ? modeLabel(currentMode) : 'Loading modes...'}
+                  {cameraModes.length === 0 && currentMode && ' - device reports no other selectable modes'}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-700 dark:text-gray-300">Auto Exposure</span>
+              <ToggleSwitch enabled={autoExposure} onChange={changeAutoExposure} />
+            </div>
+
+            {/* a fixed short exposure is what actually makes AprilTag detection reliable on a
+                moving robot (motion blur otherwise smears the tag edges) - this is the whole
+                point of exposing manual exposure control here, not just a nice-to-have. */}
+            <div className={autoExposure ? 'opacity-50 pointer-events-none' : ''}>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Exposure (100&micro;s units)</label>
+              <div className="flex gap-2">
+                <input type="number" value={exposureValue} onChange={e => setExposureValue(parseInt(e.target.value) || 0)}
+                  className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white" />
+                <button onClick={applyExposure} className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">Apply</button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Gain</label>
+              <div className="flex gap-2">
+                <input type="number" value={gainValue} onChange={e => setGainValue(parseInt(e.target.value) || 0)}
+                  className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white" />
+                <button onClick={applyGain} className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">Apply</button>
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-400">
+              Not every device/driver honours all of these - a control this camera doesn't support fails with a toast rather than silently doing nothing.
+            </p>
+          </div>
+        )}
 
         {sink && (
           <>
@@ -219,12 +361,20 @@ export const Inspector: React.FC<{
                 ))}
               </div>
             )}
-            <div className="flex gap-2">
+            <div className="space-y-1">
               <input value={newProfileName} onChange={e => setNewProfileName(e.target.value)} placeholder="New AprilTag profile name"
-                className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white" />
-              <input type="number" step="any" value={newProfileTagSize} onChange={e => setNewProfileTagSize(parseFloat(e.target.value) || 0.1651)}
-                className="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white" />
-              <button onClick={createApriltagProfile} className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">Add</button>
+                className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white" />
+              <div className="flex gap-2">
+                <input type="number" step="any" value={newProfileTagSize} onChange={e => setNewProfileTagSize(parseFloat(e.target.value) || 0.1651)}
+                  title="Tag size (meters)"
+                  className="w-20 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white" />
+                <select value={newProfileBackend} onChange={e => setNewProfileBackend(parseInt(e.target.value))}
+                  className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white">
+                  <option value={0}>CPU (apriltag)</option>
+                  <option value={1}>Vulkan (vkapriltag)</option>
+                </select>
+                <button onClick={createApriltagProfile} className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">Add</button>
+              </div>
             </div>
           </div>
         )}

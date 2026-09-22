@@ -19,7 +19,7 @@ void ObjectDetectionSink::Process(std::vector<SourceResult> results)
 		if (m_DriverMode) {
 			// still streams video (matches PhotonVision's own driver-mode behaviour) - skips
 			// the actual inference call, the expensive part.
-			SetLatestResult(SourceResult(nlohmann::json(std::vector<nlohmann::json>{}), sourceFrame));
+			SetLatestResult(SourceResult(nlohmann::json(std::vector<nlohmann::json>{}), sourceFrame, result.captureTimeUs));
 			continue;
 		}
 
@@ -44,6 +44,6 @@ void ObjectDetectionSink::Process(std::vector<SourceResult> results)
 				cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0xff, 0), 1);
 		}
 
-		SetLatestResult(SourceResult(nlohmann::json(jsonVector), annotatedFrame));
+		SetLatestResult(SourceResult(nlohmann::json(jsonVector), annotatedFrame, result.captureTimeUs));
 	}
 }

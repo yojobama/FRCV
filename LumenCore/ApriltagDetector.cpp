@@ -129,7 +129,7 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 				// same {"tags":[...],"multiTag":...} envelope as the real detection path below
 				// (both empty/null) so NetworkTablesSink clears tags/* AND multitag/* to "0 tags"
 				// rather than leaving stale data from before driver mode was enabled.
-				SetLatestResult(SourceResult(nlohmann::json{{"tags", nlohmann::json::array()}, {"multiTag", nullptr}}, result.frame->AsBgr()));
+				SetLatestResult(SourceResult(nlohmann::json{{"tags", nlohmann::json::array()}, {"multiTag", nullptr}}, result.frame->AsBgr(), result.captureTimeUs));
 				continue;
 			}
 
@@ -295,7 +295,7 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 			nlohmann::json multiTagJson = SolveMultiTagPnP(
 				multiTagObjectPoints, multiTagImagePoints, m_CameraMatrix, m_DistCoeffs, multiTagCount);
 
-			SetLatestResult(SourceResult(nlohmann::json{{"tags", jsonVector}, {"multiTag", multiTagJson}}, colouredFrame));
+			SetLatestResult(SourceResult(nlohmann::json{{"tags", jsonVector}, {"multiTag", multiTagJson}}, colouredFrame, result.captureTimeUs));
 		}
 	}
 }
