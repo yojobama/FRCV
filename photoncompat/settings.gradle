@@ -1,0 +1,6 @@
+// Deliberately its OWN, independent Gradle build - not included as a subproject of robot/'s
+// build (which would let robot/build.gradle depend on it via project(':photoncompat'), a
+// same-build source reference that would silently defeat the whole point of this module: proving
+// the REAL external vendordep/Maven-artifact consumption path actually works end to end, not
+// just that the Java compiles in the same build. See photoncompat/build.gradle's own comment.
+rootProject.name = "photoncompat"

@@ -1,0 +1,95 @@
+// org.lumenvision:photoncompat-java - the NT4 client library robot code uses to read a
+// LumenVision coprocessor's AprilTag/object-detection results (org.lumenvision.photoncompat.*).
+// Published as a real FRC vendor library (see photoncompat/vendordep-template.json) rather than
+// living as plain source inside robot/, so a team consuming LumenVision doesn't need this repo
+// checked out at all - they add photoncompat.json to their own project's vendordeps/ the same
+// way they'd add PhotonLib.
+//
+// Deliberately a plain "java-library" module, NOT a GradleRIO project - it depends only on
+// WPILib's own published Maven artifacts (wpimath/ntcore/wpiutil), reachable from any ordinary
+// Gradle repository declaration, so it needs none of GradleRIO's RoboRIO-deploy-target machinery
+// (see robot/build.gradle for that side of this repo). robot/ itself consumes this module the
+// same way any other FRC team's project would: via robot/vendordeps/photoncompat.json, not a
+// same-Gradle-project source dependency - real end-to-end proof the published artifact actually
+// resolves and works, not just a compile-time convenience.
+plugins {
+    id "java-library"
+    id "maven-publish"
+}
+
+group = "org.lumenvision"
+// Real releases set this via `-PphotoncompatVersion=X.Y.Z` (the CI release workflow, driven by
+// the pushed tag - see .github/workflows/release.yml). A local/manual build without that
+// property gets an unmistakably-not-a-release placeholder rather than silently defaulting to
+// something that could be confused for a real version.
+version = project.hasProperty("photoncompatVersion") ? project.photoncompatVersion : "0.0.0-local"
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+    withSourcesJar()
+}
+
+repositories {
+    mavenCentral()
+    maven { url = "https://frcmaven.wpi.edu/artifactory/release/" }
+}
+
+// Must track robot/build.gradle's own GradleRIO version (robot/.wpilib/wpilib_preferences.json's
+// projectYear) - there's no single shared source of truth between a GradleRIO-plugin project and
+// a plain java-library one, so this is kept in step by hand across both season upgrades.
+ext.wpilibVersion = "2026.2.1"
+
+dependencies {
+    // WPILib's own published POMs are intentionally bare (no transitive dependency info -
+    // confirmed against the real installed 2026.2.1 maven cache: wpimath-java's .pom declares
+    // no <dependencies> at all). GradleRIO's wpi.java.deps.wpilib() helper works around this by
+    // adding each artifact explicitly rather than relying on POM resolution; this plain
+    // java-library module (which doesn't have that helper available) does the same by hand.
+    //
+    // api, not implementation: photoncompat's own public API returns WPIMath geometry types
+    // (Pose2d/Pose3d/Transform2d/Transform3d/...) and NetworkTables types directly (see
+    // LumenUtils/LumenCamera/LumenTrackedTarget) - a consumer needs these on ITS OWN compile
+    // classpath too, which only `api` (not `implementation`) propagates transitively.
+    api "edu.wpi.first.wpimath:wpimath-java:${wpilibVersion}"
+    api "edu.wpi.first.ntcore:ntcore-java:${wpilibVersion}"
+    implementation "edu.wpi.first.wpiutil:wpiutil-java:${wpilibVersion}"
+    // wpimath's own compiled classes (Pose3d and friends) reference edu.wpi.first.units.measure
+    // types even though photoncompat's own source never imports them directly - javac still
+    // needs them resolvable, confirmed the hard way (compile failed without this).
+    implementation "edu.wpi.first.wpiunits:wpiunits-java:${wpilibVersion}"
+    implementation "org.ejml:ejml-simple:0.44.0"
+    // wpimath's Jackson-annotated classes need this resolvable at runtime, not just compile time
+    // (struct/protobuf schema reflection) - same "wpimath's own bare POM doesn't declare it"
+    // reasoning as everything else in this block.
+    implementation "com.fasterxml.jackson.core:jackson-annotations:2.19.2"
+    // Translation2d/Translation3d's static initializers build a QuickBuffers protobuf schema for
+    // NT4 struct serialization - confirmed the hard way (NoClassDefFoundError at class-init time,
+    // not just on first real use, so this is unconditionally required, not an optional feature).
+    implementation "us.hebi.quickbuf:quickbuf-runtime:1.4"
+
+    testImplementation "org.junit.jupiter:junit-jupiter:5.10.1"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+test {
+    useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            artifactId = "photoncompat-java"
+        }
+    }
+    repositories {
+        // CI copies this directory's contents into the gh-pages branch after a release build -
+        // see .github/workflows/release.yml. Not a real remote publish target; kept local so a
+        // plain `./gradlew photoncompat:publish` run (CI or manual) never needs credentials.
+        maven {
+            name = "local"
+            url = layout.buildDirectory.dir("maven-repo")
+        }
+    }
+}
