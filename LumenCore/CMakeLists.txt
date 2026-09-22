@@ -337,6 +337,23 @@ if(WIN32)
                 "$<TARGET_FILE_DIR:LumenCore>"
         COMMAND_EXPAND_LISTS
     )
+else()
+    # Linux has rpath/LD_LIBRARY_PATH/ldconfig, so a plain `dotnet build`/dev loop against an
+    # install-deps.sh'd machine needs no copy at all - the dynamic linker already finds
+    # everything under /usr/local and /opt/lumenvision-ffmpeg on its own. This copy exists for
+    # PACKAGING (scripts/build-deb.sh): it stages every from-source/vendored runtime dependency
+    # next to libLumenCore.so so Server.csproj's existing *.so glob (see its own comment) bundles
+    # them into the publish output automatically - the same mechanism that already ships them for
+    # a plain deploy, not a packaging-only special case. See CopyLinuxRuntimeDeps.cmake's own
+    # comment for why only /usr/local and /opt/lumenvision-ffmpeg are copied, not every resolved
+    # dependency (glibc/libstdc++ must never be bundled; apt-managed libs are the target image's
+    # own responsibility).
+    add_custom_command(TARGET LumenCore POST_BUILD
+        COMMAND "${CMAKE_COMMAND}"
+                -D "EXECUTABLE=$<TARGET_FILE:LumenCore>"
+                -D "DEST_DIR=$<TARGET_FILE_DIR:LumenCore>"
+                -P "${CMAKE_CURRENT_SOURCE_DIR}/../cmake/CopyLinuxRuntimeDeps.cmake"
+    )
 endif()
 
 # --- The SWIG/native pairing stamp -------------------------------------------------------------

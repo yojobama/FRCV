@@ -81,7 +81,11 @@
     single-file version of this same problem.
   -->
   <ItemGroup>
-    <LumenCoreStageFiles Include="$(LumenCoreStageDir)\*.so;$(LumenCoreStageDir)\*.dll" Condition="Exists('$(LumenCoreStageDir)')" />
+    <!-- *.so* (not just *.so): versioned SONAMEs like libopencv_core.so.5.0.0 and their
+         unversioned-major symlinks like libapriltag.so.3 don't end in a literal ".so" - see
+         LumenCore/CMakeLists.txt's Linux POST_BUILD step (CopyLinuxRuntimeDeps.cmake), which
+         stages exactly these files/symlinks next to libLumenCore.so for packaging. -->
+    <LumenCoreStageFiles Include="$(LumenCoreStageDir)\*.so*;$(LumenCoreStageDir)\*.dll" Condition="Exists('$(LumenCoreStageDir)')" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="@(LumenCoreStageFiles)">
