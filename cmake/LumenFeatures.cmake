@@ -32,6 +32,7 @@ set(_LUMEN_FEATURE_NAMES
     VULKAN_APRILTAG
     CODEC_STEREO
     RKNN
+    RGA
 )
 
 set(_LUMEN_FEATURE_ONNX_DESC            "ONNX Runtime object detection backend")
@@ -40,15 +41,18 @@ set(_LUMEN_FEATURE_WEBRTC_DESC          "WebRTC live-view sink")
 set(_LUMEN_FEATURE_VULKAN_APRILTAG_DESC "Vulkan compute AprilTag backend")
 set(_LUMEN_FEATURE_CODEC_STEREO_DESC    "codec-stereo hardware-motion-vector depth backend")
 set(_LUMEN_FEATURE_RKNN_DESC            "Rockchip NPU object detection backend (aarch64 only)")
+set(_LUMEN_FEATURE_RGA_DESC              "Rockchip RGA hardware BGR->NV12 conversion for WebRTCSink (aarch64 only)")
 
 # Defaults match what LumenCore.vcxproj's FeatureFlags PropertyGroup used to hardcode: everything
-# on except RKNN, which is unimplemented (Manager.cpp throws) and ARM64-only regardless.
+# on except RKNN and RGA, both Rockchip-silicon-only (see their aarch64-only guards below) - a
+# generic x64/Windows configure has no such hardware to target regardless of what a caller passes.
 set(_LUMEN_FEATURE_ONNX_DEFAULT            ON)
 set(_LUMEN_FEATURE_NT4_DEFAULT             ON)
 set(_LUMEN_FEATURE_WEBRTC_DEFAULT          ON)
 set(_LUMEN_FEATURE_VULKAN_APRILTAG_DEFAULT ON)
 set(_LUMEN_FEATURE_CODEC_STEREO_DEFAULT    ON)
 set(_LUMEN_FEATURE_RKNN_DEFAULT            OFF)
+set(_LUMEN_FEATURE_RGA_DEFAULT              OFF)
 
 set(LUMEN_SWIG_DEFINES "")
 set(LUMEN_ENABLED_DEFINES "")
@@ -63,13 +67,18 @@ foreach(_name ${_LUMEN_FEATURE_NAMES})
     endif()
 endforeach()
 
-# RKNN guards no first-party code today (Manager.cpp:801 throws "not implemented yet" regardless
-# of this flag) and is Rockchip-silicon-only - refuse it anywhere but a genuine aarch64 configure,
-# rather than let it silently do nothing on Windows/x64 (ROADMAP.md Phase 2f).
+# RKNN (RknnDetectionBackend) and RGA (RgaColorConverter) are both Rockchip-silicon-only -
+# refuse either anywhere but a genuine aarch64 configure, rather than let it silently do nothing
+# on Windows/x64 (ROADMAP.md Phase 2f).
 if(LUMEN_WITH_RKNN AND NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
     message(FATAL_ERROR
         "LUMEN_WITH_RKNN=ON but CMAKE_SYSTEM_PROCESSOR is '${CMAKE_SYSTEM_PROCESSOR}' - "
         "RKNN is the Orange Pi's NPU and only exists on aarch64. Turn it off for this configure.")
+endif()
+if(LUMEN_WITH_RGA AND NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+    message(FATAL_ERROR
+        "LUMEN_WITH_RGA=ON but CMAKE_SYSTEM_PROCESSOR is '${CMAKE_SYSTEM_PROCESSOR}' - "
+        "RGA is the Orange Pi's 2D accelerator and only exists on aarch64. Turn it off for this configure.")
 endif()
 
 message(STATUS "LumenCore enabled features: ${LUMEN_ENABLED_FEATURES}")

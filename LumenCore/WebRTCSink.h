@@ -15,6 +15,10 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
+#ifdef LUMEN_WITH_RGA
+#include "RgaColorConverter.h"
+#endif
+
 struct WebRTCSinkConfig {
 	int bitrateKbps = 4000;
 	int fps = 30;
@@ -80,6 +84,14 @@ private:
 	int m_EncoderWidth = 0;
 	int m_EncoderHeight = 0;
 	int64_t m_FrameCounter = 0;
+
+#ifdef LUMEN_WITH_RGA
+	RgaColorConverter m_RgaConverter;
+	// only warn once per sink lifetime, not once per frame - a persistently-failing RGA path
+	// (unsupported size, driver issue) would otherwise flood the log at whatever fps this sink
+	// runs, drowning out anything else the logger reports.
+	bool m_RgaConversionFailureLogged = false;
+#endif
 };
 
 #endif // LUMEN_WITH_WEBRTC

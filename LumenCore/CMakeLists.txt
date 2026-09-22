@@ -60,6 +60,11 @@ if(LUMEN_WITH_RKNN)
     list(APPEND LUMEN_CORE_SOURCES RknnDetectionBackend.cpp)
 endif()
 
+if(LUMEN_WITH_RGA)
+    # same reasoning as LUMEN_WITH_RKNN immediately above - <im2d.h> only exists on the Pi image.
+    list(APPEND LUMEN_CORE_SOURCES RgaColorConverter.cpp)
+endif()
+
 # --- SWIG source properties -------------------------------------------------------------------
 # Generated C# lands directly in Server/Interop/ (gitignored, regenerated every configure/build -
 # see .gitignore's swig_wrap.cxx / **/Interop/*.cs rules) so Server.csproj's own glob picks it up
@@ -288,12 +293,20 @@ if(LUMEN_WITH_WEBRTC)
     target_link_libraries(LumenCore PRIVATE LibDataChannel::LibDataChannel Lumen::ffmpeg)
 endif()
 
-# --- Optional: Rockchip NPU object detection (aarch64 only; RknnDetectionBackend not yet
-# written - ROADMAP.md Phase 6 - so this currently only affects what's available to LINK, not
-# what code exists) --------------------------------------------------------------------------
+# --- Optional: Rockchip NPU object detection (aarch64 only) ----------------------------------
 if(LUMEN_WITH_RKNN)
     find_package(RKNN REQUIRED)
     target_link_libraries(LumenCore PRIVATE RKNN::rknn)
+endif()
+
+# --- Optional: Rockchip RGA hardware colour conversion for WebRTCSink (aarch64 only) ----------
+# librga ships its own .pc file (install-deps.sh --with-mpp writes one - see that script's own
+# comment for why airockchip/librga has no upstream .pc of its own), so plain pkg-config is
+# enough here, matching LumenFFmpeg.cmake's approach rather than a dedicated Find module.
+if(LUMEN_WITH_RGA)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(LUMEN_RGA REQUIRED IMPORTED_TARGET librga)
+    target_link_libraries(LumenCore PRIVATE PkgConfig::LUMEN_RGA)
 endif()
 
 # --- Packaging: collect every transitive runtime dependency next to the built library ---------

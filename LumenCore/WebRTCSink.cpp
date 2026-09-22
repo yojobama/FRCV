@@ -180,7 +180,17 @@ bool WebRTCSink::EnsureEncoderInitialized(int width, int height)
 	m_CodecContext->height = height;
 	m_CodecContext->time_base = AVRational{ 1, m_Config.fps };
 	m_CodecContext->framerate = AVRational{ m_Config.fps, 1 };
-	m_CodecContext->pix_fmt = AV_PIX_FMT_YUV420P;
+	// NV12 when RGA is compiled in - it's the format RgaColorConverter actually produces (and
+	// the RK3588 VPU's own native/preferred format for h264_rkmpp regardless), avoiding a
+	// pointless extra conversion on top of what RGA already did. YUV420P everywhere else
+	// (unchanged from before this optimization) - sws_scale's existing fallback path is left
+	// completely untouched on any build that doesn't have RGA hardware to offload to.
+#ifdef LUMEN_WITH_RGA
+	const AVPixelFormat convertedPixFmt = AV_PIX_FMT_NV12;
+#else
+	const AVPixelFormat convertedPixFmt = AV_PIX_FMT_YUV420P;
+#endif
+	m_CodecContext->pix_fmt = convertedPixFmt;
 	m_CodecContext->bit_rate = static_cast<int64_t>(m_Config.bitrateKbps) * 1000;
 	m_CodecContext->gop_size = m_Config.fps * 2;
 	m_CodecContext->max_b_frames = 0; // zero-latency streaming, not file encoding
@@ -193,11 +203,14 @@ bool WebRTCSink::EnsureEncoderInitialized(int width, int height)
 		return false;
 	}
 
-	m_SwsContext = sws_getContext(width, height, AV_PIX_FMT_BGR24, width, height, AV_PIX_FMT_YUV420P,
+	// always set up, even when RGA is compiled in - the sws_scale path is the runtime fallback
+	// whenever RgaColorConverter::ConvertBgrToNv12 fails (busy/absent hardware, unsupported
+	// size), not just a build-time alternative - see EncodeAndSend.
+	m_SwsContext = sws_getContext(width, height, AV_PIX_FMT_BGR24, width, height, convertedPixFmt,
 		SWS_BILINEAR, nullptr, nullptr, nullptr);
 
 	m_YuvFrame = av_frame_alloc();
-	m_YuvFrame->format = AV_PIX_FMT_YUV420P;
+	m_YuvFrame->format = convertedPixFmt;
 	m_YuvFrame->width = width;
 	m_YuvFrame->height = height;
 	av_frame_get_buffer(m_YuvFrame, 32);
@@ -226,9 +239,23 @@ void WebRTCSink::EncodeAndSend(const cv::Mat& bgrFrame)
 	if (!track || !track->isOpen()) return;
 	if (!EnsureEncoderInitialized(bgrFrame.cols, bgrFrame.rows)) return;
 
-	const uint8_t* srcSlices[1] = { bgrFrame.data };
-	int srcStride[1] = { static_cast<int>(bgrFrame.step) };
-	sws_scale(m_SwsContext, srcSlices, srcStride, 0, bgrFrame.rows, m_YuvFrame->data, m_YuvFrame->linesize);
+	// RGA first (hardware, near-zero CPU cost); sws_scale (software) is the fallback whenever
+	// it's not compiled in, or the hardware call itself fails at runtime (busy/absent RGA,
+	// unsupported size) - not just a build-time either/or, matching how ApriltagDetector falls
+	// back from Vulkan to CPU on its own hardware-path failure rather than dropping the frame.
+	bool converted = false;
+#ifdef LUMEN_WITH_RGA
+	converted = m_RgaConverter.ConvertBgrToNv12(bgrFrame, m_YuvFrame);
+	if (!converted && m_Logger && !m_RgaConversionFailureLogged) {
+		m_Logger->EnterLog(::LogLevel::Warning, "WebRTCSink: RGA colour conversion failed, falling back to sws_scale (logged once)");
+		m_RgaConversionFailureLogged = true;
+	}
+#endif
+	if (!converted) {
+		const uint8_t* srcSlices[1] = { bgrFrame.data };
+		int srcStride[1] = { static_cast<int>(bgrFrame.step) };
+		sws_scale(m_SwsContext, srcSlices, srcStride, 0, bgrFrame.rows, m_YuvFrame->data, m_YuvFrame->linesize);
+	}
 	m_YuvFrame->pts = m_FrameCounter++;
 
 	if (avcodec_send_frame(m_CodecContext, m_YuvFrame) < 0) return;
