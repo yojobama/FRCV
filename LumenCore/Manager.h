@@ -142,12 +142,19 @@ public:
 	int CreateObjectDetectionSink(ObjectDetectionProvider provider);
 	int CreateObjectDetectionSink(ObjectDetectionProvider provider, int id);
 
-	// RKNN is accepted here but not yet implemented (throws) - it is the production path on the
-	// Orange Pi once written, but ONNX Runtime is the only backend actually wired up today
+	// RKNN runs on the RK3588's own NPU (see RknnDetectionBackend's own comment) - only compiled
+	// in when LUMEN_WITH_RKNN is on (the Pi build; not WSL/Windows, which have no RK3588 NPU to
+	// target), in which case selecting RKNN without that build flag throws a clear error rather
+	// than silently falling back to ONNX.
 	int CreateObjectDetectionSink(ObjectDetectionProvider provider, string modelPath, string labelsPath,
 		YoloVariant variant, float confThreshold, float nmsThreshold, int inputSize);
 	int CreateObjectDetectionSink(int id, ObjectDetectionProvider provider, string modelPath, string labelsPath,
 		YoloVariant variant, float confThreshold, float nmsThreshold, int inputSize);
+
+	// which backend an existing ObjectDetectionSink actually ended up running - see
+	// ObjectDetectionSink::GetBackendName's own comment on why this is read-only/informational
+	// rather than a live setter the way ApriltagDetector's backend choice is.
+	std::string GetObjectDetectionSinkBackendName(int sinkId);
 
 	// functions to create/manage camera calibrators. Default board is a 6x9 checkerboard with
 	// 25mm squares, matching the previous hardcoded behavior; the explicit-config overloads

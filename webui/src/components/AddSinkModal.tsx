@@ -149,7 +149,7 @@ export const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAd
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white"
                   >
                     {models.map(m => (
-                      <option key={m.id} value={m.id}>{m.name} ({m.variant === 1 ? 'YOLOv11' : 'YOLOv8'})</option>
+                      <option key={m.id} value={m.id}>{m.name} ({m.variant === 1 ? 'YOLOv11' : 'YOLOv8'}, {m.provider === 0 ? 'RKNN/NPU' : 'ONNX'})</option>
                     ))}
                   </select>
                 ) : (
@@ -189,9 +189,10 @@ export const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAd
                   <option value={1}>YOLOv11</option>
                 </select>
                 <div>
-                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Model weights (.onnx)</label>
-                  <input type="file" accept=".onnx" onChange={(e) => setNewModelFile(e.target.files?.[0] ?? null)}
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Model weights (.onnx or .rknn)</label>
+                  <input type="file" accept=".onnx,.rknn" onChange={(e) => setNewModelFile(e.target.files?.[0] ?? null)}
                     className="w-full text-sm text-gray-700 dark:text-gray-300" />
+                  <p className="text-xs text-gray-400 mt-1">The backend (ONNX Runtime or RKNN/NPU) is picked automatically from the file extension.</p>
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Class labels (optional, one per line)</label>

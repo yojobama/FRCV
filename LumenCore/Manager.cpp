@@ -1141,6 +1141,17 @@ int Manager::CreateObjectDetectionSink(int id, ObjectDetectionProvider provider,
     return id;
 }
 
+std::string Manager::GetObjectDetectionSinkBackendName(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return "none";
+
+    ObjectDetectionSink* p_Sink = dynamic_cast<ObjectDetectionSink*>(sink->second.get());
+    if (p_Sink == nullptr) return "none";
+
+    return p_Sink->GetBackendName();
+}
+
 // Bodies only - see Manager.h's comment on why these methods are DECLARED unconditionally.
 // #ifdef'd per logical group rather than per function: every symbol below is defined in both
 // branches (so linking/SWIG-wrapping never sees a missing entry point), the LUMEN_WITH_NT4

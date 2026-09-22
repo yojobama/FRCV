@@ -54,6 +54,14 @@ namespace Server
                 labelsData.CopyTo(output);
             }
 
+            // .rknn is the only export format RknnDetectionBackend actually reads (see its own
+            // Load() comment) - everything else (.onnx in practice) goes to ONNX Runtime. This
+            // is the ONE place the provider is decided; every sink-creation call site downstream
+            // reads it back off the model rather than hardcoding a provider itself.
+            ObjectDetectionProvider provider = Path.GetExtension(modelFileName).Equals(".rknn", StringComparison.OrdinalIgnoreCase)
+                ? ObjectDetectionProvider.RKNN
+                : ObjectDetectionProvider.ONNX;
+
             var model = new Model
             {
                 Id = id,
@@ -64,6 +72,7 @@ namespace Server
                 InputSize = inputSize,
                 ConfThreshold = confThreshold,
                 NmsThreshold = nmsThreshold,
+                Provider = provider,
             };
             models.Add(model);
             Save();

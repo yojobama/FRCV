@@ -5,14 +5,17 @@ using HttpMultipartParser;
 
 namespace Server.Controllers
 {
-    // upload/list/delete for YOLOv8/v11 ONNX detection models. The variant is a plain form
-    // field (the WebUI's model-family dropdown), not inferred from the file - both variants
-    // share the same ONNX head shape, so there is nothing in the file itself to detect it from.
+    // upload/list/delete for YOLOv8/v11 detection models (ONNX Runtime or RKNN/NPU export). The
+    // variant is a plain form field (the WebUI's model-family dropdown), not inferred from the
+    // file - both variants share the same head shape in either format, so there is nothing in
+    // the file itself to detect it from. The PROVIDER (ONNX vs RKNN), by contrast, IS inferred
+    // from the file - see ModelManager.AddModel's own comment - since a .rknn export and a .onnx
+    // graph are different file formats, not a preference to ask for separately.
     internal class ModelController : WebApiController
     {
         // POST multipart/form-data: fields "name", "variant" (0=YOLOv8, 1=YOLOv11),
-        // "inputSize", "confThreshold", "nmsThreshold"; files "model" (.onnx, required) and
-        // "labels" (one class name per line, optional)
+        // "inputSize", "confThreshold", "nmsThreshold"; files "model" (.onnx or .rknn, required)
+        // and "labels" (one class name per line, optional)
         [Route(HttpVerbs.Post, "/model/upload")]
         public Task<int> Upload()
         {

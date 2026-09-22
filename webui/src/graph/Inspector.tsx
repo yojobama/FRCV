@@ -124,6 +124,20 @@ export const Inspector: React.FC<{
   };
 
   const isApriltagSink = sink != null && node.data.typeName === 'ApriltagSink';
+  const isObjectDetectionSink = sink != null && node.data.typeName === 'ObjectDetectionSink';
+  const [detectionBackendName, setDetectionBackendName] = useState<string | null>(null);
+
+  // read-only - see ObjectDetectionSinkController.GetBackend's own comment for why there's no
+  // switcher here the way ApriltagSink has one.
+  useEffect(() => {
+    if (!isObjectDetectionSink || !sink) return;
+    let cancelled = false;
+    api.getObjectDetectionSinkBackend(sink.Id)
+      .then(name => { if (!cancelled) setDetectionBackendName(name); })
+      .catch(() => { if (!cancelled) setDetectionBackendName(null); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id, isObjectDetectionSink]);
 
   // Same reasoning as the camera modes fetch above - the sink's actual running backend/tuning
   // isn't in the /ws/state snapshot, so this needs its own one-shot fetch per selected node.
@@ -412,6 +426,16 @@ export const Inspector: React.FC<{
                 )}
                 <button onClick={applyTuning} disabled={applyingTuning}
                   className="w-full px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50">Apply Tuning</button>
+              </div>
+            )}
+
+            {/* read-only - RKNN vs ONNX Runtime is decided once from the uploaded model's own
+                file format (Model.provider), not a live switch the way ApriltagSink's backend
+                dropdown is - see ObjectDetectionSinkController.GetBackend's own comment. */}
+            {isObjectDetectionSink && (
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-700 dark:text-gray-300">Backend</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{detectionBackendName ?? 'Loading...'}</span>
               </div>
             )}
 

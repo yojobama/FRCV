@@ -133,7 +133,11 @@ namespace Server
                         break;
                     case "objectdetectionsink":
                     case "ObjectDetectionSink":
-                        id = ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX, id.Value);// TODO: Add logic for selecting acceleration type (ONNX with REP, or Rknn)
+                        // unreachable in practice: the no-model CreateObjectDetectionSink overload
+                        // always throws (see its own comment) - a real ObjectDetectionSink can
+                        // only come from AddObjectDetectionSink/CreateOrReplaceDetectionSinkForProfile,
+                        // which resolve the provider from the model itself, not a hardcoded one.
+                        id = ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX, id.Value);
                         sinks.Add(new Sink(id.Value, name, SinkType.ObjectDetectionSink));
                         break;
                     case "cameracalibrationsink":
@@ -340,20 +344,26 @@ namespace Server
         public bool IsWebRTCSinkConnected(int sinkId) => ManagerWrapper.Instance.IsWebRTCSinkConnected(sinkId);
         public string GetWebRTCSinkStatus(int sinkId) => ManagerWrapper.Instance.GetWebRTCSinkStatus(sinkId);
 
-        // creates an ObjectDetectionSink running a previously uploaded model. Provider is fixed
-        // to ONNX for now - RKNN is accepted by the native API but throws (not implemented yet).
+        // creates an ObjectDetectionSink running a previously uploaded model. The provider
+        // (ONNX Runtime vs RKNN/NPU) is whatever ModelManager.AddModel decided from the
+        // uploaded file's own extension at upload time, not chosen here - there's no "same
+        // model, different backend" the way ApriltagDetector's CPU/Vulkan switch works.
         public int AddObjectDetectionSink(string name, int modelId)
         {
             var model = ModelManager.Instance.GetModel(modelId);
             if (model == null) throw new ArgumentException($"no model with id {modelId}");
 
             int id = ManagerWrapper.Instance.CreateObjectDetectionSink(
-                ObjectDetectionProvider.ONNX, model.ModelPath, model.LabelsPath, model.Variant,
+                model.Provider, model.ModelPath, model.LabelsPath, model.Variant,
                 model.ConfThreshold, model.NmsThreshold, model.InputSize);
             sinks.Add(new Sink(id, name, SinkType.ObjectDetectionSink));
             DB.Instance.Save();
             return id;
         }
+
+        // which backend an existing ObjectDetectionSink is actually running - see
+        // ObjectDetectionSink::GetBackendName's own comment for why this is read-only.
+        public string GetObjectDetectionSinkBackendName(int sinkId) => ManagerWrapper.Instance.GetObjectDetectionSinkBackendName(sinkId);
 
         // ROADMAP.md Phase 7 (pipeline profiles): (re)creates the one detection sink a
         // PipelineProfile describes, applying every setting that has no live mutator on the
@@ -394,9 +404,9 @@ namespace Server
                     if (model == null) throw new ArgumentException($"no model with id {profile.ModelId.Value}");
 
                     id = explicitId.HasValue
-                        ? ManagerWrapper.Instance.CreateObjectDetectionSink(explicitId.Value, ObjectDetectionProvider.ONNX,
+                        ? ManagerWrapper.Instance.CreateObjectDetectionSink(explicitId.Value, model.Provider,
                             model.ModelPath, model.LabelsPath, model.Variant, model.ConfThreshold, model.NmsThreshold, model.InputSize)
-                        : ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX,
+                        : ManagerWrapper.Instance.CreateObjectDetectionSink(model.Provider,
                             model.ModelPath, model.LabelsPath, model.Variant, model.ConfThreshold, model.NmsThreshold, model.InputSize);
                     sinks.Add(new Sink(id, name, SinkType.ObjectDetectionSink));
                     break;

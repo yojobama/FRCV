@@ -289,7 +289,16 @@ export class ApiService {
     return response.json();
   }
 
-  // Model Controller routes (uploaded YOLOv8/YOLOv11 ONNX models, consumed by object detection sinks)
+  // Which backend an existing sink is actually running (ONNX Runtime vs RKNN/NPU) - read-only,
+  // decided once at creation from the model's own file format (see Model.provider's comment).
+  async getObjectDetectionSinkBackend(sinkId: number): Promise<string> {
+    const response = await fetch(`${this.baseUrl}/objectDetectionSink/backend?sinkId=${sinkId}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // Model Controller routes (uploaded YOLOv8/YOLOv11 models - ONNX Runtime or RKNN/NPU export -
+  // consumed by object detection sinks)
   async getAllModels(): Promise<Model[]> {
     const response = await fetch(`${this.baseUrl}/model/getAll`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);

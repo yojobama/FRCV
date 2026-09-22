@@ -57,7 +57,11 @@ namespace Server
                         id = ManagerWrapper.Instance.CreateApriltagDetector();
                         break;
                     case SinkType.ObjectDetectionSink:
-                        id = ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX); // TODO: Add logic for selecting acceleration type (ONNX with REP, or Rknn)
+                        // unreachable in practice - see AddSink's identical no-model-overload
+                        // comment; a real ObjectDetectionSink only ever comes from
+                        // SinkManager.AddObjectDetectionSink, which resolves the provider from
+                        // the chosen model's own file format (Model.Provider), not a hardcoded one.
+                        id = ManagerWrapper.Instance.CreateObjectDetectionSink(ObjectDetectionProvider.ONNX);
                         break;
                     case SinkType.CameraCalibrationSink:
                         id = ManagerWrapper.Instance.CreateCameraCalibrator();

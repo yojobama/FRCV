@@ -13,6 +13,14 @@ public:
 	// CPU-vs-Vulkan backend distinction either
 	ObjectDetectionSink(std::shared_ptr<Logger> logger, std::string id, std::shared_ptr<IDetectionBackend> backend);
 
+	// which backend this sink actually ended up running - RKNN vs ONNX Runtime is decided once,
+	// at construction, from the uploaded model's own file format (see Model.cs's Provider field
+	// and ModelManager.AddModel), not something a caller picks independently the way
+	// ApriltagDetector's CPU/Vulkan choice is - there's no such thing as "the same model" in
+	// both formats to switch between. This is purely informational, mirroring
+	// ApriltagDetector::GetBackendName for the webui Inspector.
+	std::string GetBackendName() const { return m_Backend ? m_Backend->Name() : "none"; }
+
 	// ROADMAP.md Phase 7 (driver mode) - see ApriltagDetector's own identical accessor for the
 	// full rationale; same semantics here (skip inference, keep streaming raw video).
 	void SetDriverMode(bool enabled) { m_DriverMode = enabled; }

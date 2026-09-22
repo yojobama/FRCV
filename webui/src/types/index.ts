@@ -54,6 +54,10 @@ export interface Model {
   inputSize: number;
   confThreshold: number;
   nmsThreshold: number;
+  // which backend this model runs on - derived from the uploaded file's own extension at
+  // upload time (ModelManager.AddModel), not a separate preference: 0 = RKNN (NPU), 1 = ONNX
+  // Runtime (matches LumenCore/Manager.h's ObjectDetectionProvider declaration order).
+  provider: number;
 }
 
 // Extra fields AddSinkModal collects for sink types that need more than just a name -
