@@ -186,3 +186,88 @@ export interface StereoDepthStats {
   validFraction: number;
   medianDepthMeters: number;
 }
+
+// --- ROADMAP.md Phase 7/8: pipeline profiles + the /ws/state channel + node capabilities ---
+// These mirror the real C# response shapes field-for-field, PascalCase and all - confirmed
+// empirically (Server/Dtos.cs and friends are serialized by EmbedIO's own Swan formatter, which
+// (unlike System.Text.Json defaults elsewhere) was checked directly against a live server and
+// does NOT camelCase or otherwise rename properties) rather than assumed, the same way the
+// stereo types above document doing.
+
+// mirrors Server/PipelineProfile.cs
+export const PipelineProfileKind = { ApriltagSink: 0, ObjectDetectionSink: 1 } as const;
+export interface PipelineProfile {
+  Index: number;
+  Name: string;
+  Kind: number;
+  TagSize: number | null;
+  CalibratorSinkId: number | null;
+  Backend: number | null;
+  FrameWidth: number;
+  FrameHeight: number;
+  FieldLayoutPath: string | null;
+  DriverMode: boolean;
+  ModelId: number | null;
+}
+
+// mirrors Server/NodeCapabilities.cs
+export interface NodeTypeCapability {
+  TypeName: string;
+  Category: 'source' | 'sink';
+  DisplayName: string;
+  Icon: string;
+  MaxSources: number;
+  SourceRoles: string[] | null;
+  IsDualRoleSink: boolean;
+  HasDepthAttach: boolean;
+  Implemented: boolean;
+}
+export interface NodeTypesResponse {
+  Sources: NodeTypeCapability[];
+  Sinks: NodeTypeCapability[];
+}
+
+// mirrors Server/Source.cs, as embedded in the /ws/state channel and Sink.Source/Source2
+export interface WsSource {
+  CameraHardwareInfo: { name: string; path: string } | null;
+  Fps: number | null;
+  FilePath: string | null;
+  Profiles: PipelineProfile[];
+  ActiveProfileIndex: number;
+  ActiveDetectionSinkId: number | null;
+  Type: number; // 0 Camera, 1 ImageFile, 2 VideoFile, 3 SinkOutput - see SourceType in Source.cs
+  Id: number;
+  Name: string;
+}
+
+// mirrors Server/Sink.cs
+export interface WsSink {
+  Type: number; // SinkType ordinal - see mapSinkType in hooks/useAppData.ts for the string labels
+  Id: number;
+  Name: string;
+  Source: WsSource | null;
+  Source2: WsSource | null; // stereo sinks only - the RIGHT camera (Source is LEFT)
+  DepthSourceId: number | null; // DepthFusionSink only
+}
+
+// mirrors Server/WebSockets/StateChannel.cs's own DTOs
+export interface WsSinkState {
+  Sink: WsSink;
+  IsRunning: boolean;
+}
+export interface WsNodeStats {
+  Fps: number;
+  LatencyUs: number;
+}
+export interface WsDeviceStats {
+  CpuUsagePercent: number;
+  RamUsageMb: number;
+  DiskUsagePercent: number;
+  TemperatureC: number;
+}
+export interface StateSnapshot {
+  Sources: WsSource[];
+  Sinks: WsSinkState[];
+  Device: WsDeviceStats;
+  NodeStats: Record<string, WsNodeStats>;
+}

@@ -95,7 +95,21 @@ namespace Server
         // reached through the normal ISink bind/Process path at all.
         public int? DepthSourceId { get; set; }
 
-        public Sink(int id, string name, SinkType type, Source? source = null)
+        // ROADMAP.md Phase 8c: this constructor used to accept an unused `source` parameter -
+        // no call site anywhere in this codebase ever passed one (confirmed by grepping every
+        // `new Sink(...)` call site), but its mere presence broke deserialization: with exactly
+        // one public constructor, System.Text.Json deserializes via constructor-parameter
+        // matching (case-insensitively matching JSON property names to parameter names) rather
+        // than property setters wherever a match exists, so a JSON "Source" property was being
+        // passed to this constructor's own `source` parameter - which the constructor body then
+        // silently discarded, never assigning it to the backing field - instead of reaching the
+        // public Source property's setter the way Source2/DepthSourceId already correctly do
+        // (neither has a matching constructor parameter). Every sink's primary Source binding
+        // was silently lost on every single deserialization - i.e. every server restart with a
+        // bound sink - confirmed the hard way while testing ROADMAP.md Phase 8c's live graph
+        // rebuild across a restart. Removing the dead parameter fixes it: STJ now falls back to
+        // the property setter for Source too, matching Source2/DepthSourceId.
+        public Sink(int id, string name, SinkType type)
         {
             this.id = id;
             this.name = name;

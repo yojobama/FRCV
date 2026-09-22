@@ -6,6 +6,28 @@ import { ApiService } from '../services/ApiService';
 // everything with a frame/json output, whether it's a raw Source or a dual-role detector Sink.
 export const PUBLISHABLE_SINK_TYPES = ['apriltag', 'object', 'calibration'];
 
+// Maps the server's SinkType enum ordinal to the string label this UI uses everywhere - must
+// mirror Server/Sink.cs's SinkType exactly: ApriltagSink=0, ObjectDetectionSink=1,
+// RecordingSink=2, CameraCalibrationSink=3, NetworkTablesSink=4, WebRTCSink=5,
+// StereoCalibrationSink=6, StereoDepthSink=7, DepthFusionSink=8. Exported (not just a local
+// helper) so Phase 8c's graph code can reuse it without a second copy of this enum-order
+// knowledge.
+export const mapSinkType = (type: any): string => {
+  if (typeof type === 'string') return type;
+  switch (type) {
+    case 0: return 'apriltag';
+    case 1: return 'object';
+    case 2: return 'record';
+    case 3: return 'calibration';
+    case 4: return 'networktables';
+    case 5: return 'webrtc';
+    case 6: return 'stereocalibration';
+    case 7: return 'stereodepth';
+    case 8: return 'depthfusion';
+    default: return 'unknown';
+  }
+};
+
 export const useAppData = () => {
   const [sources, setSources] = useState<Source[]>([]);
   const [sinks, setSinks] = useState<Sink[]>([]);
@@ -44,26 +66,6 @@ export const useAppData = () => {
       return { cpuUsage: 0, ramUsage: 0, diskUsage: 0 };
     }
   }, []);
-
-  // helper to map server sink type enum to string label - must mirror Server.SinkType exactly
-  // (Sink.cs): ApriltagSink=0, ObjectDetectionSink=1, RecordingSink=2, CameraCalibrationSink=3,
-  // NetworkTablesSink=4, WebRTCSink=5, StereoCalibrationSink=6, StereoDepthSink=7,
-  // DepthFusionSink=8.
-  const mapSinkType = (type: any): string => {
-    if (typeof type === 'string') return type;
-    switch (type) {
-      case 0: return 'apriltag';
-      case 1: return 'object';
-      case 2: return 'record';
-      case 3: return 'calibration';
-      case 4: return 'networktables';
-      case 5: return 'webrtc';
-      case 6: return 'stereocalibration';
-      case 7: return 'stereodepth';
-      case 8: return 'depthfusion';
-      default: return 'unknown';
-    }
-  };
 
   // Load data with error handling
   const loadData = useCallback(async () => {

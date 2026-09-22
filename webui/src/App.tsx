@@ -288,7 +288,7 @@ function App() {
                 onToggleSink={handleToggleSink}
               />
             } />
-            <Route path="/graph" element={<GraphPage />} />
+            <Route path="/graph" element={<GraphPage onToast={showToast} nt4Settings={settings.nt4} />} />
             <Route path="/sources" element={
               <SourcesPage
                 sources={sources}

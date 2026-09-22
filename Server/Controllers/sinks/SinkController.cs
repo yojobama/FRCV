@@ -18,20 +18,39 @@ namespace Server.Controllers.sinks
             return Task.FromResult(SinkManager.Instance.IsSinkRunning(SinkID));
         }
 
+        // Encoding.UTF8 writes a BOM preamble, which breaks strict JSON parsers (confirmed the
+        // hard way fixing OpenApiController's own /openapi.json endpoint) - reused here for the
+        // same reason.
+        private static readonly Encoding Utf8NoBom = new UTF8Encoding(false);
+
+        // Written as a raw string body rather than returned as Task<string> - EmbedIO's default
+        // serializer (Swan.Formatters.Json, not System.Text.Json - see OpenApiController's own
+        // comment on this) re-wraps a returned string in an OUTER JSON string layer, but does so
+        // WITHOUT escaping the embedded quotes the inner JSON already has, producing literally
+        // invalid JSON on the wire for any result containing a nested object or string (which is
+        // effectively every real result - confirmed the hard way: this endpoint went completely
+        // unexercised by the webui until ROADMAP.md Phase 8c actually started calling it, so the
+        // bug had been latent since this route was first written). GetResult/GetAllResults
+        // already return a fully-formed JSON document as a string (Manager::GetSinkResult /
+        // GetAllSinkResults both call nlohmann::json::dump()) - there is no "string value" to
+        // encode here, the string already IS the response body.
+        //
         // GET: the latest result JSON produced by a sink that is also a source (ApriltagSink,
         // CameraCalibrationSink, ObjectDetectionSink) - "{}" for a terminal sink (NetworkTables,
         // WebRTC, Recording) or one that hasn't produced anything yet
         [Route(HttpVerbs.Get, "/sink/getResult")]
-        public Task<string> GetResult([QueryField] int SinkID)
+        public async Task GetResult([QueryField] int SinkID)
         {
-            return Task.FromResult(SinkManager.Instance.GetResult(SinkID));
+            string json = SinkManager.Instance.GetResult(SinkID);
+            await HttpContext.SendStringAsync(json, "application/json", Utf8NoBom);
         }
 
         // GET: every sink's latest result, keyed by sink id, as one JSON object
         [Route(HttpVerbs.Get, "/sink/getAllResults")]
-        public Task<string> GetAllResults()
+        public async Task GetAllResults()
         {
-            return Task.FromResult(SinkManager.Instance.GetAllResults());
+            string json = SinkManager.Instance.GetAllResults();
+            await HttpContext.SendStringAsync(json, "application/json", Utf8NoBom);
         }
 
         // PATCH: Enable/Disable a sink;

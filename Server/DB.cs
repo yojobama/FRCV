@@ -23,6 +23,24 @@ namespace Server
         private List<Source> sources;
         private readonly Logger logger;
 
+        // ROADMAP.md Phase 8c: guards a real, severe data-loss bug found while testing the graph
+        // editor's live-binding rebuild across a restart - SourceManager.InitializeCameraSource
+        // (and its ImageFile/VideoFile equivalents) each call DB.Instance.Save() unconditionally
+        // as soon as one source is created, which is correct for ordinary interactive use but
+        // corrupts data.json when called from inside Load()'s own reconstruction loop: sources
+        // are reconstructed BEFORE sinks, so a Save() fired mid-reconstruction serializes
+        // whatever SinkManager/SourceManager's LIVE state is at that exact moment - zero sinks,
+        // since none have been recreated yet - overwriting the on-disk file's real sink list with
+        // an empty one. Nothing writes it back afterward (the sink-reconstruction loop
+        // deliberately skips Save() during load - see AddSink's id.HasValue branch), so every
+        // sink a source was ever bound to was silently and permanently gone from disk after the
+        // very next restart, confirmed by reproducing it directly: bind a sink, restart once
+        // (fine, still in memory), restart again (gone - because the first restart had already
+        // wiped the file). Save() becomes a no-op for the whole duration of Load() instead -
+        // nothing actually needs persisting mid-reconstruction, since the file already has
+        // exactly the data being reconstructed FROM.
+        private bool m_Loading = false;
+
         private DB(string jsonPath)
         {
             this.jsonPath = jsonPath;
@@ -44,6 +62,19 @@ namespace Server
         public void Load()
         {
             logger.EnterLog("DB Load called");
+            m_Loading = true;
+            try
+            {
+                LoadInternal();
+            }
+            finally
+            {
+                m_Loading = false;
+            }
+        }
+
+        private void LoadInternal()
+        {
             if (File.Exists(jsonPath))
             {
                 string jsonData = File.ReadAllText(jsonPath);
@@ -174,6 +205,11 @@ namespace Server
 
         public void Save()
         {
+            // see m_Loading's own comment - a Save() triggered from inside a still-in-progress
+            // Load() reads live state that doesn't reflect the reconstruction yet and would
+            // corrupt the on-disk file with it.
+            if (m_Loading) return;
+
             logger.EnterLog("DB Save called");
             List<Sink> sinks = new List<Sink>();
             List<Source> sources = new List<Source>();

@@ -1,4 +1,4 @@
-import type { CameraHardwareInfo, Model, StereoCalibrationResult, StereoDepthStats } from '../types';
+import type { CameraHardwareInfo, Model, StereoCalibrationResult, StereoDepthStats, PipelineProfile, NodeTypesResponse } from '../types';
 
 export class ApiService {
   // Relative to wherever this page is served from - the C# server always serves its own built
@@ -560,6 +560,19 @@ export class ApiService {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
+  // the sink's latest result (Manager::GetSinkResult, already a JSON document) - its shape
+  // varies per sink type (AprilTag detections vs. object-detection boxes vs. ...), so unlike
+  // NetworkTablesSink/WebRTCSink's own fixed-shape status there's no one DTO to type this as;
+  // SinkController writes the response body directly rather than letting it go through
+  // EmbedIO's default string serializer, which does not escape embedded quotes correctly (see
+  // that controller's own comment - confirmed the hard way, this endpoint went unexercised by
+  // the webui until Phase 8c actually started calling it).
+  async getSinkResult(sinkId: number): Promise<unknown> {
+    const response = await fetch(`${this.baseUrl}/sink/getResult?SinkID=${sinkId}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
   async getSinkStatus(sinkId: number): Promise<boolean> {
     const response = await fetch(`${this.baseUrl}/sink/getStatus?SinkID=${sinkId}`, { method: 'GET' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -579,6 +592,59 @@ export class ApiService {
   async disableSink(id: number): Promise<void> {
       const response = await fetch(`${this.baseUrl}/sink/toggle?SinkID=${encodeURIComponent(id)}&Enabled=${false}`, { method: 'PATCH' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  // Capabilities Controller routes (/api/capabilities/*) - ROADMAP.md Phase 8a/8c
+  async getNodeTypeCapabilities(): Promise<NodeTypesResponse> {
+    const response = await fetch(`${this.baseUrl}/capabilities/nodeTypes`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async getEnabledFeatures(): Promise<string[]> {
+    const response = await fetch(`${this.baseUrl}/capabilities/features`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // Pipeline Profile Controller routes (/api/source/profiles*) - ROADMAP.md Phase 7/8c. A
+  // profile belongs to a camera SOURCE (not a sink) - activating one tears down and rebuilds
+  // whatever detection sink is currently bound to that source. See PipelineProfileController.cs.
+  async getProfiles(sourceId: number): Promise<PipelineProfile[]> {
+    const response = await fetch(`${this.baseUrl}/source/profiles?sourceId=${sourceId}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async createApriltagProfile(sourceId: number, name: string, tagSize: number, options?: {
+    calibratorSinkId?: number; backend?: number; frameWidth?: number; frameHeight?: number; driverMode?: boolean;
+  }): Promise<number> {
+    const params = new URLSearchParams({ sourceId: String(sourceId), name, tagSize: String(tagSize) });
+    if (options?.calibratorSinkId != null) params.set('calibratorSinkId', String(options.calibratorSinkId));
+    if (options?.backend != null) params.set('backend', String(options.backend));
+    if (options?.frameWidth != null) params.set('frameWidth', String(options.frameWidth));
+    if (options?.frameHeight != null) params.set('frameHeight', String(options.frameHeight));
+    if (options?.driverMode != null) params.set('driverMode', String(options.driverMode));
+    const response = await fetch(`${this.baseUrl}/source/profiles/apriltag?${params}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async createObjectDetectionProfile(sourceId: number, name: string, modelId: number): Promise<number> {
+    const params = new URLSearchParams({ sourceId: String(sourceId), name, modelId: String(modelId) });
+    const response = await fetch(`${this.baseUrl}/source/profiles/objectDetection?${params}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async activateProfile(sourceId: number, index: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/source/profiles/activate?sourceId=${sourceId}&index=${index}`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
+  async deleteProfile(sourceId: number, index: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/source/profiles?sourceId=${sourceId}&index=${index}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
 }

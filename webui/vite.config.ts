@@ -11,6 +11,15 @@ export default defineConfig({
                 target: 'http://localhost:8175',
                 changeOrigin: true,
                 secure: false,
+            },
+            // ROADMAP.md Phase 8c: the /ws/state push channel useStateSocket.ts connects to -
+            // without this, `npm run dev` never gets live graph data at all (window.location.host
+            // is the Vite dev port, which only the /api proxy above forwards; ws:true is required
+            // for Vite to actually upgrade the connection instead of proxying it as plain HTTP).
+            '/ws': {
+                target: 'ws://localhost:8175',
+                ws: true,
+                changeOrigin: true,
             }
         }
     }
