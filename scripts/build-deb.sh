@@ -83,7 +83,17 @@ EOF
 
 echo "==> Writing DEBIAN control files"
 INSTALLED_SIZE_KB=$(du -sk "$STAGE_DIR/opt" "$STAGE_DIR/etc" | awk '{sum+=$1} END {print sum}')
-MAINTAINER="$(git config user.name 2>/dev/null || true) <$(git config user.email 2>/dev/null || echo 'noreply@example.invalid')>"
+# falls back to a fixed, non-empty identity rather than a blank/malformed "Name <email>" when
+# git config isn't set (the common case on a CI runner or a bare source checkout, not just a
+# hypothetical) - confirmed the hard way (an unset git user.name left a leading space before the
+# email on a real build).
+GIT_MAINTAINER_NAME="$(git config user.name 2>/dev/null || true)"
+GIT_MAINTAINER_EMAIL="$(git config user.email 2>/dev/null || true)"
+if [[ -n "$GIT_MAINTAINER_NAME" && -n "$GIT_MAINTAINER_EMAIL" ]]; then
+    MAINTAINER="$GIT_MAINTAINER_NAME <$GIT_MAINTAINER_EMAIL>"
+else
+    MAINTAINER="LumenVision <noreply@example.invalid>"
+fi
 
 cat > "$STAGE_DIR/DEBIAN/control" <<EOF
 Package: $PKG_NAME
