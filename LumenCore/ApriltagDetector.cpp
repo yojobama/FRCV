@@ -2,6 +2,7 @@
 #include "ApriltagDetection.h"
 #include "CameraCalibrationResult.h"
 #include "CpuApriltagBackend.h"
+#include "FramePool.h"
 #ifdef LUMEN_WITH_VULKAN_APRILTAG
 #include "VkApriltagBackend.h"
 #endif
@@ -139,7 +140,12 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 				// same {"tags":[...],"multiTag":...} envelope as the real detection path below
 				// (both empty/null) so NetworkTablesSink clears tags/* AND multitag/* to "0 tags"
 				// rather than leaving stale data from before driver mode was enabled.
-				SetLatestResult(SourceResult(nlohmann::json{{"tags", nlohmann::json::array()}, {"multiTag", nullptr}}, result.frame->AsBgr(), result.captureTimeUs));
+				// AsBgrFrame(), not AsBgr() - a bare cv::Mat republished through SourceResult's
+				// implicit conversion would wrap it in a brand new, pool-ownership-less Frame,
+				// which is a real use-after-recycle risk the moment `result` (this function's own
+				// parameter, holding the ONLY other reference to that buffer's pool owner) goes
+				// out of scope at the end of this Process() call.
+				SetLatestResult(SourceResult(nlohmann::json{{"tags", nlohmann::json::array()}, {"multiTag", nullptr}}, result.frame->AsBgrFrame(), result.captureTimeUs));
 				continue;
 			}
 
@@ -151,7 +157,15 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 			m_Logger->EnterLog("detecting apriltags using backend=" + m_Backend->Name());
 			zarray_t* detections = m_Backend->Detect(gray);
 
-			cv::Mat colouredFrame = result.frame->AsBgr().clone();
+			// Acquire()+copyTo() instead of .clone() - .clone() always mallocs a fresh buffer;
+			// this recycles one from the pool when one of the right size is free. `colourOwner`
+			// must be carried into the SetLatestResult call below via Frame's pool-owner
+			// constructor, not dropped by passing the bare cv::Mat through the implicit
+			// conversion - same hazard as AsBgrFrame's own comment describes.
+			std::shared_ptr<void> colourOwner;
+			const cv::Mat& sourceBgr = result.frame->AsBgr();
+			cv::Mat colouredFrame = FramePool::Instance().Acquire(sourceBgr.rows, sourceBgr.cols, sourceBgr.type(), colourOwner);
+			sourceBgr.copyTo(colouredFrame);
 
 			std::vector<nlohmann::json> jsonVector;
 
@@ -305,7 +319,8 @@ void ApriltagDetector::Process(std::vector<SourceResult> results)
 			nlohmann::json multiTagJson = SolveMultiTagPnP(
 				multiTagObjectPoints, multiTagImagePoints, m_CameraMatrix, m_DistCoeffs, multiTagCount);
 
-			SetLatestResult(SourceResult(nlohmann::json{{"tags", jsonVector}, {"multiTag", multiTagJson}}, colouredFrame, result.captureTimeUs));
+			SetLatestResult(SourceResult(nlohmann::json{{"tags", jsonVector}, {"multiTag", multiTagJson}},
+				Frame(colouredFrame, FrameFormat::BGR24, colourOwner), result.captureTimeUs));
 		}
 	}
 }

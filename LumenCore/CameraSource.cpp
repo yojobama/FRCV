@@ -1,4 +1,5 @@
 #include "CameraSource.h"
+#include "Frame.h"
 #include "OpenCvCameraBackend.h"
 #ifdef __linux__
 #include "V4l2CameraBackend.h"
@@ -99,7 +100,13 @@ void CameraFrameSource::CaptureFrame()
     if (m_Backend->IsOpened()) {
         CameraGrabResult grab = m_Backend->Grab();
         if (grab.success) {
-            SetLatestResult(SourceResult(std::nullopt, grab.frame, grab.captureTimeUs));
+            // Carries grab.poolOwner through explicitly (not the implicit bare-cv::Mat
+            // conversion SourceResult also accepts) - THAT overload has no pool-owner parameter
+            // at all, so going through it here would silently let the FramePool buffer get
+            // recycled the moment this function returns, out from under every sink still
+            // processing this exact frame on its own thread. See ICameraBackend.h's own comment
+            // on CameraGrabResult::poolOwner.
+            SetLatestResult(SourceResult(std::nullopt, Frame(grab.frame, FrameFormat::BGR24, grab.poolOwner), grab.captureTimeUs));
         } else {
             // previously: this branch didn't exist at all - a failed grab (device still open,
             // read() returning false) was silently dropped with no diagnostic.

@@ -1,4 +1,5 @@
 #include "ObjectDetectionSink.h"
+#include "FramePool.h"
 #include <nlohmann/json.hpp>
 
 ObjectDetectionSink::ObjectDetectionSink(std::shared_ptr<Logger> logger, std::string id, std::shared_ptr<IDetectionBackend> backend)
@@ -17,15 +18,21 @@ void ObjectDetectionSink::Process(std::vector<SourceResult> results)
 		const cv::Mat& sourceFrame = result.frame->AsBgr();
 
 		if (m_DriverMode) {
-			// still streams video (matches PhotonVision's own driver-mode behaviour) - skips
-			// the actual inference call, the expensive part.
-			SetLatestResult(SourceResult(nlohmann::json(std::vector<nlohmann::json>{}), sourceFrame, result.captureTimeUs));
+			// AsBgrFrame(), not the bare sourceFrame cv::Mat - see ApriltagDetector.cpp's
+			// identical driver-mode passthrough for why passing a raw cv::Mat through
+			// SourceResult's implicit conversion here would drop FramePool ownership tracking.
+			SetLatestResult(SourceResult(nlohmann::json(std::vector<nlohmann::json>{}), result.frame->AsBgrFrame(), result.captureTimeUs));
 			continue;
 		}
 
 		std::vector<ObjectDetection> detections = m_Backend->Infer(sourceFrame);
 
-		cv::Mat annotatedFrame = sourceFrame.clone();
+		// Acquire()+copyTo() instead of .clone() - see ApriltagDetector.cpp's identical pattern.
+		// annotOwner is carried into the SetLatestResult call below via Frame's pool-owner
+		// constructor, not dropped through the bare-cv::Mat implicit conversion.
+		std::shared_ptr<void> annotOwner;
+		cv::Mat annotatedFrame = FramePool::Instance().Acquire(sourceFrame.rows, sourceFrame.cols, sourceFrame.type(), annotOwner);
+		sourceFrame.copyTo(annotatedFrame);
 		std::vector<nlohmann::json> jsonVector;
 
 		for (const ObjectDetection& detection : detections) {
@@ -44,6 +51,7 @@ void ObjectDetectionSink::Process(std::vector<SourceResult> results)
 				cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0xff, 0), 1);
 		}
 
-		SetLatestResult(SourceResult(nlohmann::json(jsonVector), annotatedFrame, result.captureTimeUs));
+		SetLatestResult(SourceResult(nlohmann::json(jsonVector),
+			Frame(annotatedFrame, FrameFormat::BGR24, annotOwner), result.captureTimeUs));
 	}
 }

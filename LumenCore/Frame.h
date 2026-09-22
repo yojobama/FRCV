@@ -32,6 +32,12 @@ public:
 	// (.AsGray()/.AsBgr()) instead of compiling inconsistently for non-obvious reasons.
 	Frame(const cv::Mat& mat);
 	Frame(cv::Mat mat, FrameFormat format);
+	// Same as above, plus the pool-owner handle FramePool::Acquire returned alongside `mat` (see
+	// FramePool.h) - kept alive here for as long as this Frame (and every copy sharing its
+	// Storage) is, so the buffer isn't recycled out from under a Frame still using it. Pass
+	// nullptr (or use the other constructors) for a normally-allocated Mat with no pool
+	// involvement - not every producer needs to use the pool for this to work correctly.
+	Frame(cv::Mat mat, FrameFormat format, std::shared_ptr<void> poolOwner);
 
 	bool empty() const;
 	cv::Size size() const;
@@ -51,6 +57,16 @@ public:
 	const cv::Mat& AsGray() const;
 	const cv::Mat& AsBgr() const;
 
+	// Returns a NEW Frame wrapping the SAME BGR view AsBgr() would (no extra conversion/copy -
+	// still computed at most once, cached, exactly like AsBgr() alone), but correctly carrying
+	// forward whatever FramePool ownership that view's buffer has. Passing AsBgr()'s raw cv::Mat
+	// through a bare Frame/SourceResult constructor instead would silently drop that tracking -
+	// a real use-after-recycle risk once the buffer's original Frame (this one) goes out of
+	// scope and nothing else is keeping its pool owner alive. Use this, not AsBgr(), at any call
+	// site that needs to publish a view as a NEW SourceResult/Frame rather than just read pixels
+	// from it locally - ApriltagDetector's driver-mode passthrough is the first such site.
+	Frame AsBgrFrame() const;
+
 private:
 	struct Storage {
 		cv::Mat mat;
@@ -58,6 +74,13 @@ private:
 		std::mutex viewMutex;
 		std::optional<cv::Mat> grayView;
 		std::optional<cv::Mat> bgrView;
+		// non-null when `mat` (or, independently, grayView/bgrView) is backed by a FramePool
+		// buffer rather than a normally-allocated one - see the pool-taking constructor's comment.
+		// mat and the two lazy views can each independently be pool-backed or not; one owner per
+		// buffer, matching them up by field name below.
+		std::shared_ptr<void> matPoolOwner;
+		std::shared_ptr<void> grayPoolOwner;
+		std::shared_ptr<void> bgrPoolOwner;
 	};
 	std::shared_ptr<Storage> m_Storage;
 };

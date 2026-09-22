@@ -18,6 +18,7 @@ set(LUMEN_CORE_SOURCES
     CameraSource.cpp
     CpuApriltagBackend.cpp
     Frame.cpp
+    FramePool.cpp
     ISource.cpp
     ImageFileSource.cpp
     StereoCalibrationResult.cpp

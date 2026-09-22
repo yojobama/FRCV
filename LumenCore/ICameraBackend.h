@@ -1,5 +1,6 @@
 #pragma once
 #include <opencv2/opencv.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 #include <cstdint>
@@ -14,6 +15,14 @@ struct CameraGrabResult
 	bool success = false;
 	cv::Mat frame;
 	uint64_t captureTimeUs = 0;
+	// non-null when `frame` is backed by a FramePool buffer (V4l2CameraBackend::Grab() sets this;
+	// OpenCvCameraBackend leaves it null, which is exactly as correct - a null poolOwner just
+	// means `frame` owns its own memory the normal cv::Mat way). CameraFrameSource::CaptureFrame
+	// must carry this through to the Frame it constructs from `frame` - see Frame's own
+	// pool-owner-taking constructor - or the pooled buffer can be recycled out from under a Frame
+	// still using it the moment this shared_ptr's last reference (this struct, once Grab()
+	// returns) goes away.
+	std::shared_ptr<void> poolOwner;
 };
 
 // Implemented per-platform: OpenCvCameraBackend is the always-available fallback (the only one

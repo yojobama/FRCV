@@ -1,5 +1,6 @@
 #include "V4l2CameraBackend.h"
 #include "SourceResult.h"
+#include "FramePool.h"
 
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -231,20 +232,40 @@ CameraGrabResult V4l2CameraBackend::Grab()
 	const uint8_t* data = static_cast<const uint8_t*>(m_Buffers[buf.index].start);
 	size_t bytesUsed = buf.bytesused;
 
+	// Every branch below targets a FramePool buffer sized to the negotiated mode's own
+	// width/height, CV_8UC3 (BGR - every branch produces BGR regardless of the wire format), and
+	// requests it BEFORE the decode/convert/copy call so that call's own Mat::create() fast path
+	// (already-right-shape => write in place, no allocation) actually fires. Acquire()ing after
+	// the fact - into an already-decoded temporary - would just move the allocation, not remove
+	// it. If a real frame ever comes back a different size than the negotiated mode (a malformed
+	// JPEG, in practice), Mat::create() falls back to a normal one-off allocation for that frame
+	// only - safe, just not pooled that cycle.
+	int width = currentFmt.fmt.pix.width, height = currentFmt.fmt.pix.height;
 	if (fourcc == V4L2_PIX_FMT_MJPEG || fourcc == V4L2_PIX_FMT_JPEG) {
 		cv::Mat jpegView(1, static_cast<int>(bytesUsed), CV_8UC1, const_cast<uint8_t*>(data));
-		result.frame = cv::imdecode(jpegView, cv::IMREAD_COLOR);
+		// imdecode's 3-arg overload reuses *dst in place when it's already the right size/type
+		// (its own doc comment: "can save the image reallocations when called repeatedly for
+		// images of the same size") - exactly the fast path Acquire()ing at the negotiated mode's
+		// own size is meant to hit every frame. Its return value, not the pre-set dst, is the
+		// authoritative decoded Mat (a genuine size mismatch reallocates a fresh one instead -
+		// result.poolOwner then just outlives an unused buffer harmlessly, see this function's
+		// own comment above).
+		result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
+		result.frame = cv::imdecode(jpegView, cv::IMREAD_COLOR, &result.frame);
 		result.success = !result.frame.empty();
 	} else if (fourcc == V4L2_PIX_FMT_YUYV) {
-		cv::Mat yuyv(currentFmt.fmt.pix.height, currentFmt.fmt.pix.width, CV_8UC2, const_cast<uint8_t*>(data));
+		cv::Mat yuyv(height, width, CV_8UC2, const_cast<uint8_t*>(data));
+		result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
 		cv::cvtColor(yuyv, result.frame, cv::COLOR_YUV2BGR_YUYV);
 		result.success = true;
 	} else if (fourcc == V4L2_PIX_FMT_BGR24) {
-		cv::Mat bgr(currentFmt.fmt.pix.height, currentFmt.fmt.pix.width, CV_8UC3, const_cast<uint8_t*>(data));
-		result.frame = bgr.clone();
+		cv::Mat bgr(height, width, CV_8UC3, const_cast<uint8_t*>(data));
+		result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
+		bgr.copyTo(result.frame);
 		result.success = true;
 	} else if (fourcc == V4L2_PIX_FMT_GREY) {
-		cv::Mat gray(currentFmt.fmt.pix.height, currentFmt.fmt.pix.width, CV_8UC1, const_cast<uint8_t*>(data));
+		cv::Mat gray(height, width, CV_8UC1, const_cast<uint8_t*>(data));
+		result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
 		cv::cvtColor(gray, result.frame, cv::COLOR_GRAY2BGR);
 		result.success = true;
 	} else {
