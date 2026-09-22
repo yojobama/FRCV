@@ -1,4 +1,5 @@
 #include "ISink.h"
+#include "CpuAffinity.h"
 
 ISink::ISink(std::shared_ptr<Logger> p_Logger, int maxSources, bool requireJson, bool requireFrame, std::string id) : m_Logger(p_Logger) {
     if (m_Logger) m_Logger->EnterLog("ISink constructed");
@@ -65,6 +66,11 @@ void ISink::NotifyDataAvailable()
 
 void ISink::ProcessingThreadLoop()
 {
+    // detection/encoding is CPU-heavy and latency-sensitive - keep it off the slow efficiency
+    // cores when this is a big.LITTLE SoC (see CpuAffinity's own comment on why this isn't
+    // hardcoded to a specific core index)
+    CpuAffinity::PinCurrentThreadToPerformanceCores();
+
     // safety-net poll interval: if a bound source stalls or a notification is missed,
     // the loop still re-checks frame counts periodically instead of hanging forever
     const auto pollTimeout = std::chrono::milliseconds(100);

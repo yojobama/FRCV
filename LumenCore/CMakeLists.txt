@@ -17,6 +17,7 @@ set(LUMEN_CORE_SOURCES
     CameraCalibrator.cpp
     CameraSource.cpp
     CpuApriltagBackend.cpp
+    CpuAffinity.cpp
     Frame.cpp
     FramePool.cpp
     ISource.cpp

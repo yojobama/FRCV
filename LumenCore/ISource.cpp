@@ -1,5 +1,6 @@
 #include "ISource.h"
 #include "SourceResult.h"
+#include "CpuAffinity.h"
 
 ISource::ISource(std::shared_ptr<Logger> p_Logger, std::string m_ID)
 	: m_ResultLock() // Initialize m_ResultLock
@@ -116,6 +117,10 @@ SourceResult ISource::GetLatestResult()
 
 void ISource::SourceThreadProc()
 {
+	// capture + colour conversion is CPU-heavy and latency-sensitive - keep it off the slow
+	// efficiency cores when this is a big.LITTLE SoC (see CpuAffinity's own comment on why this
+	// isn't hardcoded to a specific core index)
+	CpuAffinity::PinCurrentThreadToPerformanceCores();
 	OnCaptureThreadStart();
 	while (!m_ShouldTerminate) {
 		CaptureFrame();
