@@ -236,8 +236,8 @@ export const DashboardPage: React.FC<{
       <div className="text-center py-12">
         <MonitorSpeaker className="w-16 h-16 mx-auto mb-4 text-gray-400" />
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Active Streams</h3>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">Activate Live Preview on a node from the Sources or Sinks page to see it here.</p>
-        <button onClick={onGoToSinks} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2 mx-auto"><Target className="w-4 h-4" />Go to Sinks</button>
+        <p className="text-gray-600 dark:text-gray-400 mb-4">Activate Live Preview on a node from the Graph editor to see it here.</p>
+        <button onClick={onGoToSinks} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-2 mx-auto"><Target className="w-4 h-4" />Go to Graph</button>
       </div>
     )}
   </div>

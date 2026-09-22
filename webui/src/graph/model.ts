@@ -12,8 +12,7 @@ const SINK_TYPE_NAMES = [
 const SOURCE_TYPE_NAMES = ['Camera', 'ImageFile', 'VideoFile', 'SinkOutput'];
 
 // Terminal/preview sinks render as a badge on the node they're bound to, not their own box - the
-// plan's original "toggles on a node's output" decision (already reflected in useAppData.ts's
-// PUBLISHABLE_SINK_TYPES on the flip side of the same rule).
+// plan's original "toggles on a node's output" decision.
 const BADGE_SINK_TYPES = new Set(['WebRTCSink', 'NetworkTablesSink']);
 
 export function sinkTypeName(ordinal: number): string {

@@ -6,9 +6,9 @@ and stereo depth — targeting an Orange Pi 5 / 5 Plus (RK3588) in production, w
 (WSL2 included) usable for development.
 
 See `docs/history/IMPLEMENTATION_PLAN.md` for the design rationale behind the original phases
-and `ROADMAP.md` for what's being worked on next (a robot-side vendordep, a node-graph WebUI, a
-CMake + native-Windows build, side-by-side stereo cameras, explicit capture resolution, and
-better hardware utilisation). This file is the quick-start.
+and `ROADMAP.md` for what's being worked on next (a robot-side vendordep, a CMake +
+native-Windows build, side-by-side stereo cameras, explicit capture resolution, and better
+hardware utilisation). This file is the quick-start.
 
 ## Architecture
 
@@ -132,16 +132,33 @@ the same grid), then `PATCH .../attachDepthSource` to point it at the depth sink
 plain C++ reference, not a bound source — the full depth grid is deliberately never serialized
 through JSON). Each detection comes back with `distanceMeters`/`xMeters`/`yMeters` added.
 
-The WebUI has a "Stereo" tab covering this whole flow — calibration wizard, depth node config,
-and fusion — with `epipolarRms` and the 0.5px gate called out explicitly. Its controllers are
-now registered in `Program.cs` (they weren't, until recently — every request the tab made
-404'd), so the flow is actually reachable end to end.
+The WebUI's "Stereo" page covers creating and binding stereo calibration/depth sinks; the actual
+step-by-step capture flow lives in the calibration wizard (see below), reachable from there or
+from the graph editor's node inspector.
+
+## WebUI
+
+`/graph` is the primary way to build a pipeline: sources and sinks are canvas nodes, dragging a
+connection between them performs the real REST bind (with structurally invalid connections — e.g.
+a second source onto a single-source sink — rejected before the drag completes), and the
+right-hand inspector covers per-node parameters, a live WebRTC preview, the latest result JSON,
+and pipeline profile switching. State (topology, per-node FPS/latency, device stats) is pushed
+over a `/ws/state` WebSocket, not polled.
+
+Mono and stereo calibration each get a full-screen wizard (`/calibrate/:sinkId`,
+`/calibrate/stereo/:sinkId`, opened from a `CameraCalibrationSink`/`StereoCalibrationSink` node's
+inspector): bind camera(s) → capture with a live coverage heatmap showing where the board has and
+hasn't been seen in-frame → run, with a pass/fail light against the real gate (`epipolarRms` <
+0.5px for stereo, not `stereoRms`; a configurable RMS gate for mono).
+
+`/match` is a read-only, per-camera table (FPS, latency, detector binding, NT4 connection state)
+plus CPU/RAM/disk/temperature — meant to be legible across a pit during a match, not for editing
+anything.
 
 ## Known gaps
 
 See `docs/history/IMPLEMENTATION_PLAN.md`'s phase status lines for the authoritative historical
 record, and `ROADMAP.md` for what's planned next. Currently: RKNN object detection is
 unimplemented; a stored calibration doesn't yet auto-apply to a matching camera source on
-creation; WebRTC has been verified by compiling/linking against the real libraries, not against
-an actual browser handshake in this environment; and the WebUI is still the pre-existing
-tab-based single-page app rather than the node-graph editor `ROADMAP.md` describes.
+creation; and WebRTC has been verified by compiling/linking against the real libraries, not
+against an actual browser ICE handshake in this environment.

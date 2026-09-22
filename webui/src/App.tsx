@@ -6,7 +6,6 @@ import {
   Moon,
   RefreshCw,
   Target,
-  Camera,
   BarChart3,
   Wifi,
   WifiOff,
@@ -19,21 +18,16 @@ import {
 import './App.css';
 import StereoPage from './components/StereoPage';
 import { DashboardPage } from './pages/DashboardPage';
-import { SourcesPage } from './pages/SourcesPage';
-import { SinksPage } from './pages/SinksPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { GraphPage } from './pages/GraphPage';
 import { MatchPage } from './pages/MatchPage';
 import { CalibrationWizardPage } from './pages/CalibrationWizardPage';
 import { StereoCalibrationWizardPage } from './pages/StereoCalibrationWizardPage';
 
-import type { Source, Sink, SystemStats, Settings as SettingsType } from './types';
+import type { SystemStats, Settings as SettingsType } from './types';
 
 import { Toast } from './components/Toast';
-import { AddSourceModal } from './components/AddSourceModal';
-import { AddSinkModal } from './components/AddSinkModal';
-import { ConfigureSourceModal, ConfigureSinkModal } from './components/ConfigureModals';
-import { useAppData, PUBLISHABLE_SINK_TYPES } from './hooks/useAppData';
+import { useAppData } from './hooks/useAppData';
 
 /***************************
  * Dark Mode Hook
@@ -117,8 +111,6 @@ const Header: React.FC<{
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: BarChart3, end: true },
   { to: '/graph', label: 'Graph', icon: Workflow, end: false },
-  { to: '/sources', label: 'Sources', icon: Camera, end: false },
-  { to: '/sinks', label: 'Sinks', icon: Target, end: false },
   { to: '/stereo', label: 'Stereo', icon: Layers, end: false },
   { to: '/match', label: 'Match', icon: Gauge, end: false },
 ];
@@ -152,8 +144,6 @@ const Navigation: React.FC<{ streamingCount: number }> = ({ streamingCount }) =>
 function App() {
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useDarkMode();
-  const [showAddSource, setShowAddSource] = useState(false);
-  const [showAddSink, setShowAddSink] = useState(false);
   const [settings, setSettingsState] = useState<SettingsType>(() => {
     try {
       // one-time migration from the old FRCV-branded key: rewrite rootTable only when it's
@@ -180,9 +170,6 @@ function App() {
     setSettingsState(next);
     try { localStorage.setItem('lumenSettings', JSON.stringify(next)); } catch { /* ignore */ }
   };
-  const [cfgSource, setCfgSource] = useState<Source|null>(null);
-  const [cfgSink, setCfgSink] = useState<Sink|null>(null);
-
   const {
     sources,
     sinks,
@@ -196,16 +183,6 @@ function App() {
     stopStream,
     handleStreamError,
     showToast,
-    handleAddSource,
-    handleAddSink,
-    handleRenameSource,
-    handleDeleteSource,
-    handleRenameSink,
-    handleDeleteSink,
-    handleBindSink,
-    handleUnbindSink,
-    handleBulkVideoUpload,
-    handleBulkImageUpload,
     startUDPTransmission,
     stopUDPTransmission,
     handleToggleSink,
@@ -215,17 +192,6 @@ function App() {
     setError,
     setToast
   } = useAppData();
-
-  // AprilTag/Object Detection/Calibration sinks are dual-role sources too (see Manager.cpp's
-  // m_Sources.emplace alongside m_Sinks.emplace) - the bind picker needs to offer them
-  // alongside real Sources, or a WebRTC/NT4 sink could never be pointed at a detector's own
-  // annotated output (confirmed the hard way: this is why AprilTag preview didn't work before).
-  const bindableSources: Source[] = [
-    ...sources,
-    ...sinks.filter(s => PUBLISHABLE_SINK_TYPES.includes(s.type)).map(s => ({
-      id: s.id, name: s.name, type: 'detector-output', status: 'active' as const
-    }))
-  ];
 
   useEffect(() => {
     loadData();
@@ -283,44 +249,14 @@ function App() {
                 onStopStream={stopStream}
                 onStreamError={handleStreamError}
                 onTogglePreview={handleTogglePreview}
-                onGoToSinks={()=>navigate('/sinks')}
-                onGoToSources={()=>navigate('/sources')}
+                onGoToSinks={()=>navigate('/graph')}
+                onGoToSources={()=>navigate('/graph')}
                 onStartUDP={startUDPTransmission}
                 onStopUDP={stopUDPTransmission}
                 onToggleSink={handleToggleSink}
               />
             } />
             <Route path="/graph" element={<GraphPage onToast={showToast} nt4Settings={settings.nt4} />} />
-            <Route path="/sources" element={
-              <SourcesPage
-                sources={sources}
-                sinks={sinks}
-                streamingSinks={streamingSinks}
-                loading={loading}
-                onAddSource={()=>setShowAddSource(true)}
-                onConfigure={s=>setCfgSource(s)}
-                onDelete={id=>handleDeleteSource(id)}
-                onTogglePreview={handleTogglePreview}
-                onStreamError={handleStreamError}
-                onBulkVideoUpload={handleBulkVideoUpload}
-                onBulkImageUpload={handleBulkImageUpload}
-              />
-            } />
-            <Route path="/sinks" element={
-              <SinksPage
-                sinks={sinks}
-                loading={loading}
-                streamingSinks={streamingSinks}
-                nt4Settings={settings.nt4}
-                onAddSink={()=>setShowAddSink(true)}
-                onTogglePreview={handleTogglePreview}
-                onToggleNT4Publish={handleToggleNT4Publish}
-                onStreamError={handleStreamError}
-                onConfigure={s=>setCfgSink(s)}
-                onDelete={id=>handleDeleteSink(id)}
-                onToggleSink={handleToggleSink}
-              />
-            } />
             <Route path="/stereo" element={
               <StereoPage sources={sources} sinks={sinks} onToast={showToast} onRefresh={loadData} />
             } />
@@ -330,12 +266,6 @@ function App() {
             <Route path="/calibrate/:sinkId" element={<CalibrationWizardPage sources={sources} onToast={showToast} />} />
           </Routes>
         </main>
-
-        <AddSourceModal isOpen={showAddSource} onClose={()=>setShowAddSource(false)} onAdd={handleAddSource} />
-        <AddSinkModal isOpen={showAddSink} onClose={()=>setShowAddSink(false)} onAdd={handleAddSink} />
-
-        <ConfigureSourceModal isOpen={!!cfgSource} source={cfgSource} onClose={()=>setCfgSource(null)} onRename={name=> cfgSource && handleRenameSource(cfgSource.id, name)} onDelete={()=> { if(cfgSource){ handleDeleteSource(cfgSource.id); setCfgSource(null);} }} />
-        <ConfigureSinkModal isOpen={!!cfgSink} sink={cfgSink} sources={bindableSources.filter(s => s.id !== cfgSink?.id)} onClose={()=>setCfgSink(null)} onRename={name=> cfgSink && handleRenameSink(cfgSink.id, name)} onDelete={()=> { if(cfgSink){ handleDeleteSink(cfgSink.id); setCfgSink(null);} }} onBind={(src)=> cfgSink && handleBindSink(cfgSink.id, src)} onUnbind={(src)=> cfgSink && handleUnbindSink(cfgSink.id, src)} />
 
         {toast && <Toast message={toast.message} type={toast.type} onClose={()=>setToast(null)} />}
       </div>

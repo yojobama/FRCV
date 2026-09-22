@@ -1,10 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { Source, Sink, SystemStats, Toast, DeviceStats, AddSinkOptions, NT4Defaults } from '../types';
+import type { Source, Sink, SystemStats, Toast, DeviceStats, NT4Defaults } from '../types';
 import { ApiService } from '../services/ApiService';
-
-// Sink types that can themselves have a live preview or be published to NetworkTables -
-// everything with a frame/json output, whether it's a raw Source or a dual-role detector Sink.
-export const PUBLISHABLE_SINK_TYPES = ['apriltag', 'object', 'calibration'];
 
 // Maps the server's SinkType enum ordinal to the string label this UI uses everywhere - must
 // mirror Server/Sink.cs's SinkType exactly: ApriltagSink=0, ObjectDetectionSink=1,
@@ -173,176 +169,6 @@ export const useAppData = () => {
     setToast({ message, type });
   };
 
-  const handleAddSource = async (name: string, type: string, files?: FileList, fps?: number, hardwareInfo?: any) => {
-    try {
-      if (type === 'camera' && hardwareInfo) {
-        const sourceId = await api.createCameraSource(hardwareInfo, name);
-        showToast(`Camera source "${name}" added successfully with ID ${sourceId}`, 'success');
-      } else if (type === 'video' && files && files.length > 0) {
-        const result = await api.uploadVideoFiles(files, fps || 30);
-        if (result.success) {
-          showToast(result.message, 'success');
-        } else {
-          showToast(result.message, 'error');
-          return;
-        }
-      } else if (type === 'image' && files && files.length > 0) {
-        const result = await api.uploadImageFiles(files);
-        if (result.success) {
-          showToast(result.message, 'success');
-        } else {
-          showToast(result.message, 'error');
-          return;
-        }
-      } else {
-        throw new Error('Invalid source configuration');
-      }
-      
-      // Refresh data to show the new sources
-      setTimeout(() => loadData(), 1000);
-    } catch (error) {
-      showToast(`Failed to add source: ${error}`, 'error');
-    }
-  };
-
-  const handleAddSink = async (name: string, type: string, options?: AddSinkOptions) => {
-    try {
-      let sinkId: number;
-
-      switch (type) {
-        case 'ApriltagSink':
-          sinkId = await api.createApriltagSinkWithBackend(name, options?.tagSize ?? 0.1651, options?.backend ?? 0);
-          break;
-
-        case 'calibration':
-          sinkId = await api.createCameraCalibrationSink(name);
-          break;
-
-        case 'object': {
-          let modelId = options?.modelId;
-          if (!modelId && options?.newModel) {
-            modelId = await api.uploadModel(options.newModel);
-          }
-          if (!modelId) throw new Error('an object detection sink needs a model - upload one or pick an existing one');
-          sinkId = await api.createObjectDetectionSink(name, modelId);
-          break;
-        }
-
-        default:
-          showToast(`Sink type "${type}" is not yet implemented.`, 'error');
-          return;
-      }
-
-      // Refresh sinks from backend to keep UI consistent across reloads
-      await loadData();
-
-      showToast(`Sink "${name}" added successfully with ID ${sinkId}`, 'success');
-    } catch (error) {
-      showToast(`Failed to add sink: ${error}`, 'error');
-    }
-  };
-
-  const handleRenameSource = async (id: number, name: string) => {
-    try {
-      await api.changeSourceName(id, name);
-      showToast('Source renamed', 'success');
-      loadData();
-    } catch (e) {
-      showToast('Failed to rename source', 'error');
-    }
-  };
-
-  const handleDeleteSource = async (id: number) => {
-    try {
-      await api.deleteSource(id);
-      showToast('Source deleted', 'info');
-      loadData();
-    } catch {
-      showToast('Failed to delete source', 'error');
-    }
-  };
-
-  const handleRenameSink = async (id: number, name: string) => {
-    try {
-      await api.renameSink(id, name);
-      showToast('Sink renamed', 'success');
-      loadData();
-    } catch {
-      showToast('Sink name changing not implemented yet', 'error');
-    }
-  };
-
-  const handleDeleteSink = async (id: number) => {
-    try {
-      await api.deleteSink(id);
-      
-      // Reload from backend to reflect deletion consistently
-      await loadData();
-      showToast('Sink deleted', 'info');
-    } catch {
-      showToast('Failed to delete sink', 'error');
-    }
-  };
-
-  const handleBindSink = async (sinkId: number, sourceId: number) => {
-    try {
-      await api.bindSinkToSource(sinkId, sourceId);
-      
-      // Update from backend
-      await loadData();
-      showToast('Sink bound to source', 'success');
-    } catch {
-      showToast('Failed to bind sink', 'error');
-    }
-  };
-
-  const handleUnbindSink = async (sinkId: number, sourceId: number) => {
-    try {
-      await api.unbindSinkFromSource(sinkId, sourceId);
-      
-      // Update from backend
-      await loadData();
-      showToast('Sink unbound from source', 'info');
-    } catch {
-      showToast('Failed to unbind sink', 'error');
-    }
-  };
-
-  // Enhanced bulk operations for multiple files
-  const handleBulkVideoUpload = async (files: FileList, fps: number = 30) => {
-    try {
-      const result = await api.uploadVideoFiles(files, fps);
-      if (result.success) {
-        showToast(result.message, 'success');
-        setTimeout(() => loadData(), 1000);
-      } else {
-        showToast(result.message, 'error');
-      }
-      return result;
-    } catch (error) {
-      const message = `Failed to upload video files: ${error}`;
-      showToast(message, 'error');
-      return { success: false, sourceIds: [], message };
-    }
-  };
-
-  const handleBulkImageUpload = async (files: FileList) => {
-    try {
-      const result = await api.uploadImageFiles(files);
-      if (result.success) {
-        showToast(result.message, 'success');
-        setTimeout(() => loadData(), 1000);
-      } else {
-        showToast(result.message, 'error');
-      }
-      return result;
-    } catch (error) {
-      const message = `Failed to upload image files: ${error}`;
-      showToast(message, 'error');
-      return { success: false, sourceIds: [], message };
-    }
-  };
-
   // UDP transmission controls
   const startUDPTransmission = async () => {
     try {
@@ -459,16 +285,6 @@ export const useAppData = () => {
     stopStream,
     handleStreamError,
     showToast,
-    handleAddSource,
-    handleAddSink,
-    handleRenameSource,
-    handleDeleteSource,
-    handleRenameSink,
-    handleDeleteSink,
-    handleBindSink,
-    handleUnbindSink,
-    handleBulkVideoUpload,
-    handleBulkImageUpload,
     startUDPTransmission,
     stopUDPTransmission,
     handleToggleSink,
