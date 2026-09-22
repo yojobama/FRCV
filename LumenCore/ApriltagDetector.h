@@ -75,7 +75,7 @@ public:
 		const std::vector<cv::Point3d>& objectPoints, const std::vector<cv::Point2d>& imagePoints,
 		const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs, int tagCount);
 private:
-	void Process(std::vector<SourceResult> results) override;
+	void Process(const std::vector<SourceResult>& results) override;
 
 	std::unique_ptr<IApriltagBackend> m_Backend;
 	ApriltagBackendKind m_ActiveBackendKind = APRILTAG_BACKEND_CPU;

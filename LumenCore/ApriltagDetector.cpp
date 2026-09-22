@@ -128,7 +128,7 @@ nlohmann::json ApriltagDetector::SolveMultiTagPnP(
 	};
 }
 
-void ApriltagDetector::Process(std::vector<SourceResult> results)
+void ApriltagDetector::Process(const std::vector<SourceResult>& results)
 {
 	for (const SourceResult& result : results)
 	{

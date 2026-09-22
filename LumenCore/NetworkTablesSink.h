@@ -40,7 +40,7 @@ public:
 	std::string GetConnectionStatus() const;
 
 private:
-	void Process(std::vector<SourceResult> results) override;
+	void Process(const std::vector<SourceResult>& results) override;
 
 	// interprets one source's JSON and writes it into that source's NT subtable. Recognizes the
 	// AprilTag detector's array-of-detections shape (id/center/corners/pose) and publishes the

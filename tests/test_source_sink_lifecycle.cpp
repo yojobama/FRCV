@@ -34,7 +34,7 @@ public:
     std::atomic<int> processedResultCount{0};
 
 protected:
-    void Process(std::vector<SourceResult> results) override {
+    void Process(const std::vector<SourceResult>& results) override {
         processedResultCount += static_cast<int>(results.size());
     }
 };

@@ -7,7 +7,7 @@ RoiSource::RoiSource(std::shared_ptr<Logger> logger, std::string id, cv::Rect ro
 	m_DoNotLoadCaptureThread = true;
 }
 
-void RoiSource::Process(std::vector<SourceResult> results)
+void RoiSource::Process(const std::vector<SourceResult>& results)
 {
 	for (const SourceResult& result : results) {
 		if (!result.frame.has_value() || result.frame->empty()) continue;

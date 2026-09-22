@@ -50,7 +50,7 @@ public:
 	StereoCalibrationResult GetCalibration() const { return m_Calibration; }
 
 private:
-	void Process(std::vector<SourceResult> results) override;
+	void Process(const std::vector<SourceResult>& results) override;
 	void EnsureRectifyMaps(const cv::Size& sourceSize);
 	void EnsureBackend(int croppedW, int croppedH);
 	// synthesizes a known 16px shift from a real captured frame and checks which sign the

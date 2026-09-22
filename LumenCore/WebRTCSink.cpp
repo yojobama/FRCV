@@ -247,7 +247,7 @@ void WebRTCSink::EncodeAndSend(const cv::Mat& bgrFrame)
 	av_packet_free(&packet);
 }
 
-void WebRTCSink::Process(std::vector<SourceResult> results)
+void WebRTCSink::Process(const std::vector<SourceResult>& results)
 {
 	for (const SourceResult& result : results) {
 		if (result.frame.has_value() && !result.frame.value().empty()) {

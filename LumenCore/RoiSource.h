@@ -21,7 +21,7 @@ public:
 	RoiSource(std::shared_ptr<Logger> logger, std::string id, cv::Rect roi);
 
 private:
-	void Process(std::vector<SourceResult> results) override;
+	void Process(const std::vector<SourceResult>& results) override;
 
 	std::shared_ptr<Logger> m_Logger;
 	cv::Rect m_Roi;

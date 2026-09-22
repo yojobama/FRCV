@@ -13,7 +13,7 @@ void DepthFusionNode::SetStereoDepthNode(std::shared_ptr<StereoDepthNode> depthN
 	m_DepthNode = depthNode;
 }
 
-void DepthFusionNode::Process(std::vector<SourceResult> results)
+void DepthFusionNode::Process(const std::vector<SourceResult>& results)
 {
 	if (results.empty() || !results[0].json.has_value()) return;
 	if (!m_DepthNode) {

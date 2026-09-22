@@ -191,7 +191,7 @@ void CameraCalibrator::ProcessCharuco(const cv::Mat& gray, cv::Mat& displayFrame
 	}
 }
 
-void CameraCalibrator::Process(std::vector<SourceResult> results)
+void CameraCalibrator::Process(const std::vector<SourceResult>& results)
 {
 	const Frame& frame = results[0].frame.value();
 

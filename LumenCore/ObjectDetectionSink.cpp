@@ -9,7 +9,7 @@ ObjectDetectionSink::ObjectDetectionSink(std::shared_ptr<Logger> logger, std::st
 	m_DoNotLoadCaptureThread = true;
 }
 
-void ObjectDetectionSink::Process(std::vector<SourceResult> results)
+void ObjectDetectionSink::Process(const std::vector<SourceResult>& results)
 {
 	for (const SourceResult& result : results) {
 		if (!result.frame.has_value()) continue;

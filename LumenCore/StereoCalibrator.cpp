@@ -58,7 +58,7 @@ bool StereoCalibrator::DetectCheckerboard(const cv::Mat& gray, std::vector<cv::P
 	return true;
 }
 
-void StereoCalibrator::Process(std::vector<SourceResult> results)
+void StereoCalibrator::Process(const std::vector<SourceResult>& results)
 {
 	if (!m_Pairer.has_value()) return; // SetStereoRoles hasn't run yet
 

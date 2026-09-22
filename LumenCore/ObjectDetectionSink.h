@@ -19,7 +19,7 @@ public:
 	bool GetDriverMode() const { return m_DriverMode; }
 
 private:
-	void Process(std::vector<SourceResult> results) override;
+	void Process(const std::vector<SourceResult>& results) override;
 
 	std::shared_ptr<IDetectionBackend> m_Backend;
 	std::shared_ptr<Logger> m_Logger;

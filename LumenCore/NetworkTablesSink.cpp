@@ -145,7 +145,7 @@ void NetworkTablesSink::PublishSourceResult(const std::string& sourceId, const n
 	}
 }
 
-void NetworkTablesSink::Process(std::vector<SourceResult> results)
+void NetworkTablesSink::Process(const std::vector<SourceResult>& results)
 {
 	for (const SourceResult& result : results) {
 		if (!result.json.has_value()) continue;

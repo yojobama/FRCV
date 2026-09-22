@@ -29,7 +29,7 @@ public:
 	void SetStereoDepthNode(std::shared_ptr<StereoDepthNode> depthNode);
 
 private:
-	void Process(std::vector<SourceResult> results) override;
+	void Process(const std::vector<SourceResult>& results) override;
 
 	std::shared_ptr<Logger> m_Logger;
 	std::shared_ptr<StereoDepthNode> m_DepthNode;

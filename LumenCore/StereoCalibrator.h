@@ -68,7 +68,7 @@ public:
 	StereoCalibrationResult GetCalibrationResult() const;
 
 private:
-	void Process(std::vector<SourceResult> results) override;
+	void Process(const std::vector<SourceResult>& results) override;
 	bool DetectCheckerboard(const cv::Mat& gray, std::vector<cv::Point2f>& corners, std::vector<cv::Point3f>& objectPoints);
 
 	std::shared_ptr<Logger> m_Logger;

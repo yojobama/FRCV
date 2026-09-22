@@ -50,7 +50,7 @@ public:
 	std::string GetConnectionStatus() const;
 
 private:
-	void Process(std::vector<SourceResult> results) override;
+	void Process(const std::vector<SourceResult>& results) override;
 	void InitializePeerConnection(); // caller must already hold m_ConnectionMutex
 
 	bool EnsureEncoderInitialized(int width, int height);

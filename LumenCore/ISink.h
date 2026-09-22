@@ -27,7 +27,7 @@ public:
 
 protected:
 
-    virtual void Process(std::vector<SourceResult> sources) = 0;
+    virtual void Process(const std::vector<SourceResult>& sources) = 0;
 private:
     std::shared_ptr<Logger> m_Logger;
 

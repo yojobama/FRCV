@@ -201,7 +201,7 @@ void StereoDepthNode::RunSignSelfCheckIfNeeded(const cv::Mat& rectLeftGray)
 #endif
 }
 
-void StereoDepthNode::Process(std::vector<SourceResult> results)
+void StereoDepthNode::Process(const std::vector<SourceResult>& results)
 {
 	if (!m_Pairer.has_value()) return; // SetStereoRoles hasn't run yet
 

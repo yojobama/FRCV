@@ -59,7 +59,7 @@ public:
 	int GetFrameHeight() const;
 
 private:
-	void Process(std::vector<SourceResult> results) override;
+	void Process(const std::vector<SourceResult>& results) override;
 	void ProcessCheckerboard(const cv::Mat& gray, cv::Mat& displayFrame);
 	void ProcessCharuco(const cv::Mat& gray, cv::Mat& displayFrame);
 
