@@ -162,7 +162,8 @@
             "displayName": "CI: Linux ARM64",
             "inherits": [ "linux-base", "ci-base" ],
             "cacheVariables": {
-                "LUMEN_WITH_RKNN": "ON"
+                "LUMEN_WITH_RKNN": "ON",
+                "LUMEN_WITH_RGA": "ON"
             }
         },
         {
@@ -197,6 +198,12 @@
         {
             "name": "ci-linux-x64",
             "configurePreset": "ci-linux-x64",
+            "configuration": "Release",
+            "filter": { "exclude": { "label": "hitl" } }
+        },
+        {
+            "name": "ci-linux-arm64",
+            "configurePreset": "ci-linux-arm64",
             "configuration": "Release",
             "filter": { "exclude": { "label": "hitl" } }
         },

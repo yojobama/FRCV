@@ -8,7 +8,13 @@
 # /usr/local and /opt/lumenvision-ffmpeg on THIS machine at build time, not just be declared.
 #
 # Usage: VERSION=1.2.3 scripts/build-deb.sh
-#   VERSION - package version (Debian policy: digits/dots, no leading "v") - required.
+#   VERSION           - package version (Debian policy: digits/dots, no leading "v") - required.
+#   LUMEN_CORE_PRESET  - CMake preset to configure/build LumenCore with - optional, defaults to
+#                        pi-arm64-release (the right choice on a real Orange Pi). CI overrides
+#                        this to ci-linux-arm64 (see .github/workflows/release.yml) so the
+#                        native build stays under the SAME explicit-every-flag preset its own
+#                        earlier configure/build/test steps already used, rather than this
+#                        script silently re-resolving a different, unconfigured one.
 # Produces: lumenvision-backend_<VERSION>_arm64.deb in the repo root.
 set -euo pipefail
 
@@ -16,6 +22,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 VERSION="${VERSION:?set VERSION=x.y.z (no leading v) before running this script}"
+LUMEN_CORE_PRESET="${LUMEN_CORE_PRESET:-pi-arm64-release}"
 PKG_NAME="lumenvision-backend"
 STAGE_DIR="$REPO_ROOT/out/deb-stage"
 DEB_FILE="$REPO_ROOT/${PKG_NAME}_${VERSION}_arm64.deb"
@@ -33,8 +40,19 @@ mkdir -p "$STAGE_DIR/DEBIAN" "$STAGE_DIR/opt/lumenvision" \
 echo "==> Building webui"
 (cd webui && npm ci && npm run build)
 
-echo "==> Publishing Server (self-contained, linux-arm64, Release) - transitively builds LumenCore"
-dotnet publish "$REPO_ROOT/Server/Server.csproj" -c Release -r linux-arm64 --self-contained true
+# Configure/build LumenCore explicitly rather than relying on dotnet publish's own BuildLumenCore
+# MSBuild hook alone - that hook only re-BUILDS an already-configured preset (it checks for an
+# existing CMakeCache.txt and warns+skips otherwise, see Server.csproj's own comment), it never
+# runs the initial `cmake --preset` configure step. A from-scratch machine (a fresh CI runner, or
+# a Pi that's never been configured for this preset before) needs that done explicitly first.
+# Idempotent - a no-op on a machine that already configured/built this preset itself.
+echo "==> Configuring/building LumenCore ($LUMEN_CORE_PRESET)"
+cmake --preset "$LUMEN_CORE_PRESET"
+cmake --build --preset "$LUMEN_CORE_PRESET"
+
+echo "==> Publishing Server (self-contained, linux-arm64, Release)"
+dotnet publish "$REPO_ROOT/Server/Server.csproj" -c Release -r linux-arm64 --self-contained true \
+    -p:LumenCorePreset="$LUMEN_CORE_PRESET"
 
 PUBLISH_DIR="$REPO_ROOT/Server/bin/Release/net10.0/linux-arm64/publish"
 if [[ ! -f "$PUBLISH_DIR/Server" ]]; then

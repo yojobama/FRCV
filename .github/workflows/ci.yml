@@ -1,16 +1,17 @@
 name: CI
 
-# Linux x64 only for now. Windows and ARM64 CI are deliberately deferred, not forgotten:
+# Linux x64 only for now. Windows CI is deliberately deferred, not forgotten:
 #   - Windows: install-deps' Windows-side equivalent is OpenCV built from source (confirmed the
 #     hard way this took well over an hour on a real dev machine); GitHub-hosted windows-latest
 #     runners have no ready equivalent of the /usr/local cache below (no single prefix vcpkg and
 #     a from-source build can both land in), and doing this properly needs either a hosted OpenCV
 #     binary artifact or vcpkg binary caching - real design work, not a small addition here.
-#   - ARM64: GitHub offers no free ARM64 Linux runner. The natural fix is a self-hosted runner
-#     registered ON the Orange Pi bench board itself (it already has the full pi-arm64-release
-#     dependency stack built and verified) - that needs a repo-owner action (Settings > Actions >
-#     Runners > New self-hosted runner, generating a registration token) this workflow can't do
-#     on its own.
+#   - ARM64 is no longer blocked the way this comment used to say: GitHub-hosted ubuntu-24.04-arm
+#     runners went GA for public repos in August 2025 (no self-hosted runner needed at all). This
+#     fast build/test job still only covers x64 on every push - the full ARM64 build (RKNN/RGA
+#     included, plus the .deb package) lives in release.yml instead, since it needs the complete
+#     install-deps.sh feature set and only makes sense to run when actually cutting a release,
+#     not on every push.
 on:
   push:
     branches: [main]

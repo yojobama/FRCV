@@ -1,0 +1,174 @@
+name: Release
+
+# Builds the backend .deb and the photoncompat vendordep, and publishes both to a GitHub
+# Release - triggered only by a version tag someone pushes (never by this workflow itself; no
+# step here runs `git tag` or `gh release create` outside the publish-release job's own final
+# step, and that job is entirely skipped on a manual run - see its own `if:`).
+#
+# workflow_dispatch is for shaking out build issues WITHOUT creating a public release: build-deb
+# and build-vendordep both run and upload their output as ordinary workflow artifacts either way,
+# but publish-release (the job that touches gh-pages and creates the GitHub Release) only runs
+# when this was triggered by an actual pushed tag.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-deb:
+    # GitHub-hosted arm64 runners (GA for public repos since August 2025) - no self-hosted
+    # runner needed, see ci.yml's own comment on this.
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=0.0.0-dev${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # same cache strategy as ci.yml's x64 job - a from-source OpenCV/ffmpeg-rockchip/MPP build
+      # is far too slow to redo on every release otherwise (this feature set is heavier than
+      # ci.yml's own x64 job: RKNN and RGA both need real Rockchip-specific builds on top of it).
+      - name: Cache dependency build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.lumen-build
+            /usr/local/include
+            /usr/local/lib
+            /usr/local/bin
+            /opt/lumenvision-ffmpeg
+          key: lumen-deps-linux-arm64-${{ hashFiles('scripts/install-deps.sh') }}
+          restore-keys: |
+            lumen-deps-linux-arm64-
+
+      - name: Install/build dependencies
+        run: ./scripts/install-deps.sh --with-nt4 --with-webrtc --with-rknn --with-mpp --with-ffmpeg-rockchip
+
+      - name: Configure
+        run: cmake --preset ci-linux-arm64
+
+      - name: Build
+        run: cmake --build --preset ci-linux-arm64
+
+      - name: Test
+        run: ctest --preset ci-linux-arm64 --output-on-failure
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build .deb
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+          # matches this job's own earlier Configure/Build/Test steps - see build-deb.sh's own
+          # comment for why it must be told this explicitly rather than falling back to its
+          # pi-arm64-release default (unconfigured on this runner).
+          LUMEN_CORE_PRESET: ci-linux-arm64
+        run: ./scripts/build-deb.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lumenvision-backend-deb
+          path: lumenvision-backend_*_arm64.deb
+          if-no-files-found: error
+
+  build-vendordep:
+    # pure Java - no ARM64 (or any C++ toolchain) needed.
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=0.0.0-dev${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Build and publish photoncompat
+        working-directory: photoncompat
+        run: ./gradlew publish -PphotoncompatVersion=${{ steps.version.outputs.value }}
+
+      - name: Render vendordep JSON
+        run: |
+          sed "s/__VERSION__/${{ steps.version.outputs.value }}/g" \
+            photoncompat/vendordep-template.json > photoncompat.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: photoncompat-maven-repo
+          path: photoncompat/build/maven-repo
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: photoncompat-vendordep-json
+          path: photoncompat.json
+
+  publish-release:
+    needs: [build-deb, build-vendordep]
+    runs-on: ubuntu-24.04
+    # only a real pushed tag creates a public release - a workflow_dispatch run stops after
+    # build-deb/build-vendordep so their artifacts can be inspected without publishing anything.
+    if: github.ref_type == 'tag'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: lumenvision-backend-deb
+          path: dist
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: photoncompat-vendordep-json
+          path: dist
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: photoncompat-maven-repo
+          path: maven-repo
+
+      - name: Publish Maven artifacts to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: maven-repo
+          destination_dir: maven
+          # additive: this release's artifacts land alongside every previous release's, not
+          # replacing them - an older robot project pinned to an older photoncompat-java version
+          # must keep resolving it.
+          keep_files: true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            dist/lumenvision-backend_*_arm64.deb \
+            dist/photoncompat.json \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes
