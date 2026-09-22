@@ -115,20 +115,27 @@ public:
 	// frameHeight are only consulted for APRILTAG_BACKEND_VULKAN (the GPU pipeline's buffers
 	// are sized once at construction, unlike the CPU backend which is frame-size-agnostic); if
 	// Vulkan is requested but unavailable, the node falls back to CPU rather than failing to
-	// construct (check GetApriltagDetectorBackendName afterwards to see which one actually ran)
+	// construct (check GetApriltagDetectorBackendName afterwards to see which one actually ran).
+	// nthreads/quadDecimate <=0 means "let the backend pick its own default" - see
+	// ApriltagDetector's own constructor comment.
 	int CreateApriltagDetector(CameraCalibrationResult calibrationResult, double tagSize,
-		ApriltagBackendKind backendKind, int frameWidth, int frameHeight);
+		ApriltagBackendKind backendKind, int frameWidth, int frameHeight,
+		int nthreads = 0, float quadDecimate = 0.0f);
 	int CreateApriltagDetector(int id, CameraCalibrationResult calibrationResult, double tagSize,
-		ApriltagBackendKind backendKind, int frameWidth, int frameHeight);
+		ApriltagBackendKind backendKind, int frameWidth, int frameHeight,
+		int nthreads = 0, float quadDecimate = 0.0f);
 	string GetApriltagDetectorBackendName(int sinkId);
 	// which backend was actually requested/resolved to (as a real enum, not just the display
 	// name GetApriltagDetectorBackendName returns) plus everything else needed to rebuild an
-	// equivalent detector - the webui's Inspector "Backend" switch on a plain-created
-	// ApriltagSink (one not made via a Pipeline Profile) needs all three to recreate the sink
-	// without silently dropping its tag size/calibration.
+	// equivalent detector - the webui's Inspector "Backend"/"Threads"/"Quad Decimate" controls
+	// on a plain-created ApriltagSink (one not made via a Pipeline Profile) need all of these to
+	// recreate the sink without silently dropping its tag size/calibration/tuning.
 	ApriltagBackendKind GetApriltagDetectorBackendKind(int sinkId);
 	double GetApriltagDetectorTagSize(int sinkId);
 	CameraCalibrationResult GetApriltagDetectorCalibration(int sinkId);
+	int GetApriltagDetectorThreads(int sinkId);
+	float GetApriltagDetectorQuadDecimate(int sinkId);
+	bool GetApriltagDetectorQuadDecimateSupported(int sinkId);
 	// legacy no-model overloads: there is no way to run inference without a model, so these
 	// exist only to keep already-generated SWIG call sites compiling and throw a clear error
 	// explaining that a model must be supplied via the overload below

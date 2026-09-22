@@ -30,13 +30,25 @@ public:
 	// throws (via vk::Context's constructor / CheckVk) if no usable Vulkan compute device is
 	// found - callers should catch this and fall back to CpuApriltagBackend, matching the
 	// runtime capability probe called for in the implementation plan (phase 5, item 5); this
-	// class makes no attempt to be silently CPU-safe itself
-	explicit VkApriltagBackend(int frameWidth, int frameHeight);
+	// class makes no attempt to be silently CPU-safe itself.
+	// cpuThreads <= 0 means "leave DetectorConfig's own default (0 = hardware_concurrency())
+	// alone" - see .cpp's own comment on why this project's caller picks a different default.
+	explicit VkApriltagBackend(int frameWidth, int frameHeight, int cpuThreads = 0);
 	~VkApriltagBackend() override;
 
 	zarray_t* Detect(const cv::Mat& grayFrame) override;
 	void ReleaseResult(zarray_t* detections) override; // no-op: TagDecoder owns its zarray_t
 	std::string Name() const override { return "Vulkan (vkapriltag)"; }
+
+	// QuadDecode's own cpu_threads getter (the CPU-tail worker pool - the one part of this
+	// pipeline actually running on ordinary CPU threads, decimation/quad-selection is all GPU
+	// compute) - the genuinely analogous knob to CpuApriltagBackend's nthreads.
+	int GetThreads() const override { return static_cast<int>(m_QuadDecode->threads()); }
+	// Fixed at 2x in GpuDetector's own pipeline (see this class's .cpp comment) - not a
+	// DetectorConfig field, so there is nothing to read back per-instance; reported as a
+	// constant purely so a caller can display what's actually happening.
+	float GetQuadDecimate() const override { return 2.0f; }
+	bool GetQuadDecimateSupported() const override { return false; }
 
 private:
 	apriltag_detector_t* m_Detector;

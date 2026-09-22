@@ -56,16 +56,39 @@ namespace Server.Controllers.sinks
             return Task.FromResult(ManagerWrapper.Instance.GetApriltagDetectorBackendKind(sinkId));
         }
 
+        // GET: the sink's current tuning - threads and quad_decimate are genuinely
+        // user-adjustable (not hardcoded, see ApriltagDetector's own constructor comment), so the
+        // Inspector needs this to pre-populate its Threads/QuadDecimate controls the same way
+        // /backendKind pre-populates the Backend dropdown. QuadDecimateSupported is false for
+        // Vulkan (fixed 2x decimation baked into its compute pipeline - see
+        // VkApriltagBackend::GetQuadDecimate's own comment) - the webui hides/disables the
+        // QuadDecimate control when this is false rather than letting a user set a value that's
+        // silently ignored.
+        [Route(HttpVerbs.Get, "/apriltagSink/tuning")]
+        public Task<ApriltagTuningDto> GetTuning([QueryField] int sinkId)
+        {
+            return Task.FromResult(new ApriltagTuningDto
+            {
+                Threads = ManagerWrapper.Instance.GetApriltagDetectorThreads(sinkId),
+                QuadDecimate = ManagerWrapper.Instance.GetApriltagDetectorQuadDecimate(sinkId),
+                QuadDecimateSupported = ManagerWrapper.Instance.GetApriltagDetectorQuadDecimateSupported(sinkId),
+            });
+        }
+
         // PATCH: switches an EXISTING sink between CPU/Vulkan in place, preserving its id, tag
         // size, calibration, driver mode, and every binding (upstream camera + any downstream
         // WebRTC/NT4 sinks) - see SinkManager.SetApriltagBackend's own comment for why this has
         // to tear down and recreate the detector rather than mutating it. This is the sink's own
         // "Backend" control, not the Pipeline Profiles one (PipelineProfileController) - that one
         // only helps if a profile was set up in advance; this works on any plain ApriltagSink.
+        // nthreads/quadDecimate are optional - when omitted, SetApriltagBackend carries forward
+        // the sink's current tuning rather than resetting it, so a plain backend switch doesn't
+        // silently clobber tuning the user already dialled in.
         [Route(HttpVerbs.Patch, "/apriltagSink/backend")]
-        public Task SetBackend([QueryField] int sinkId, [QueryField] ApriltagBackendKind backend)
+        public Task SetBackend([QueryField] int sinkId, [QueryField] ApriltagBackendKind backend,
+            [QueryField] int? nthreads = null, [QueryField] float? quadDecimate = null)
         {
-            SinkManager.Instance.SetApriltagBackend(sinkId, backend);
+            SinkManager.Instance.SetApriltagBackend(sinkId, backend, nthreads, quadDecimate);
             return Task.CompletedTask;
         }
 

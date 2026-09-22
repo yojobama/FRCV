@@ -283,7 +283,16 @@ namespace Server
         // way to change backend was to delete the sink and manually recreate every binding by
         // hand - this is what the Inspector's own "Backend" control (on the sink itself, not
         // just Pipeline Profiles) calls.
-        public void SetApriltagBackend(int sinkId, ApriltagBackendKind backend)
+        //
+        // nthreads/quadDecimate are genuinely user-adjustable (not hardcoded - see
+        // ApriltagDetector's own constructor comment): when omitted, this carries forward the
+        // sink's CURRENT values (read back via GetApriltagDetectorThreads/QuadDecimate before
+        // tearing it down) so a plain backend switch from the Inspector's "Backend" dropdown
+        // doesn't silently reset tuning the user already dialled in. quadDecimate is simply
+        // ignored by ApriltagDetector when the target backend is Vulkan (fixed 2x decimation -
+        // see VkApriltagBackend::GetQuadDecimateSupported), so carrying forward a CPU-only value
+        // into a Vulkan switch is harmless.
+        public void SetApriltagBackend(int sinkId, ApriltagBackendKind backend, int? nthreads = null, float? quadDecimate = null)
         {
             Sink sink = GetSinkById(sinkId) ?? throw new ArgumentException($"no sink with id {sinkId}");
             if (sink.Type != SinkType.ApriltagSink)
@@ -296,10 +305,12 @@ namespace Server
             int? upstreamSourceId = sink.Source?.Id;
             List<int> downstreamSinkIds = GetSinksBoundToSource(sinkId);
             string name = sink.Name;
+            int effectiveThreads = nthreads ?? ManagerWrapper.Instance.GetApriltagDetectorThreads(sinkId);
+            float effectiveQuadDecimate = quadDecimate ?? ManagerWrapper.Instance.GetApriltagDetectorQuadDecimate(sinkId);
 
             DeleteSink(sinkId);
 
-            ManagerWrapper.Instance.CreateApriltagDetector(sinkId, calibration, tagSize, backend, 0, 0);
+            ManagerWrapper.Instance.CreateApriltagDetector(sinkId, calibration, tagSize, backend, 0, 0, effectiveThreads, effectiveQuadDecimate);
             sinks.Add(new Sink(sinkId, name, SinkType.ApriltagSink));
             if (driverMode) ManagerWrapper.Instance.SetDriverMode(sinkId, true);
 

@@ -8,7 +8,7 @@
 #endif
 
 ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string id, CameraCalibrationResult cameraCalibrationResult,
-	double tagSize, ApriltagBackendKind backendKind, int frameWidth, int frameHeight)
+	double tagSize, ApriltagBackendKind backendKind, int frameWidth, int frameHeight, int nthreads, float quadDecimate)
 	: ISource(logger, id), ISink(logger, 1, false, true, id)
 {
 	if (logger) logger->EnterLog("ApriltagDetector constructed");
@@ -16,24 +16,24 @@ ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string i
 	if (backendKind == APRILTAG_BACKEND_VULKAN) {
 #ifdef LUMEN_WITH_VULKAN_APRILTAG
 		try {
-			m_Backend = std::make_unique<VkApriltagBackend>(frameWidth, frameHeight);
+			m_Backend = std::make_unique<VkApriltagBackend>(frameWidth, frameHeight, nthreads);
 			m_ActiveBackendKind = APRILTAG_BACKEND_VULKAN;
 		} catch (const std::exception& e) {
 			// no usable Vulkan compute device, or GpuDetector/pipeline setup failed - fall back
 			// to CPU rather than fail to construct at all (plan phase 5, item 5)
 			if (logger) logger->EnterLog(LogLevel::Warning,
 				std::string("Vulkan AprilTag backend unavailable (") + e.what() + "), falling back to CPU");
-			m_Backend = std::make_unique<CpuApriltagBackend>();
+			m_Backend = std::make_unique<CpuApriltagBackend>(nthreads, quadDecimate);
 			m_ActiveBackendKind = APRILTAG_BACKEND_CPU;
 		}
 #else
 		if (logger) logger->EnterLog(LogLevel::Warning,
 			"Vulkan AprilTag backend requested but LUMEN_WITH_VULKAN_APRILTAG was not compiled in, falling back to CPU");
-		m_Backend = std::make_unique<CpuApriltagBackend>();
+		m_Backend = std::make_unique<CpuApriltagBackend>(nthreads, quadDecimate);
 		m_ActiveBackendKind = APRILTAG_BACKEND_CPU;
 #endif
 	} else {
-		m_Backend = std::make_unique<CpuApriltagBackend>();
+		m_Backend = std::make_unique<CpuApriltagBackend>(nthreads, quadDecimate);
 		m_ActiveBackendKind = APRILTAG_BACKEND_CPU;
 	}
 

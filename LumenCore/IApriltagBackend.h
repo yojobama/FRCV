@@ -29,4 +29,16 @@ public:
 	virtual void ReleaseResult(zarray_t* detections) = 0;
 
 	virtual std::string Name() const = 0;
+
+	// Runtime tuning knobs - reported back (not just "what was requested") so a caller can see
+	// what's actually in effect, same "requested vs actual" honesty IApriltagBackend already
+	// has via Name()/GetBackendName() for the CPU<->Vulkan fallback. Not every backend supports
+	// every knob: CpuApriltagBackend backs both directly; VkApriltagBackend's GetThreads() maps
+	// to its own cpu_threads (the CPU-tail worker pool, the genuinely analogous knob), but its
+	// decimation is fixed at 2x in the GPU pipeline itself (see VkApriltagBackend.cpp's own
+	// comment) - GetQuadDecimateSupported() is how a caller (the webui's Inspector) knows not to
+	// offer a control that would silently do nothing.
+	virtual int GetThreads() const = 0;
+	virtual float GetQuadDecimate() const = 0;
+	virtual bool GetQuadDecimateSupported() const = 0;
 };

@@ -4,7 +4,7 @@
 
 using namespace apriltag_vulkan;
 
-VkApriltagBackend::VkApriltagBackend(int frameWidth, int frameHeight)
+VkApriltagBackend::VkApriltagBackend(int frameWidth, int frameHeight, int cpuThreads)
 {
 	m_Family = tag36h11_create();
 	m_Detector = apriltag_detector_create();
@@ -18,6 +18,13 @@ VkApriltagBackend::VkApriltagBackend(int frameWidth, int frameHeight)
 	config.tag_width = static_cast<uint32_t>(m_Family->width_at_border);
 	config.reversed_border = m_Family->reversed_border;
 	config.normal_border = !m_Family->reversed_border;
+	// left at DetectorConfig's own default (0 = std::thread::hardware_concurrency(), i.e. every
+	// core on this 4xA76+4xA55 chip) unless this project's caller picks something smaller - a
+	// single detector's CPU tail claiming all 8 cores starves whatever else the pipeline is
+	// doing (another camera's own detector, capture threads, the WebRTC encoder). QuadDecode's
+	// pool is sized once at construction (see its own header comment - no live resize), so
+	// changing this requires rebuilding the backend, same as switching CPU<->Vulkan already does.
+	if (cpuThreads > 0) config.cpu_threads = static_cast<uint32_t>(cpuThreads);
 
 	m_GpuDetector = std::make_unique<GpuDetector>(*m_Context, config);
 	m_QuadDecode = std::make_unique<QuadDecode>(config);

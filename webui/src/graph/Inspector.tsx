@@ -43,6 +43,14 @@ export const Inspector: React.FC<{
   const [gainValue, setGainValue] = useState(0);
   const [sinkBackend, setSinkBackend] = useState<number | null>(null);
   const [switchingBackend, setSwitchingBackend] = useState(false);
+  // threads/quadDecimate are genuinely user-adjustable (not hardcoded - see ApriltagDetector's
+  // own constructor comment). quadDecimateSupported is false for Vulkan (fixed 2x decimation
+  // baked into its compute pipeline), so that control is hidden rather than accepting a value
+  // that would be silently ignored.
+  const [threadsValue, setThreadsValue] = useState(0);
+  const [quadDecimateValue, setQuadDecimateValue] = useState(0);
+  const [quadDecimateSupported, setQuadDecimateSupported] = useState(true);
+  const [applyingTuning, setApplyingTuning] = useState(false);
 
   useEffect(() => {
     setName(node.data.label);
@@ -117,14 +125,22 @@ export const Inspector: React.FC<{
 
   const isApriltagSink = sink != null && node.data.typeName === 'ApriltagSink';
 
-  // Same reasoning as the camera modes fetch above - the sink's actual running backend isn't in
-  // the /ws/state snapshot, so this needs its own one-shot fetch per selected node.
+  // Same reasoning as the camera modes fetch above - the sink's actual running backend/tuning
+  // isn't in the /ws/state snapshot, so this needs its own one-shot fetch per selected node.
   useEffect(() => {
     if (!isApriltagSink || !sink) return;
     let cancelled = false;
     api.getApriltagBackendKind(sink.Id)
       .then(backend => { if (!cancelled) setSinkBackend(backend); })
       .catch(() => { if (!cancelled) onToast('Failed to load detector backend', 'error'); });
+    api.getApriltagTuning(sink.Id)
+      .then(tuning => {
+        if (cancelled) return;
+        setThreadsValue(tuning.threads);
+        setQuadDecimateValue(tuning.quadDecimate);
+        setQuadDecimateSupported(tuning.quadDecimateSupported);
+      })
+      .catch(() => { if (!cancelled) onToast('Failed to load detector tuning', 'error'); });
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.id, isApriltagSink]);
@@ -133,17 +149,35 @@ export const Inspector: React.FC<{
   // calibration/bindings, but the underlying native object is genuinely destroyed and recreated
   // (ApriltagDetector::m_Backend has no setter), so an open Live Preview may show a brief black
   // frame while its binding to the new detector re-establishes on the next /ws/state tick.
+  // Carries the current threads/quadDecimate values forward explicitly so switching backend
+  // doesn't reset tuning the user already dialled in (Vulkan simply ignores quadDecimate - fixed
+  // 2x decimation - so passing it through on a switch to Vulkan is harmless).
   const switchBackend = async (backend: number) => {
     if (!sink) return;
     setSwitchingBackend(true);
     try {
-      await api.setApriltagBackend(sink.Id, backend);
+      await api.setApriltagBackend(sink.Id, backend, threadsValue, quadDecimateValue);
       setSinkBackend(backend);
+      setQuadDecimateSupported(backend !== 1);
       onToast('Backend switched', 'success');
     } catch {
       onToast('Failed to switch backend', 'error');
     } finally {
       setSwitchingBackend(false);
+    }
+  };
+
+  // Applies threads/quadDecimate without changing backend - same rebuild-in-place mechanism.
+  const applyTuning = async () => {
+    if (!sink || sinkBackend === null) return;
+    setApplyingTuning(true);
+    try {
+      await api.setApriltagBackend(sink.Id, sinkBackend, threadsValue, quadDecimateSupported ? quadDecimateValue : undefined);
+      onToast('Tuning applied', 'success');
+    } catch {
+      onToast('Failed to apply tuning', 'error');
+    } finally {
+      setApplyingTuning(false);
     }
   };
 
@@ -351,6 +385,33 @@ export const Inspector: React.FC<{
                   <option value={0}>CPU (apriltag)</option>
                   <option value={1}>Vulkan (vkapriltag)</option>
                 </select>
+              </div>
+            )}
+
+            {/* genuinely adjustable, not hardcoded - see ApriltagDetector's own constructor
+                comment. Threads applies to both backends (libapriltag's nthreads / vkapriltag's
+                cpu_threads); QuadDecimate is CPU-only (Vulkan's decimation is architecturally
+                fixed at 2x) and is hidden rather than accepting a value that'd be silently
+                ignored. */}
+            {isApriltagSink && (
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Threads (0 = default)</label>
+                  <input type="number" min={0} value={threadsValue} onChange={e => setThreadsValue(parseInt(e.target.value) || 0)}
+                    className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white" />
+                </div>
+                {quadDecimateSupported ? (
+                  <div>
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Quad Decimate (0 = default)</label>
+                    <input type="number" min={0} step={0.5} value={quadDecimateValue}
+                      onChange={e => setQuadDecimateValue(parseFloat(e.target.value) || 0)}
+                      className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white" />
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-400">Vulkan's decimation is fixed at 2x - not adjustable.</p>
+                )}
+                <button onClick={applyTuning} disabled={applyingTuning}
+                  className="w-full px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50">Apply Tuning</button>
               </div>
             )}
 

@@ -14,10 +14,16 @@ class Logger;
 class ApriltagDetector : public ISink, public ISource
 {
 public:
+	// nthreads/quadDecimate <= 0 means "let the backend pick its own default" - see
+	// CpuApriltagBackend/VkApriltagBackend's own constructors for what that means for each.
+	// Genuinely runtime-adjustable afterward, not fixed at construction: see GetThreads/
+	// GetQuadDecimate and SinkManager.SetApriltagBackend, which rebuilds a live sink with new
+	// values the same way it already rebuilds one to switch CPU<->Vulkan.
 	ApriltagDetector(std::shared_ptr<Logger> logger, std::string id, CameraCalibrationResult calibrationResult,
 		double tagSize /* in METERS you bloody Americans */,
 		ApriltagBackendKind backendKind = APRILTAG_BACKEND_CPU,
-		int frameWidth = 0, int frameHeight = 0 /* only consulted for APRILTAG_BACKEND_VULKAN */);
+		int frameWidth = 0, int frameHeight = 0, /* only consulted for APRILTAG_BACKEND_VULKAN */
+		int nthreads = 0, float quadDecimate = 0.0f);
 	~ApriltagDetector();
 
 	// which backend actually ended up running - may differ from what was requested if Vulkan
@@ -33,6 +39,12 @@ public:
 	// exactly this.
 	double GetTagSize() const { return m_DetectionInfo.tagsize; }
 	CameraCalibrationResult GetCalibration() const;
+
+	// Pass-throughs to whichever backend is actually active - see IApriltagBackend's own comment
+	// on why not every knob applies to every backend.
+	int GetThreads() const { return m_Backend->GetThreads(); }
+	float GetQuadDecimate() const { return m_Backend->GetQuadDecimate(); }
+	bool GetQuadDecimateSupported() const { return m_Backend->GetQuadDecimateSupported(); }
 
 	// ROADMAP.md Phase 7 (driver mode): when true, Process() skips the actual detection call and
 	// NT4 publish entirely and just republishes the raw camera frame - matching PhotonVision's

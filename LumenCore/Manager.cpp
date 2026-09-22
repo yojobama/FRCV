@@ -624,19 +624,19 @@ int Manager::CreateApriltagDetector(int id)
 }
 
 int Manager::CreateApriltagDetector(CameraCalibrationResult calibrationResult, double tagSize,
-    ApriltagBackendKind backendKind, int frameWidth, int frameHeight)
+    ApriltagBackendKind backendKind, int frameWidth, int frameHeight, int nthreads, float quadDecimate)
 {
     int id = GenerateUUID();
-    return CreateApriltagDetector(id, calibrationResult, tagSize, backendKind, frameWidth, frameHeight);
+    return CreateApriltagDetector(id, calibrationResult, tagSize, backendKind, frameWidth, frameHeight, nthreads, quadDecimate);
 }
 
 int Manager::CreateApriltagDetector(int id, CameraCalibrationResult calibrationResult, double tagSize,
-    ApriltagBackendKind backendKind, int frameWidth, int frameHeight)
+    ApriltagBackendKind backendKind, int frameWidth, int frameHeight, int nthreads, float quadDecimate)
 {
     m_Logger->EnterLog("CreateApriltagDetector called with id=" + std::to_string(id) + ", backend=" + std::to_string(backendKind));
 
     auto p_Detector = std::make_shared<ApriltagDetector>(m_Logger, std::to_string(id), calibrationResult, tagSize,
-        backendKind, frameWidth, frameHeight);
+        backendKind, frameWidth, frameHeight, nthreads, quadDecimate);
 
     m_Sinks.emplace(id, p_Detector);
     m_Sources.emplace(id, p_Detector);
@@ -685,6 +685,39 @@ CameraCalibrationResult Manager::GetApriltagDetectorCalibration(int sinkId)
     if (p_Detector == nullptr) return CameraCalibrationResult();
 
     return p_Detector->GetCalibration();
+}
+
+int Manager::GetApriltagDetectorThreads(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return 0;
+
+    ApriltagDetector* p_Detector = dynamic_cast<ApriltagDetector*>(sink->second.get());
+    if (p_Detector == nullptr) return 0;
+
+    return p_Detector->GetThreads();
+}
+
+float Manager::GetApriltagDetectorQuadDecimate(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return 0.0f;
+
+    ApriltagDetector* p_Detector = dynamic_cast<ApriltagDetector*>(sink->second.get());
+    if (p_Detector == nullptr) return 0.0f;
+
+    return p_Detector->GetQuadDecimate();
+}
+
+bool Manager::GetApriltagDetectorQuadDecimateSupported(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return false;
+
+    ApriltagDetector* p_Detector = dynamic_cast<ApriltagDetector*>(sink->second.get());
+    if (p_Detector == nullptr) return false;
+
+    return p_Detector->GetQuadDecimateSupported();
 }
 
 namespace {
