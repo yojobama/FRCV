@@ -7,6 +7,14 @@
     <Nullable>enable</Nullable>
     <Configurations>Debug;Release;LocalCheck</Configurations>
 
+    <!-- The Pi's deploy image has no libicu installed, and a self-contained publish doesn't
+         bundle it - .NET dynamically loads it at startup, so without this every deploy target
+         needs a new apt dependency or crashes with FailFast("Couldn't find a valid ICU package")
+         the instant LinuxResourceMonitor's first Console.WriteLine touches the encoding. Nothing
+         here does culture-aware string work (LinuxResourceMonitor.cs already parses with
+         CultureInfo.InvariantCulture) - invariant mode is a real fit, not a workaround. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+
     <!--
       LumenCore is built by CMake (see /CMakeLists.txt, /CMakePresets.json, LumenCore/CMakeLists.txt),
       not by MSBuild's normal C# build graph, so it is consumed as a prebuilt native library rather

@@ -96,8 +96,18 @@ namespace Server
             var server = CreateWebServer("http://*:8175");
             server.Start();
 
+            // Console.ReadLine() only makes sense with a real interactive terminal attached - under
+            // systemd (Type=simple, stdin is /dev/null) it hits EOF immediately and returns null,
+            // so Main would return and the "server" would exit within a second of starting, right
+            // after logging that it's running (confirmed live: a fresh `systemctl start` looked
+            // briefly healthy, then systemd's Restart=always looped it forever). Block on stdin
+            // only when there's an actual console to read Enter from; otherwise run until the
+            // process receives SIGTERM (systemd stop/restart), same as any other daemon.
             Console.WriteLine("Server is running. Press Enter to exit.");
-            Console.ReadLine();
+            if (!Console.IsInputRedirected)
+                Console.ReadLine();
+            else
+                new ManualResetEventSlim(false).Wait();
         }
     }
 }
