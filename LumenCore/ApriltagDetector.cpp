@@ -157,15 +157,26 @@ void ApriltagDetector::Process(const std::vector<SourceResult>& results)
 			m_Logger->EnterLog("detecting apriltags using backend=" + m_Backend->Name());
 			zarray_t* detections = m_Backend->Detect(gray);
 
+			// annotate-on-demand: drawing tag outlines/labels only matters to something that
+			// actually wants this frame - a running WebRTC preview - never to NetworkTablesSink
+			// (json-only) or a robot with no preview open at all, the common case mid-match.
+			// Skipping the FramePool acquire/copy AND every cv::line/putText call below when
+			// nobody's watching is real CPU saved on every single detected frame, not just a
+			// theoretical one - see ISource::HasActiveFrameConsumer's own comment.
+			bool wantsFrame = HasActiveFrameConsumer();
+
 			// Acquire()+copyTo() instead of .clone() - .clone() always mallocs a fresh buffer;
 			// this recycles one from the pool when one of the right size is free. `colourOwner`
 			// must be carried into the SetLatestResult call below via Frame's pool-owner
 			// constructor, not dropped by passing the bare cv::Mat through the implicit
 			// conversion - same hazard as AsBgrFrame's own comment describes.
 			std::shared_ptr<void> colourOwner;
-			const cv::Mat& sourceBgr = result.frame->AsBgr();
-			cv::Mat colouredFrame = FramePool::Instance().Acquire(sourceBgr.rows, sourceBgr.cols, sourceBgr.type(), colourOwner);
-			sourceBgr.copyTo(colouredFrame);
+			cv::Mat colouredFrame;
+			if (wantsFrame) {
+				const cv::Mat& sourceBgr = result.frame->AsBgr();
+				colouredFrame = FramePool::Instance().Acquire(sourceBgr.rows, sourceBgr.cols, sourceBgr.type(), colourOwner);
+				sourceBgr.copyTo(colouredFrame);
+			}
 
 			std::vector<nlohmann::json> jsonVector;
 
@@ -288,30 +299,32 @@ void ApriltagDetector::Process(const std::vector<SourceResult>& results)
 
 				jsonVector.push_back(detectionJson);
 
-				cv::line(colouredFrame, cv::Point(detection->p[0][0], detection->p[0][1]),
-					cv::Point(detection->p[1][0], detection->p[1][1]),
-					cv::Scalar(0, 0xff, 0), 2);
-				cv::line(colouredFrame, cv::Point(detection->p[0][0], detection->p[0][1]),
-					cv::Point(detection->p[3][0], detection->p[3][1]),
-					cv::Scalar(0, 0, 0xff), 2);
-				cv::line(colouredFrame, cv::Point(detection->p[1][0], detection->p[1][1]),
-					cv::Point(detection->p[2][0], detection->p[2][1]),
-					cv::Scalar(0xff, 0, 0), 2);
-				cv::line(colouredFrame, cv::Point(detection->p[2][0], detection->p[2][1]),
-					cv::Point(detection->p[3][0], detection->p[3][1]),
-					cv::Scalar(0xff, 0, 0), 2);
+				if (wantsFrame) {
+					cv::line(colouredFrame, cv::Point(detection->p[0][0], detection->p[0][1]),
+						cv::Point(detection->p[1][0], detection->p[1][1]),
+						cv::Scalar(0, 0xff, 0), 2);
+					cv::line(colouredFrame, cv::Point(detection->p[0][0], detection->p[0][1]),
+						cv::Point(detection->p[3][0], detection->p[3][1]),
+						cv::Scalar(0, 0, 0xff), 2);
+					cv::line(colouredFrame, cv::Point(detection->p[1][0], detection->p[1][1]),
+						cv::Point(detection->p[2][0], detection->p[2][1]),
+						cv::Scalar(0xff, 0, 0), 2);
+					cv::line(colouredFrame, cv::Point(detection->p[2][0], detection->p[2][1]),
+						cv::Point(detection->p[3][0], detection->p[3][1]),
+						cv::Scalar(0xff, 0, 0), 2);
 
-				std::stringstream ss;
-				ss << detection->id;
-				std::string text = ss.str();
-				int fontface = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
-				double fontscale = 1.0;
-				int baseline;
-				cv::Size textsize = cv::getTextSize(text, fontface, fontscale, 2,
-					&baseline);
-				cv::putText(colouredFrame, text, cv::Point(detection->c[0] - textsize.width / 2,
-					detection->c[1] + textsize.height / 2),
-					fontface, fontscale, cv::Scalar(0xff, 0x99, 0), 2);
+					std::stringstream ss;
+					ss << detection->id;
+					std::string text = ss.str();
+					int fontface = cv::FONT_HERSHEY_SCRIPT_SIMPLEX;
+					double fontscale = 1.0;
+					int baseline;
+					cv::Size textsize = cv::getTextSize(text, fontface, fontscale, 2,
+						&baseline);
+					cv::putText(colouredFrame, text, cv::Point(detection->c[0] - textsize.width / 2,
+						detection->c[1] + textsize.height / 2),
+						fontface, fontscale, cv::Scalar(0xff, 0x99, 0), 2);
+				}
 			}
 
 			m_Backend->ReleaseResult(detections);
@@ -319,8 +332,11 @@ void ApriltagDetector::Process(const std::vector<SourceResult>& results)
 			nlohmann::json multiTagJson = SolveMultiTagPnP(
 				multiTagObjectPoints, multiTagImagePoints, m_CameraMatrix, m_DistCoeffs, multiTagCount);
 
+			std::optional<Frame> outputFrame;
+			if (wantsFrame) outputFrame = Frame(colouredFrame, FrameFormat::BGR24, colourOwner);
+
 			SetLatestResult(SourceResult(nlohmann::json{{"tags", jsonVector}, {"multiTag", multiTagJson}},
-				Frame(colouredFrame, FrameFormat::BGR24, colourOwner), result.captureTimeUs));
+				outputFrame, result.captureTimeUs));
 		}
 	}
 }

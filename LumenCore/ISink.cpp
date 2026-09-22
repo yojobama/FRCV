@@ -120,6 +120,13 @@ bool ISink::BindSource(std::shared_ptr<ISource> p_Source) {
                 NotifyDataAvailable();
             }
         });
+        // see ISource::HasActiveFrameConsumer's own comment - this is what lets a bound
+        // detector know whether it's worth annotating a frame for this sink specifically.
+        // GetToggleStatus() is only called once the alive flag confirms `this` still exists.
+        p_Source->RegisterFrameConsumer(m_ID, m_RequireFrame, [this, aliveFlag] {
+            auto alive = aliveFlag.lock();
+            return alive && *alive && this->GetToggleStatus();
+        });
         return true;
     }
 
@@ -133,6 +140,7 @@ bool ISink::UnbindSource(std::string sourceID) {
 
     for (int i = 0; i < m_Sources.size(); i++) {
         if (m_Sources[i].first->GetID() == sourceID) {
+            m_Sources[i].first->UnregisterFrameConsumer(m_ID);
             m_Sources.erase(m_Sources.begin() + i);
             return true;
         }

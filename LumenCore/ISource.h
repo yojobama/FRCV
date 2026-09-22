@@ -9,6 +9,7 @@
 #include <mutex>
 #include <queue>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 class ISource
@@ -28,6 +29,28 @@ public:
 	// registers a callback invoked (off the result lock) whenever a new result is published;
 	// used by bound ISinks to wake their processing thread instead of polling
 	void AddResultListener(std::function<void()> listener);
+
+	// Called by ISink::BindSource/UnbindSource so a dual-role node (ApriltagDetector/
+	// ObjectDetectionSink) can tell whether anything downstream actually wants its FRAME (as
+	// opposed to just its JSON, e.g. NetworkTablesSink) right now - see HasActiveFrameConsumer's
+	// own comment for what this enables. isActive is called lazily (not cached) so it always
+	// reflects the consumer's CURRENT toggled-on state, not a snapshot from bind time; it must
+	// return false once the registering sink is destroyed (guard it with the same alive-flag
+	// idiom AddResultListener's own callers already use), not dangle a raw `this`.
+	void RegisterFrameConsumer(const std::string& sinkId, bool requiresFrame, std::function<bool()> isActive);
+	// removed on an explicit UnbindSource - not on destruction (destruction is instead covered
+	// by isActive naturally returning false forever after, same tradeoff AddResultListener
+	// already makes: a handful of dead entries across a session's lifetime, never actively
+	// leaking meaningfully, versus needing every ISink subclass to unregister on teardown).
+	void UnregisterFrameConsumer(const std::string& sinkId);
+
+	// true if at least one bound, frame-requiring consumer is currently active (alive and
+	// toggled on) - e.g. a running WebRTCSink bound to this detector's annotated output.
+	// ApriltagDetector/ObjectDetectionSink use this to skip drawing annotations onto a frame
+	// nothing is actually going to look at (NT4-only publishing needs the JSON, never the
+	// image) - real CPU/latency cost on a robot with no live preview open, the common case
+	// during an actual match.
+	bool HasActiveFrameConsumer() const;
 protected:
 	void SetLatestResult(SourceResult result);
 	// Written under m_ResultLock (in SetLatestResult) but read WITHOUT it by
@@ -56,6 +79,13 @@ private:
 
 	std::mutex m_ListenersMutex;
 	std::vector<std::function<void()>> m_Listeners;
+
+	struct FrameConsumer {
+		bool requiresFrame;
+		std::function<bool()> isActive;
+	};
+	mutable std::mutex m_FrameConsumersMutex;
+	std::unordered_map<std::string, FrameConsumer> m_FrameConsumers;
 
 	std::string m_ID;
 };

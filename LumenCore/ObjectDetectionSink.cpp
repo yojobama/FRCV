@@ -27,12 +27,21 @@ void ObjectDetectionSink::Process(const std::vector<SourceResult>& results)
 
 		std::vector<ObjectDetection> detections = m_Backend->Infer(sourceFrame);
 
+		// annotate-on-demand - see ApriltagDetector::Process's identical comment; skips the
+		// FramePool acquire/copy AND every cv::rectangle/putText call below when nothing bound
+		// to this sink actually wants the frame (NetworkTablesSink is json-only, and a robot
+		// with no preview open never needs it drawn at all).
+		bool wantsFrame = HasActiveFrameConsumer();
+
 		// Acquire()+copyTo() instead of .clone() - see ApriltagDetector.cpp's identical pattern.
 		// annotOwner is carried into the SetLatestResult call below via Frame's pool-owner
 		// constructor, not dropped through the bare-cv::Mat implicit conversion.
 		std::shared_ptr<void> annotOwner;
-		cv::Mat annotatedFrame = FramePool::Instance().Acquire(sourceFrame.rows, sourceFrame.cols, sourceFrame.type(), annotOwner);
-		sourceFrame.copyTo(annotatedFrame);
+		cv::Mat annotatedFrame;
+		if (wantsFrame) {
+			annotatedFrame = FramePool::Instance().Acquire(sourceFrame.rows, sourceFrame.cols, sourceFrame.type(), annotOwner);
+			sourceFrame.copyTo(annotatedFrame);
+		}
 		std::vector<nlohmann::json> jsonVector;
 
 		for (const ObjectDetection& detection : detections) {
@@ -45,13 +54,17 @@ void ObjectDetectionSink::Process(const std::vector<SourceResult>& results)
 				{"box", {box.x, box.y, box.width, box.height}}
 			});
 
-			cv::rectangle(annotatedFrame, box, cv::Scalar(0, 0xff, 0), 2);
-			std::string label = detection.GetClassName() + " " + std::to_string(static_cast<int>(detection.GetConfidence() * 100)) + "%";
-			cv::putText(annotatedFrame, label, cv::Point(static_cast<int>(box.x), static_cast<int>(box.y) - 5),
-				cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0xff, 0), 1);
+			if (wantsFrame) {
+				cv::rectangle(annotatedFrame, box, cv::Scalar(0, 0xff, 0), 2);
+				std::string label = detection.GetClassName() + " " + std::to_string(static_cast<int>(detection.GetConfidence() * 100)) + "%";
+				cv::putText(annotatedFrame, label, cv::Point(static_cast<int>(box.x), static_cast<int>(box.y) - 5),
+					cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0xff, 0), 1);
+			}
 		}
 
-		SetLatestResult(SourceResult(nlohmann::json(jsonVector),
-			Frame(annotatedFrame, FrameFormat::BGR24, annotOwner), result.captureTimeUs));
+		std::optional<Frame> outputFrame;
+		if (wantsFrame) outputFrame = Frame(annotatedFrame, FrameFormat::BGR24, annotOwner);
+
+		SetLatestResult(SourceResult(nlohmann::json(jsonVector), outputFrame, result.captureTimeUs));
 	}
 }

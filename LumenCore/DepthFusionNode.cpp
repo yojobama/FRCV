@@ -28,8 +28,13 @@ void DepthFusionNode::Process(const std::vector<SourceResult>& results)
 	StereoCalibrationResult calibration = m_DepthNode->GetCalibration();
 	double fx = calibration.rectifiedFx, cx = calibration.rectifiedCx, cy = calibration.rectifiedCy;
 
+	// annotate-on-demand - see ApriltagDetector::Process's identical comment. Skips the clone
+	// AND every distance-label cv::putText call below when nothing bound to this sink actually
+	// wants the frame.
+	bool wantsFrame = HasActiveFrameConsumer();
+
 	cv::Mat annotatedFrame;
-	if (results[0].frame.has_value() && !results[0].frame->empty()) annotatedFrame = results[0].frame->AsBgr().clone();
+	if (wantsFrame && results[0].frame.has_value() && !results[0].frame->empty()) annotatedFrame = results[0].frame->AsBgr().clone();
 
 	std::vector<nlohmann::json> fused;
 

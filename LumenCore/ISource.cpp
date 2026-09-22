@@ -61,6 +61,27 @@ void ISource::AddResultListener(std::function<void()> listener)
 	m_Listeners.push_back(std::move(listener));
 }
 
+void ISource::RegisterFrameConsumer(const std::string& sinkId, bool requiresFrame, std::function<bool()> isActive)
+{
+	std::lock_guard<std::mutex> guard(m_FrameConsumersMutex);
+	m_FrameConsumers[sinkId] = FrameConsumer{ requiresFrame, std::move(isActive) };
+}
+
+void ISource::UnregisterFrameConsumer(const std::string& sinkId)
+{
+	std::lock_guard<std::mutex> guard(m_FrameConsumersMutex);
+	m_FrameConsumers.erase(sinkId);
+}
+
+bool ISource::HasActiveFrameConsumer() const
+{
+	std::lock_guard<std::mutex> guard(m_FrameConsumersMutex);
+	for (const auto& [id, consumer] : m_FrameConsumers) {
+		if (consumer.requiresFrame && consumer.isActive()) return true;
+	}
+	return false;
+}
+
 void ISource::SetLatestResult(SourceResult result)
 {
 	{
