@@ -24,7 +24,7 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
 // enforced by isValidConnection in GraphPage, not by which handles exist, since a dual-role sink
 // (a StereoDepthSink feeding a DepthFusionSink's depth input) is legitimately both a target and
 // a source at once.
-export const PipelineNode: React.FC<NodeProps<PipelineNodeType>> = ({ data, selected }) => {
+const PipelineNodeImpl: React.FC<NodeProps<PipelineNodeType>> = ({ data, selected }) => {
   const Icon = ICONS[data.capability?.Icon ?? ''] ?? HelpCircle;
   const isSource = data.kind === 'source';
 
@@ -76,5 +76,37 @@ export const PipelineNode: React.FC<NodeProps<PipelineNodeType>> = ({ data, sele
     </div>
   );
 };
+
+// buildGraph (graph/model.ts) rebuilds the whole nodes array from scratch on every /ws/state
+// tick (~1/sec) - every node gets a brand new `data` object every time, even one whose displayed
+// values haven't actually changed (an idle/disabled sink, a source sitting at a steady fps).
+// Without this, React Flow re-renders every node's full DOM subtree every tick regardless -
+// this is what made the graph feel laggy with more than a handful of nodes on screen. The
+// comparator checks the same fields PipelineNode actually renders, at the same precision it
+// displays them at (fps/latency compared as their rendered strings, not raw floats, so
+// imperceptible jitter like 14.98 -> 15.02 - both "15.0" on screen - doesn't force a re-render
+// either). `raw` is deliberately NOT compared: PipelineNode never reads it (only Inspector does,
+// off the live `nodes` state directly, not off this memoized component), so ignoring it here
+// costs nothing and staleness never leaks through to the Inspector.
+function pipelineNodePropsEqual(prev: NodeProps<PipelineNodeType>, next: NodeProps<PipelineNodeType>): boolean {
+  if (prev.selected !== next.selected) return false;
+  const a = prev.data, b = next.data;
+  if (a === b) return true;
+  return (
+    a.kind === b.kind &&
+    a.label === b.label &&
+    a.typeName === b.typeName &&
+    a.capability === b.capability &&
+    a.fps.toFixed(1) === b.fps.toFixed(1) &&
+    a.latencyUs.toFixed(0) === b.latencyUs.toFixed(0) &&
+    a.isRunning === b.isRunning &&
+    a.activeProfileIndex === b.activeProfileIndex &&
+    a.profileCount === b.profileCount &&
+    (a.webrtcSink?.IsRunning ?? null) === (b.webrtcSink?.IsRunning ?? null) &&
+    (a.nt4Sink?.IsRunning ?? null) === (b.nt4Sink?.IsRunning ?? null)
+  );
+}
+
+export const PipelineNode = React.memo(PipelineNodeImpl, pipelineNodePropsEqual);
 
 export const nodeTypes = { pipelineNode: PipelineNode };

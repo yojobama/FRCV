@@ -164,3 +164,20 @@ export function buildGraph(
 
   return { nodes, edges };
 }
+
+// buildGraph builds a brand new `edges` array (with brand new edge objects) every call, but
+// edges only actually change when a binding is made/broken - which is rare compared to how often
+// buildGraph runs (once per /ws/state tick, ~1/sec). Passing a new array+objects to React Flow's
+// `edges` prop every tick regardless forces it to redo edge-path layout (and the MiniMap to
+// redraw) every second even when literally nothing rebound. The caller should keep its previous
+// edges array and call this before calling setEdges - reuse the OLD array reference when it
+// returns true, so React Flow's own prop-identity check skips that work entirely.
+export function edgesEqual(a: Edge[], b: Edge[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].id !== b[i].id || a[i].source !== b[i].source || a[i].target !== b[i].target || a[i].label !== b[i].label) {
+      return false;
+    }
+  }
+  return true;
+}

@@ -7,7 +7,7 @@ import '@xyflow/react/dist/style.css';
 import { Plus, Camera as CameraIcon, Target } from 'lucide-react';
 import { useStateSocket } from '../hooks/useStateSocket';
 import { ApiService } from '../services/ApiService';
-import { buildGraph, type PipelineNode, type PositionStore } from '../graph/model';
+import { buildGraph, edgesEqual, type PipelineNode, type PositionStore } from '../graph/model';
 import { nodeTypes } from '../graph/PipelineNode';
 import { Inspector } from '../graph/Inspector';
 import { AddSourceModal } from '../components/AddSourceModal';
@@ -52,7 +52,9 @@ const GraphPageInner: React.FC<{ onToast: (m: string, t: 'success'|'error'|'info
     };
     const built = buildGraph(snapshot, capabilities, store);
     setNodes(built.nodes);
-    setEdges(built.edges);
+    // reuse the previous array reference when the edge set hasn't actually changed - see
+    // edgesEqual's own comment for why this matters every tick, not just as a micro-opt.
+    setEdges(prev => (edgesEqual(prev, built.edges) ? prev : built.edges));
   }, [snapshot, capabilities, setNodes]);
 
   const selectedNode = nodes.find(n => n.id === selectedId) ?? null;
