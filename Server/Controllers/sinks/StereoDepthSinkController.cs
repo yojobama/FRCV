@@ -11,14 +11,18 @@ namespace Server.Controllers.sinks
         // POST: create a StereoDepthNode. `calibration` is normally the result of a
         // StereoCalibrationSink's /run (or /result), passed straight through - see
         // StereoCalibrationSinkController. Bind its left/right sources afterwards via /bind.
+        // Body read and deserialized by hand with System.Text.Json rather than [JsonData] - see
+        // CameraSourceController.Create's comment on why (Swan can't construct a record struct's
+        // primary constructor and silently leaves every field at its default).
         [Route(HttpVerbs.Post, "/stereoDepthSink/create")]
-        public Task<int> Create([QueryField] string name, [QueryField] StereoDepthBackendKind backend,
+        public async Task<int> Create([QueryField] string name, [QueryField] StereoDepthBackendKind backend,
             [QueryField] double minDepthMeters, [QueryField] double maxDepthMeters,
-            [QueryField] int maxSkewUs, [QueryField] StereoFrameOutput frameOutput,
-            [JsonData] StereoCalibrationResultDto calibration)
+            [QueryField] int maxSkewUs, [QueryField] StereoFrameOutput frameOutput)
         {
+            string body = await HttpContext.GetRequestBodyAsStringAsync();
+            StereoCalibrationResultDto calibration = System.Text.Json.JsonSerializer.Deserialize<StereoCalibrationResultDto>(body);
             int sinkId = SinkManager.Instance.AddStereoDepthSink(name, backend, calibration.ToNative(), minDepthMeters, maxDepthMeters, maxSkewUs, frameOutput);
-            return Task.FromResult(sinkId);
+            return sinkId;
         }
 
         // PATCH: bind the explicit left/right camera sources for this stereo sink

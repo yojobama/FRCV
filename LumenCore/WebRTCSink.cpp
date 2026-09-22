@@ -16,9 +16,38 @@ WebRTCSink::WebRTCSink(std::shared_ptr<Logger> logger, std::string id, WebRTCSin
 	, m_Config(config)
 {
 	if (m_Logger) m_Logger->EnterLog("WebRTCSink constructed, encoder=" + config.encoderName);
+	std::lock_guard<std::mutex> lock(m_ConnectionMutex);
+	InitializePeerConnection();
+}
+
+WebRTCSink::~WebRTCSink()
+{
+	ShutdownEncoder();
+	std::lock_guard<std::mutex> lock(m_ConnectionMutex);
+	if (m_PeerConnection) m_PeerConnection->close();
+}
+
+// Builds a fresh PeerConnection/Track/SrReporter triple - caller must already hold
+// m_ConnectionMutex. Split out of the constructor so CreateOffer() can call it again for every
+// new negotiation: a browser tab (re)opening Live Preview creates a brand new RTCPeerConnection
+// with its own ICE ufrag/pwd and DTLS fingerprint, and answering it against the OLD, already-
+// "stable" native PeerConnection left over from a previous session is rejected outright by
+// libdatachannel - confirmed live, on a real Orange Pi with a real camera: stopping and
+// restarting Live Preview (or just navigating away from /graph and back) failed every time with
+// "WebRTCSink::SetAnswer failed: Unexpected remote answer description in signaling state stable"
+// followed by "AddIceCandidate dropped a candidate: Got a remote candidate without ICE
+// transport" - the sink's own peer connection was never actually reset between sessions, only
+// ever created once in the constructor and reused (and re-answered against) forever after.
+void WebRTCSink::InitializePeerConnection()
+{
+	if (m_PeerConnection) m_PeerConnection->close();
+
+	{
+		std::lock_guard<std::mutex> gatheringLock(m_GatheringMutex);
+		m_GatheringComplete = false;
+	}
 
 	m_PeerConnection = std::make_shared<PeerConnection>();
-
 	m_PeerConnection->onGatheringStateChange([this](PeerConnection::GatheringState state) {
 		if (state == PeerConnection::GatheringState::Complete) {
 			std::lock_guard<std::mutex> lock(m_GatheringMutex);
@@ -40,15 +69,16 @@ WebRTCSink::WebRTCSink(std::shared_ptr<Logger> logger, std::string id, WebRTCSin
 	m_Track->setMediaHandler(packetizer);
 }
 
-WebRTCSink::~WebRTCSink()
-{
-	ShutdownEncoder();
-	if (m_PeerConnection) m_PeerConnection->close();
-}
-
 std::string WebRTCSink::CreateOffer()
 {
-	m_PeerConnection->setLocalDescription();
+	std::shared_ptr<PeerConnection> pc;
+	{
+		std::lock_guard<std::mutex> lock(m_ConnectionMutex);
+		InitializePeerConnection();
+		pc = m_PeerConnection;
+	}
+
+	pc->setLocalDescription();
 
 	{
 		std::unique_lock<std::mutex> lock(m_GatheringMutex);
@@ -57,7 +87,7 @@ std::string WebRTCSink::CreateOffer()
 		}
 	}
 
-	auto description = m_PeerConnection->localDescription();
+	auto description = pc->localDescription();
 	if (!description.has_value()) {
 		throw std::runtime_error("WebRTCSink::CreateOffer: no local description after gathering completed");
 	}
@@ -66,8 +96,13 @@ std::string WebRTCSink::CreateOffer()
 
 void WebRTCSink::SetAnswer(const std::string& sdp)
 {
+	std::shared_ptr<PeerConnection> pc;
+	{
+		std::lock_guard<std::mutex> lock(m_ConnectionMutex);
+		pc = m_PeerConnection;
+	}
 	try {
-		m_PeerConnection->setRemoteDescription(Description(sdp, Description::Type::Answer));
+		pc->setRemoteDescription(Description(sdp, Description::Type::Answer));
 	} catch (const std::exception& e) {
 		// Deliberately swallowed, not rethrown: whether a C++ exception thrown here gets
 		// marshaled into a well-behaved C# exception at the SWIG/P-Invoke boundary depends on
@@ -83,8 +118,13 @@ void WebRTCSink::SetAnswer(const std::string& sdp)
 
 void WebRTCSink::AddIceCandidate(const std::string& candidate, const std::string& mid)
 {
+	std::shared_ptr<PeerConnection> pc;
+	{
+		std::lock_guard<std::mutex> lock(m_ConnectionMutex);
+		pc = m_PeerConnection;
+	}
 	try {
-		m_PeerConnection->addRemoteCandidate(Candidate(candidate, mid));
+		pc->addRemoteCandidate(Candidate(candidate, mid));
 	} catch (const std::exception& e) {
 		// Same reasoning as SetAnswer above - libdatachannel throws std::logic_error if a
 		// candidate arrives before the remote description is set (a real race: browsers start
@@ -98,15 +138,26 @@ void WebRTCSink::AddIceCandidate(const std::string& candidate, const std::string
 
 bool WebRTCSink::IsConnected() const
 {
+	std::lock_guard<std::mutex> lock(m_ConnectionMutex);
 	return m_PeerConnection && m_PeerConnection->state() == PeerConnection::State::Connected;
 }
 
 std::string WebRTCSink::GetConnectionStatus() const
 {
+	std::shared_ptr<PeerConnection> pc;
+	{
+		std::lock_guard<std::mutex> lock(m_ConnectionMutex);
+		pc = m_PeerConnection;
+	}
+	bool gatheringComplete;
+	{
+		std::lock_guard<std::mutex> gLock(m_GatheringMutex);
+		gatheringComplete = m_GatheringComplete;
+	}
 	nlohmann::json status{
-		{"connected", IsConnected()},
-		{"iceState", static_cast<int>(m_PeerConnection ? m_PeerConnection->iceState() : PeerConnection::IceState::Closed)},
-		{"gatheringComplete", m_GatheringComplete},
+		{"connected", pc && pc->state() == PeerConnection::State::Connected},
+		{"iceState", static_cast<int>(pc ? pc->iceState() : PeerConnection::IceState::Closed)},
+		{"gatheringComplete", gatheringComplete},
 	};
 	return status.dump();
 }
@@ -167,7 +218,12 @@ void WebRTCSink::ShutdownEncoder()
 
 void WebRTCSink::EncodeAndSend(const cv::Mat& bgrFrame)
 {
-	if (!m_Track->isOpen()) return;
+	std::shared_ptr<rtc::Track> track;
+	{
+		std::lock_guard<std::mutex> lock(m_ConnectionMutex);
+		track = m_Track;
+	}
+	if (!track || !track->isOpen()) return;
 	if (!EnsureEncoderInitialized(bgrFrame.cols, bgrFrame.rows)) return;
 
 	const uint8_t* srcSlices[1] = { bgrFrame.data };
@@ -182,7 +238,7 @@ void WebRTCSink::EncodeAndSend(const cv::Mat& bgrFrame)
 		binary sample(reinterpret_cast<byte*>(packet->data), reinterpret_cast<byte*>(packet->data) + packet->size);
 		double elapsedSeconds = static_cast<double>(m_FrameCounter) / m_Config.fps;
 		try {
-			m_Track->sendFrame(sample, std::chrono::duration<double>(elapsedSeconds));
+			track->sendFrame(sample, std::chrono::duration<double>(elapsedSeconds));
 		} catch (const std::exception& e) {
 			if (m_Logger) m_Logger->EnterLog(::LogLevel::Warning, std::string("WebRTCSink: sendFrame failed: ") + e.what());
 		}

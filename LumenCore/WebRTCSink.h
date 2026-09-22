@@ -51,6 +51,7 @@ public:
 
 private:
 	void Process(std::vector<SourceResult> results) override;
+	void InitializePeerConnection(); // caller must already hold m_ConnectionMutex
 
 	bool EnsureEncoderInitialized(int width, int height);
 	void EncodeAndSend(const cv::Mat& bgrFrame);
@@ -59,11 +60,17 @@ private:
 	std::shared_ptr<Logger> m_Logger;
 	WebRTCSinkConfig m_Config;
 
+	// Guards m_PeerConnection/m_Track/m_SrReporter reassignment - CreateOffer() replaces all
+	// three with a fresh instance for every new negotiation (see InitializePeerConnection's own
+	// comment for why), which races with Process()'s background thread reading m_Track through
+	// EncodeAndSend() unless both sides take this lock before touching the pointers themselves
+	// (their own internals are already thread-safe, courtesy of libdatachannel).
+	mutable std::mutex m_ConnectionMutex;
 	std::shared_ptr<rtc::PeerConnection> m_PeerConnection;
 	std::shared_ptr<rtc::Track> m_Track;
 	std::shared_ptr<rtc::RtcpSrReporter> m_SrReporter;
 
-	std::mutex m_GatheringMutex;
+	mutable std::mutex m_GatheringMutex;
 	std::condition_variable m_GatheringCv;
 	bool m_GatheringComplete = false;
 

@@ -35,11 +35,19 @@ namespace Server.Controllers.sources
         }
 
         // POST: Create a camera source from a specified camera;
+        // Body read and deserialized by hand with System.Text.Json rather than [JsonData] - the
+        // latter goes through Swan.Formatters, which cannot construct a record struct's primary
+        // constructor and silently leaves every field at its default (confirmed live: every
+        // [JsonData]-bound record struct across this controller and StereoDepthSinkController
+        // threw ArgumentNullException from inside the native setter, regardless of the JSON
+        // body's field casing - not a casing bug, Swan just never calls the constructor at all).
         [Route(EmbedIO.HttpVerbs.Post, "/cameraSource/create")]
-        public Task<int> Create([JsonData] CameraHardwareInfoDto hardwareInfo, [QueryField] string name = "default")
+        public async Task<int> Create([QueryField] string name = "default")
         {
+            string body = await HttpContext.GetRequestBodyAsStringAsync();
+            CameraHardwareInfoDto hardwareInfo = System.Text.Json.JsonSerializer.Deserialize<CameraHardwareInfoDto>(body);
             int sourceId = SourceManager.Instance.InitializeCameraSource(hardwareInfo.ToNative(), name);
-            return Task.FromResult(sourceId);
+            return sourceId;
         }
 
         // GET: All connected cameras;
@@ -95,9 +103,11 @@ namespace Server.Controllers.sources
         // itself succeeded - NOT whether the device honoured it exactly; re-GET /currentMode
         // afterwards for that.
         [Route(HttpVerbs.Patch, "/cameraSource/{id}/mode")]
-        public Task<bool> SetMode(int id, [JsonData] CameraModeDto mode)
+        public async Task<bool> SetMode(int id)
         {
-            return Task.FromResult(ManagerWrapper.Instance.SetCameraMode(id, mode.ToNative()));
+            string body = await HttpContext.GetRequestBodyAsStringAsync();
+            CameraModeDto mode = System.Text.Json.JsonSerializer.Deserialize<CameraModeDto>(body);
+            return ManagerWrapper.Instance.SetCameraMode(id, mode.ToNative());
         }
 
         // PATCH: exposure/gain control - a fixed short exposure is what actually makes AprilTags

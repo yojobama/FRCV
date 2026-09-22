@@ -246,17 +246,17 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
                 <div className="text-sm text-gray-500 dark:text-gray-400">Loading available cameras...</div>
               ) : cameras.length > 0 ? (
                 <select
-                  value={selectedCamera?.path || ''}
+                  value={selectedCamera?.Path || ''}
                   onChange={(e) => {
-                    const camera = cameras.find(c => c.path === e.target.value);
+                    const camera = cameras.find(c => c.Path === e.target.value);
                     setSelectedCamera(camera || null);
                   }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 >
                   {cameras.map((camera, index) => (
-                    <option key={index} value={camera.path}>
-                      {camera.name} ({camera.path})
+                    <option key={index} value={camera.Path}>
+                      {camera.Name} ({camera.Path})
                     </option>
                   ))}
                 </select>
@@ -312,7 +312,7 @@ export const AddSourceModal: React.FC<AddSourceModalProps> = ({
                       <div className="font-medium text-red-800 dark:text-red-200 mb-1">File Validation Errors:</div>
                       <ul className="text-red-700 dark:text-red-300 space-y-1">
                         {validationErrors.map((error, index) => (
-                          <li key={index}>• {error}</li>
+                          <li key={index}>ï¿½ {error}</li>
                         ))}
                       </ul>
                     </div>

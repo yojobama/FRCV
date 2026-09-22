@@ -24,9 +24,15 @@ export interface Sink {
   isEnabled?: boolean; // Track whether sink is enabled/disabled
 }
 
+// mirrors Server/Dtos.cs's CameraHardwareInfoDto - PascalCase, see the note on
+// CameraCalibrationResult below. Was declared lowercase here until caught live: the "Camera
+// Device" dropdown in AddSourceModal rendered every option as the literal text "()" (camera.name/
+// camera.path both undefined), and submitting silently POSTed an empty {} body to
+// /cameraSource/create - found while testing camera creation against a real USB camera on the
+// Orange Pi.
 export interface CameraHardwareInfo {
-  name: string;
-  path: string;
+  Name: string;
+  Path: string;
 }
 
 // An uploaded ONNX object detection model (YOLOv8/YOLOv11), as returned by /model/getAll
@@ -247,7 +253,15 @@ export interface NodeTypesResponse {
   Sinks: NodeTypeCapability[];
 }
 
-// mirrors Server/Source.cs, as embedded in the /ws/state channel and Sink.Source/Source2
+// mirrors Server/Source.cs, as embedded in the /ws/state channel and Sink.Source/Source2.
+// CameraHardwareInfo here is lowercase {name,path} - unlike every other field on this type, it's
+// the raw native SWIG CameraHardwareInfo passed straight through (Source.cs's own property is a
+// CameraHardwareInfo, not a DTO wrapper), and SWIG generated lowercase C# properties for it since
+// that's what the C++ struct's own members are named. Confirmed empirically against a live
+// /ws/state frame: {"CameraHardwareInfo":{"name":"...","path":"/dev/video2"},...} - do NOT
+// "fix" this to PascalCase to match the rest of the file, that would silently break it again.
+// (CameraHardwareInfo below, the OTHER one, IS PascalCase - it comes from CameraHardwareInfoDto,
+// a real DTO wrapper used by /cameraSource/getNotRegistered and /cameraSource/create.)
 export interface WsSource {
   CameraHardwareInfo: { name: string; path: string } | null;
   Fps: number | null;
