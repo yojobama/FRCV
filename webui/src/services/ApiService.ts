@@ -190,6 +190,22 @@ export class ApiService {
     return response.json();
   }
 
+  // Same as getApriltagBackendName, as the real 0/1 enum rather than a display string - lets the
+  // Inspector's "Backend" dropdown pre-select the sink's actual current backend.
+  async getApriltagBackendKind(sinkId: number): Promise<number> {
+    const response = await fetch(`${this.baseUrl}/apriltagSink/backendKind?sinkId=${sinkId}`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // Switches an EXISTING sink between CPU/Vulkan in place, preserving its id/tag size/
+  // calibration/bindings - the sink's own "Backend" control, not the Pipeline Profiles one
+  // (createApriltagProfile's options.backend only helps if you set up a profile in advance).
+  async setApriltagBackend(sinkId: number, backend: number): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/apriltagSink/backend?sinkId=${sinkId}&backend=${backend}`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  }
+
   // Camera Calibration Sink Controller routes (default 6x9 checkerboard, 25mm squares - see
   // CreateWithBoard for a custom board, not exposed in the WebUI yet)
   async createCameraCalibrationSink(name: string): Promise<number> {

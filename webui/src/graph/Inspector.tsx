@@ -32,17 +32,17 @@ export const Inspector: React.FC<{
   const [showPreview, setShowPreview] = useState(false);
   const [newProfileName, setNewProfileName] = useState('');
   const [newProfileTagSize, setNewProfileTagSize] = useState(0.1651);
-  // 0 = CPU (apriltag), 1 = Vulkan (vkapriltag) - matches AddSinkModal's own convention. The
-  // backend can only be picked at creation time (ApriltagDetector::m_Backend has no setter, and
-  // there's no PATCH endpoint), so profiles are the only way to switch an existing detector
-  // between CPU/Vulkan at runtime - this dropdown was missing, so createApriltagProfile always
-  // silently created CPU profiles regardless of what the user actually wanted.
+  // 0 = CPU (apriltag), 1 = Vulkan (vkapriltag) - matches AddSinkModal's own convention. Used
+  // both for the profile-creation dropdown below and the sink's own "Backend" control further
+  // down (SinkManager.SetApriltagBackend rebuilds the sink in place to apply it).
   const [newProfileBackend, setNewProfileBackend] = useState(0);
   const [cameraModes, setCameraModes] = useState<CameraMode[]>([]);
   const [currentMode, setCurrentMode] = useState<CameraMode | null>(null);
   const [autoExposure, setAutoExposure] = useState(true);
   const [exposureValue, setExposureValue] = useState(300);
   const [gainValue, setGainValue] = useState(0);
+  const [sinkBackend, setSinkBackend] = useState<number | null>(null);
+  const [switchingBackend, setSwitchingBackend] = useState(false);
 
   useEffect(() => {
     setName(node.data.label);
@@ -112,6 +112,38 @@ export const Inspector: React.FC<{
       onToast('Gain applied', 'success');
     } catch {
       onToast('Gain not supported by this device', 'error');
+    }
+  };
+
+  const isApriltagSink = sink != null && node.data.typeName === 'ApriltagSink';
+
+  // Same reasoning as the camera modes fetch above - the sink's actual running backend isn't in
+  // the /ws/state snapshot, so this needs its own one-shot fetch per selected node.
+  useEffect(() => {
+    if (!isApriltagSink || !sink) return;
+    let cancelled = false;
+    api.getApriltagBackendKind(sink.Id)
+      .then(backend => { if (!cancelled) setSinkBackend(backend); })
+      .catch(() => { if (!cancelled) onToast('Failed to load detector backend', 'error'); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id, isApriltagSink]);
+
+  // Rebuilds the detector in place (SinkManager.SetApriltagBackend) - preserves id/tag size/
+  // calibration/bindings, but the underlying native object is genuinely destroyed and recreated
+  // (ApriltagDetector::m_Backend has no setter), so an open Live Preview may show a brief black
+  // frame while its binding to the new detector re-establishes on the next /ws/state tick.
+  const switchBackend = async (backend: number) => {
+    if (!sink) return;
+    setSwitchingBackend(true);
+    try {
+      await api.setApriltagBackend(sink.Id, backend);
+      setSinkBackend(backend);
+      onToast('Backend switched', 'success');
+    } catch {
+      onToast('Failed to switch backend', 'error');
+    } finally {
+      setSwitchingBackend(false);
     }
   };
 
@@ -303,6 +335,24 @@ export const Inspector: React.FC<{
               <span className="text-sm text-gray-700 dark:text-gray-300">Enabled</span>
               <ToggleSwitch enabled={isRunning ?? false} onChange={toggleEnabled} />
             </div>
+
+            {/* directly on the sink, not just buried in Pipeline Profiles - SetApriltagBackend
+                rebuilds the detector in place (same id/tag size/calibration/bindings), so this
+                works on any ApriltagSink whether or not it was ever set up via a profile. */}
+            {isApriltagSink && (
+              <div>
+                <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Backend</label>
+                <select
+                  value={sinkBackend ?? 0}
+                  disabled={sinkBackend === null || switchingBackend}
+                  onChange={e => switchBackend(parseInt(e.target.value))}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white disabled:opacity-50"
+                >
+                  <option value={0}>CPU (apriltag)</option>
+                  <option value={1}>Vulkan (vkapriltag)</option>
+                </select>
+              </div>
+            )}
 
             {/* ROADMAP.md Phase 8d: the only entry point into the calibration wizards - a
                 CameraCalibrationSink/StereoCalibrationSink had no dedicated UI at all before

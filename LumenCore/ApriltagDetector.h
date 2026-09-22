@@ -3,13 +3,13 @@
 #include "ISource.h"
 #include "IApriltagBackend.h"
 #include "AprilTagFieldLayout.h"
+#include "CameraCalibrationResult.h"
 #include <apriltag/apriltag_pose.h>
 #include <opencv2/opencv.hpp>
 #include <opencv2/calib3d.hpp> // cv::undistortPoints - not pulled in by <opencv2/opencv.hpp> alone
 #include <memory>
 
 class Logger;
-class CameraCalibrationResult;
 
 class ApriltagDetector : public ISink, public ISource
 {
@@ -24,6 +24,15 @@ public:
 	// was asked for and no usable device was found (falls back to CPU rather than failing to
 	// construct at all; see phase 5 item 5 in the implementation plan)
 	std::string GetBackendName() const;
+	ApriltagBackendKind GetBackendKind() const { return m_ActiveBackendKind; }
+
+	// lets a caller rebuild an equivalent detector (e.g. to switch backend on an existing sink
+	// without losing its tag size/calibration) without needing its own separate tracking of
+	// what this detector was originally constructed with - the webui's Inspector "Backend"
+	// control on a plain-created ApriltagSink (not one made via a Pipeline Profile) needs
+	// exactly this.
+	double GetTagSize() const { return m_DetectionInfo.tagsize; }
+	CameraCalibrationResult GetCalibration() const;
 
 	// ROADMAP.md Phase 7 (driver mode): when true, Process() skips the actual detection call and
 	// NT4 publish entirely and just republishes the raw camera frame - matching PhotonVision's
@@ -57,9 +66,15 @@ private:
 	void Process(std::vector<SourceResult> results) override;
 
 	std::unique_ptr<IApriltagBackend> m_Backend;
+	ApriltagBackendKind m_ActiveBackendKind = APRILTAG_BACKEND_CPU;
 
 	std::shared_ptr<Logger> m_Logger;
 	apriltag_detection_info_t m_DetectionInfo;
+	// the CameraCalibrationResult this was actually constructed with, kept verbatim (not just
+	// derived back out of m_CameraMatrix/m_DistCoeffs, which lose rms/imageWidth/imageHeight) so
+	// GetCalibration() can hand it back unchanged to whoever needs to rebuild an equivalent
+	// detector (see GetCalibration's own comment).
+	CameraCalibrationResult m_OriginalCalibration;
 
 	// present only when the supplied CameraCalibrationResult had real distortion coefficients;
 	// when absent, pose estimation runs on the raw detected corners as before (best-effort,

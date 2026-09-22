@@ -48,6 +48,27 @@ namespace Server.Controllers.sinks
             return Task.FromResult(SinkManager.Instance.GetApriltagBackendName(sinkId));
         }
 
+        // GET: the same thing as /backend, as the real enum rather than a display string - lets
+        // the webui's Inspector pre-select the sink's actual current backend in its dropdown.
+        [Route(HttpVerbs.Get, "/apriltagSink/backendKind")]
+        public Task<ApriltagBackendKind> GetBackendKind([QueryField] int sinkId)
+        {
+            return Task.FromResult(ManagerWrapper.Instance.GetApriltagDetectorBackendKind(sinkId));
+        }
+
+        // PATCH: switches an EXISTING sink between CPU/Vulkan in place, preserving its id, tag
+        // size, calibration, driver mode, and every binding (upstream camera + any downstream
+        // WebRTC/NT4 sinks) - see SinkManager.SetApriltagBackend's own comment for why this has
+        // to tear down and recreate the detector rather than mutating it. This is the sink's own
+        // "Backend" control, not the Pipeline Profiles one (PipelineProfileController) - that one
+        // only helps if a profile was set up in advance; this works on any plain ApriltagSink.
+        [Route(HttpVerbs.Patch, "/apriltagSink/backend")]
+        public Task SetBackend([QueryField] int sinkId, [QueryField] ApriltagBackendKind backend)
+        {
+            SinkManager.Instance.SetApriltagBackend(sinkId, backend);
+            return Task.CompletedTask;
+        }
+
         // --?-- PATCH: Apriltag Family Type;
 
         // POST: upload a WPILib-format AprilTagFieldLayout JSON body (the same file a robot

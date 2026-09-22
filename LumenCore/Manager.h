@@ -121,6 +121,14 @@ public:
 	int CreateApriltagDetector(int id, CameraCalibrationResult calibrationResult, double tagSize,
 		ApriltagBackendKind backendKind, int frameWidth, int frameHeight);
 	string GetApriltagDetectorBackendName(int sinkId);
+	// which backend was actually requested/resolved to (as a real enum, not just the display
+	// name GetApriltagDetectorBackendName returns) plus everything else needed to rebuild an
+	// equivalent detector - the webui's Inspector "Backend" switch on a plain-created
+	// ApriltagSink (one not made via a Pipeline Profile) needs all three to recreate the sink
+	// without silently dropping its tag size/calibration.
+	ApriltagBackendKind GetApriltagDetectorBackendKind(int sinkId);
+	double GetApriltagDetectorTagSize(int sinkId);
+	CameraCalibrationResult GetApriltagDetectorCalibration(int sinkId);
 	// legacy no-model overloads: there is no way to run inference without a model, so these
 	// exist only to keep already-generated SWIG call sites compiling and throw a clear error
 	// explaining that a model must be supplied via the overload below

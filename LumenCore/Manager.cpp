@@ -654,6 +654,39 @@ string Manager::GetApriltagDetectorBackendName(int sinkId)
     return p_Detector->GetBackendName();
 }
 
+ApriltagBackendKind Manager::GetApriltagDetectorBackendKind(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return APRILTAG_BACKEND_CPU;
+
+    ApriltagDetector* p_Detector = dynamic_cast<ApriltagDetector*>(sink->second.get());
+    if (p_Detector == nullptr) return APRILTAG_BACKEND_CPU;
+
+    return p_Detector->GetBackendKind();
+}
+
+double Manager::GetApriltagDetectorTagSize(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return 0.0;
+
+    ApriltagDetector* p_Detector = dynamic_cast<ApriltagDetector*>(sink->second.get());
+    if (p_Detector == nullptr) return 0.0;
+
+    return p_Detector->GetTagSize();
+}
+
+CameraCalibrationResult Manager::GetApriltagDetectorCalibration(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return CameraCalibrationResult();
+
+    ApriltagDetector* p_Detector = dynamic_cast<ApriltagDetector*>(sink->second.get());
+    if (p_Detector == nullptr) return CameraCalibrationResult();
+
+    return p_Detector->GetCalibration();
+}
+
 namespace {
 	CameraCalibrator* FindCalibrator(map<int, std::shared_ptr<ISink>>& sinks, int calibratorId)
 	{

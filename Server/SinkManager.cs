@@ -271,6 +271,45 @@ namespace Server
             return ManagerWrapper.Instance.GetApriltagDetectorBackendName(sinkId);
         }
 
+        // Switches an EXISTING ApriltagSink between CPU/Vulkan in place - ApriltagDetector::
+        // m_Backend has no setter (SWIG never exposed one, and the underlying backend object
+        // genuinely can't be swapped without reconstructing the detector - CpuApriltagBackend/
+        // VkApriltagBackend allocate their own detector state at construction), so this does the
+        // same tear-down/rebuild-preserving-id SourceManager.ActivateProfile already does for a
+        // Pipeline Profile's detector, but for a plain-created sink with no profile involved:
+        // reads the current tag size/calibration/driver mode/bindings back out via the new
+        // ApriltagDetector getters, deletes the sink, recreates it at the SAME id with the new
+        // backend, then re-establishes every binding that existed before. Previously the only
+        // way to change backend was to delete the sink and manually recreate every binding by
+        // hand - this is what the Inspector's own "Backend" control (on the sink itself, not
+        // just Pipeline Profiles) calls.
+        public void SetApriltagBackend(int sinkId, ApriltagBackendKind backend)
+        {
+            Sink sink = GetSinkById(sinkId) ?? throw new ArgumentException($"no sink with id {sinkId}");
+            if (sink.Type != SinkType.ApriltagSink)
+                throw new ArgumentException($"sink {sinkId} is not an ApriltagSink");
+
+            double tagSize = ManagerWrapper.Instance.GetApriltagDetectorTagSize(sinkId);
+            CameraCalibrationResult calibration = ManagerWrapper.Instance.GetApriltagDetectorCalibration(sinkId);
+            bool driverMode = ManagerWrapper.Instance.GetDriverMode(sinkId);
+            bool wasRunning = IsSinkRunning(sinkId);
+            int? upstreamSourceId = sink.Source?.Id;
+            List<int> downstreamSinkIds = GetSinksBoundToSource(sinkId);
+            string name = sink.Name;
+
+            DeleteSink(sinkId);
+
+            ManagerWrapper.Instance.CreateApriltagDetector(sinkId, calibration, tagSize, backend, 0, 0);
+            sinks.Add(new Sink(sinkId, name, SinkType.ApriltagSink));
+            if (driverMode) ManagerWrapper.Instance.SetDriverMode(sinkId, true);
+
+            if (upstreamSourceId.HasValue) BindSourceToSink(sinkId, upstreamSourceId.Value);
+            foreach (int downstreamId in downstreamSinkIds) BindSourceToSink(downstreamId, sinkId);
+            if (wasRunning) EnableSinkById(sinkId);
+
+            DB.Instance.Save();
+        }
+
         // creates a WebRTCSink; bind it (BindSourceToSink) to any single frame-producing node -
         // a raw camera, or a detector's annotated output - to stream that stage. encoderName
         // defaults to null (resolved to GetPreferredWebRTCEncoder() below), not a hardcoded
