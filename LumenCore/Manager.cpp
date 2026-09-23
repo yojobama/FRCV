@@ -36,6 +36,16 @@
 #include <unistd.h>
 #include <dirent.h>
 #endif
+#ifdef _WIN32
+// Not #include <windows.h>/<mfapi.h> directly here: this file (via Manager.h) has `using
+// namespace std;` in scope, and the Windows SDK's COM/RPC headers (rpcndr.h, objidl.h, ...)
+// reference an unqualified `byte` of their own - with std::byte ALSO in unqualified lookup
+// because of that using-directive, every one of those references becomes a real ambiguous-symbol
+// compile error (confirmed the hard way - dozens of C2872s across rpcndr.h/objidl.h/wtypes.h the
+// moment mfapi.h was included straight into this file). WindowsCameraEnumerator.cpp is a
+// dedicated, `using namespace std`-free translation unit for exactly this reason.
+#include "WindowsCameraEnumerator.h"
+#endif
 #include <cstring>
 #include <iostream>
 #include <opencv2/opencv.hpp>
@@ -177,14 +187,31 @@ vector<CameraHardwareInfo> Manager::EnumerateAvailableCameras()
     return cameras;
 }
 #else
-// LUMEN_TODO(windows-camera-enumeration): a real Media Foundation-backed enumerator is
-// ROADMAP.md Phase 3's CameraEnumerator work (its own PIMPL, its own design pass) - not
-// reasonable to improvise inline here. Stubbed empty for now so the rest of LumenCore (and the
-// P/Invoke boundary that depends on this symbol existing) builds and runs natively on Windows.
+// Media Foundation's own device-source enumerator (MFEnumDeviceSources) - the same underlying
+// API the Windows Camera app and Device Manager query, confirmed the hard way: a camera that
+// showed up healthy in both ("Lenovo Performance RGB Camera"/"Lenovo Performance IR Camera") was
+// invisible here while this was still the old empty stub, purely because nothing ever asked
+// Media Foundation for the device list - a separate problem from whether cv::VideoCapture can
+// actually OPEN a given device once it's listed (MSMF/DSHOW/CAP_ANY all failing on a Windows
+// Hello-restricted camera is a real, distinct limitation - see OpenCvCameraBackend.cpp's own
+// comment - not something this enumerator can fix).
 vector<CameraHardwareInfo> Manager::EnumerateAvailableCameras()
 {
-    m_Logger->EnterLog("EnumerateAvailableCameras: not yet implemented on Windows (ROADMAP.md Phase 3)");
-    return vector<CameraHardwareInfo>();
+    m_Logger->EnterLog("EnumerateAvailableCameras called");
+    vector<CameraHardwareInfo> cameras;
+
+    for (const WindowsCameraDevice& device : EnumerateWindowsCameras(m_Logger)) {
+        // OpenCvCameraBackend::Open's numeric-index branch (cv::VideoCapture(index, backend)) is
+        // what actually opens a device on Windows - MFEnumDeviceSources' array position IS that
+        // index, since MSMF ultimately enumerates the same underlying device list
+        // EnumerateWindowsCameras just walked, so hand back the position rather than the
+        // device's symbolic-link path (a real unique identifier, but not something
+        // OpenCvCameraBackend knows how to open - see its own comment on why a non-numeric path
+        // falls back to a generic, unreliable cv::VideoCapture(string) open).
+        cameras.push_back(CameraHardwareInfo{ .name = device.name, .path = std::to_string(device.index) });
+    }
+
+    return cameras;
 }
 #endif
 

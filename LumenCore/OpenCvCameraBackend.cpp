@@ -37,11 +37,11 @@ bool OpenCvCameraBackend::Open(const std::string& devicePath)
 #ifdef __linux__
 	m_Capture = cv::VideoCapture(devicePath, cv::CAP_V4L2);
 #else
-	// A real device symbolic link (Windows has no V4L2 equivalent) is still
-	// MediaFoundationCameraBackend's job (ROADMAP.md Phase 3, not yet written), but a plain
-	// numeric index - what EnumerateAvailableCameras' own Windows stub would hand back if/when
-	// it's implemented, and what a caller passes directly in the meantime (confirmed the hard
-	// way: cv::VideoCapture's STRING constructor does NOT reliably resolve a numeric string to
+	// A real device symbolic link (Windows has no V4L2 equivalent) is still a possible future
+	// enhancement, but a plain numeric index - what Manager::EnumerateAvailableCameras' Windows
+	// implementation (WindowsCameraEnumerator.cpp, Media Foundation's MFEnumDeviceSources) hands
+	// back as each device's path - needs the real int overload (confirmed the hard way:
+	// cv::VideoCapture's STRING constructor does NOT reliably resolve a numeric string to
 	// a device index on Windows the way the dedicated int-index overload does, even though
 	// nothing in cv::VideoCapture's own documented behavior rules it out - it simply opened
 	// nothing, silently, with isOpened() false and no diagnostic) needs the real int overload,
@@ -60,9 +60,12 @@ bool OpenCvCameraBackend::Open(const std::string& devicePath)
 		constexpr auto kOpenTimeout = std::chrono::seconds(5);
 		m_Capture = OpenWithTimeout(index, cv::CAP_MSMF, kOpenTimeout);
 		if (!m_Capture.isOpened()) {
-			// some devices (confirmed against a real Windows Hello IR+RGB combo camera) simply
-			// don't open via Media Foundation at all despite Device Manager reporting them
-			// healthy - legacy DirectShow is the fallback, not a third guess: it's the other
+			// MSMF opening the wrong (or a genuinely restricted) device isn't ruled out just
+			// because it worked for one specific camera this session - earlier failures against
+			// this same physical machine turned out to be caused by guessing device indices with
+			// no real enumerator, not a hardware/driver wall (fixed by the enumerator existing
+			// at all - see WindowsCameraEnumerator.cpp), but that doesn't mean every device will
+			// open via MSMF. Legacy DirectShow is the fallback, not a third guess: it's the other
 			// backend OpenCV's own Windows build actually ships, and cv::VideoCapture's own
 			// generic (no-backend-specified) constructor already tries both internally in some
 			// order, so being explicit about the fallback here is strictly more informative than

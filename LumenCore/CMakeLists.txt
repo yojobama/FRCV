@@ -54,6 +54,14 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND LUMEN_CORE_SOURCES V4l2CameraBackend.cpp)
 endif()
 
+if(WIN32)
+    # Manager::EnumerateAvailableCameras' Windows implementation (Media Foundation's
+    # MFEnumDeviceSources) - a separate translation unit from Manager.cpp on purpose, see
+    # WindowsCameraEnumerator.h's own comment for why (a `using namespace std;`/Windows-SDK-COM-
+    # headers ambiguity, not stylistic preference).
+    list(APPEND LUMEN_CORE_SOURCES WindowsCameraEnumerator.cpp)
+endif()
+
 if(LUMEN_WITH_RKNN)
     # guarded here (not just by its own #ifdef LUMEN_WITH_RKNN) so the file isn't even compiled -
     # and <rknn_api.h> isn't even searched for - on a configure where LumenFeatures.cmake has
@@ -150,6 +158,10 @@ if(MSVC)
     # asserts on it (fmt/base.h's Unicode support check).
     target_compile_definitions(LumenCore PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
     target_compile_options(LumenCore PRIVATE /W3 /permissive- /utf-8)
+    # Media Foundation (Manager.cpp's Windows EnumerateAvailableCameras - MFEnumDeviceSources)
+    # ships as part of the Windows SDK, not a vcpkg/FetchContent dependency - plain .lib names
+    # are enough, same as any other Windows SDK import library.
+    target_link_libraries(LumenCore PRIVATE mfplat mf mfuuid Ole32)
 else()
     target_compile_options(LumenCore PRIVATE -Wall -Wextra -Wno-unused-parameter)
 endif()
