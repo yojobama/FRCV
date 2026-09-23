@@ -44,11 +44,15 @@ namespace Server.Controllers.sources
 
                     Directory.CreateDirectory("videos");
 
-                    using (var output = File.Create(Path.Combine("videos", fileName)))
+                    string savedPath = Path.Combine("videos", fileName);
+                    using (var output = File.Create(savedPath))
                     {
                         fileStream.CopyTo(output);
-                        created.Add(SourceManager.Instance.InitializeVideoFileSource(Path.Combine("videos", fileName), 30, Path.GetFileNameWithoutExtension(fileName)));
                     }
+                    // same "native code must not open this file until the upload's own
+                    // FileStream has actually closed" fix as ImageFileSourceController.Create -
+                    // see its own comment.
+                    created.Add(SourceManager.Instance.InitializeVideoFileSource(savedPath, 30, Path.GetFileNameWithoutExtension(fileName)));
                 }
             }
             return Task.FromResult(created.ToArray());

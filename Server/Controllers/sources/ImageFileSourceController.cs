@@ -44,11 +44,21 @@ namespace Server.Controllers.sources
 
                     Directory.CreateDirectory("images");
 
-                    using (var output = File.Create(Path.Combine("images", fileName)))
+                    string savedPath = Path.Combine("images", fileName);
+                    using (var output = File.Create(savedPath))
                     {
                         fileStream.CopyTo(output);
-                        created.Add(SourceManager.Instance.initializeImageFileSource(Path.Combine("images", fileName), Path.GetFileNameWithoutExtension(fileName)));
                     }
+                    // native cv::imread (initializeImageFileSource -> ImageFileSource's own
+                    // constructor) must run AFTER the FileStream above is closed, not inside its
+                    // `using` block - File.Create's default FileShare.None holds an exclusive
+                    // lock on Windows until disposed, and a second handle (OpenCV's own fopen/
+                    // CreateFile call) trying to read the SAME file while that lock is still held
+                    // fails outright there ("can't open/read file: check file path/integrity").
+                    // Confirmed the hard way running this natively on Windows for the first time -
+                    // Linux's own file semantics have no such exclusivity, which is exactly why
+                    // this went unnoticed through every WSL/Linux run this project has had so far.
+                    created.Add(SourceManager.Instance.initializeImageFileSource(savedPath, Path.GetFileNameWithoutExtension(fileName)));
                 }
             }
             return Task.FromResult(created.ToArray());

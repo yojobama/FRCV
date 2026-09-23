@@ -1,16 +1,47 @@
 #include "OpenCvCameraBackend.h"
 #include "SourceResult.h"
+#include <cctype>
+#include <algorithm>
 
 bool OpenCvCameraBackend::Open(const std::string& devicePath)
 {
 #ifdef __linux__
 	m_Capture = cv::VideoCapture(devicePath, cv::CAP_V4L2);
 #else
-	// cv::VideoCapture's string-path constructor only resolves a numeric index (or an actual
-	// video FILE path) on Windows, not a device symbolic link - real device-path opening on
-	// Windows is MediaFoundationCameraBackend's job (ROADMAP.md Phase 3); this fallback exists
-	// for parity/testing there, not as the real Windows camera path.
-	m_Capture = cv::VideoCapture(devicePath);
+	// A real device symbolic link (Windows has no V4L2 equivalent) is still
+	// MediaFoundationCameraBackend's job (ROADMAP.md Phase 3, not yet written), but a plain
+	// numeric index - what EnumerateAvailableCameras' own Windows stub would hand back if/when
+	// it's implemented, and what a caller passes directly in the meantime (confirmed the hard
+	// way: cv::VideoCapture's STRING constructor does NOT reliably resolve a numeric string to
+	// a device index on Windows the way the dedicated int-index overload does, even though
+	// nothing in cv::VideoCapture's own documented behavior rules it out - it simply opened
+	// nothing, silently, with isOpened() false and no diagnostic) needs the real int overload,
+	// with cv::CAP_MSMF explicitly requested rather than left to OpenCV's own auto-detection -
+	// Media Foundation is the modern, actively-maintained Windows capture backend (unlike the
+	// legacy DirectShow one), and being explicit here removes one more variable from "why didn't
+	// this open" the next time this code runs on a machine this wasn't tested on.
+	std::string trimmed = devicePath;
+	trimmed.erase(std::remove_if(trimmed.begin(), trimmed.end(), [](unsigned char c) { return std::isspace(c); }), trimmed.end());
+	bool isNumericIndex = !trimmed.empty() && std::all_of(trimmed.begin(), trimmed.end(), [](unsigned char c) { return std::isdigit(c); });
+	if (isNumericIndex) {
+		int index = std::stoi(trimmed);
+		m_Capture = cv::VideoCapture(index, cv::CAP_MSMF);
+		if (!m_Capture.isOpened()) {
+			// some devices (confirmed against a real Windows Hello IR+RGB combo camera) simply
+			// don't open via Media Foundation at all despite Device Manager reporting them
+			// healthy - legacy DirectShow is the fallback, not a third guess: it's the other
+			// backend OpenCV's own Windows build actually ships, and cv::VideoCapture's own
+			// generic (no-backend-specified) constructor already tries both internally in some
+			// order, so being explicit about the fallback here is strictly more informative than
+			// letting that internal order decide silently.
+			m_Capture = cv::VideoCapture(index, cv::CAP_DSHOW);
+		}
+		if (!m_Capture.isOpened()) {
+			m_Capture = cv::VideoCapture(index, cv::CAP_ANY);
+		}
+	} else {
+		m_Capture = cv::VideoCapture(devicePath);
+	}
 #endif
 	return m_Capture.isOpened();
 }
