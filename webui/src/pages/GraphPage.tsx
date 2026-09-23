@@ -70,7 +70,19 @@ const GraphPageInner: React.FC<{ onToast: (m: string, t: 'success'|'error'|'info
   // stable" - which StreamView.tsx then (correctly, but pointlessly) treats as a real failure and
   // falls back to MJPEG). Excluding whichever sink Inspector is already showing from BottomStrip
   // avoids the double-negotiation instead of racing them.
-  const inspectorPreviewSinkId = selectedNode?.data.webrtcSink?.IsRunning ? selectedNode.data.webrtcSink.Sink.Id : null;
+  //
+  // Derived straight from `snapshot` (the same source BottomStrip's own webrtcSinks filter
+  // reads), NOT from `selectedNode`/`nodes` - `nodes` is rebuilt in the effect above, one render
+  // behind `snapshot` itself, so on the very first tick a sink transitions to running,
+  // `snapshot` already reflects it (and BottomStrip, reading `snapshot` directly, would already
+  // render that thumbnail) while `nodes` - and this exclusion, if it were derived from it -
+  // hadn't caught up yet, still letting the two race for exactly one tick. Reading `snapshot`
+  // directly keeps both derived from identical data in the identical render, closing that gap
+  // rather than narrowing it.
+  const selectedRawId = selectedId ? Number(selectedId.split('-')[1]) : null;
+  const inspectorPreviewSinkId = selectedRawId != null && snapshot
+    ? snapshot.Sinks.find(s => s.Sink.Type === 5 && s.IsRunning && s.Sink.Source?.Id === selectedRawId)?.Sink.Id ?? null
+    : null;
 
   const onConnect = useCallback(async (connection: Connection) => {
     // source-{id} -> sink-{id}: bind. sink-{id} -> sink-{id} (a StereoDepthSink's own output
