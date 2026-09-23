@@ -17,7 +17,6 @@
             "cacheVariables": {
                 "CMAKE_C_COMPILER": "cl",
                 "CMAKE_CXX_COMPILER": "cl",
-                "LUMEN_WITH_WEBRTC": "OFF",
                 "LUMEN_WITH_RKNN": "OFF",
                 "FETCHCONTENT_TRY_FIND_PACKAGE_MODE": "ALWAYS"
             },
@@ -52,7 +51,6 @@
             "generator": "Visual Studio 18 2026",
             "architecture": "x64",
             "cacheVariables": {
-                "LUMEN_WITH_WEBRTC": "OFF",
                 "LUMEN_WITH_RKNN": "OFF"
             },
             "vendor": {
@@ -171,7 +169,6 @@
             "displayName": "CI: Windows x64",
             "inherits": [ "windows-base", "ci-base" ],
             "cacheVariables": {
-                "LUMEN_WITH_WEBRTC": "OFF",
                 "LUMEN_WITH_RKNN": "OFF"
             }
         }

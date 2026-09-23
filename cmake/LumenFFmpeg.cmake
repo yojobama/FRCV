@@ -10,12 +10,16 @@
     ffmpeg:x64-windows and pkgconf:x64-windows are already built) - no separate Windows-only
     Find module needed.
 
-  Note the vcpkg ffmpeg:x64-windows port pulled in here is LGPL with no x264 feature - it has
-  no encoder WebRTCSink's own default (encoderName = "libx264", WebRTCSink.h) can use. That is
-  exactly why LUMEN_WITH_WEBRTC defaults OFF on the windows-x64 presets (see
-  cmake/LumenFeatures.cmake's defaults and CMakePresets.json) rather than something this module
-  tries to paper over - a team that wants WebRTC on Windows needs a GPL ffmpeg build providing
-  libx264, which is a deliberate opt-in, not a default.
+  Note the plain vcpkg ffmpeg:x64-windows port is LGPL with no x264 feature - it has no encoder
+  WebRTCSink's own default (encoderName = "libx264", WebRTCSink.h) can use. WebRTC is the
+  standard preview transport for this project (LUMEN_WITH_WEBRTC now defaults ON everywhere -
+  see cmake/LumenFeatures.cmake - with MJPEG as StreamView.tsx's same-preview fallback for when
+  it breaks, not a parallel always-on alternative), so the Windows dev box's vcpkg ffmpeg install
+  was rebuilt with the "gpl" and "x264" features enabled to provide it. That is a real, deliberate
+  licensing choice - libx264 is GPL, and any resulting Windows binary that links it is GPL-
+  encumbered - carried here explicitly rather than left implicit: a from-source ffmpeg build
+  without those features (or a future switch to a non-GPL encoder, e.g. openh264) would need
+  WebRTCSink's encoderName reconfigured accordingly.
 
   Provides:
     Lumen::ffmpeg - INTERFACE target aggregating avcodec/avformat/avutil/swscale
