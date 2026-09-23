@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   ChevronDown, ChevronRight, Layers, Camera, Box, Grid3x3, ScrollText,
-  Settings as SettingsIcon, PlayCircle, RefreshCw,
+  Settings as SettingsIcon, PlayCircle, RefreshCw, Film,
 } from 'lucide-react';
 import { ApiService } from '../services/ApiService';
 import type { StateSnapshot, Model } from '../types';
@@ -58,6 +58,13 @@ export const LeftRail: React.FC<{ snapshot: StateSnapshot | null; onToast: (m: s
       <RailSection title="Logs" icon={ScrollText} open={open === 'logs'} onToggle={() => toggle('logs')}>
         <LogsSection />
       </RailSection>
+
+      <NavLink
+        to="/recordings"
+        className="flex items-center gap-2 px-3 py-2 border-t border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+      >
+        <Film className="w-4 h-4" />Recordings
+      </NavLink>
 
       <NavLink
         to="/settings"

@@ -345,3 +345,10 @@ export interface StateSnapshot {
   Device: WsDeviceStats;
   NodeStats: Record<string, WsNodeStats>;
 }
+
+// mirrors Server/Controllers/sinks/RecordSinkController.cs's RecordSegmentDto.
+export interface RecordSegment {
+  FileName: string;
+  SizeBytes: number;
+  LastWriteTimeUtc: string;
+}

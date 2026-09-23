@@ -1,4 +1,4 @@
-import type { CameraHardwareInfo, CameraMode, Model, StereoCalibrationResult, StereoDepthStats, PipelineProfile, NodeTypesResponse, CameraCalibrationResult, CalibrationCoverage, CalibrationStatus, NetworkTablesStatus } from '../types';
+import type { CameraHardwareInfo, CameraMode, Model, StereoCalibrationResult, StereoDepthStats, PipelineProfile, NodeTypesResponse, CameraCalibrationResult, CalibrationCoverage, CalibrationStatus, NetworkTablesStatus, RecordSegment } from '../types';
 import { apiClient } from '../api/client';
 import type { components } from '../api/generated';
 
@@ -492,6 +492,52 @@ export class ApiService {
   // baseUrl with every other route in this file.
   getMjpegStreamUrl(sinkId: number): string {
     return `${window.location.origin}/stream/mjpeg?SinkID=${sinkId}`;
+  }
+
+  // Record Sink Controller routes - segmented MP4 recording with a JSON-Lines telemetry sidecar
+  // per segment (see RecordSink.h's own comment). dstFolder/encoderName left undefined default
+  // to a name-derived folder/libx264 server-side, same as createWebRTCSink's encoderName pattern.
+  async createRecordSink(name: string, options?: { dstFolder?: string; encoderName?: string; bitrateKbps?: number; fps?: number; segmentSeconds?: number; maxFolderSizeBytes?: number; maxFileCount?: number }): Promise<number> {
+    const params = new URLSearchParams({ name });
+    if (options?.dstFolder) params.set('dstFolder', options.dstFolder);
+    if (options?.encoderName) params.set('encoderName', options.encoderName);
+    if (options?.bitrateKbps != null) params.set('bitrateKbps', String(options.bitrateKbps));
+    if (options?.fps != null) params.set('fps', String(options.fps));
+    if (options?.segmentSeconds != null) params.set('segmentSeconds', String(options.segmentSeconds));
+    if (options?.maxFolderSizeBytes != null) params.set('maxFolderSizeBytes', String(options.maxFolderSizeBytes));
+    if (options?.maxFileCount != null) params.set('maxFileCount', String(options.maxFileCount));
+    const response = await fetch(`${this.baseUrl}/recordSink/create?${params.toString()}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async getRecordSinkSegments(sinkId: number): Promise<RecordSegment[]> {
+    const response = await fetch(`${this.baseUrl}/recordSink/${sinkId}/segments`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // opened directly by the browser (an <a href> / window.open target), not fetch()'d - the
+  // response is a real file download (Content-Disposition: attachment), not JSON.
+  getRecordSinkDownloadUrl(sinkId: number, fileName: string): string {
+    return `${this.baseUrl}/recordSink/${sinkId}/download?${new URLSearchParams({ file: fileName })}`;
+  }
+
+  // the old (deleted) RecordSink stub's own second aspirational comment, now real: use an
+  // already-recorded segment as a VideoFileSource directly, no re-upload.
+  async promoteRecordSinkSegment(sinkId: number, fileName: string, name?: string): Promise<number> {
+    const params = new URLSearchParams({ file: fileName });
+    if (name) params.set('name', name);
+    const response = await fetch(`${this.baseUrl}/recordSink/${sinkId}/promote?${params.toString()}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  async deleteRecordSinkSegment(sinkId: number, fileName: string): Promise<boolean> {
+    const params = new URLSearchParams({ file: fileName });
+    const response = await fetch(`${this.baseUrl}/recordSink/${sinkId}/segments?${params.toString()}`, { method: 'DELETE' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
   }
 
   // Stereo Calibration Sink Controller routes (phase 10 - see STEREO_IMPLEMENTATION_PLAN.md)

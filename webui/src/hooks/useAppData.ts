@@ -7,8 +7,10 @@ import { useStateSocket } from './useStateSocket';
 // mirror Server/Sink.cs's SinkType exactly: ApriltagSink=0, ObjectDetectionSink=1,
 // (2 reserved - was RecordingSink, deleted, never reused - see Sink.cs's own comment),
 // CameraCalibrationSink=3, NetworkTablesSink=4, WebRTCSink=5, StereoCalibrationSink=6,
-// StereoDepthSink=7, DepthFusionSink=8, MjpegSink=9. Exported (not just a local helper) so
-// Phase 8c's graph code can reuse it without a second copy of this enum-order knowledge.
+// StereoDepthSink=7, DepthFusionSink=8, MjpegSink=9, RecordSink=10 (the real thing, not the old
+// deleted RecordingSink - a fresh ordinal, the reserved 2 slot stays reserved). Exported (not
+// just a local helper) so Phase 8c's graph code can reuse it without a second copy of this
+// enum-order knowledge.
 export const mapSinkType = (type: any): string => {
   if (typeof type === 'string') return type;
   switch (type) {
@@ -21,6 +23,7 @@ export const mapSinkType = (type: any): string => {
     case 7: return 'stereodepth';
     case 8: return 'depthfusion';
     case 9: return 'mjpeg';
+    case 10: return 'record';
     default: return 'unknown';
   }
 };

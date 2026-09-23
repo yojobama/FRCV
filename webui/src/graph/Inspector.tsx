@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Trash2, Wifi, WifiOff, Radio, Play, Square, Code, RefreshCw, Wand2, AlertTriangle } from 'lucide-react';
+import { X, Trash2, Wifi, WifiOff, Radio, Play, Square, Code, RefreshCw, Wand2, AlertTriangle, Circle, Download, FolderInput } from 'lucide-react';
 import type { PipelineNode } from './model';
-import type { WsSource, WsSink, NT4Defaults, CameraMode, CalibrationStatus } from '../types';
+import type { WsSource, WsSink, NT4Defaults, CameraMode, CalibrationStatus, RecordSegment } from '../types';
 import { ApiService } from '../services/ApiService';
 import { ToggleSwitch } from '../components/ToggleSwitch';
 import { StreamView } from '../components/StreamView';
@@ -26,10 +26,12 @@ export const Inspector: React.FC<{
   nt4Settings: NT4Defaults;
 }> = ({ node, onClose, onToast, onDeleted, nt4Settings }) => {
   const navigate = useNavigate();
-  const { kind, raw, webrtcSink, nt4Sink, isRunning } = node.data;
+  const { kind, raw, webrtcSink, nt4Sink, recordSink, isRunning } = node.data;
   const [name, setName] = useState(node.data.label);
   const [resultJson, setResultJson] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [segments, setSegments] = useState<RecordSegment[]>([]);
+  const [promotingSegment, setPromotingSegment] = useState<string | null>(null);
   const [newProfileName, setNewProfileName] = useState('');
   const [newProfileTagSize, setNewProfileTagSize] = useState(0.1651);
   // 0 = CPU (apriltag), 1 = Vulkan (vkapriltag) - matches AddSinkModal's own convention. Used
@@ -252,6 +254,63 @@ export const Inspector: React.FC<{
       }
     } catch {
       onToast('Failed to toggle preview', 'error');
+    }
+  };
+
+  // same shape as togglePreview - a RecordSink is just another terminal sink bound to whichever
+  // node is currently selected (previewTarget already treats source/sink nodes uniformly).
+  const toggleRecording = async () => {
+    if (!previewTarget) return;
+    try {
+      if (recordSink) {
+        await api.toggleSink(recordSink.Sink.Id, !recordSink.IsRunning);
+      } else {
+        const recordId = await api.createRecordSink(`${previewTarget.Name}-recording`);
+        await api.bindSinkToSource(recordId, previewTarget.Id);
+        await api.toggleSink(recordId, true);
+      }
+    } catch {
+      onToast('Failed to toggle recording', 'error');
+    }
+  };
+
+  const refreshSegments = async () => {
+    if (!recordSink) { setSegments([]); return; }
+    try {
+      setSegments(await api.getRecordSinkSegments(recordSink.Sink.Id));
+    } catch {
+      onToast('Failed to load recorded segments', 'error');
+    }
+  };
+
+  // re-fetch whenever recording starts/stops (a new segment appears the moment it starts, and
+  // the in-progress one is only guaranteed finalized/playable once it stops - see RecordSink's
+  // own OnStopped comment) or a different node gets selected.
+  useEffect(() => {
+    refreshSegments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordSink?.Sink.Id, recordSink?.IsRunning]);
+
+  const promoteSegment = async (fileName: string) => {
+    if (!recordSink) return;
+    setPromotingSegment(fileName);
+    try {
+      await api.promoteRecordSinkSegment(recordSink.Sink.Id, fileName);
+      onToast(`"${fileName}" is now available as a Video File source`, 'success');
+    } catch {
+      onToast(`Failed to use "${fileName}" as a source`, 'error');
+    } finally {
+      setPromotingSegment(null);
+    }
+  };
+
+  const deleteSegment = async (fileName: string) => {
+    if (!recordSink) return;
+    try {
+      await api.deleteRecordSinkSegment(recordSink.Sink.Id, fileName);
+      await refreshSegments();
+    } catch {
+      onToast(`Failed to delete "${fileName}"`, 'error');
     }
   };
 
@@ -506,6 +565,43 @@ export const Inspector: React.FC<{
             </div>
             {webrtcSink?.IsRunning && (
               <StreamView sinkId={webrtcSink.Sink.Id} sourceId={previewTarget.Id} onStop={togglePreview} onError={() => onToast('Preview stream error', 'error')} />
+            )}
+          </div>
+        )}
+
+        {/* Recording: segmented MP4 + a JSON-Lines telemetry sidecar per segment (see
+            RecordSink.h's own comment) - both for post-match analysis and for footage a team
+            downloads to feature in videos. Same previewTarget-driven uniform source/sink
+            treatment as Live Preview above. */}
+        {previewTarget && (
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1"><Circle className="w-3 h-3" />Recording</span>
+              <button onClick={toggleRecording} className={`px-2 py-1 rounded text-xs flex items-center gap-1 text-white ${recordSink?.IsRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}>
+                {recordSink?.IsRunning ? <><Square className="w-3 h-3" />Stop</> : <><Play className="w-3 h-3" />Start</>}
+              </button>
+            </div>
+            {recordSink && segments.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {segments.map(seg => (
+                  <div key={seg.FileName} className="flex items-center justify-between text-xs bg-gray-50 dark:bg-gray-700 rounded px-2 py-1 gap-2">
+                    <span className="truncate flex-1" title={seg.FileName}>{seg.FileName}</span>
+                    <span className="text-gray-500 dark:text-gray-400 whitespace-nowrap">{(seg.SizeBytes / (1024 * 1024)).toFixed(1)} MB</span>
+                    <a href={recordSink ? api.getRecordSinkDownloadUrl(recordSink.Sink.Id, seg.FileName) : '#'}
+                      className="text-blue-600 hover:text-blue-700" title="Download"><Download className="w-3.5 h-3.5" /></a>
+                    <button onClick={() => promoteSegment(seg.FileName)} disabled={promotingSegment === seg.FileName}
+                      className="text-blue-600 hover:text-blue-700 disabled:opacity-50" title="Use as a Video File source">
+                      <FolderInput className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => deleteSegment(seg.FileName)} className="text-red-600 hover:text-red-700" title="Delete">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {recordSink && segments.length === 0 && (
+              <p className="mt-1 text-xs text-gray-400">No segments recorded yet.</p>
             )}
           </div>
         )}
