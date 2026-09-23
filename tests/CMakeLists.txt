@@ -60,6 +60,22 @@ if(LUMEN_WITH_RKNN)
     target_compile_definitions(LumenCoreTests PRIVATE LUMEN_WITH_RKNN)
 endif()
 
+if(LUMEN_WITH_VULKAN_APRILTAG)
+    # same "header-only real code, not just declarations, reaches this test's own translation
+    # unit" situation as LUMEN_WITH_ONNX above - VkApriltagBackend.h includes real vkapriltag
+    # headers (<vkapriltag/TagDecoder.h>), not just forward declarations, so this needs the same
+    # include dirs and link libraries LumenCore/CMakeLists.txt itself uses for exactly that
+    # target (apriltag, vkapriltag::vkapriltag, Vulkan::Vulkan) - that linkage is PRIVATE to
+    # LumenCore and doesn't propagate to an external target like this one.
+    find_package(Vulkan REQUIRED)
+    target_sources(LumenCoreTests PRIVATE test_apriltag_backend_agreement_hitl.cpp)
+    target_compile_definitions(LumenCoreTests PRIVATE
+        LUMEN_WITH_VULKAN_APRILTAG
+        LUMEN_VKAPRILTAG_SAMPLE_DIR="${CMAKE_SOURCE_DIR}/third_party/vkapriltag/apriltags_vulkan"
+    )
+    target_link_libraries(LumenCoreTests PRIVATE apriltag vkapriltag::vkapriltag Vulkan::Vulkan)
+endif()
+
 if(LUMEN_WITH_CODEC_STEREO)
     # same PRIVATE-compile-definition situation as LUMEN_WITH_RKNN above - CodecStereoBackend.h's
     # own #ifdef LUMEN_WITH_CODEC_STEREO guard needs this define visible to the test's own
