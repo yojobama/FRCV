@@ -10,6 +10,7 @@ import { ApiService } from '../services/ApiService';
 import { buildGraph, edgesEqual, type PipelineNode, type PositionStore } from '../graph/model';
 import { nodeTypes } from '../graph/PipelineNode';
 import { Inspector } from '../graph/Inspector';
+import { GraphProfileBar } from '../graph/GraphProfileBar';
 import { AddSourceModal } from '../components/AddSourceModal';
 import { AddSinkModal } from '../components/AddSinkModal';
 import type { AddSinkOptions, NodeTypesResponse, NT4Defaults, CameraHardwareInfo } from '../types';
@@ -181,6 +182,7 @@ const GraphPageInner: React.FC<{ onToast: (m: string, t: 'success'|'error'|'info
           {!connected && (
             <span className="px-3 py-2 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded text-sm">Reconnecting to live state...</span>
           )}
+          <GraphProfileBar onToast={onToast} />
         </div>
         <ReactFlow
           nodes={nodes}

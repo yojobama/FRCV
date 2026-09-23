@@ -122,6 +122,28 @@ export class ApiService {
     return data as CalibrationStatus;
   }
 
+  // Graph Profile Controller routes (/api/graphProfile/*) - ROADMAP.md Phase 8/E6: save/restore
+  // the WHOLE node graph under a name, distinct from the existing per-source PipelineProfile
+  // (see Server/GraphProfile.cs's own comment). Brand new endpoints, so these go straight
+  // through the typed client from day one rather than needing their own later migration.
+  async listGraphProfiles(): Promise<string[]> {
+    const { data, error } = await apiClient.GET('/graphProfile/list');
+    if (error) throw new Error('Failed to list graph profiles');
+    return data ?? [];
+  }
+
+  async saveGraphProfileAs(name: string): Promise<void> {
+    const { error } = await apiClient.POST('/graphProfile/saveCurrentAs', { params: { query: { name } } });
+    if (error) throw new Error('Failed to save graph profile');
+  }
+
+  // Tears down the currently-live graph and reconstructs the named one in its place - see
+  // GraphProfile.cs's own comment. Irreversible unless the current graph was saved first.
+  async activateGraphProfile(name: string): Promise<void> {
+    const { error } = await apiClient.POST('/graphProfile/activate', { params: { query: { name } } });
+    if (error) throw new Error('Failed to activate graph profile');
+  }
+
   // Video File Source Controller routes (/api/videoFileSource/*)
   async getAllVideoFileSources(): Promise<any[]> {
     const response = await fetch(`${this.baseUrl}/videoFileSource/getAll`);

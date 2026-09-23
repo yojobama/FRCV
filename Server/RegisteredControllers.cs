@@ -38,6 +38,8 @@ namespace Server
             typeof(DeviceController),
             typeof(CapabilitiesController),
             typeof(OpenApiController),
+            typeof(LogController),
+            typeof(GraphProfileController),
         };
     }
 }
