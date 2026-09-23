@@ -5,7 +5,7 @@ import type { PipelineNode } from './model';
 import type { WsSource, WsSink, NT4Defaults, CameraMode, CalibrationStatus } from '../types';
 import { ApiService } from '../services/ApiService';
 import { ToggleSwitch } from '../components/ToggleSwitch';
-import { WebRTCStream } from '../components/WebRTCStream';
+import { StreamView } from '../components/StreamView';
 
 const api = new ApiService();
 
@@ -15,7 +15,7 @@ const modeLabel = (m: CameraMode) => `${m.Width}x${m.Height} @ ${m.Fps}fps (${PI
 const modeKey = (m: CameraMode) => `${m.Width}x${m.Height}x${m.Fps}x${m.PixelFormat}`;
 
 // ROADMAP.md Phase 8c: right-hand inspector on node selection - live parameters, a live
-// preview (reusing WebRTCStream.tsx's connection logic as-is), the node's latest result JSON,
+// preview (reusing StreamView.tsx's WebRTC-with-MJPEG-fallback logic as-is), the node's latest result JSON,
 // and FPS/latency/backend already shown on the node card itself. Node creation/connection stay
 // on the canvas (GraphPage); this panel is for configuring and observing a node once it exists.
 export const Inspector: React.FC<{
@@ -476,7 +476,7 @@ export const Inspector: React.FC<{
               </button>
             </div>
             {webrtcSink?.IsRunning && (
-              <WebRTCStream sinkId={webrtcSink.Sink.Id} onStop={togglePreview} onError={() => onToast('Preview stream error', 'error')} />
+              <StreamView sinkId={webrtcSink.Sink.Id} sourceId={sink?.Id ?? null} onStop={togglePreview} onError={() => onToast('Preview stream error', 'error')} />
             )}
 
             <div className="flex items-center justify-between">

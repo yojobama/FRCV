@@ -475,6 +475,25 @@ export class ApiService {
     return response.json();
   }
 
+  // MJPEG Sink Controller routes. Not a general-purpose alternative to WebRTC - StreamView.tsx
+  // is the only caller, and only reaches these when a WebRTC preview has already failed (see its
+  // own comment). Bind/toggle afterwards the same way WebRTC sinks do (PATCH /sink/bind, PATCH
+  // /sink/toggle) - MjpegSinkController.Create only creates the sink, same division of labour as
+  // createWebRTCSink above.
+  async createMjpegSink(name: string, jpegQuality = 80): Promise<number> {
+    const params = new URLSearchParams({ name, jpegQuality: String(jpegQuality) });
+    const response = await fetch(`${this.baseUrl}/mjpegSink/create?${params.toString()}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // MjpegStreamModule.cs is mounted at "/stream/mjpeg" directly (Program.cs), NOT under "/api" -
+  // it's a raw multipart HTTP response, not a WebApiController action, so it doesn't share
+  // baseUrl with every other route in this file.
+  getMjpegStreamUrl(sinkId: number): string {
+    return `${window.location.origin}/stream/mjpeg?SinkID=${sinkId}`;
+  }
+
   // Stereo Calibration Sink Controller routes (phase 10 - see STEREO_IMPLEMENTATION_PLAN.md)
   async createStereoCalibrationSink(name: string): Promise<number> {
     const response = await fetch(`${this.baseUrl}/stereoCalibrationSink/create?name=${encodeURIComponent(name)}`, { method: 'POST' });

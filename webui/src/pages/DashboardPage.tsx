@@ -13,7 +13,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import type { Source, Sink, SystemStats, DeviceStats } from '../types';
-import { WebRTCStream } from '../components/WebRTCStream';
+import { StreamView } from '../components/StreamView';
 import { ToggleSwitch } from '../components/ToggleSwitch';
 
 const SystemStatus: React.FC<{ systemStats: SystemStats; deviceStats: DeviceStats }> = ({ systemStats, deviceStats }) => (
@@ -207,9 +207,10 @@ export const DashboardPage: React.FC<{
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {Array.from(streamingSinks).map(sinkId => (
-            <WebRTCStream
+            <StreamView
               key={sinkId}
               sinkId={sinkId}
+              sourceId={sinks.find(s => s.id === sinkId)?.sourceId ?? null}
               onStop={() => onStopStream(sinkId)}
               onError={(error) => onStreamError(sinkId, error)}
             />

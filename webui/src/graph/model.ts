@@ -11,12 +11,15 @@ import type { StateSnapshot, WsSinkState, WsSource, WsSink, NodeTypesResponse, N
 const SINK_TYPE_NAMES = [
   'ApriltagSink', 'ObjectDetectionSink', undefined, 'CameraCalibrationSink',
   'NetworkTablesSink', 'WebRTCSink', 'StereoCalibrationSink', 'StereoDepthSink', 'DepthFusionSink',
+  'MjpegSink',
 ];
 const SOURCE_TYPE_NAMES = ['Camera', 'ImageFile', 'VideoFile', 'SinkOutput'];
 
 // Terminal/preview sinks render as a badge on the node they're bound to, not their own box - the
-// plan's original "toggles on a node's output" decision.
-const BADGE_SINK_TYPES = new Set(['WebRTCSink', 'NetworkTablesSink']);
+// plan's original "toggles on a node's output" decision. MjpegSink joins WebRTCSink here for the
+// same reason: StreamView.tsx spins one up as a same-preview fallback when WebRTC breaks, and it
+// should disappear back into the badge it's standing in for, not get its own graph box.
+const BADGE_SINK_TYPES = new Set(['WebRTCSink', 'NetworkTablesSink', 'MjpegSink']);
 
 export function sinkTypeName(ordinal: number): string {
   return SINK_TYPE_NAMES[ordinal] ?? 'Unknown';
@@ -39,6 +42,7 @@ export interface PipelineNodeData extends Record<string, unknown> {
   isRunning?: boolean;
   webrtcSink?: WsSinkState;
   nt4Sink?: WsSinkState;
+  mjpegSink?: WsSinkState;
   // source nodes only
   activeProfileIndex?: number;
   profileCount?: number;
@@ -122,6 +126,9 @@ export function buildGraph(
     // register themselves as a source too - see SinkManager.DualRoleSinkTypes)
     const webrtcSink = snapshot.Sinks.find(s => sinkTypeName(s.Sink.Type) === 'WebRTCSink' && s.Sink.Source?.Id === sink.Id);
     const nt4Sink = snapshot.Sinks.find(s => sinkTypeName(s.Sink.Type) === 'NetworkTablesSink' && s.Sink.Source?.Id === sink.Id);
+    // the StreamView.tsx-created same-preview MJPEG fallback, if WebRTC has broken for this
+    // node's preview and one's already been spun up - same dual-role lookup as webrtcSink above.
+    const mjpegSink = snapshot.Sinks.find(s => sinkTypeName(s.Sink.Type) === 'MjpegSink' && s.Sink.Source?.Id === sink.Id);
 
     // column: one to the right of whatever this sink's primary (left, for stereo) source is
     // sitting in, so the graph visually flows left-to-right with data - falls back to column 1
@@ -147,6 +154,7 @@ export function buildGraph(
         isRunning: sinkState.IsRunning,
         webrtcSink,
         nt4Sink,
+        mjpegSink,
       },
     });
 

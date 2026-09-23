@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, CheckCircle, XCircle, Trash2, Play, RefreshCw } from 'lucide-react';
 import { ApiService } from '../services/ApiService';
 import { CoverageHeatmap } from '../components/CoverageHeatmap';
-import { WebRTCStream } from '../components/WebRTCStream';
+import { StreamView } from '../components/StreamView';
 import type { CameraCalibrationResult, CalibrationCoverage, Source } from '../types';
 
 const api = new ApiService();
@@ -158,7 +158,7 @@ export const CalibrationWizardPage: React.FC<{
                 {showPreview ? 'Stop preview' : 'Start live preview'}
               </button>
               {showPreview && previewSinkId && (
-                <WebRTCStream sinkId={previewSinkId} onStop={() => setShowPreview(false)} onError={() => onToast('Preview error', 'error')} />
+                <StreamView sinkId={previewSinkId} sourceId={boundSourceId || null} onStop={() => setShowPreview(false)} onError={() => onToast('Preview error', 'error')} />
               )}
             </div>
             <CoverageHeatmap coverage={coverage} />
