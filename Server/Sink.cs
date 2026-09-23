@@ -33,6 +33,8 @@ namespace Server
         StereoDepthSink = 7,
         [Description("DepthFusionSink")]
         DepthFusionSink = 8,
+        [Description("MjpegSink")]
+        MjpegSink = 9,
     }
 
     public class Sink

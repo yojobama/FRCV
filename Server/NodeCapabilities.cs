@@ -51,6 +51,7 @@ namespace Server
             new("CameraCalibrationSink", "sink", "Camera Calibration", "grid", 1, null, true, false, true),
             new("NetworkTablesSink", "sink", "NetworkTables", "radio", 1, null, false, false, true),
             new("WebRTCSink", "sink", "WebRTC Preview", "video", 1, null, false, false, true),
+            new("MjpegSink", "sink", "MJPEG Preview", "video", 1, null, false, false, true),
             new("StereoCalibrationSink", "sink", "Stereo Calibration", "grid", 2, new[] { "left", "right" }, true, false, true),
             new("StereoDepthSink", "sink", "Stereo Depth", "layers", 2, new[] { "left", "right" }, true, false, true),
             new("DepthFusionSink", "sink", "Depth Fusion", "combine", 1, null, true, true, true),

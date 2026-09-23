@@ -26,6 +26,7 @@ namespace Server
             typeof(StereoCalibrationSinkController),
             typeof(StereoDepthSinkController),
             typeof(DepthFusionSinkController),
+            typeof(MjpegSinkController),
             // sources
             typeof(SourceController),
             typeof(ImageFileSourceController),

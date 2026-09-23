@@ -12,6 +12,7 @@
 #include "SystemMonitor.h"
 #include "ISink.h"
 #include "ObjectDetectionSink.h"
+#include "MjpegSink.h"
 #ifdef LUMEN_WITH_ONNX
 #include "OnnxDetectionBackend.h"
 #endif
@@ -1370,6 +1371,32 @@ bool Manager::IsWebRTCSinkConnected(int) { return false; }
 string Manager::GetWebRTCSinkStatus(int) { return "{}"; }
 string Manager::GetPreferredWebRTCEncoder() { return "libx264"; }
 #endif
+
+// Always available - see MjpegSink.h's own comment for why this needs no LUMEN_WITH_* guard the
+// way the NT4/WebRTC blocks above do.
+int Manager::CreateMjpegSink(int jpegQuality)
+{
+    int id = GenerateUUID();
+    return CreateMjpegSink(id, jpegQuality);
+}
+
+int Manager::CreateMjpegSink(int id, int jpegQuality)
+{
+    m_Logger->EnterLog("CreateMjpegSink called with id=" + std::to_string(id) + ", jpegQuality=" + std::to_string(jpegQuality));
+
+    auto p_Sink = std::make_shared<MjpegSink>(m_Logger, std::to_string(id), jpegQuality);
+    m_Sinks.emplace(id, p_Sink);
+    return id;
+}
+
+string Manager::GetMjpegFrameBase64(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return "";
+
+    auto mjpegSink = std::dynamic_pointer_cast<MjpegSink>(sink->second);
+    return mjpegSink ? mjpegSink->GetLatestJpegBase64() : "";
+}
 
 void Manager::StartAllSources()
 {

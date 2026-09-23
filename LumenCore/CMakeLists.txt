@@ -31,6 +31,7 @@ set(LUMEN_CORE_SOURCES
     ISink.cpp
     Logger.cpp
     Manager.cpp
+    MjpegSink.cpp
     NetworkTablesSink.cpp
     ObjectDetection.cpp
     ObjectDetectionSink.cpp

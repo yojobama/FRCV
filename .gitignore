@@ -42,6 +42,13 @@ data.json
 *.log
 *Log.txt
 graph-profiles/
+# uploaded ImageFile/VideoFile source files, robot-side AprilTag field layout JSON uploads, and
+# saved snapshots (SourceController.SaveSnapshot) - all runtime state a fresh checkout never has
+# and a running server recreates on demand, same as models/ above.
+images/
+videos/
+fieldLayouts/
+snapshots/
 
 # Third-party: vkapriltag and codec-stereo are git submodules (tracked as a reference, not
 # ignored); only their build output is ignored, matching the rest of this file's

@@ -302,6 +302,17 @@ public:
 	bool IsWebRTCSinkConnected(int sinkId);
 	string GetWebRTCSinkStatus(int sinkId);
 
+	// terminal sink: a fallback preview stream simpler than WebRTCSink - see MjpegSink.h's own
+	// comment. Always available (no LUMEN_WITH_* guard, pure OpenCV), but declared here (not a
+	// header included directly by this one) for the same "keep this header's own SWIG-visible
+	// surface small and dependency-free" reason WebRTCSink's declarations already follow.
+	int CreateMjpegSink(int jpegQuality);
+	int CreateMjpegSink(int id, int jpegQuality);
+	// base64-encoded JPEG - see MjpegSink::GetLatestJpegBase64's own comment for why base64, not
+	// raw bytes, crosses this exact boundary. Empty string if sinkId isn't an MjpegSink, or no
+	// frame has arrived yet.
+	string GetMjpegFrameBase64(int sinkId);
+
 	// which LUMEN_WITH_* backends this build actually has compiled in (e.g. {"ONNX", "NT4",
 	// "VULKAN_APRILTAG"}) - lets the WebUI grey out unavailable options instead of discovering
 	// them by a failed request, and is the runtime counterpart to the SWIG-surface-stays-constant

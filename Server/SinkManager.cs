@@ -295,6 +295,18 @@ namespace Server
             return id;
         }
 
+        // ROADMAP.md Phase 8/E7: fallback preview stream simpler than WebRTCSink - see
+        // MjpegSink.h's own comment. jpegQuality is cv::IMWRITE_JPEG_QUALITY's own 0-100 scale.
+        public int AddMjpegSink(string name, int jpegQuality = 80)
+        {
+            int id = ManagerWrapper.Instance.CreateMjpegSink(jpegQuality);
+            sinks.Add(new Sink(id, name, SinkType.MjpegSink));
+            DB.Instance.Save();
+            return id;
+        }
+
+        public string GetMjpegFrameBase64(int sinkId) => ManagerWrapper.Instance.GetMjpegFrameBase64(sinkId);
+
         public string WebRTCCreateOffer(int sinkId) => ManagerWrapper.Instance.WebRTCCreateOffer(sinkId);
         public void WebRTCSetAnswer(int sinkId, string sdp) => ManagerWrapper.Instance.WebRTCSetAnswer(sinkId, sdp);
         public void WebRTCAddIceCandidate(int sinkId, string candidate, string mid) =>

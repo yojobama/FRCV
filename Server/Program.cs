@@ -3,6 +3,7 @@ using EmbedIO.Files;
 using EmbedIO.WebApi;
 using EmbedIO.Cors;
 using Server.WebSockets;
+using Server.HttpModules;
 using System.Text;
 
 namespace Server
@@ -34,7 +35,12 @@ namespace Server
                 })
                 // ROADMAP.md Phase 8a: the push channel replacing the webui's old polling loop -
                 // see StateChannel's own comment for what it broadcasts and why.
-                .WithModule(new StateChannel("/ws/state"));
+                .WithModule(new StateChannel("/ws/state"))
+                // Outside /api, same reasoning as StateChannel above - a long-lived response
+                // needs its own module, not a WithWebApi controller action, and keeping it off
+                // the /api/* prefix altogether sidesteps any question of module-match ordering
+                // against the WebApi module's own routing.
+                .WithModule(new MjpegStreamModule("/stream/mjpeg"));
 
             // Serves the built React WebUI (npm run build in reactproject1, copied into
             // wwwroot by Server.csproj) - registered after WithWebApi so /api/* is always
