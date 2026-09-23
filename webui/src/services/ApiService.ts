@@ -530,17 +530,6 @@ export class ApiService {
     return response.json();
   }
 
-  // UDP Controller routes
-  async startUDPTransmission(): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/udp/start`, { method: 'POST' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  }
-
-  async stopUDPTransmission(): Promise<void> {
-    const response = await fetch(`${this.baseUrl}/udp/stop`, { method: 'POST' });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  }
-
   // Enhanced utility methods for better data aggregation
   async getAllSources(): Promise<any[]> {
     try {

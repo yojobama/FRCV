@@ -24,7 +24,7 @@ namespace Server
                                        // fusion output) - see SinkManager.DualRoleSinkTypes
         bool HasDepthAttach,          // DepthFusionSink only - a second, non-Source input via
                                        // AttachDepthFusionSource, not an ordinary bind
-        bool Implemented              // false for enum values with no working creation path (RecordingSink)
+        bool Implemented              // false for a node type with no working creation path
     );
 
     public static class NodeCapabilities
@@ -48,7 +48,6 @@ namespace Server
         {
             new("ApriltagSink", "sink", "AprilTag Detector", "scan", 1, null, true, false, true),
             new("ObjectDetectionSink", "sink", "Object Detection", "box", 1, null, true, false, true),
-            new("RecordingSink", "sink", "Recording", "circle", 1, null, false, false, false),
             new("CameraCalibrationSink", "sink", "Camera Calibration", "grid", 1, null, true, false, true),
             new("NetworkTablesSink", "sink", "NetworkTables", "radio", 1, null, false, false, true),
             new("WebRTCSink", "sink", "WebRTC Preview", "video", 1, null, false, false, true),

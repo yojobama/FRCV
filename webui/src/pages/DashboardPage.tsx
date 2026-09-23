@@ -8,7 +8,6 @@ import {
   XCircle,
   MonitorSpeaker,
   Activity,
-  Wifi,
   StopCircle,
   PlayCircle,
   ExternalLink,
@@ -81,10 +80,8 @@ export const DashboardPage: React.FC<{
   onTogglePreview: (node: { id: number; name: string }) => void;
   onGoToSinks: () => void;
   onGoToSources: () => void;
-  onStartUDP: () => void;
-  onStopUDP: () => void;
   onToggleSink: (id: number, enabled: boolean) => void;
-}> = ({ systemStats, deviceStats, streamingSinks, sources, sinks, onStopAllStreams, onStopStream, onStreamError, onTogglePreview, onGoToSinks, onGoToSources, onStartUDP, onStopUDP, onToggleSink }) => {
+}> = ({ systemStats, deviceStats, streamingSinks, sources, sinks, onStopAllStreams, onStopStream, onStreamError, onTogglePreview, onGoToSinks, onGoToSources, onToggleSink }) => {
   // WebRTC/NetworkTables sinks are plumbing auto-created by the Live Preview / Publish to NT4
   // toggles - not something the user directly created, so they're left out of this summary too.
   const visibleSinks = sinks.filter(s => s.type !== 'webrtc' && s.type !== 'networktables');
@@ -93,7 +90,7 @@ export const DashboardPage: React.FC<{
     <SystemStatus systemStats={systemStats} deviceStats={deviceStats} />
 
     {/* Device Stats Row */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
         <div className="flex items-center justify-between">
           <div>
@@ -110,18 +107,6 @@ export const DashboardPage: React.FC<{
             <p className="text-2xl font-bold text-red-600 dark:text-red-400">{deviceStats.diskUsage}%</p>
           </div>
           <BarChart3 className="w-8 h-8 text-red-600" />
-        </div>
-      </div>
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">UDP Control</h3>
-            <div className="flex gap-2 mt-2">
-              <button onClick={onStartUDP} className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700">Start</button>
-              <button onClick={onStopUDP} className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700">Stop</button>
-            </div>
-          </div>
-          <Wifi className="w-8 h-8 text-blue-600" />
         </div>
       </div>
     </div>

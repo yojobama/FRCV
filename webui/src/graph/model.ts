@@ -5,8 +5,11 @@ import type { StateSnapshot, WsSinkState, WsSource, WsSink, NodeTypesResponse, N
 // Server/Source.cs's SourceType are plain enums with no [Description]-style string exposed over
 // the wire (WsSink.Type/WsSource.Type are raw ordinals) - these mirror their declaration order
 // exactly, matching how hooks/useAppData.ts's mapSinkType already has to.
+// index 2 stays a reserved gap, not 'CameraCalibrationSink' shifted down - Server/Sink.cs's
+// SinkType enum pins explicit numeric values for exactly this reason (2 was RecordingSink,
+// deleted but never reused, since it's a raw ordinal over the wire with no string converter).
 const SINK_TYPE_NAMES = [
-  'ApriltagSink', 'ObjectDetectionSink', 'RecordingSink', 'CameraCalibrationSink',
+  'ApriltagSink', 'ObjectDetectionSink', undefined, 'CameraCalibrationSink',
   'NetworkTablesSink', 'WebRTCSink', 'StereoCalibrationSink', 'StereoDepthSink', 'DepthFusionSink',
 ];
 const SOURCE_TYPE_NAMES = ['Camera', 'ImageFile', 'VideoFile', 'SinkOutput'];

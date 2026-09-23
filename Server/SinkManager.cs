@@ -5,7 +5,6 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 
 namespace Server
@@ -14,49 +13,17 @@ namespace Server
     {
         public static SinkManager Instance { get; } = new SinkManager();
 
-        private string currentResults;
-        private Thread thread;
-        private List<Channel<string>> channels;
         private List<Sink> sinks;
-        private bool isRunning;
 
         private SinkManager()
         {
-            thread = new Thread(ThreadProc);
-
             sinks = new List<Sink>();
-            channels = new List<Channel<string>>();
-            isRunning = false;
         }
 
         // Direct pass-through to the native, per-sink result JSON (fixed to actually work back
-        // in phase 2 - it used to return nullptr/GetStatus()'s hardcoded ""). GetResults() below
-        // is a SEPARATE, older mechanism (a background thread + Channel<string> fan-out) that is
-        // never started anywhere in this codebase (EnableManagerThread() has no caller) and has
-        // its own busy-wait bug (ThreadProc's while(isRunning) loop has no sleep) - left alone
-        // for now rather than half-fixed, since nothing currently depends on it.
+        // in phase 2 - it used to return nullptr/GetStatus()'s hardcoded "").
         public string GetResult(int sinkId) => ManagerWrapper.Instance.GetSinkResult(sinkId);
         public string GetAllResults() => ManagerWrapper.Instance.GetAllSinkResults();
-
-        public string GetResults()
-        {
-            return currentResults;
-        }
-
-        private void ThreadProc()
-        {
-            // This method will run in a separate thread to manage sinks
-            while (isRunning)
-            {
-                updateResults();
-                foreach (var channel in channels)
-                {
-                    channel.Writer.TryWrite(currentResults);
-                }
-                // Logic to manage sinks, e.g., checking for new data, processing it, etc.
-                // This could involve reading from channels and updating sinks accordingly.
-            }
-        }
 
         public Sink GetSinkById(int id)
         {
@@ -193,15 +160,6 @@ namespace Server
                 DB.Instance.Save(); // Save changes to the database
                 return id.GetValueOrDefault(-1);
             }
-        }
-
-        public Channel<string> createResultChannel()
-        {
-            Channel<string> channel = Channel.CreateUnbounded<string>();
-
-            channels.Add(channel);
-
-            return channel;
         }
 
         // creates a CameraCalibrationSink with an explicit board configuration (checkerboard or
@@ -585,43 +543,6 @@ namespace Server
             {
                 sink.DepthSourceId = stereoDepthSinkId;
                 DB.Instance.Save();
-            }
-        }
-
-        // update results
-        private void updateResults()
-        {
-            string[] results = getAllSinkIds().Select(id => ManagerWrapper.Instance.GetSinkResult(id)).ToArray();
-            
-            // Manually construct JSON array without re-serializing the JSON strings
-            if (results.Length == 0)
-            {
-                currentResults = "[]";
-            }
-            else
-            {
-                currentResults = "[" + string.Join(",", results) + "]";
-            }
-        }
-
-        // start the sink manager thread
-        public void EnableManagerThread()
-        {
-            if (!isRunning)
-            {
-                isRunning = true;
-                thread = new Thread(ThreadProc); // Recreate the thread if it has been stopped
-                thread.Start();
-            }
-        }
-
-        // stop the sink manager thread
-        public void DisableManagerThread()
-        {
-            if (thread.IsAlive)
-            {
-                isRunning = false;
-                thread.Join();
             }
         }
 

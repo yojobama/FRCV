@@ -183,8 +183,6 @@ function App() {
     stopStream,
     handleStreamError,
     showToast,
-    startUDPTransmission,
-    stopUDPTransmission,
     handleToggleSink,
     handleTogglePreview,
     handleToggleNT4Publish,
@@ -251,8 +249,6 @@ function App() {
                 onTogglePreview={handleTogglePreview}
                 onGoToSinks={()=>navigate('/graph')}
                 onGoToSources={()=>navigate('/graph')}
-                onStartUDP={startUDPTransmission}
-                onStopUDP={stopUDPTransmission}
                 onToggleSink={handleToggleSink}
               />
             } />

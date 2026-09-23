@@ -7,26 +7,32 @@ using System.Threading.Tasks;
 
 namespace Server
 {
+    // Explicit numeric values, pinned permanently: SinkType is persisted as a raw integer in
+    // data.json (no JsonStringEnumConverter registered anywhere in this project), so removing or
+    // reordering a member without pinning the rest would silently reinterpret every
+    // already-saved sink whose value shifted - confirmed the hard way when removing
+    // RecordingSink below (value 2, never actually reachable - RecordingSinkController was
+    // deleted outright, see Program.cs's own comment - but the slot stays reserved, never
+    // reused, so this can never happen again for any future removal either).
     public enum SinkType
     {
         [Description("ApriltagSink")]
-        ApriltagSink,
+        ApriltagSink = 0,
         [Description("ObjectDetectionSink")]
-        ObjectDetectionSink,
-        [Description("RecordingSink")]
-        RecordingSink,
+        ObjectDetectionSink = 1,
+        // 2 was RecordingSink - deleted, not reused (see this enum's own comment).
         [Description("CameraCalibrationSink")]
-        CameraCalibrationSink,
+        CameraCalibrationSink = 3,
         [Description("NetworkTablesSink")]
-        NetworkTablesSink,
+        NetworkTablesSink = 4,
         [Description("WebRTCSink")]
-        WebRTCSink,
+        WebRTCSink = 5,
         [Description("StereoCalibrationSink")]
-        StereoCalibrationSink,
+        StereoCalibrationSink = 6,
         [Description("StereoDepthSink")]
-        StereoDepthSink,
+        StereoDepthSink = 7,
         [Description("DepthFusionSink")]
-        DepthFusionSink,
+        DepthFusionSink = 8,
     }
 
     public class Sink

@@ -35,7 +35,6 @@ namespace Server
             // models
             typeof(ModelController),
             // others
-            typeof(UDPController),
             typeof(DeviceController),
             typeof(CapabilitiesController),
             typeof(OpenApiController),

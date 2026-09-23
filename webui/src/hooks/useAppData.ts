@@ -4,16 +4,15 @@ import { ApiService } from '../services/ApiService';
 
 // Maps the server's SinkType enum ordinal to the string label this UI uses everywhere - must
 // mirror Server/Sink.cs's SinkType exactly: ApriltagSink=0, ObjectDetectionSink=1,
-// RecordingSink=2, CameraCalibrationSink=3, NetworkTablesSink=4, WebRTCSink=5,
-// StereoCalibrationSink=6, StereoDepthSink=7, DepthFusionSink=8. Exported (not just a local
-// helper) so Phase 8c's graph code can reuse it without a second copy of this enum-order
-// knowledge.
+// (2 reserved - was RecordingSink, deleted, never reused - see Sink.cs's own comment),
+// CameraCalibrationSink=3, NetworkTablesSink=4, WebRTCSink=5, StereoCalibrationSink=6,
+// StereoDepthSink=7, DepthFusionSink=8. Exported (not just a local helper) so Phase 8c's graph
+// code can reuse it without a second copy of this enum-order knowledge.
 export const mapSinkType = (type: any): string => {
   if (typeof type === 'string') return type;
   switch (type) {
     case 0: return 'apriltag';
     case 1: return 'object';
-    case 2: return 'record';
     case 3: return 'calibration';
     case 4: return 'networktables';
     case 5: return 'webrtc';
@@ -169,25 +168,6 @@ export const useAppData = () => {
     setToast({ message, type });
   };
 
-  // UDP transmission controls
-  const startUDPTransmission = async () => {
-    try {
-      await api.startUDPTransmission();
-      showToast('UDP transmission started', 'success');
-    } catch (error) {
-      showToast(`Failed to start UDP transmission: ${error}`, 'error');
-    }
-  };
-
-  const stopUDPTransmission = async () => {
-    try {
-      await api.stopUDPTransmission();
-      showToast('UDP transmission stopped', 'info');
-    } catch (error) {
-      showToast(`Failed to stop UDP transmission: ${error}`, 'error');
-    }
-  };
-
   // "Live Preview" toggle for any node (a raw Source, or a dual-role detector Sink) - creates a
   // dedicated WebRTCSink bound to it on first use rather than requiring the user to create and
   // bind one manually. WebRTC is not itself a user-facing addable sink type anymore; this is
@@ -285,8 +265,6 @@ export const useAppData = () => {
     stopStream,
     handleStreamError,
     showToast,
-    startUDPTransmission,
-    stopUDPTransmission,
     handleToggleSink,
     handleTogglePreview,
     handleToggleNT4Publish,
