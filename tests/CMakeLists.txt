@@ -28,6 +28,28 @@ add_executable(LumenCoreTests
     test_sgbm_synthetic_disparity.cpp
 )
 
+if(LUMEN_WITH_ONNX)
+    # same PRIVATE-compile-definition situation as LUMEN_WITH_RKNN below -
+    # OnnxDetectionBackend.h's own #ifdef LUMEN_WITH_ONNX guard needs this define visible to the
+    # test's own translation unit too. Genuinely local (unlike the RKNN/CODEC_STEREO hitl tests
+    # right below): ONNX Runtime's CPU execution provider needs no RK3588 hardware, and ONNX is
+    # on by default everywhere this project builds.
+    #
+    # Also needs a direct link against OnnxRuntime::onnxruntime, unlike RKNN/CODEC_STEREO's own
+    # blocks below - onnxruntime_cxx_api.h's C++ wrapper classes (Ort::Env/Session/MemoryInfo,
+    # used as OnnxDetectionBackend's private members) are header-only, so merely including
+    # OnnxDetectionBackend.h from this test's own translation unit pulls in real (not just
+    # declared) code that calls into the C API directly - confirmed the hard way: without this,
+    # the link fails with "undefined reference to OrtGetApiBase" even though this test never
+    # calls any Ort:: API itself. LumenCore already resolves OnnxRuntime via find_package in its
+    # own CMakeLists.txt, but that link is PRIVATE (deliberately, so consumers of the .so don't
+    # need onnxruntime headers) and so doesn't propagate here.
+    find_package(OnnxRuntime REQUIRED)
+    target_sources(LumenCoreTests PRIVATE test_onnx_detection.cpp)
+    target_compile_definitions(LumenCoreTests PRIVATE LUMEN_WITH_ONNX)
+    target_link_libraries(LumenCoreTests PRIVATE OnnxRuntime::onnxruntime)
+endif()
+
 if(LUMEN_WITH_RKNN)
     # only buildable at all where RknnDetectionBackend.h itself has real content - see that
     # header's own #ifdef LUMEN_WITH_RKNN guard. LumenCore's own LUMEN_WITH_RKNN compile
