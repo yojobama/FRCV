@@ -128,6 +128,20 @@ nlohmann::json ApriltagDetector::SolveMultiTagPnP(
 	};
 }
 
+nlohmann::json ApriltagDetector::BuildCalibrationJson() const
+{
+	if (!m_HasCalibration) return nullptr;
+	return {
+		{"fx", m_OriginalCalibration.fx},
+		{"fy", m_OriginalCalibration.fy},
+		{"cx", m_OriginalCalibration.cx},
+		{"cy", m_OriginalCalibration.cy},
+		{"distCoeffs", m_OriginalCalibration.distCoeffs},
+		{"imageWidth", m_OriginalCalibration.imageWidth},
+		{"imageHeight", m_OriginalCalibration.imageHeight},
+	};
+}
+
 void ApriltagDetector::Process(const std::vector<SourceResult>& results)
 {
 	for (const SourceResult& result : results)
@@ -145,7 +159,7 @@ void ApriltagDetector::Process(const std::vector<SourceResult>& results)
 				// which is a real use-after-recycle risk the moment `result` (this function's own
 				// parameter, holding the ONLY other reference to that buffer's pool owner) goes
 				// out of scope at the end of this Process() call.
-				SetLatestResult(SourceResult(nlohmann::json{{"tags", nlohmann::json::array()}, {"multiTag", nullptr}}, result.frame->AsBgrFrame(), result.captureTimeUs));
+				SetLatestResult(SourceResult(nlohmann::json{{"tags", nlohmann::json::array()}, {"multiTag", nullptr}, {"calibration", BuildCalibrationJson()}}, result.frame->AsBgrFrame(), result.captureTimeUs));
 				continue;
 			}
 
@@ -335,7 +349,7 @@ void ApriltagDetector::Process(const std::vector<SourceResult>& results)
 			std::optional<Frame> outputFrame;
 			if (wantsFrame) outputFrame = Frame(colouredFrame, FrameFormat::BGR24, colourOwner);
 
-			SetLatestResult(SourceResult(nlohmann::json{{"tags", jsonVector}, {"multiTag", multiTagJson}},
+			SetLatestResult(SourceResult(nlohmann::json{{"tags", jsonVector}, {"multiTag", multiTagJson}, {"calibration", BuildCalibrationJson()}},
 				outputFrame, result.captureTimeUs));
 		}
 	}

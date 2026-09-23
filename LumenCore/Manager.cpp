@@ -1177,7 +1177,7 @@ int Manager::CreateNetworkTablesSinkForTeam(int id, int teamNumber, string rootT
 
     m_Logger->EnterLog("CreateNetworkTablesSinkForTeam called with id=" + std::to_string(id) + ", team=" + std::to_string(teamNumber));
 
-    auto p_Sink = std::make_shared<NetworkTablesSink>(m_Logger, std::to_string(id), config);
+    auto p_Sink = std::make_shared<NetworkTablesSink>(m_Logger, std::to_string(id), config, m_SystemMonitor);
 
     // terminal sink: it has no ISource half, so it only ever goes into m_Sinks
     m_Sinks.emplace(id, p_Sink);
@@ -1200,7 +1200,7 @@ int Manager::CreateNetworkTablesSinkForServer(int id, string serverAddress, int 
 
     m_Logger->EnterLog("CreateNetworkTablesSinkForServer called with id=" + std::to_string(id) + ", server=" + serverAddress);
 
-    auto p_Sink = std::make_shared<NetworkTablesSink>(m_Logger, std::to_string(id), config);
+    auto p_Sink = std::make_shared<NetworkTablesSink>(m_Logger, std::to_string(id), config, m_SystemMonitor);
     m_Sinks.emplace(id, p_Sink);
     return id;
 }

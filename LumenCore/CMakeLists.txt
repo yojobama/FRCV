@@ -135,6 +135,10 @@ target_compile_features(LumenCore PUBLIC cxx_std_20)
 
 target_compile_definitions(LumenCore PRIVATE ${LUMEN_ENABLED_DEFINES})
 
+# NetworkTablesSink's own ".version" NT4 topic (see NetworkTablesSink.cpp) publishes this
+# verbatim - PROJECT_VERSION comes from the top-level project(LumenVision VERSION ...) call.
+target_compile_definitions(LumenCore PRIVATE LUMEN_VERSION_STRING="${PROJECT_VERSION}")
+
 if(MSVC)
     # NOMINMAX/WIN32_LEAN_AND_MEAN: without these, <windows.h> (pulled in transitively by
     # WPILib/ONNX Runtime headers) defines max/min and GetMessage as macros, breaking

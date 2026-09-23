@@ -77,6 +77,12 @@ public:
 private:
 	void Process(const std::vector<SourceResult>& results) override;
 
+	// intrinsics/distortion/resolution as a JSON sibling of "tags"/"multiTag" in the published
+	// envelope (ROADMAP.md Phase E1) - null when m_HasCalibration is false, so NetworkTablesSink
+	// can tell "no calibration attached" apart from "calibrated with a degenerate/zero result"
+	// rather than guessing from fx==0.
+	nlohmann::json BuildCalibrationJson() const;
+
 	std::unique_ptr<IApriltagBackend> m_Backend;
 	ApriltagBackendKind m_ActiveBackendKind = APRILTAG_BACKEND_CPU;
 

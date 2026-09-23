@@ -69,11 +69,22 @@ if(LUMEN_WITH_VULKAN_APRILTAG)
     # LumenCore and doesn't propagate to an external target like this one.
     find_package(Vulkan REQUIRED)
     target_sources(LumenCoreTests PRIVATE test_apriltag_backend_agreement_hitl.cpp)
-    target_compile_definitions(LumenCoreTests PRIVATE
-        LUMEN_WITH_VULKAN_APRILTAG
-        LUMEN_VKAPRILTAG_SAMPLE_DIR="${CMAKE_SOURCE_DIR}/third_party/vkapriltag/apriltags_vulkan"
-    )
+    target_compile_definitions(LumenCoreTests PRIVATE LUMEN_WITH_VULKAN_APRILTAG)
     target_link_libraries(LumenCoreTests PRIVATE apriltag vkapriltag::vkapriltag Vulkan::Vulkan)
+endif()
+
+if(LUMEN_WITH_NT4)
+    # same PRIVATE-compile-definition situation as LUMEN_WITH_RKNN above - NetworkTablesSink.h's
+    # own #ifdef LUMEN_WITH_NT4 guard needs this define visible to the test's own translation unit
+    # too. Also needs a direct link against Ntcore::ntcore, same "PRIVATE on LumenCore doesn't
+    # propagate to an external target" situation as LUMEN_WITH_ONNX/LUMEN_WITH_VULKAN_APRILTAG
+    # above - this test's own translation unit includes NetworkTablesSink.h directly (real ntcore
+    # types like nt::NetworkTableInstance appear in the constructor it calls, not just forward
+    # declarations), so it needs ntcore's headers/libs visible here too.
+    find_package(Ntcore REQUIRED)
+    target_sources(LumenCoreTests PRIVATE test_networktables_nt4_e2e.cpp)
+    target_compile_definitions(LumenCoreTests PRIVATE LUMEN_WITH_NT4 LUMEN_VERSION_STRING="${PROJECT_VERSION}")
+    target_link_libraries(LumenCoreTests PRIVATE Ntcore::ntcore)
 endif()
 
 if(LUMEN_WITH_CODEC_STEREO)
@@ -103,6 +114,12 @@ target_include_directories(LumenCoreTests PRIVATE "${CMAKE_SOURCE_DIR}/LumenCore
 # test executable's own output directory, not this source directory, so a relative path to
 # data/coco_80_labels.txt would silently fail to resolve.
 target_compile_definitions(LumenCoreTests PRIVATE LUMEN_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/data")
+
+# grayimage.pgm is tracked in the vkapriltag submodule's own git history regardless of whether
+# LUMEN_WITH_VULKAN_APRILTAG is actually on - defined unconditionally (unlike that feature's own
+# LUMEN_WITH_VULKAN_APRILTAG define above) so both the CPU-vs-Vulkan agreement test and the NT4
+# end-to-end test can use the same real fixture without depending on each other's feature gate.
+target_compile_definitions(LumenCoreTests PRIVATE LUMEN_VKAPRILTAG_SAMPLE_DIR="${CMAKE_SOURCE_DIR}/third_party/vkapriltag/apriltags_vulkan")
 
 if(MSVC)
     target_compile_definitions(LumenCoreTests PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)

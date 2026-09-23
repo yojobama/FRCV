@@ -6,9 +6,14 @@ cmake_minimum_required(VERSION 3.25)
 # still giving FetchContent's FETCHCONTENT_TRY_FIND_PACKAGE_MODE (needs 3.24) and
 # $<TARGET_RUNTIME_DLLS:...> (needs 3.21) to work. See ROADMAP.md Phase A2.
 project(LumenVision
+    VERSION 0.1.0
     DESCRIPTION "PhotonVision-style FRC vision coprocessor - AprilTag/object detection, calibration, WebRTC, NT4, stereo depth"
     LANGUAGES CXX
 )
+# Bumped by hand for now, kept in step with whatever tag is about to be pushed - the actual
+# release pipeline (.github/workflows/release.yml) derives its own version string from the pushed
+# git tag itself, not from this file, so the two can drift if this isn't updated at tag time. This
+# is what NetworkTablesSink's own ".version" NT4 topic (LumenCore/NetworkTablesSink.cpp) publishes.
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
