@@ -25,6 +25,7 @@ add_executable(LumenCoreTests
     test_driver_mode.cpp
     test_snapshot.cpp
     test_multitag_pnp.cpp
+    test_sgbm_synthetic_disparity.cpp
 )
 
 if(LUMEN_WITH_RKNN)
@@ -43,7 +44,10 @@ if(LUMEN_WITH_CODEC_STEREO)
     # translation unit too. No extra include dir/link needed: CodecStereoBackend.h only forward-
     # declares cs_context (never includes codec-stereo's own cs.h), and the actual cs_* calls
     # live inside CodecStereoBackend.cpp, already compiled into LumenCore itself.
-    target_sources(LumenCoreTests PRIVATE test_codec_stereo_rkmpp_hitl.cpp)
+    target_sources(LumenCoreTests PRIVATE
+        test_codec_stereo_rkmpp_hitl.cpp
+        test_codec_stereo_lavc_synthetic_disparity.cpp
+    )
     target_compile_definitions(LumenCoreTests PRIVATE LUMEN_WITH_CODEC_STEREO)
 endif()
 
