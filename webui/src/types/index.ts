@@ -46,6 +46,16 @@ export interface CameraMode {
   IsNative: boolean;
 }
 
+// mirrors Server/Dtos.cs's CalibrationStatusDto (ROADMAP.md Phase 8/E5) - whether a camera
+// source has a saved calibration at all, and whether it still matches the camera's CURRENT
+// capture mode (a SetMode call can silently leave it stale).
+export interface CalibrationStatus {
+  HasCalibration: boolean;
+  MatchesCurrentResolution: boolean;
+  CalibratedWidth: number | null;
+  CalibratedHeight: number | null;
+}
+
 // An uploaded ONNX object detection model (YOLOv8/YOLOv11), as returned by /model/getAll
 export interface Model {
   id: number;

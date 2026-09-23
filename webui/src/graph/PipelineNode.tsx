@@ -2,9 +2,13 @@ import React from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
 import {
   Camera, Video, Image as ImageIcon, Scan, Box, Grid3x3, Radio, Layers, Combine, HelpCircle,
-  Wifi, WifiOff, Radio as RadioIcon,
+  Wifi, WifiOff, Radio as RadioIcon, AlertTriangle,
 } from 'lucide-react';
 import type { PipelineNode as PipelineNodeType } from './model';
+import type { WsSource } from '../types';
+import { ApiService } from '../services/ApiService';
+
+const api = new ApiService();
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   camera: Camera,
@@ -16,6 +20,39 @@ const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   radio: Radio,
   layers: Layers,
   combine: Combine,
+};
+
+// ROADMAP.md Phase 8/E5: polls /cameraSource/{id}/calibrationStatus on its own, separate from
+// buildGraph's /ws/state-driven tick - calibration status isn't (and doesn't need to be) part of
+// that continuous per-second snapshot, so a camera node fetches its own status independently
+// rather than that payload growing an extra REST round-trip for every source on every tick
+// whether or not a graph is even showing calibration warnings. Renders nothing until a real
+// mismatch is confirmed (no calibration at all is normal for a camera that was never meant to be
+// calibrated, e.g. a driver-camera-only feed - not itself a warning).
+const CalibrationWarningBadge: React.FC<{ sourceId: number }> = ({ sourceId }) => {
+  const [stale, setStale] = React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    const poll = () => {
+      api.getCalibrationStatus(sourceId)
+        .then(status => { if (!cancelled) setStale(status.HasCalibration && !status.MatchesCurrentResolution); })
+        .catch(() => { /* transient fetch failure - keep showing whatever was last known */ });
+    };
+    poll();
+    const interval = setInterval(poll, 5000);
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [sourceId]);
+
+  if (!stale) return null;
+  return (
+    <span
+      className="flex items-center gap-1 text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200"
+      title="Saved calibration was computed at a different resolution than this camera is running now - pose estimation using it will be wrong until it's redone."
+    >
+      <AlertTriangle className="w-3 h-3" />Calibration stale
+    </span>
+  );
 };
 
 // ROADMAP.md Phase 8c: one generic node renderer for both sources and the graph-shaped sink
@@ -56,6 +93,12 @@ const PipelineNodeImpl: React.FC<NodeProps<PipelineNodeType>> = ({ data, selecte
       {isSource && (data.profileCount ?? 0) > 0 && (
         <div className="mt-1 text-xs text-purple-600 dark:text-purple-400">
           Profile {data.activeProfileIndex! >= 0 ? data.activeProfileIndex : '(none active)'} / {data.profileCount}
+        </div>
+      )}
+
+      {isSource && (data.raw as WsSource).CameraHardwareInfo != null && (
+        <div className="mt-1">
+          <CalibrationWarningBadge sourceId={(data.raw as WsSource).Id} />
         </div>
       )}
 

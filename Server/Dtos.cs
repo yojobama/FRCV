@@ -64,6 +64,12 @@ namespace Server
             new(stored.CameraPath, CameraCalibrationResultDto.From(stored.Result), stored.CalibratedAtUnixMs);
     }
 
+    public record struct CalibrationStatusDto(bool HasCalibration, bool MatchesCurrentResolution, int? CalibratedWidth, int? CalibratedHeight)
+    {
+        public static CalibrationStatusDto From(CalibrationStatus status) =>
+            new(status.HasCalibration, status.MatchesCurrentResolution, status.CalibratedWidth, status.CalibratedHeight);
+    }
+
     public record struct StereoCalibrationResultDto(
         CameraCalibrationResultDto Left, CameraCalibrationResultDto Right,
         double[] R, double[] T, double[] E, double[] F,

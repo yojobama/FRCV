@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Trash2, Wifi, WifiOff, Radio, Play, Square, Code, RefreshCw, Wand2 } from 'lucide-react';
+import { X, Trash2, Wifi, WifiOff, Radio, Play, Square, Code, RefreshCw, Wand2, AlertTriangle } from 'lucide-react';
 import type { PipelineNode } from './model';
-import type { WsSource, WsSink, NT4Defaults, CameraMode } from '../types';
+import type { WsSource, WsSink, NT4Defaults, CameraMode, CalibrationStatus } from '../types';
 import { ApiService } from '../services/ApiService';
 import { ToggleSwitch } from '../components/ToggleSwitch';
 import { WebRTCStream } from '../components/WebRTCStream';
@@ -38,6 +38,7 @@ export const Inspector: React.FC<{
   const [newProfileBackend, setNewProfileBackend] = useState(0);
   const [cameraModes, setCameraModes] = useState<CameraMode[]>([]);
   const [currentMode, setCurrentMode] = useState<CameraMode | null>(null);
+  const [calibrationStatus, setCalibrationStatus] = useState<CalibrationStatus | null>(null);
   const [autoExposure, setAutoExposure] = useState(true);
   const [exposureValue, setExposureValue] = useState(300);
   const [gainValue, setGainValue] = useState(0);
@@ -58,6 +59,7 @@ export const Inspector: React.FC<{
     setShowPreview(false);
     setCameraModes([]);
     setCurrentMode(null);
+    setCalibrationStatus(null);
   }, [node.id]);
 
   const source = kind === 'source' ? (raw as WsSource) : null;
@@ -66,15 +68,18 @@ export const Inspector: React.FC<{
 
   // Modes/current mode aren't in the /ws/state snapshot (they're a live device query, not
   // pipeline state), so this needs its own fetch - only for camera sources, only once per
-  // selected node rather than on every WS tick.
+  // selected node rather than on every WS tick. Calibration status (ROADMAP.md Phase 8/E5)
+  // rides along on the same fetch - it's the exact same "not part of pipeline state, only a
+  // camera source has one" shape.
   useEffect(() => {
     if (!isCamera || !source) return;
     let cancelled = false;
-    Promise.all([api.getCameraModes(source.Id), api.getCameraCurrentMode(source.Id)])
-      .then(([modes, mode]) => {
+    Promise.all([api.getCameraModes(source.Id), api.getCameraCurrentMode(source.Id), api.getCalibrationStatus(source.Id)])
+      .then(([modes, mode, calibration]) => {
         if (cancelled) return;
         setCameraModes(modes);
         setCurrentMode(mode);
+        setCalibrationStatus(calibration);
       })
       .catch(() => { if (!cancelled) onToast('Failed to load camera modes', 'error'); });
     return () => { cancelled = true; };
@@ -88,6 +93,9 @@ export const Inspector: React.FC<{
       const applied = await api.getCameraCurrentMode(source.Id);
       setCurrentMode(applied);
       onToast(applied.IsNative ? 'Mode applied' : 'Camera substituted the nearest supported mode', applied.IsNative ? 'success' : 'info');
+      // the exact moment a stale calibration can newly appear (or clear) - re-check right away
+      // rather than waiting for this node to be reselected.
+      api.getCalibrationStatus(source.Id).then(setCalibrationStatus).catch(() => {});
     } catch {
       onToast('Failed to set camera mode', 'error');
     }
@@ -316,6 +324,16 @@ export const Inspector: React.FC<{
         {isCamera && (
           <div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-3">
             <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400">Camera Controls</h4>
+
+            {calibrationStatus?.HasCalibration && !calibrationStatus.MatchesCurrentResolution && (
+              <div className="flex items-start gap-1.5 text-xs px-2 py-1.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                <span>
+                  Saved calibration is for {calibrationStatus.CalibratedWidth}x{calibrationStatus.CalibratedHeight}, not this
+                  camera's current resolution - any bound AprilTag pose estimation will be wrong until it's redone.
+                </span>
+              </div>
+            )}
 
             <div>
               <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">

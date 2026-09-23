@@ -1,4 +1,4 @@
-import type { CameraHardwareInfo, CameraMode, Model, StereoCalibrationResult, StereoDepthStats, PipelineProfile, NodeTypesResponse, CameraCalibrationResult, CalibrationCoverage, NetworkTablesStatus } from '../types';
+import type { CameraHardwareInfo, CameraMode, Model, StereoCalibrationResult, StereoDepthStats, PipelineProfile, NodeTypesResponse, CameraCalibrationResult, CalibrationCoverage, CalibrationStatus, NetworkTablesStatus } from '../types';
 
 export class ApiService {
   // Relative to wherever this page is served from - the C# server always serves its own built
@@ -96,6 +96,14 @@ export class ApiService {
 
   async setCameraGain(id: number, gain: number): Promise<boolean> {
     const response = await fetch(`${this.baseUrl}/cameraSource/${id}/gain?gain=${gain}`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // ROADMAP.md Phase 8/E5: surfaces a stale/missing calibration after a resolution change -
+  // consumed as a warning badge by Inspector.tsx/PipelineNode.tsx.
+  async getCalibrationStatus(id: number): Promise<CalibrationStatus> {
+    const response = await fetch(`${this.baseUrl}/cameraSource/${id}/calibrationStatus`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }

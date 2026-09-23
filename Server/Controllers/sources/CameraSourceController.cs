@@ -99,6 +99,16 @@ namespace Server.Controllers.sources
             return Task.FromResult(CameraModeDto.From(ManagerWrapper.Instance.GetCameraCurrentMode(id)));
         }
 
+        // GET: whether this camera has a saved calibration, and whether that calibration still
+        // matches the camera's CURRENT capture mode (ROADMAP.md Phase 8/E5) - a SetMode call
+        // above can silently leave a bound ApriltagDetector's pose estimation running on
+        // intrinsics computed for a different resolution, with nothing else surfacing that.
+        [Route(HttpVerbs.Get, "/cameraSource/{id}/calibrationStatus")]
+        public Task<CalibrationStatusDto> GetCalibrationStatus(int id)
+        {
+            return Task.FromResult(CalibrationStatusDto.From(CalibrationManager.Instance.GetCalibrationStatus(id)));
+        }
+
         // PATCH: request an explicit capture mode. Returns whether the underlying ioctl/API call
         // itself succeeded - NOT whether the device honoured it exactly; re-GET /currentMode
         // afterwards for that.

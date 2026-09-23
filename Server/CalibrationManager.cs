@@ -9,6 +9,13 @@ namespace Server
         public long CalibratedAtUnixMs { get; set; }
     }
 
+    // ROADMAP.md Phase 8/E5: a calibration is only valid at the exact resolution it was computed
+    // at (see StoredCalibration's own comment on the codebase's existing lookup key), but nothing
+    // previously surfaced when a camera's CURRENT mode had drifted away from that - a
+    // SetCameraMode call silently left any bound ApriltagDetector's pose estimation running on
+    // now-mismatched (or, worse, stale-but-still-attached) intrinsics with no visible warning.
+    public record struct CalibrationStatus(bool HasCalibration, bool MatchesCurrentResolution, int? CalibratedWidth, int? CalibratedHeight);
+
     // Persists calibration results keyed by camera device path + resolution (a result is only
     // valid for the exact resolution it was computed at), so a calibration survives a server
     // restart and doesn't need re-doing every time a camera source is recreated.
@@ -73,5 +80,27 @@ namespace Server
         }
 
         public List<StoredCalibration> GetAll() => calibrations;
+
+        // Not GetLatest(cameraPath, width, height) - this deliberately ignores the current
+        // resolution when looking a calibration up, then compares it against the camera's actual
+        // current mode itself, so it can tell "never calibrated" apart from "calibrated, but not
+        // at this resolution" rather than treating both as one "no match" case the way an
+        // exact-key lookup would.
+        public CalibrationStatus GetCalibrationStatus(int sourceId)
+        {
+            Source? source = SourceManager.Instance.GetSourceById(sourceId);
+            string? cameraPath = source?.CameraHardwareInfo?.path;
+            if (cameraPath == null) return new CalibrationStatus(false, false, null, null);
+
+            StoredCalibration? latest = calibrations
+                .Where(c => c.CameraPath == cameraPath)
+                .OrderByDescending(c => c.CalibratedAtUnixMs)
+                .FirstOrDefault();
+            if (latest == null) return new CalibrationStatus(false, false, null, null);
+
+            CameraMode currentMode = ManagerWrapper.Instance.GetCameraCurrentMode(sourceId);
+            bool matches = latest.Result.imageWidth == currentMode.width && latest.Result.imageHeight == currentMode.height;
+            return new CalibrationStatus(true, matches, latest.Result.imageWidth, latest.Result.imageHeight);
+        }
     }
 }
