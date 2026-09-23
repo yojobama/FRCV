@@ -18,12 +18,6 @@ namespace Server
                 .WithCors("*", "*", "*")
                 .WithWebApi("/api", m =>
                 {
-                    // RecordingSinkController/RecordSink were deleted outright rather than left
-                    // half-implemented (ROADMAP.md Phase 0's own "implement or delete" decision):
-                    // the C++ side never initialized its VideoWriter, Manager::CreateRecordingSink
-                    // never actually registered a sink, and the controller only ever threw
-                    // NotImplementedException - nothing real to keep.
-                    //
                     // Registered from RegisteredControllers.All (not one m.WithController<T>()
                     // call per type) so this list and Server/OpenApi's generated document can
                     // never drift apart - a controller reachable here is exactly a controller

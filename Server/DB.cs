@@ -119,6 +119,19 @@ namespace Server
                         SinkManager.Instance.AddSink(sink.Name, sink.Type.ToString(), sink.Id);
                     }
 
+                    // AddSink's generic (name, type, id) switch has no case for RecordSink - its
+                    // config (dstFolder/encoder/segment/retention) doesn't fit that signature, and
+                    // silently not restoring it would mean a recording never resumes after a
+                    // restart mid-competition-day. RestoreRecordSink reads the persisted Sink
+                    // object directly instead - see its own comment.
+                    foreach (var sink in sinks)
+                    {
+                        if (sink.Type == SinkType.RecordSink)
+                        {
+                            SinkManager.Instance.RestoreRecordSink(sink);
+                        }
+                    }
+
                     // AddSink only recreates the native node; the source->sink binding itself
                     // was never restored here, so every pipeline came back unbound after a
                     // restart (the robot power-cycles - this mattered). Sources must exist
@@ -151,7 +164,10 @@ namespace Server
                     // runs the H.264 encoder on every frame regardless of whether a peer is
                     // connected, so starting it before any client has even asked for a stream
                     // is pure waste. StartSinkById (re-)starts a sink's bound source too, which
-                    // is safe now that ISource/ISink::Toggle are idempotent.
+                    // is safe now that ISource/ISink::Toggle are idempotent. RecordSink is
+                    // deliberately NOT excluded here - a recording that was running is exactly
+                    // the kind of thing that should resume unattended after a restart
+                    // mid-competition-day, same reasoning as NetworkTablesSink/StereoDepthSink.
                     foreach (var sink in sinks)
                     {
                         // StereoCalibrationSink is interactive/operator-driven like

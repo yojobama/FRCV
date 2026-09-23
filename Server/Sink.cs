@@ -35,6 +35,8 @@ namespace Server
         DepthFusionSink = 8,
         [Description("MjpegSink")]
         MjpegSink = 9,
+        [Description("RecordSink")]
+        RecordSink = 10,
     }
 
     public class Sink
@@ -106,6 +108,18 @@ namespace Server
         // (see DepthFusionNode.h / AttachDepthFusionSource) - not a Source, since it isn't
         // reached through the normal ISink bind/Process path at all.
         public int? DepthSourceId { get; set; }
+
+        // RecordSink only: persisted so DB.Load()'s restore switch can recreate the native
+        // RecordSink with its original config after a server restart - unlike WebRTCSink/
+        // MjpegSink's already-accepted "not restorable across a restart" gap (fine for an
+        // ephemeral live-view sink), a recording silently not resuming mid-competition-day is a
+        // real problem worth avoiding here. Null for every other sink type.
+        public string? RecordDstFolder { get; set; }
+        public string? RecordEncoderName { get; set; }
+        public int? RecordBitrateKbps { get; set; }
+        public int? RecordSegmentSeconds { get; set; }
+        public long? RecordMaxFolderSizeBytes { get; set; }
+        public int? RecordMaxFileCount { get; set; }
 
         // ROADMAP.md Phase 8c: this constructor used to accept an unused `source` parameter -
         // no call site anywhere in this codebase ever passed one (confirmed by grepping every

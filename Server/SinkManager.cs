@@ -307,6 +307,77 @@ namespace Server
 
         public string GetMjpegFrameBase64(int sinkId) => ManagerWrapper.Instance.GetMjpegFrameBase64(sinkId);
 
+        // creates a RecordSink; bind it (BindSourceToSink) to any single frame-producing node -
+        // a raw camera, or a detector's annotated output - to record that stage to segmented MP4
+        // files plus a JSON-Lines telemetry sidecar per segment (see RecordSink.h's own comment).
+        // dstFolder is relative to the server's own working directory, matching ImageFileSource/
+        // VideoFileSource's "images/"/"videos/" convention - defaults to a name-derived folder
+        // under "recordings/" (not an id-derived one: the native id doesn't exist until AFTER
+        // CreateRecordSink runs, and the sink's own name is already known before that call).
+        public int AddRecordSink(string name, string? dstFolder = null, string? encoderName = null,
+            int bitrateKbps = 8000, int fps = 30, int segmentSeconds = 300,
+            long maxFolderSizeBytes = 0, int maxFileCount = 0)
+        {
+            string resolvedFolder = dstFolder ?? System.IO.Path.Combine("recordings", SanitizeFolderName(name));
+            string resolvedEncoder = encoderName ?? "libx264";
+            int id = ManagerWrapper.Instance.CreateRecordSink(resolvedFolder, resolvedEncoder, bitrateKbps, fps, segmentSeconds, maxFolderSizeBytes, maxFileCount);
+            sinks.Add(new Sink(id, name, SinkType.RecordSink)
+            {
+                RecordDstFolder = resolvedFolder,
+                RecordEncoderName = resolvedEncoder,
+                RecordBitrateKbps = bitrateKbps,
+                RecordSegmentSeconds = segmentSeconds,
+                RecordMaxFolderSizeBytes = maxFolderSizeBytes,
+                RecordMaxFileCount = maxFileCount,
+            });
+            DB.Instance.Save();
+            return id;
+        }
+
+        // a RecordSink's own dstFolder is a real filesystem path (see AddRecordSink's own
+        // comment) - a sink name is free-text from a REST caller, so this strips anything that
+        // isn't alphanumeric/dash/underscore before it becomes part of one.
+        private static string SanitizeFolderName(string name)
+        {
+            var sanitized = new System.Text.StringBuilder();
+            foreach (char c in name)
+            {
+                sanitized.Append(char.IsLetterOrDigit(c) || c == '-' || c == '_' ? c : '_');
+            }
+            return sanitized.Length > 0 ? sanitized.ToString() : "sink";
+        }
+
+        // DB.Load()'s restore path - see its own comment on why RecordSink needs a dedicated
+        // restore call rather than going through AddSink's generic (name, type, id) switch: that
+        // signature has no room for RecordSink's own config (dstFolder/encoder/segment/retention),
+        // which must survive a restart for a recording actually to resume.
+        public int RestoreRecordSink(Sink persisted)
+        {
+            string dstFolder = persisted.RecordDstFolder ?? System.IO.Path.Combine("recordings", persisted.Id.ToString());
+            int id = ManagerWrapper.Instance.CreateRecordSink(persisted.Id, dstFolder,
+                persisted.RecordEncoderName ?? "libx264", persisted.RecordBitrateKbps ?? 8000, 30,
+                persisted.RecordSegmentSeconds ?? 300, persisted.RecordMaxFolderSizeBytes ?? 0,
+                persisted.RecordMaxFileCount ?? 0);
+            sinks.Add(new Sink(id, persisted.Name, SinkType.RecordSink)
+            {
+                RecordDstFolder = dstFolder,
+                RecordEncoderName = persisted.RecordEncoderName,
+                RecordBitrateKbps = persisted.RecordBitrateKbps,
+                RecordSegmentSeconds = persisted.RecordSegmentSeconds,
+                RecordMaxFolderSizeBytes = persisted.RecordMaxFolderSizeBytes,
+                RecordMaxFileCount = persisted.RecordMaxFileCount,
+            });
+            return id;
+        }
+
+        // filenames only, newest first - Server/Controllers/sinks/RecordSinkController.cs
+        // resolves these against this sink's own RecordDstFolder for download/promote/delete,
+        // never a caller-supplied path.
+        public List<string> GetRecordSinkSegments(int sinkId) =>
+            ManagerWrapper.Instance.GetRecordSinkSegments(sinkId).ToList();
+        public bool DeleteRecordSinkSegment(int sinkId, string filename) =>
+            ManagerWrapper.Instance.DeleteRecordSinkSegment(sinkId, filename);
+
         public string WebRTCCreateOffer(int sinkId) => ManagerWrapper.Instance.WebRTCCreateOffer(sinkId);
         public void WebRTCSetAnswer(int sinkId, string sdp) => ManagerWrapper.Instance.WebRTCSetAnswer(sinkId, sdp);
         public void WebRTCAddIceCandidate(int sinkId, string candidate, string mid) =>
