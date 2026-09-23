@@ -274,6 +274,12 @@ public:
 	int CreateNetworkTablesSinkForServer(int id, string serverAddress, int port, string rootTable, string clientIdentity);
 	bool IsNetworkTablesSinkConnected(int sinkId);
 	string GetNetworkTablesSinkStatus(int sinkId);
+	// drains every pending robot-writable config/pipelineIndex and config/driverMode write this
+	// sink has seen since the last call, as a JSON array (see NetworkTablesSink::PollConfigRequests
+	// for the exact shape). The caller (the C# Server side, on its own existing periodic loop) is
+	// responsible for actually applying each request - e.g. a driverMode entry via this same
+	// Manager's own SetDriverMode(int.Parse(sourceId), ...) - nothing does that yet.
+	string PollNetworkTablesSinkConfigRequests(int sinkId);
 
 	// terminal sink: bind any single frame-producing node (raw camera, or a detector's
 	// annotated output) and it encodes+streams it over WebRTC. Deliberately takes only

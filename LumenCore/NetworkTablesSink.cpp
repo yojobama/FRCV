@@ -6,6 +6,7 @@
 #include <cmath>
 #include <cstring>
 #include <numbers>
+#include <string_view>
 
 namespace {
 	// arbitrary but generous; a real deployment binds a handful of detector nodes, not dozens
@@ -207,11 +208,74 @@ NetworkTablesSink::NetworkTablesSink(std::shared_ptr<Logger> logger, std::string
 		m_Instance.SetServer(config.serverAddress, config.port);
 	}
 	m_Instance.StartClient4(config.clientIdentity);
+
+	// prefix-subscribed to this sink's own whole subtree (not per-bound-source - ISink has no
+	// hook for "a source just got bound/unbound" this could piggyback on, and a robot writing to
+	// an id nothing is currently bound to is just a harmless no-op once polled) so a robot can
+	// write "<rootTable>/<sourceId>/config/pipelineIndex" or ".../driverMode" for any source this
+	// sink ever publishes, present or not yet bound.
+	// leading slash required - every real topic name is absolute ("/lumenvision/...", confirmed
+	// against this sink's own published topics), and a prefix without it matches nothing at all
+	// (confirmed the hard way: the listener never fired once, silently, with no error).
+	std::string configPrefix = "/" + m_Config.rootTable + "/";
+	std::array<std::string_view, 1> prefixes{ std::string_view(configPrefix) };
+	m_ConfigListener = m_Instance.AddListener(prefixes, NT_EVENT_VALUE_REMOTE,
+		[this](const nt::Event& event) { OnConfigValueChanged(event); });
 }
 
 NetworkTablesSink::~NetworkTablesSink()
 {
+	m_Instance.RemoveListener(m_ConfigListener);
 	m_Instance.StopClient();
+}
+
+void NetworkTablesSink::OnConfigValueChanged(const nt::Event& event)
+{
+	const nt::ValueEventData* valueData = event.GetValueEventData();
+	if (valueData == nullptr) return;
+
+	// "/<rootTable>/<sourceId>/config/pipelineIndex" or ".../driverMode" - GetTopicName always
+	// returns a leading-slash absolute name (confirmed against every other topic this sink itself
+	// publishes), so the expected prefix below includes it too.
+	std::string name = nt::GetTopicName(valueData->topic);
+	std::string prefix = "/" + m_Config.rootTable + "/";
+	if (name.rfind(prefix, 0) != 0) return;
+	std::string rest = name.substr(prefix.size());
+
+	size_t firstSlash = rest.find('/');
+	size_t secondSlash = rest.find('/', firstSlash == std::string::npos ? std::string::npos : firstSlash + 1);
+	if (firstSlash == std::string::npos || secondSlash == std::string::npos) return;
+	if (rest.substr(firstSlash + 1, secondSlash - firstSlash - 1) != "config") return;
+
+	std::string sourceId = rest.substr(0, firstSlash);
+	std::string leaf = rest.substr(secondSlash + 1);
+
+	std::lock_guard<std::mutex> lock(m_ConfigMutex);
+	if (leaf == "pipelineIndex" && (valueData->value.IsInteger() || valueData->value.IsDouble())) {
+		m_PendingConfig[sourceId].pipelineIndex = valueData->value.IsInteger()
+			? static_cast<int>(valueData->value.GetInteger())
+			: static_cast<int>(valueData->value.GetDouble());
+	} else if (leaf == "driverMode" && valueData->value.IsBoolean()) {
+		m_PendingConfig[sourceId].driverMode = valueData->value.GetBoolean();
+	}
+}
+
+std::string NetworkTablesSink::PollConfigRequests()
+{
+	std::unordered_map<std::string, PendingConfigRequest> drained;
+	{
+		std::lock_guard<std::mutex> lock(m_ConfigMutex);
+		drained.swap(m_PendingConfig);
+	}
+
+	nlohmann::json out = nlohmann::json::array();
+	for (const auto& [sourceId, request] : drained) {
+		nlohmann::json entry{ {"sourceId", sourceId} };
+		if (request.pipelineIndex.has_value()) entry["pipelineIndex"] = request.pipelineIndex.value();
+		if (request.driverMode.has_value()) entry["driverMode"] = request.driverMode.value();
+		out.push_back(entry);
+	}
+	return out.dump();
 }
 
 bool NetworkTablesSink::IsConnected() const

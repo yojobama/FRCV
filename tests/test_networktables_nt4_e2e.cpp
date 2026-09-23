@@ -138,3 +138,46 @@ TEST_CASE("NetworkTablesSink publishes the real NT4 schema end to end over a loo
 	client.StopClient();
 	server.StopServer();
 }
+
+TEST_CASE("NetworkTablesSink surfaces robot-writable config/pipelineIndex and config/driverMode writes", "[nt4]") {
+	constexpr unsigned int TEST_NT3_PORT = 17811;
+	constexpr unsigned int TEST_NT4_PORT = 17812;
+
+	nt::NetworkTableInstance server = nt::NetworkTableInstance::Create();
+	server.StartServer("", "127.0.0.1", TEST_NT3_PORT, TEST_NT4_PORT);
+
+	auto logger = std::make_shared<Logger>("LumenCoreTests-nt4-config.log");
+	NetworkTablesConfig config;
+	config.serverAddress = "127.0.0.1";
+	config.port = TEST_NT4_PORT;
+	config.rootTable = "lumenvision";
+	config.clientIdentity = "LumenCoreTests-nt4-config-sink";
+	auto ntSink = std::make_shared<NetworkTablesSink>(logger, "nt4-config-sink", config);
+
+	// nothing bound, and no Process() tick ever runs - PollConfigRequests must work purely off
+	// the listener callback, independent of this sink's own publish cadence.
+	REQUIRE(ntSink->PollConfigRequests() == "[]");
+
+	nt::NetworkTableInstance robot = nt::NetworkTableInstance::Create();
+	robot.SetServer("127.0.0.1", TEST_NT4_PORT);
+	robot.StartClient4("LumenCoreTests-nt4-config-robot");
+	auto robotSourceTable = robot.GetTable("lumenvision/some-detector-id");
+	robotSourceTable->PutBoolean("config/driverMode", true);
+	robotSourceTable->PutNumber("config/pipelineIndex", 3);
+
+	nlohmann::json requests;
+	REQUIRE(WaitUntil([&] {
+		requests = nlohmann::json::parse(ntSink->PollConfigRequests(), nullptr, false);
+		return !requests.is_discarded() && !requests.empty();
+	}));
+	REQUIRE(requests.size() == 1);
+	REQUIRE(requests[0]["sourceId"] == "some-detector-id");
+	REQUIRE(requests[0]["driverMode"] == true);
+	REQUIRE(requests[0]["pipelineIndex"] == 3);
+
+	// consumed, not just read - a second poll with no new writes must come back empty
+	REQUIRE(ntSink->PollConfigRequests() == "[]");
+
+	robot.StopClient();
+	server.StopServer();
+}

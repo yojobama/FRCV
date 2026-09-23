@@ -1230,6 +1230,23 @@ string Manager::GetNetworkTablesSinkStatus(int sinkId)
 
     return p_NtSink->GetConnectionStatus();
 }
+
+string Manager::PollNetworkTablesSinkConfigRequests(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) {
+        m_Logger->EnterLog("Sink not found: " + std::to_string(sinkId));
+        return "[]";
+    }
+
+    NetworkTablesSink* p_NtSink = dynamic_cast<NetworkTablesSink*>(sink->second.get());
+    if (p_NtSink == nullptr) {
+        m_Logger->EnterLog("Sink " + std::to_string(sinkId) + " is not a NetworkTablesSink");
+        return "[]";
+    }
+
+    return p_NtSink->PollConfigRequests();
+}
 #else
 int Manager::CreateNetworkTablesSinkForTeam(int, string, string)
 {
@@ -1249,6 +1266,7 @@ int Manager::CreateNetworkTablesSinkForServer(int, string, int, string, string)
 }
 bool Manager::IsNetworkTablesSinkConnected(int) { return false; }
 string Manager::GetNetworkTablesSinkStatus(int) { return "{}"; }
+string Manager::PollNetworkTablesSinkConfigRequests(int) { return "[]"; }
 #endif
 
 // Same "declared unconditionally, #ifdef'd body per logical group" pattern as the NT4 block
