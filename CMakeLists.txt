@@ -45,3 +45,10 @@ if(LUMEN_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
+
+# Off by default, same reasoning as LUMEN_BUILD_TESTS - ROADMAP.md Phase 8/E7's standalone
+# per-backend timing tool (tools/lumen-bench), not part of the normal build.
+option(LUMEN_BUILD_TOOLS "Build standalone tools (tools/lumen-bench)" OFF)
+if(LUMEN_BUILD_TOOLS)
+    add_subdirectory(tools/lumen-bench)
+endif()
