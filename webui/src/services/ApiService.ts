@@ -101,6 +101,18 @@ export class ApiService {
     return response.json();
   }
 
+  // Splits one camera source's frame into a fixed crop, published as its own independent
+  // source - the side-by-side/top-bottom stereo building block
+  // (StereoCalibrationWizardPage.tsx's "one camera or two?" first step). Brand new call site,
+  // routed straight through the typed client.
+  async createRoiSource(id: number, x: number, y: number, width: number, height: number): Promise<number> {
+    const { data, error } = await apiClient.POST('/cameraSource/{id}/roi', {
+      params: { path: { id }, query: { x, y, width, height } },
+    });
+    if (error || data == null) throw new Error('Failed to create ROI source');
+    return data;
+  }
+
   // ROADMAP.md Phase 8/E5: surfaces a stale/missing calibration after a resolution change -
   // consumed as a warning badge by Inspector.tsx/PipelineNode.tsx.
   //

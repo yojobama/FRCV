@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Layers, CheckCircle, XCircle, Trash2, Play, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Layers, CheckCircle, XCircle, Trash2, Play, RefreshCw, Camera, Columns2 } from 'lucide-react';
 import { ApiService } from '../services/ApiService';
 import { CoverageHeatmap } from '../components/CoverageHeatmap';
 import type { StereoCalibrationResult, CalibrationCoverage, Source } from '../types';
@@ -18,6 +18,16 @@ export const StereoCalibrationWizardPage: React.FC<{
   const { sinkId } = useParams<{ sinkId: string }>();
   const navigate = useNavigate();
   const id = Number(sinkId);
+
+  // ROADMAP.md Phase 8/E6: "one camera or two?" - a real side-by-side/top-bottom stereo camera
+  // (one V4L2 device producing both eyes in a single frame) is just as common a rig as two
+  // separate cameras, and previously needed the RoiSource split done by hand via a raw REST call
+  // before this wizard was even usable with one. 'choose' is the new first step; 'two'/'one' pick
+  // which of the rest of the wizard's flow applies.
+  const [mode, setMode] = useState<'choose' | 'two' | 'one'>('choose');
+  const [singleCameraId, setSingleCameraId] = useState<number | ''>('');
+  const [splitting, setSplitting] = useState(false);
+  const cameraSources = sources.filter(s => s.type === 'camera');
 
   const [left, setLeft] = useState<number | ''>('');
   const [right, setRight] = useState<number | ''>('');
@@ -48,6 +58,30 @@ export const StereoCalibrationWizardPage: React.FC<{
     const interval = setInterval(refresh, 2000);
     return () => clearInterval(interval);
   }, [refresh]);
+
+  // Splits the chosen camera's current frame in half (left/right eyes) via two RoiSource nodes
+  // (ROADMAP.md Phase 3d, proven this session) and binds them directly - skips the manual "1.
+  // Bind cameras" step entirely, since there's nothing left to choose once the split is done.
+  const splitAndBind = async () => {
+    if (!singleCameraId) return;
+    setSplitting(true);
+    try {
+      const currentMode = await api.getCameraCurrentMode(singleCameraId as number);
+      const leftWidth = Math.floor(currentMode.Width / 2);
+      const rightWidth = currentMode.Width - leftWidth;
+      const leftId = await api.createRoiSource(singleCameraId as number, 0, 0, leftWidth, currentMode.Height);
+      const rightId = await api.createRoiSource(singleCameraId as number, leftWidth, 0, rightWidth, currentMode.Height);
+      await api.bindStereoSources(id, leftId, rightId);
+      setLeft(leftId);
+      setRight(rightId);
+      setBound(true);
+      onToast('Camera split into left/right eyes and bound', 'success');
+    } catch {
+      onToast('Failed to split camera into left/right eyes', 'error');
+    } finally {
+      setSplitting(false);
+    }
+  };
 
   const bind = async () => {
     if (!left || !right) return;
@@ -111,30 +145,76 @@ export const StereoCalibrationWizardPage: React.FC<{
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-3">1. Bind cameras</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-            <label className="block text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Left camera</span>
-              <select className="mt-1 w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" value={left} onChange={e => setLeft(e.target.value ? Number(e.target.value) : '')}>
-                <option value="">Select…</option>
-                {sources.map(s => <option key={s.id} value={s.id}>{s.name} (#{s.id})</option>)}
-              </select>
-            </label>
-            <label className="block text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Right camera</span>
-              <select className="mt-1 w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" value={right} onChange={e => setRight(e.target.value ? Number(e.target.value) : '')}>
-                <option value="">Select…</option>
-                {sources.map(s => <option key={s.id} value={s.id}>{s.name} (#{s.id})</option>)}
-              </select>
-            </label>
-            <button disabled={busy || !left || !right} onClick={bind} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded text-sm font-medium">Bind</button>
+        {mode === 'choose' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 className="font-semibold text-gray-900 dark:text-white mb-3">1. One camera or two?</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <button
+                onClick={() => setMode('two')}
+                className="flex flex-col items-center gap-2 p-6 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 text-center"
+              >
+                <Layers className="w-8 h-8 text-blue-600" />
+                <span className="font-medium text-gray-900 dark:text-white">Two separate cameras</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Bind two already-created camera sources as left/right eyes</span>
+              </button>
+              <button
+                onClick={() => setMode('one')}
+                className="flex flex-col items-center gap-2 p-6 border-2 border-gray-200 dark:border-gray-700 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 text-center"
+              >
+                <Columns2 className="w-8 h-8 text-blue-600" />
+                <span className="font-medium text-gray-900 dark:text-white">One side-by-side stereo camera</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Splits a single camera's frame in half into two independent eyes (RoiSource)</span>
+              </button>
+            </div>
           </div>
-          {bound && <p className="text-xs text-green-600 dark:text-green-400 mt-2">Bound</p>}
-        </div>
+        )}
 
+        {mode === 'one' && !bound && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 className="font-semibold text-gray-900 dark:text-white mb-3">1. Split &amp; bind</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+              <label className="block text-sm md:col-span-2">
+                <span className="text-gray-600 dark:text-gray-400">Camera</span>
+                <select className="mt-1 w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" value={singleCameraId} onChange={e => setSingleCameraId(e.target.value ? Number(e.target.value) : '')}>
+                  <option value="">Select…</option>
+                  {cameraSources.map(s => <option key={s.id} value={s.id}>{s.name} (#{s.id})</option>)}
+                </select>
+              </label>
+              <button disabled={splitting || !singleCameraId} onClick={splitAndBind} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded text-sm font-medium flex items-center justify-center gap-2">
+                <Camera className="w-4 h-4" />{splitting ? 'Splitting…' : 'Split & bind'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {mode === 'two' && (
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 className="font-semibold text-gray-900 dark:text-white mb-3">2. Bind cameras</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+              <label className="block text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Left camera</span>
+                <select className="mt-1 w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" value={left} onChange={e => setLeft(e.target.value ? Number(e.target.value) : '')}>
+                  <option value="">Select…</option>
+                  {sources.map(s => <option key={s.id} value={s.id}>{s.name} (#{s.id})</option>)}
+                </select>
+              </label>
+              <label className="block text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Right camera</span>
+                <select className="mt-1 w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white" value={right} onChange={e => setRight(e.target.value ? Number(e.target.value) : '')}>
+                  <option value="">Select…</option>
+                  {sources.map(s => <option key={s.id} value={s.id}>{s.name} (#{s.id})</option>)}
+                </select>
+              </label>
+              <button disabled={busy || !left || !right} onClick={bind} className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded text-sm font-medium">Bind</button>
+            </div>
+            {bound && <p className="text-xs text-green-600 dark:text-green-400 mt-2">Bound</p>}
+          </div>
+        )}
+
+        {bound && (
+        <>
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-3">2. Capture pairs</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-white mb-3">3. Capture pairs</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Left coverage</p>
@@ -153,7 +233,7 @@ export const StereoCalibrationWizardPage: React.FC<{
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="font-semibold text-gray-900 dark:text-white mb-3">3. Run &amp; result</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-white mb-3">4. Run &amp; result</h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
             Check <strong>epipolarRms</strong> - it must be under {EPIPOLAR_RMS_GATE}px for a stereo depth node to
             produce useful output; stereoRms alone doesn't predict this.
@@ -171,6 +251,8 @@ export const StereoCalibrationWizardPage: React.FC<{
           )}
           <button onClick={refresh} className="mt-4 text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"><RefreshCw className="w-3 h-3" />Refresh</button>
         </div>
+        </>
+        )}
       </div>
     </div>
   );
