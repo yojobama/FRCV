@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "CameraMode.h"
+
 class Logger;
 
 // Separated out from Manager.cpp on purpose: Manager.h brings `using namespace std;` into scope,
@@ -24,5 +26,14 @@ struct WindowsCameraDevice {
 // match what a user sees there. Logger is optional (nullable) purely so this can be unit-tested
 // without constructing one.
 std::vector<WindowsCameraDevice> EnumerateWindowsCameras(const std::shared_ptr<Logger>& logger);
+
+// Enumerates the native capture modes (resolution/fps/pixel format) MFEnumDeviceSources'
+// deviceIndex'th device advertises, via an IMFSourceReader's GetNativeMediaType - Windows'
+// equivalent of V4l2CameraBackend's VIDIOC_ENUM_FRAMESIZES/VIDIOC_ENUM_FRAMEINTERVALS walk. This
+// is why OpenCvCameraBackend::EnumerateModes() always returned empty on Windows: cv::VideoCapture
+// genuinely has no generic mode-enumeration API on any backend, MSMF included - it only exposes
+// get/set on the CURRENTLY active mode. Going straight to Media Foundation sidesteps that
+// limitation entirely, the same way this file's device enumeration already does.
+std::vector<CameraMode> EnumerateWindowsCameraModes(int deviceIndex, const std::shared_ptr<Logger>& logger);
 
 #endif // _WIN32

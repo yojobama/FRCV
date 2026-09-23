@@ -5,6 +5,9 @@
 #include <chrono>
 #include <future>
 #include <thread>
+#ifdef _WIN32
+#include "WindowsCameraEnumerator.h"
+#endif
 
 namespace {
 	// cv::VideoCapture's own open call is a plain blocking OS/driver call with no cancellation
@@ -54,6 +57,9 @@ bool OpenCvCameraBackend::Open(const std::string& devicePath)
 	bool isNumericIndex = !trimmed.empty() && std::all_of(trimmed.begin(), trimmed.end(), [](unsigned char c) { return std::isdigit(c); });
 	if (isNumericIndex) {
 		int index = std::stoi(trimmed);
+		// stashed for EnumerateModes() below - cv::VideoCapture itself has no way to report back
+		// which index it was opened with.
+		m_WindowsDeviceIndex = index;
 		// 5s per backend attempt - generous for a real device (which typically opens in well
 		// under a second) without letting one bad camera hold up server startup for long; three
 		// attempts worst-case is 15s, not the infinite hang this replaced.
@@ -106,6 +112,13 @@ CameraGrabResult OpenCvCameraBackend::Grab()
 
 std::vector<CameraMode> OpenCvCameraBackend::EnumerateModes()
 {
+#ifdef _WIN32
+	// only meaningful for a device opened by numeric index (the normal case - see Open()'s own
+	// comment); a real device path, or not opened at all yet, leaves this at -1.
+	if (m_WindowsDeviceIndex >= 0) {
+		return EnumerateWindowsCameraModes(m_WindowsDeviceIndex, nullptr);
+	}
+#endif
 	return {};
 }
 

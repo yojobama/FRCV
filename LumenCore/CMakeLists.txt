@@ -158,10 +158,12 @@ if(MSVC)
     # asserts on it (fmt/base.h's Unicode support check).
     target_compile_definitions(LumenCore PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
     target_compile_options(LumenCore PRIVATE /W3 /permissive- /utf-8)
-    # Media Foundation (Manager.cpp's Windows EnumerateAvailableCameras - MFEnumDeviceSources)
-    # ships as part of the Windows SDK, not a vcpkg/FetchContent dependency - plain .lib names
-    # are enough, same as any other Windows SDK import library.
-    target_link_libraries(LumenCore PRIVATE mfplat mf mfuuid Ole32)
+    # Media Foundation (WindowsCameraEnumerator.cpp's device + mode enumeration -
+    # MFEnumDeviceSources/IMFSourceReader) ships as part of the Windows SDK, not a
+    # vcpkg/FetchContent dependency - plain .lib names are enough, same as any other Windows SDK
+    # import library. mfreadwrite is IMFSourceReader's own lib (MFCreateSourceReaderFromMediaSource) -
+    # EnumerateWindowsCameraModes needs it, EnumerateWindowsCameras alone didn't.
+    target_link_libraries(LumenCore PRIVATE mfplat mf mfuuid mfreadwrite Ole32)
 else()
     target_compile_options(LumenCore PRIVATE -Wall -Wextra -Wno-unused-parameter)
 endif()

@@ -51,8 +51,11 @@ public:
 	virtual std::string Name() const = 0;
 
 	// Real device capabilities, queried after Open(). Empty on a backend with no way to enumerate
-	// them (e.g. OpenCvCameraBackend, which has no generic cross-platform capability query -
-	// see its own comment).
+	// them at all - none exist today: V4l2CameraBackend (CameraBackendFactory's preferred Linux
+	// backend) answers this via V4L2 ioctls, and OpenCvCameraBackend (the fallback there, and the
+	// only backend on every other platform including Windows) goes straight to Media Foundation
+	// on Windows specifically, bypassing cv::VideoCapture's own lack of a generic capability
+	// query - see OpenCvCameraBackend's own comment.
 	virtual std::vector<CameraMode> EnumerateModes() = 0;
 
 	// Both V4L2 and Media Foundation silently substitute a nearest mode rather than failing on a
