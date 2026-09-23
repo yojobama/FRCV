@@ -28,6 +28,14 @@ public:
 protected:
 
     virtual void Process(const std::vector<SourceResult>& sources) = 0;
+    // called once Toggle(false) has fully stopped this sink's own processing thread (already
+    // joined by the time this runs, so overriding this to do teardown work never races Process()
+    // on another thread) - default no-op. RecordSink overrides this to finalize whatever segment
+    // was still open when recording stopped (write the container trailer, close the sidecar),
+    // so a user stopping a recording gets back a genuinely playable file right away instead of
+    // one that only becomes valid once the sink is later deleted or a future segment rotation
+    // happens to close it.
+    virtual void OnStopped() {}
 private:
     std::shared_ptr<Logger> m_Logger;
 

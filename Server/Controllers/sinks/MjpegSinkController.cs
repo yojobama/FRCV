@@ -13,10 +13,17 @@ namespace Server.Controllers.sinks
     {
         // POST: create an MjpegSink. Bind it afterwards (PATCH /sink/bind) to the node whose
         // frames should be streamed, same as WebRTCSink.
+        //
+        // jpegQuality is nullable, resolved to its real default (80) in the body via ?? - NOT a
+        // plain `int jpegQuality = 80` C# default parameter. See RecordSinkController.Create's
+        // own comment for why: EmbedIO's [QueryField] binding does not apply a value-type
+        // parameter's C# default when the query string omits that key, it silently binds
+        // default(int) (0) instead - a caller omitting jpegQuality here would have silently gotten
+        // cv::IMWRITE_JPEG_QUALITY=0 (the worst possible quality setting, not merely "low").
         [Route(HttpVerbs.Post, "/mjpegSink/create")]
-        public Task<int> Create([QueryField] string name, [QueryField] int jpegQuality = 80)
+        public Task<int> Create([QueryField] string name, [QueryField] int? jpegQuality = null)
         {
-            int sinkId = SinkManager.Instance.AddMjpegSink(name, jpegQuality);
+            int sinkId = SinkManager.Instance.AddMjpegSink(name, jpegQuality ?? 80);
             return Task.FromResult(sinkId);
         }
     }

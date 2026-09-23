@@ -26,13 +26,24 @@ namespace Server.Controllers.sinks
         // frames should be recorded, same as WebRTCSink/MjpegSink. dstFolder defaults to null
         // (resolved from the sink's own name - see SinkManager.AddRecordSink's own comment) so a
         // caller doesn't have to invent a path just to start recording.
+        //
+        // Every numeric parameter is nullable here, resolved to its real default in the method
+        // body via ?? - NOT a plain `int x = 8000`-style C# default parameter. Confirmed the hard
+        // way: EmbedIO's [QueryField] binding does not apply a value-type parameter's own C#
+        // default when the query string omits that key - it silently binds default(int) (0)
+        // instead, which happened to make fps and bitrateKbps 0 and avcodec_open2 fail outright
+        // ("The encoder timebase is not set") the first time this endpoint was called without
+        // every parameter spelled out. A nullable value type's "absent" state is unambiguous, so
+        // the binder leaves it null instead of guessing - the same reason dstFolder/encoderName
+        // above were already nullable strings rather than defaulted non-nullable ones.
         [Route(HttpVerbs.Post, "/recordSink/create")]
         public Task<int> Create([QueryField] string name, [QueryField] string? dstFolder = null,
-            [QueryField] string? encoderName = null, [QueryField] int bitrateKbps = 8000,
-            [QueryField] int fps = 30, [QueryField] int segmentSeconds = 300,
-            [QueryField] long maxFolderSizeBytes = 0, [QueryField] int maxFileCount = 0)
+            [QueryField] string? encoderName = null, [QueryField] int? bitrateKbps = null,
+            [QueryField] int? fps = null, [QueryField] int? segmentSeconds = null,
+            [QueryField] long? maxFolderSizeBytes = null, [QueryField] int? maxFileCount = null)
         {
-            int sinkId = SinkManager.Instance.AddRecordSink(name, dstFolder, encoderName, bitrateKbps, fps, segmentSeconds, maxFolderSizeBytes, maxFileCount);
+            int sinkId = SinkManager.Instance.AddRecordSink(name, dstFolder, encoderName,
+                bitrateKbps ?? 8000, fps ?? 30, segmentSeconds ?? 300, maxFolderSizeBytes ?? 0, maxFileCount ?? 0);
             return Task.FromResult(sinkId);
         }
 

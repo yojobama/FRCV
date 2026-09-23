@@ -73,6 +73,10 @@ public:
 
 private:
 	void Process(const std::vector<SourceResult>& results) override;
+	// ISink::Toggle(false), once the processing thread has already stopped - finalizes whatever
+	// segment was still open (real trailer written, sidecar closed) so a user stopping a
+	// recording gets back a genuinely playable file immediately. See ISink.h's own comment.
+	void OnStopped() override;
 
 	void StartNewSegment(int width, int height); // caller must already hold m_Mutex
 	void CloseCurrentSegment();                  // caller must already hold m_Mutex

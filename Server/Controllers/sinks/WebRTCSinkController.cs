@@ -19,12 +19,21 @@ namespace Server.Controllers.sinks
         // GetPreferredWebRTCEncoder() probes real hardware encoder availability rather than
         // assuming Windows/WSL vs. the Orange Pi from the platform alone (a C# default parameter
         // must be a compile-time constant, so that probe can't just be the parameter default).
+        //
+        // bitrateKbps/fps are nullable, resolved to their real default in the body via ?? - NOT
+        // plain `int x = 4000`-style C# default parameters. See
+        // RecordSinkController.Create's own comment for why: EmbedIO's [QueryField] binding does
+        // not apply a value-type parameter's C# default when the query string omits that key, it
+        // silently binds default(int) (0) instead - confirmed the hard way building RecordSink's
+        // own /recordSink/create, and this endpoint had the exact same latent bug (a caller
+        // omitting bitrateKbps/fps here would have silently gotten a 0 kbps/0 fps encoder
+        // configuration, not the documented 4000/30 defaults).
         [Route(HttpVerbs.Post, "/webrtcSink/create")]
-        public Task<int> Create([QueryField] string name, [QueryField] int bitrateKbps = 4000,
-            [QueryField] int fps = 30, [QueryField] string? encoderName = null)
+        public Task<int> Create([QueryField] string name, [QueryField] int? bitrateKbps = null,
+            [QueryField] int? fps = null, [QueryField] string? encoderName = null)
         {
             string resolvedEncoderName = encoderName ?? ManagerWrapper.Instance.GetPreferredWebRTCEncoder();
-            int sinkId = SinkManager.Instance.AddWebRTCSink(name, bitrateKbps, fps, resolvedEncoderName);
+            int sinkId = SinkManager.Instance.AddWebRTCSink(name, bitrateKbps ?? 4000, fps ?? 30, resolvedEncoderName);
             return Task.FromResult(sinkId);
         }
 

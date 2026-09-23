@@ -95,6 +95,27 @@
   </ItemGroup>
 
   <!--
+    SWIG's generated Interop bindings declare every native entry point as
+    [DllImport("libLumenCore")] - a Linux-style module name (SWIG's own default, not something
+    this project's CMake naming chose; LumenCore/CMakeLists.txt genuinely produces "LumenCore.dll"
+    on Windows, no "lib" prefix, matching every other native Windows DLL). .NET's own unmanaged-DLL
+    resolution does NOT strip a "lib" prefix on Windows the way the equivalent lookup effectively
+    does on Linux (where "libLumenCore.so" - the real CMake output there too - already matches the
+    DllImport name literally) - confirmed the hard way: a truly clean `dotnet run` threw
+    DllNotFoundException for "libLumenCore" even with "LumenCore.dll" sitting right there in the
+    output directory, and every earlier successful run this session turned out to have been
+    reusing an already-running server process rather than actually validating a fresh start. This
+    second copy, aliased to the literal filename P/Invoke needs, is what a clean run actually
+    requires - Linux needs no equivalent since CMake's own output there is already named right.
+  -->
+  <ItemGroup Condition="Exists('$(LumenCoreStageDir)\LumenCore.dll')">
+    <Content Include="$(LumenCoreStageDir)\LumenCore.dll">
+      <Link>libLumenCore.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!--
     The React WebUI (webui) is a separate npm/Vite project, not part of this C# build graph -
     `npm run build` there produces webui\dist, which Program.cs serves as static files from a
     "wwwroot" folder next to Server.dll. Guarded on Exists() the same way as the native library

@@ -45,8 +45,7 @@ RecordSink::RecordSink(std::shared_ptr<Logger> logger, std::string id, RecordSin
 RecordSink::~RecordSink()
 {
 	std::lock_guard<std::mutex> lock(m_Mutex);
-	CloseCurrentSegment();
-	ShutdownEncoder();
+	CloseCurrentSegment(); // also shuts the encoder down - see its own comment
 }
 
 std::vector<std::string> RecordSink::ListSegments() const
@@ -159,8 +158,16 @@ bool RecordSink::EnsureEncoderInitialized(int width, int height)
 	// spending more CPU per frame for meaningfully better compression is the right tradeoff here.
 	av_opt_set(m_CodecContext->priv_data, "preset", "medium", 0);
 
-	if (avcodec_open2(m_CodecContext, codec, nullptr) < 0) {
-		if (m_Logger) m_Logger->EnterLog(LogLevel::Error, "RecordSink: avcodec_open2 failed for " + m_Config.encoderName);
+	int openResult = avcodec_open2(m_CodecContext, codec, nullptr);
+	if (openResult < 0) {
+		// av_strerror, not just the bare negative code - "The encoder timebase is not set"
+		// (fps=0 reaching here, confirmed the hard way - see RecordSinkController.Create's own
+		// comment for the actual EmbedIO binding bug that caused it) would otherwise have shown
+		// up as nothing more than a bare "-22", not enough to diagnose without adding print
+		// statements by hand.
+		char errBuf[256] = {};
+		av_strerror(openResult, errBuf, sizeof(errBuf));
+		if (m_Logger) m_Logger->EnterLog(LogLevel::Error, "RecordSink: avcodec_open2 failed for " + m_Config.encoderName + ": " + errBuf + " (code " + std::to_string(openResult) + ")");
 		avcodec_free_context(&m_CodecContext);
 		return false;
 	}
@@ -234,6 +241,22 @@ void RecordSink::StartNewSegment(int width, int height)
 void RecordSink::CloseCurrentSegment()
 {
 	if (m_FormatContext) {
+		// flush the encoder's own internal buffering before finalizing the container - libx264
+		// can hold frames in its own rate-control lookahead even with max_b_frames=0, and
+		// without an explicit flush (send a null frame, then drain every remaining packet)
+		// whatever frames were still inside the encoder when a segment rotated were silently
+		// lost - confirmed the hard way: a fresh segment's own telemetry sidecar (one line per
+		// real camera frame) had far more entries than the video's own encoded frame count.
+		avcodec_send_frame(m_CodecContext, nullptr);
+		AVPacket* packet = av_packet_alloc();
+		while (avcodec_receive_packet(m_CodecContext, packet) == 0) {
+			packet->stream_index = m_VideoStream->index;
+			av_packet_rescale_ts(packet, m_CodecContext->time_base, m_VideoStream->time_base);
+			av_interleaved_write_frame(m_FormatContext, packet);
+			av_packet_unref(packet);
+		}
+		av_packet_free(&packet);
+
 		av_write_trailer(m_FormatContext);
 		avio_closep(&m_FormatContext->pb);
 		avformat_free_context(m_FormatContext);
@@ -243,6 +266,16 @@ void RecordSink::CloseCurrentSegment()
 	if (m_TelemetrySidecar.is_open()) {
 		m_TelemetrySidecar.close();
 	}
+	// Each segment is its own standalone MP4 with its own PTS timeline starting at 0 (see
+	// StartNewSegment's m_FrameCounter reset) - EnsureEncoderInitialized's own "already
+	// initialized at this size, skip" fast path exists to avoid needless per-frame churn WITHIN
+	// a segment, but reusing that SAME encoder instance ACROSS a segment boundary fed it PTS
+	// values going backwards relative to what it had already internally accumulated. Confirmed
+	// the hard way: this was worse than the missing flush above, not just additive - a second
+	// segment that reused the first one's still-live encoder lost the large majority of its
+	// frames, not just whatever was left in the lookahead buffer. Tearing the encoder down here
+	// means StartNewSegment's EnsureEncoderInitialized call always creates a genuinely fresh one.
+	ShutdownEncoder();
 }
 
 void RecordSink::EncodeAndWrite(const cv::Mat& bgrFrame, const SourceResult& result)
@@ -293,6 +326,14 @@ void RecordSink::Process(const std::vector<SourceResult>& results)
 			EncodeAndWrite(result.frame->AsBgr(), result);
 		}
 	}
+}
+
+void RecordSink::OnStopped()
+{
+	// ISink::Toggle(false) already joined the processing thread before calling this - Process()
+	// cannot be running concurrently, so this is safe without racing EncodeAndWrite's own writes.
+	std::lock_guard<std::mutex> lock(m_Mutex);
+	CloseCurrentSegment();
 }
 
 #endif // LUMEN_WITH_RECORD

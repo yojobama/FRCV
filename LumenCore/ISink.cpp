@@ -48,6 +48,7 @@ void ISink::Toggle(bool toggle)
             m_WakeCV.notify_one();
             m_Thread.join();
 			m_ToggleState = false;
+			OnStopped();
         }
     }
 }
