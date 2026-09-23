@@ -162,7 +162,7 @@ function App() {
       const saved = localStorage.getItem('lumenSettings');
       if (saved) return { ...JSON.parse(saved), serverUrl: window.location.origin };
     } catch { /* ignore malformed/unavailable localStorage, fall through to defaults */ }
-    return { serverUrl: window.location.origin, refreshInterval: 5, nt4: { mode: 'team', rootTable: 'lumenvision' } };
+    return { serverUrl: window.location.origin, nt4: { mode: 'team', rootTable: 'lumenvision' } };
   });
   // NT4 connection details are worth remembering across reloads (they're per-robot, not
   // per-session) - persisted the same way darkMode already is.
@@ -190,12 +190,6 @@ function App() {
     setError,
     setToast
   } = useAppData();
-
-  useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, settings.refreshInterval * 1000);
-    return () => clearInterval(interval);
-  }, [loadData, settings.refreshInterval]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);

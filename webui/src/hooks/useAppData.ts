@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Source, Sink, SystemStats, Toast, DeviceStats, NT4Defaults } from '../types';
 import { ApiService } from '../services/ApiService';
+import { useStateSocket } from './useStateSocket';
 
 // Maps the server's SinkType enum ordinal to the string label this UI uses everywhere - must
 // mirror Server/Sink.cs's SinkType exactly: ApriltagSink=0, ObjectDetectionSink=1,
@@ -24,12 +25,7 @@ export const mapSinkType = (type: any): string => {
 };
 
 // Same story as mapSinkType, for Server/Source.cs's SourceType enum: Camera=0, ImageFile=1,
-// VideoFile=2, SinkOutput=3. Found while verifying Phase 8d/8e: `source.Type || source.type ||
-// 'Unknown'` below used to treat the numeric ordinal as if it were the string field - Camera
-// (0, falsy) fell through to 'Unknown', and every other type (1/2/3, truthy) got assigned the
-// raw NUMBER as `type`, which then crashed StereoPage.tsx's `s.type?.toLowerCase()` filter
-// (confirmed live: TypeError: r.type?.toLowerCase is not a function, reproduced with a real
-// ImageFileSource bound in the graph).
+// VideoFile=2, SinkOutput=3.
 const mapSourceType = (type: any): string => {
   if (typeof type === 'string') return type;
   switch (type) {
@@ -41,114 +37,73 @@ const mapSourceType = (type: any): string => {
   }
 };
 
+// ROADMAP.md Phase 8/E6: Dashboard/StereoPage's data now comes from the same /ws/state push
+// channel the Graph/Match pages already use (useStateSocket), not this hook's own REST polling
+// loop - one snapshot per server tick instead of getAllSources+getAllSinks+N*getSinkStatus+3
+// device-stat calls per client per refresh. What's left of the REST-based ApiService calls here
+// are genuine ACTIONS (toggle/create/bind a sink), not data reads - those still need a real
+// request/response round trip, a push channel has nothing to push until the action completes.
 export const useAppData = () => {
-  const [sources, setSources] = useState<Source[]>([]);
-  const [sinks, setSinks] = useState<Sink[]>([]);
+  const { snapshot, connected } = useStateSocket();
   const [streamingSinks, setStreamingSinks] = useState<Set<number>>(new Set());
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [deviceStats, setDeviceStats] = useState<DeviceStats>({
-    cpuUsage: 0,
-    ramUsage: 0,
-    diskUsage: 0
-  });
-  const [systemStats, setSystemStats] = useState<SystemStats>({
-    sources: 0,
-    sinks: 0,
-    activeStreams: 0,
-    uptime: '00:00:00',
-    serverStatus: 'offline'
-  });
   const [toast, setToast] = useState<Toast | null>(null);
-  
+
   const api = new ApiService();
 
-  // Load device stats
-  const loadDeviceStats = useCallback(async () => {
-    try {
-      const [cpuUsage, ramUsage, diskUsage] = await Promise.all([
-        api.getDeviceCPUUsage().catch(() => 0),
-        api.getDeviceRAMUsage().catch(() => 0),
-        api.getDeviceDiskUsage().catch(() => 0)
-      ]);
-      
-      setDeviceStats({ cpuUsage, ramUsage, diskUsage });
-      return { cpuUsage, ramUsage, diskUsage };
-    } catch (error) {
-      console.warn('Failed to load device stats:', error);
-      return { cpuUsage: 0, ramUsage: 0, diskUsage: 0 };
-    }
-  }, []);
+  // derived, not stored in its own useState+useEffect pair - sources/sinks/deviceStats/
+  // systemStats are all pure functions of the latest snapshot, so there's nothing to
+  // "synchronize" here the way the old REST-polling version had to.
+  const sources: Source[] = useMemo(() => {
+    if (!snapshot) return [];
+    return snapshot.Sources.map(s => ({
+      id: s.Id,
+      name: s.Name || `Source ${s.Id}`,
+      type: mapSourceType(s.Type),
+      status: 'active' as const,
+      lastUpdate: new Date(),
+      filePath: s.FilePath ?? undefined,
+      fps: s.Fps ?? undefined,
+      cameraHardwareInfo: s.CameraHardwareInfo
+        ? { Name: s.CameraHardwareInfo.name, Path: s.CameraHardwareInfo.path }
+        : undefined,
+    }));
+  }, [snapshot]);
 
-  // Load data with error handling
-  const loadData = useCallback(async () => {
-    try {
-      setError(null);
-      
-      // Load all sources using the enhanced utility method
-      const allSources = await api.getAllSources();
-      
-      // Convert to our Source type format
-      const formattedSources: Source[] = allSources.map(source => ({
-        id: source.Id || source.id,
-        name: source.Name || source.name || `Source ${source.Id || source.id}`,
-        type: mapSourceType(source.Type ?? source.type),
-        status: 'active' as const,
-        lastUpdate: new Date(),
-        filePath: source.FilePath || source.filePath,
-        fps: source.Fps || source.fps,
-        cameraHardwareInfo: source.CameraHardwareInfo || source.cameraHardwareInfo
-      }));
+  const sinks: Sink[] = useMemo(() => {
+    if (!snapshot) return [];
+    return snapshot.Sinks.map(({ Sink: s, IsRunning }) => ({
+      id: s.Id,
+      name: s.Name || `Sink ${s.Id}`,
+      type: mapSinkType(s.Type),
+      status: 'active' as const,
+      lastUpdate: new Date(),
+      sourceId: s.Source?.Id,
+      source2Id: s.Source2?.Id,
+      isEnabled: IsRunning,
+    }));
+  }, [snapshot]);
 
-      // Load sinks from backend and map to UI type
-      const serverSinks = await api.getAllSinks().catch(() => [] as any[]);
-      const mappedSinks: Sink[] = await Promise.all(serverSinks.map(async s => {
-        // Load sink status for each sink
-        let isEnabled = false;
-        try {
-          isEnabled = await api.getSinkStatus(s.Id || s.id);
-        } catch (error) {
-          console.warn(`Failed to get status for sink ${s.Id || s.id}:`, error);
-        }
-        
-        return {
-          id: s.Id || s.id,
-          name: s.Name || s.name || `Sink ${s.Id || s.id}`,
-          type: mapSinkType(s.Type ?? s.type),
-          status: 'active',
-          lastUpdate: new Date(),
-          sourceId: (s.Source && (s.Source.Id || s.Source.id)) || (s.source && (s.source.Id || s.source.id)),
-          source2Id: (s.Source2 && (s.Source2.Id || s.Source2.id)) || (s.source2 && (s.source2.Id || s.source2.id)),
-          isEnabled
-        };
-      }));
-      
-      // Load device stats
-      const currentDeviceStats = await loadDeviceStats();
+  // MB, not bytes - WsDeviceStats already reports RamUsageMb directly (unlike the old
+  // getDeviceRAMUsage() REST call, which returned raw bytes) - see DeviceStats's own comment.
+  const deviceStats: DeviceStats = useMemo(() => ({
+    cpuUsage: snapshot?.Device.CpuUsagePercent ?? 0,
+    ramUsage: snapshot?.Device.RamUsageMb ?? 0,
+    diskUsage: snapshot?.Device.DiskUsagePercent ?? 0,
+  }), [snapshot]);
 
-      setSources(formattedSources);
-      setSinks(mappedSinks);
-      
-      // Update system stats with device stats
-      setSystemStats({
-        sources: formattedSources.length,
-        sinks: mappedSinks.length,
-        activeStreams: streamingSinks.size,
-        uptime: new Date().toLocaleTimeString(),
-        serverStatus: 'online',
-        cpuUsage: currentDeviceStats.cpuUsage,
-        ramUsage: currentDeviceStats.ramUsage,
-        diskUsage: currentDeviceStats.diskUsage
-      });
-      
-      setLoading(false);
-    } catch (error) {
-      console.error('Failed to load data:', error);
-      setError(error instanceof Error ? error.message : 'Failed to load data');
-      setSystemStats(prev => ({ ...prev, serverStatus: 'error' }));
-      setLoading(false);
-    }
-  }, [streamingSinks.size, loadDeviceStats]);
+  const systemStats: SystemStats = useMemo(() => ({
+    sources: sources.length,
+    sinks: sinks.length,
+    activeStreams: streamingSinks.size,
+    uptime: new Date().toLocaleTimeString(),
+    serverStatus: snapshot ? 'online' : (connected ? 'online' : 'offline'),
+  }), [sources.length, sinks.length, streamingSinks.size, snapshot, connected]);
+
+  // true only until the first snapshot arrives - after that the app is always showing SOME
+  // data, live-updated, even across a brief disconnect/reconnect (useStateSocket keeps the last
+  // snapshot around rather than clearing it, so a flaky connection doesn't blank the whole UI).
+  const loading = snapshot === null;
 
   const stopStream = (sinkId: number) => {
     setStreamingSinks(prev => {
@@ -190,7 +145,6 @@ export const useAppData = () => {
       const sinkId = await api.createWebRTCSink(`${node.name}-preview`);
       await api.bindSinkToSource(sinkId, node.id);
       await api.toggleSink(sinkId, true);
-      await loadData();
       setStreamingSinks(prev => new Set(prev).add(sinkId));
     } catch (error) {
       showToast(`Failed to start preview: ${error}`, 'error');
@@ -223,7 +177,6 @@ export const useAppData = () => {
         : await api.createNetworkTablesSinkForTeam(`${node.name}-nt4`, nt4.teamNumber!, nt4.rootTable);
       await api.bindSinkToSource(sinkId, node.id);
       await api.toggleSink(sinkId, true);
-      await loadData();
       showToast(`Publishing "${node.name}" to NetworkTables`, 'success');
     } catch (error) {
       showToast(`Failed to toggle NetworkTables publishing: ${error}`, 'error');
@@ -233,23 +186,25 @@ export const useAppData = () => {
   const handleToggleSink = async (sinkId: number, enabled: boolean) => {
     try {
       await api.toggleSink(sinkId, enabled);
-      
-      // Update local state immediately for better UX
-      setSinks(prevSinks => 
-        prevSinks.map(sink => 
-          sink.id === sinkId 
-            ? { ...sink, isEnabled: enabled }
-            : sink
-        )
-      );
-      
       showToast(`Sink ${enabled ? 'enabled' : 'disabled'}`, 'success');
+      // no local optimistic-update / reload-on-failure needed any more - the next /ws/state
+      // tick (well under a second away) reflects the real server-side result either way.
     } catch (error) {
       showToast(`Failed to toggle sink: ${error}`, 'error');
-      // Reload data to revert to actual server state
-      loadData();
     }
   };
+
+  useEffect(() => {
+    if (!connected) setError('Reconnecting to the server...');
+    else setError(null);
+  }, [connected]);
+
+  // vestigial no-op, kept only so existing call sites (Header's "Refresh" button, three actions
+  // in StereoPage.tsx that used to force an immediate reload after a mutation) don't need their
+  // own separate cleanup pass - there is nothing left to "refresh" now that sources/sinks/
+  // deviceStats/systemStats are all live-derived from the socket snapshot above; the next
+  // /ws/state tick (well under a second away) already reflects any change on its own.
+  const loadData = () => {};
 
   return {
     sources,
@@ -261,7 +216,6 @@ export const useAppData = () => {
     deviceStats,
     toast,
     loadData,
-    loadDeviceStats,
     stopStream,
     handleStreamError,
     showToast,

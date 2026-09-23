@@ -12,11 +12,11 @@ import {
   PlayCircle,
   ExternalLink,
 } from 'lucide-react';
-import type { Source, Sink, SystemStats } from '../types';
+import type { Source, Sink, SystemStats, DeviceStats } from '../types';
 import { WebRTCStream } from '../components/WebRTCStream';
 import { ToggleSwitch } from '../components/ToggleSwitch';
 
-const SystemStatus: React.FC<{ systemStats: SystemStats; deviceStats: any }> = ({ systemStats, deviceStats }) => (
+const SystemStatus: React.FC<{ systemStats: SystemStats; deviceStats: DeviceStats }> = ({ systemStats, deviceStats }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow transition-all hover:shadow-lg">
       <div className="flex items-center justify-between">
@@ -70,7 +70,7 @@ const SystemStatus: React.FC<{ systemStats: SystemStats; deviceStats: any }> = (
 
 export const DashboardPage: React.FC<{
   systemStats: SystemStats;
-  deviceStats: any;
+  deviceStats: DeviceStats;
   streamingSinks: Set<number>;
   sources: Source[];
   sinks: Sink[];
@@ -95,7 +95,7 @@ export const DashboardPage: React.FC<{
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">RAM Usage</h3>
-            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{(deviceStats.ramUsage / 1024 / 1024).toFixed(0)} MB</p>
+            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{deviceStats.ramUsage.toFixed(0)} MB</p>
           </div>
           <BarChart3 className="w-8 h-8 text-orange-600" />
         </div>

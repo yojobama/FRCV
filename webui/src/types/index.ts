@@ -114,7 +114,6 @@ export interface SystemStats {
 
 export interface Settings {
   serverUrl: string;
-  refreshInterval: number;
   nt4: NT4Defaults;
 }
 
@@ -150,7 +149,9 @@ export interface ToastProps {
   onClose: () => void;
 }
 
-// New types for device monitoring
+// New types for device monitoring - sourced from /ws/state's WsDeviceStats (useAppData.ts),
+// not a separate REST poll. ramUsage is megabytes, not bytes - WsDeviceStats.RamUsageMb already
+// reports it that way (unlike the old getDeviceRAMUsage() REST call, which returned raw bytes).
 export interface DeviceStats {
   cpuUsage: number;
   ramUsage: number;
