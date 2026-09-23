@@ -2,6 +2,35 @@
 #include "SourceResult.h"
 #include <cctype>
 #include <algorithm>
+#include <chrono>
+#include <future>
+#include <thread>
+
+namespace {
+	// cv::VideoCapture's own open call is a plain blocking OS/driver call with no cancellation
+	// and no timeout of its own - confirmed a real, uncooperative device (Device Manager reports
+	// it healthy, but the open call itself never returns) can hang here forever, which is fatal
+	// at server startup: DB.Load() reconstructs every persisted camera source SYNCHRONOUSLY, so
+	// one bad entry in data.json was enough to make the whole server unable to start at all, with
+	// no way to fix it short of hand-editing that file. Runs the actual open on a detached
+	// worker thread and gives up waiting after `timeout` - if the open call really is stuck
+	// forever, that one thread (and whatever device handle it's holding) just leaks for the rest
+	// of the process's life instead of blocking startup, which is a real but far smaller cost.
+	cv::VideoCapture OpenWithTimeout(int index, int backend, std::chrono::milliseconds timeout)
+	{
+		auto promise = std::make_shared<std::promise<cv::VideoCapture>>();
+		std::future<cv::VideoCapture> future = promise->get_future();
+
+		std::thread([index, backend, promise]() {
+			promise->set_value(cv::VideoCapture(index, backend));
+		}).detach();
+
+		if (future.wait_for(timeout) == std::future_status::ready) {
+			return future.get();
+		}
+		return cv::VideoCapture(); // isOpened() == false
+	}
+}
 
 bool OpenCvCameraBackend::Open(const std::string& devicePath)
 {
@@ -25,7 +54,11 @@ bool OpenCvCameraBackend::Open(const std::string& devicePath)
 	bool isNumericIndex = !trimmed.empty() && std::all_of(trimmed.begin(), trimmed.end(), [](unsigned char c) { return std::isdigit(c); });
 	if (isNumericIndex) {
 		int index = std::stoi(trimmed);
-		m_Capture = cv::VideoCapture(index, cv::CAP_MSMF);
+		// 5s per backend attempt - generous for a real device (which typically opens in well
+		// under a second) without letting one bad camera hold up server startup for long; three
+		// attempts worst-case is 15s, not the infinite hang this replaced.
+		constexpr auto kOpenTimeout = std::chrono::seconds(5);
+		m_Capture = OpenWithTimeout(index, cv::CAP_MSMF, kOpenTimeout);
 		if (!m_Capture.isOpened()) {
 			// some devices (confirmed against a real Windows Hello IR+RGB combo camera) simply
 			// don't open via Media Foundation at all despite Device Manager reporting them
@@ -34,10 +67,10 @@ bool OpenCvCameraBackend::Open(const std::string& devicePath)
 			// generic (no-backend-specified) constructor already tries both internally in some
 			// order, so being explicit about the fallback here is strictly more informative than
 			// letting that internal order decide silently.
-			m_Capture = cv::VideoCapture(index, cv::CAP_DSHOW);
+			m_Capture = OpenWithTimeout(index, cv::CAP_DSHOW, kOpenTimeout);
 		}
 		if (!m_Capture.isOpened()) {
-			m_Capture = cv::VideoCapture(index, cv::CAP_ANY);
+			m_Capture = OpenWithTimeout(index, cv::CAP_ANY, kOpenTimeout);
 		}
 	} else {
 		m_Capture = cv::VideoCapture(devicePath);
