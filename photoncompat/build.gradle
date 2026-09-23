@@ -24,6 +24,18 @@ group = "org.lumenvision"
 // something that could be confused for a real version.
 version = project.hasProperty("photoncompatVersion") ? project.photoncompatVersion : "0.0.0-local"
 
+// Baked into the jar as a classpath resource so LumenVersionCheck can compare it, at runtime,
+// against the coprocessor's own ".version" NT4 topic (NetworkTablesSink.cpp) - the same
+// mismatch-detection idea photonlib's own PhotonCamera already does against PhotonVision's
+// backend version. src/main/resources/photoncompat-version.properties is a TEMPLATE (literally
+// contains the text "${version}"), not the real file - processResources' expand() below is what
+// substitutes this build's actual `version` into it before it lands in the built jar.
+processResources {
+    filesMatching("photoncompat-version.properties") {
+        expand(version: project.version.toString())
+    }
+}
+
 java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
@@ -54,6 +66,11 @@ dependencies {
     api "edu.wpi.first.wpimath:wpimath-java:${wpilibVersion}"
     api "edu.wpi.first.ntcore:ntcore-java:${wpilibVersion}"
     implementation "edu.wpi.first.wpiutil:wpiutil-java:${wpilibVersion}"
+    // DriverStation.reportWarning - the ".version" mismatch check (LumenVersionCheck) reports
+    // through it, matching how photonlib's own PhotonCamera reports a backend version mismatch.
+    // implementation, not api: consumers see this only as a warning that shows up on the driver
+    // station, never as a type in photoncompat's own public method signatures.
+    implementation "edu.wpi.first.wpilibj:wpilibj-java:${wpilibVersion}"
     // wpimath's own compiled classes (Pose3d and friends) reference edu.wpi.first.units.measure
     // types even though photoncompat's own source never imports them directly - javac still
     // needs them resolvable, confirmed the hard way (compile failed without this).
@@ -61,8 +78,15 @@ dependencies {
     implementation "org.ejml:ejml-simple:0.44.0"
     // wpimath's Jackson-annotated classes need this resolvable at runtime, not just compile time
     // (struct/protobuf schema reflection) - same "wpimath's own bare POM doesn't declare it"
-    // reasoning as everything else in this block.
+    // reasoning as everything else in this block. jackson-core/-databind, not just -annotations:
+    // RuntimeLoader (used by ntcore's own JNI loader, NetworkTablesJNI's static initializer)
+    // needs com.fasterxml.jackson.core.type.TypeReference from jackson-core specifically -
+    // confirmed the hard way (NoClassDefFoundError touching any real NT4 API, ntcore-java's own
+    // pure-Java entry point, the moment a test actually constructed a NetworkTableInstance rather
+    // than just compiling against its types).
     implementation "com.fasterxml.jackson.core:jackson-annotations:2.19.2"
+    implementation "com.fasterxml.jackson.core:jackson-core:2.19.2"
+    implementation "com.fasterxml.jackson.core:jackson-databind:2.19.2"
     // Translation2d/Translation3d's static initializers build a QuickBuffers protobuf schema for
     // NT4 struct serialization - confirmed the hard way (NoClassDefFoundError at class-init time,
     // not just on first real use, so this is unconditionally required, not an optional feature).

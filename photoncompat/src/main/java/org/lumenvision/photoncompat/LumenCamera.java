@@ -5,6 +5,7 @@ import edu.wpi.first.networktables.DoubleArrayTopic;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StringSubscriber;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,13 @@ public class LumenCamera {
     private final DoubleSubscriber multiTagTagCountSub;
     private final DoubleSubscriber multiTagReprojErrSub;
 
+    private final StringSubscriber versionSub;
+    // checked at most once - a coprocessor's ".version" never changes for the lifetime of its
+    // process (LumenCore/CMakeLists.txt bakes it in at build time), so there's nothing to gain
+    // from re-warning on every single getLatestResult() call once a real mismatch has already
+    // been reported.
+    private boolean versionChecked = false;
+
     /**
      * @param instance the NetworkTableInstance to read from - an explicit parameter (not always
      *     {@link NetworkTableInstance#getDefault()}) so a robot program's simulation code can
@@ -68,6 +76,8 @@ public class LumenCamera {
         }
         multiTagTagCountSub = subscribeScalar(multiTagTable, "tagCount");
         multiTagReprojErrSub = subscribeScalar(multiTagTable, "reprojErrPixels");
+
+        versionSub = instance.getTable(rootTable).getStringTopic(".version").subscribe("");
     }
 
     private static DoubleArraySubscriber subscribeArray(NetworkTable table, String name) {
@@ -85,6 +95,19 @@ public class LumenCamera {
      * tags this frame" (including "no frame has ever arrived yet"), not "no data available".
      */
     public LumenPipelineResult getLatestResult() {
+        // deferred to here rather than the constructor: right after construction, NT4's own
+        // client/server handshake hasn't necessarily completed yet, so ".version" would almost
+        // always still read back empty (LumenVersionCheck's own sentinel for "not received yet")
+        // and never actually catch a real mismatch - by the time any real robot loop calls
+        // getLatestResult() for the first time, the connection has normally long since settled.
+        if (!versionChecked) {
+            String coprocessorVersion = versionSub.get();
+            if (!coprocessorVersion.isEmpty()) {
+                LumenVersionCheck.warnOnMismatch(coprocessorVersion);
+                versionChecked = true;
+            }
+        }
+
         double[] ids = idsSub.get();
         double[] x = xSub.get();
         double[] y = ySub.get();
@@ -123,7 +146,11 @@ public class LumenCamera {
         // Microseconds -> seconds to match what addVisionMeasurement expects.
         double timestampSeconds = idsSub.getLastChange() / 1_000_000.0;
 
-        return new LumenPipelineResult(targets, timestampSeconds);
+        // read as part of the SAME snapshot as targets/timestamp, not left to a caller's own
+        // separate getMultiTagResult() call - LumenPoseEstimator.update(LumenPipelineResult)
+        // needs both from one coherent read, not two independent NT4 polls that could
+        // legitimately observe two different frames.
+        return new LumenPipelineResult(targets, timestampSeconds, getMultiTagResult());
     }
 
     /**
