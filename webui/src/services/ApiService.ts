@@ -1,4 +1,5 @@
 import type { CameraHardwareInfo, CameraMode, Model, StereoCalibrationResult, StereoDepthStats, PipelineProfile, NodeTypesResponse, CameraCalibrationResult, CalibrationCoverage, CalibrationStatus, NetworkTablesStatus } from '../types';
+import { apiClient } from '../api/client';
 
 export class ApiService {
   // Relative to wherever this page is served from - the C# server always serves its own built
@@ -102,10 +103,23 @@ export class ApiService {
 
   // ROADMAP.md Phase 8/E5: surfaces a stale/missing calibration after a resolution change -
   // consumed as a warning badge by Inspector.tsx/PipelineNode.tsx.
+  //
+  // ROADMAP.md Phase 8/E6's first migrated call site: routed through the OpenAPI-generated
+  // typed client (src/api/client.ts, from src/api/generated.ts - regenerate with `npm run
+  // generate-api`) instead of a hand-written fetch, proving the pattern works end to end against
+  // the real server before the rest of this file's ~40 other endpoints migrate the same way,
+  // incrementally, not in one big-bang rewrite.
   async getCalibrationStatus(id: number): Promise<CalibrationStatus> {
-    const response = await fetch(`${this.baseUrl}/cameraSource/${id}/calibrationStatus`);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    return response.json();
+    const { data, error } = await apiClient.GET('/cameraSource/{id}/calibrationStatus', {
+      params: { path: { id } },
+    });
+    if (error) throw new Error('Failed to fetch calibration status');
+    // cast, not a direct return: the generated schema models C#'s nullable int? fields as
+    // optional (`?: number`, i.e. possibly-undefined) rather than `number | null` - a real gap
+    // between what Server/OpenApi/OpenApiGenerator.cs's reflection-based schema says and what
+    // System.Text.Json actually serializes a null int? as (a literal JSON null, confirmed against
+    // a live response), not something to paper over silently at every migrated call site.
+    return data as CalibrationStatus;
   }
 
   // Video File Source Controller routes (/api/videoFileSource/*)
