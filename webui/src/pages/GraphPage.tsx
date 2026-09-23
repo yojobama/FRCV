@@ -26,7 +26,7 @@ const api = new ApiService();
 // existing form logic) but the created node lands on the canvas instead of a list, and dragging
 // a connection between two nodes performs the real bind through the same REST endpoints the old
 // Configure modals used - drag/drop replaces the dropdown-based binding UI, not the API under it.
-const GraphPageInner: React.FC<{ onToast: (m: string, t: 'success'|'error'|'info') => void; nt4Settings: NT4Defaults }> = ({ onToast, nt4Settings }) => {
+const GraphPageInner: React.FC<{ onToast: (m: string, t: 'success'|'error'|'info') => void; nt4Settings: NT4Defaults; darkMode: boolean }> = ({ onToast, nt4Settings, darkMode }) => {
   const { snapshot, connected } = useStateSocket();
   const [capabilities, setCapabilities] = useState<NodeTypesResponse | null>(null);
   const [nodes, setNodes, onNodesChange] = useNodesState<PipelineNode>([]);
@@ -61,6 +61,16 @@ const GraphPageInner: React.FC<{ onToast: (m: string, t: 'success'|'error'|'info
   }, [snapshot, capabilities, setNodes]);
 
   const selectedNode = nodes.find(n => n.id === selectedId) ?? null;
+  // WebRTCSink only ever holds ONE active peer connection (InitializePeerConnection replaces it
+  // wholesale on every new negotiation - see WebRTCSink.h's own comment) - if Inspector's own
+  // Live Preview and BottomStrip's "thumbnail for every running WebRTC sink" both try to
+  // negotiate against the SAME sink at once, one negotiation's answer arrives after the sink has
+  // already gone 'stable' from the other and gets rejected outright (confirmed the hard way:
+  // WebRTCSink::SetAnswer failed - "Unexpected remote answer description in signaling state
+  // stable" - which StreamView.tsx then (correctly, but pointlessly) treats as a real failure and
+  // falls back to MJPEG). Excluding whichever sink Inspector is already showing from BottomStrip
+  // avoids the double-negotiation instead of racing them.
+  const inspectorPreviewSinkId = selectedNode?.data.webrtcSink?.IsRunning ? selectedNode.data.webrtcSink.Sink.Id : null;
 
   const onConnect = useCallback(async (connection: Connection) => {
     // source-{id} -> sink-{id}: bind. sink-{id} -> sink-{id} (a StereoDepthSink's own output
@@ -174,35 +184,45 @@ const GraphPageInner: React.FC<{ onToast: (m: string, t: 'success'|'error'|'info
   return (
     <div className="flex h-[calc(100vh-140px)] -m-6">
       <LeftRail snapshot={snapshot} onToast={onToast} />
-      <div className="flex-1 relative">
-        <div className="absolute top-4 left-4 z-10 flex gap-2">
-          <button onClick={() => setShowAddSource(true)} className="px-3 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 flex items-center gap-2 text-sm">
-            <CameraIcon className="w-4 h-4" /><Plus className="w-3 h-3" />Source
-          </button>
-          <button onClick={() => setShowAddSink(true)} className="px-3 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 flex items-center gap-2 text-sm">
-            <Target className="w-4 h-4" /><Plus className="w-3 h-3" />Sink
-          </button>
-          {!connected && (
-            <span className="px-3 py-2 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded text-sm">Reconnecting to live state...</span>
-          )}
-          <GraphProfileBar onToast={onToast} />
+      {/* flex column, not another absolute overlay: BottomStrip used to be positioned
+          absolute/bottom-0 directly on top of the canvas, covering React Flow's own
+          bottom-anchored Controls/MiniMap panels entirely (they render within the ReactFlow
+          container's own bounds, so there was no way to reach them underneath it). Giving
+          BottomStrip its natural (dynamic - 1 or 2 rows depending on how many WebRTC sinks are
+          live) height in normal flow instead, with the canvas taking the remaining space above
+          it, means the two can never overlap regardless of BottomStrip's height. */}
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 relative min-h-0">
+          <div className="absolute top-4 left-4 z-10 flex gap-2">
+            <button onClick={() => setShowAddSource(true)} className="px-3 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 flex items-center gap-2 text-sm">
+              <CameraIcon className="w-4 h-4" /><Plus className="w-3 h-3" />Source
+            </button>
+            <button onClick={() => setShowAddSink(true)} className="px-3 py-2 bg-green-600 text-white rounded shadow hover:bg-green-700 flex items-center gap-2 text-sm">
+              <Target className="w-4 h-4" /><Plus className="w-3 h-3" />Sink
+            </button>
+            {!connected && (
+              <span className="px-3 py-2 bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 rounded text-sm">Reconnecting to live state...</span>
+            )}
+            <GraphProfileBar onToast={onToast} />
+          </div>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            nodeTypes={nodeTypes}
+            onNodesChange={onNodesChange}
+            onConnect={onConnect}
+            isValidConnection={isValidConnection}
+            onNodeClick={(_, node) => setSelectedId(node.id)}
+            onPaneClick={() => setSelectedId(null)}
+            colorMode={darkMode ? 'dark' : 'light'}
+            fitView
+          >
+            <Background />
+            <Controls />
+            <MiniMap />
+          </ReactFlow>
         </div>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={nodeTypes}
-          onNodesChange={onNodesChange}
-          onConnect={onConnect}
-          isValidConnection={isValidConnection}
-          onNodeClick={(_, node) => setSelectedId(node.id)}
-          onPaneClick={() => setSelectedId(null)}
-          fitView
-        >
-          <Background />
-          <Controls />
-          <MiniMap />
-        </ReactFlow>
-        <BottomStrip snapshot={snapshot} />
+        <BottomStrip snapshot={snapshot} excludeSinkId={inspectorPreviewSinkId} />
       </div>
 
       {selectedNode && (
@@ -221,7 +241,7 @@ const GraphPageInner: React.FC<{ onToast: (m: string, t: 'success'|'error'|'info
   );
 };
 
-export const GraphPage: React.FC<{ onToast: (m: string, t: 'success'|'error'|'info') => void; nt4Settings: NT4Defaults }> = (props) => (
+export const GraphPage: React.FC<{ onToast: (m: string, t: 'success'|'error'|'info') => void; nt4Settings: NT4Defaults; darkMode: boolean }> = (props) => (
   <ReactFlowProvider>
     <GraphPageInner {...props} />
   </ReactFlowProvider>

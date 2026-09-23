@@ -65,6 +65,12 @@ export const Inspector: React.FC<{
   const source = kind === 'source' ? (raw as WsSource) : null;
   const sink = kind === 'sink' ? (raw as WsSink) : null;
   const isCamera = source != null && source.Type === 0;
+  // Live Preview binds a WebRTCSink to whichever node is currently selected - a raw Source (to
+  // preview a camera before any detector is attached to it) or a Sink's own output, exactly like
+  // BottomStrip's thumbnails and model.ts's webrtcSink/nt4Sink/mjpegSink badge lookups already
+  // treat both uniformly. Previously hardcoded to `sink` only, so a Source node's Inspector never
+  // even rendered the Live Preview section.
+  const previewTarget = sink ?? source;
 
   // Modes/current mode aren't in the /ws/state snapshot (they're a live device query, not
   // pipeline state), so this needs its own fetch - only for camera sources, only once per
@@ -235,13 +241,13 @@ export const Inspector: React.FC<{
   };
 
   const togglePreview = async () => {
-    if (!sink) return;
+    if (!previewTarget) return;
     try {
       if (webrtcSink) {
         await api.toggleSink(webrtcSink.Sink.Id, !webrtcSink.IsRunning);
       } else {
-        const previewId = await api.createWebRTCSink(`${sink.Name}-preview`);
-        await api.bindSinkToSource(previewId, sink.Id);
+        const previewId = await api.createWebRTCSink(`${previewTarget.Name}-preview`);
+        await api.bindSinkToSource(previewId, previewTarget.Id);
         await api.toggleSink(previewId, true);
       }
     } catch {
@@ -470,16 +476,6 @@ export const Inspector: React.FC<{
             )}
 
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-700 dark:text-gray-300">Live Preview</span>
-              <button onClick={togglePreview} className={`px-2 py-1 rounded text-xs flex items-center gap-1 text-white ${webrtcSink?.IsRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}>
-                {webrtcSink?.IsRunning ? <><Square className="w-3 h-3" />Stop</> : <><Play className="w-3 h-3" />Start</>}
-              </button>
-            </div>
-            {webrtcSink?.IsRunning && (
-              <StreamView sinkId={webrtcSink.Sink.Id} sourceId={sink?.Id ?? null} onStop={togglePreview} onError={() => onToast('Preview stream error', 'error')} />
-            )}
-
-            <div className="flex items-center justify-between">
               <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1"><Radio className="w-3 h-3" />Publish to NT4</span>
               <ToggleSwitch enabled={nt4Sink?.IsRunning ?? false} onChange={toggleNT4} />
             </div>
@@ -493,6 +489,25 @@ export const Inspector: React.FC<{
               )}
             </div>
           </>
+        )}
+
+        {/* Live Preview binds a WebRTCSink to whatever node is selected - moved out of the
+            sink-only block above: a raw Source (a camera before any detector is attached) is
+            just as valid a preview target, and previewTarget/togglePreview already treat both
+            uniformly (see their own comments). Previously this only rendered for sink nodes, so
+            a Source's Inspector had no way to start a preview at all. */}
+        {previewTarget && (
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-700 dark:text-gray-300">Live Preview</span>
+              <button onClick={togglePreview} className={`px-2 py-1 rounded text-xs flex items-center gap-1 text-white ${webrtcSink?.IsRunning ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}>
+                {webrtcSink?.IsRunning ? <><Square className="w-3 h-3" />Stop</> : <><Play className="w-3 h-3" />Start</>}
+              </button>
+            </div>
+            {webrtcSink?.IsRunning && (
+              <StreamView sinkId={webrtcSink.Sink.Id} sourceId={previewTarget.Id} onStop={togglePreview} onError={() => onToast('Preview stream error', 'error')} />
+            )}
+          </div>
         )}
 
         {source && source.Profiles.length >= 0 && (

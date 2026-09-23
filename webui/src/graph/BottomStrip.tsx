@@ -10,15 +10,22 @@ import { StreamView } from '../components/StreamView';
 // each one's live connection status (that needs a per-sink REST call this bar deliberately
 // doesn't make on every tick - see NetworkTablesSink's own status endpoint for that detail,
 // already surfaced per-node in Inspector.tsx).
-export const BottomStrip: React.FC<{ snapshot: StateSnapshot | null }> = ({ snapshot }) => {
+export const BottomStrip: React.FC<{ snapshot: StateSnapshot | null; excludeSinkId?: number | null }> = ({ snapshot, excludeSinkId }) => {
   if (!snapshot) return null;
 
-  const webrtcSinks = snapshot.Sinks.filter(s => s.Sink.Type === 5 && s.IsRunning);
+  // see GraphPage.tsx's own comment on inspectorPreviewSinkId: this sink already has its own,
+  // dedicated StreamView open in the Inspector - showing it here too would negotiate a SECOND,
+  // competing WebRTC connection against a sink that can only hold one.
+  const webrtcSinks = snapshot.Sinks.filter(s => s.Sink.Type === 5 && s.IsRunning && s.Sink.Id !== excludeSinkId);
   const nt4SinksRunning = snapshot.Sinks.filter(s => s.Sink.Type === 4 && s.IsRunning).length;
   const aggregateFps = Object.values(snapshot.NodeStats).reduce((sum, n) => sum + n.Fps, 0);
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-800/95 border-t border-gray-200 dark:border-gray-700 backdrop-blur-sm">
+    // Normal flow, not absolute/bottom-0 - GraphPage.tsx now lays this out as a flex-column
+    // sibling below the canvas instead of an overlay on top of it (see its own comment: an
+    // overlay here used to sit directly on top of React Flow's own Controls/MiniMap panels,
+    // which render bottom-anchored WITHIN the canvas and had no way to be reached underneath).
+    <div className="flex-shrink-0 bg-white/95 dark:bg-gray-800/95 border-t border-gray-200 dark:border-gray-700 backdrop-blur-sm">
       <div className="flex items-center gap-4 px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700">
         <span className="flex items-center gap-1" title="CPU usage"><Cpu className="w-3.5 h-3.5" />{snapshot.Device.CpuUsagePercent.toFixed(0)}%</span>
         <span className="flex items-center gap-1" title="CPU temperature"><Thermometer className="w-3.5 h-3.5" />{snapshot.Device.TemperatureC.toFixed(0)}&deg;C</span>

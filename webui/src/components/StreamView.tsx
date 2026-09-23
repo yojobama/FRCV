@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { WebRTCStream } from './WebRTCStream';
 import { MjpegStream } from './MjpegStream';
@@ -28,14 +28,29 @@ type FallbackState = { kind: 'creating' } | { kind: 'ready'; sinkId: number } | 
 // it happens so a fallback in the field is diagnosable after the fact, not silent.
 export const StreamView: React.FC<StreamViewProps> = ({ sourceId, onError, sinkId, ...rest }) => {
   const [fallback, setFallback] = useState<FallbackState | null>(null);
+  // WebRTCStream's pc.onconnectionstatechange can call onError more than once in quick
+  // succession (e.g. 'disconnected' immediately followed by 'failed') - confirmed the hard way:
+  // checking React state alone let two near-simultaneous calls both read the same stale
+  // `fallback === null` before either one's setFallback({kind:'creating'}) had actually
+  // committed a re-render, so both proceeded to create their own MjpegSink, leaking one. A ref
+  // is checked and set synchronously, before any await, so the second call sees it immediately
+  // regardless of React's render timing.
+  const fallbackStarted = useRef(false);
+
+  useEffect(() => {
+    fallbackStarted.current = false;
+    setFallback(null);
+  }, [sinkId]);
 
   const handleWebRtcError = useCallback(async (error: string) => {
-    if (sourceId == null || fallback) {
-      // no source to bind a fallback sink to, or already past the fallback attempt (this is the
-      // MJPEG sink's own failure bubbling back up, not the original WebRTC one) - just surface it.
+    if (sourceId == null || fallbackStarted.current) {
+      // no source to bind a fallback sink to, or a fallback attempt is already in flight/done
+      // (this is either a duplicate WebRTC failure notification, or the MJPEG sink's own failure
+      // bubbling back up) - just surface it.
       onError(error);
       return;
     }
+    fallbackStarted.current = true;
     console.warn('StreamView: WebRTC preview failed, falling back to MJPEG', { sinkId, sourceId, error });
     setFallback({ kind: 'creating' });
     try {
@@ -48,7 +63,7 @@ export const StreamView: React.FC<StreamViewProps> = ({ sourceId, onError, sinkI
       setFallback({ kind: 'failed' });
       onError(error);
     }
-  }, [sourceId, fallback, onError, sinkId]);
+  }, [sourceId, onError, sinkId]);
 
   if (fallback?.kind === 'ready') {
     return <MjpegStream sinkId={fallback.sinkId} onError={onError} {...rest} />;

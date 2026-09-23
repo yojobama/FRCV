@@ -246,7 +246,7 @@ function App() {
                 onToggleSink={handleToggleSink}
               />
             } />
-            <Route path="/graph" element={<GraphPage onToast={showToast} nt4Settings={settings.nt4} />} />
+            <Route path="/graph" element={<GraphPage onToast={showToast} nt4Settings={settings.nt4} darkMode={darkMode} />} />
             <Route path="/stereo" element={
               <StereoPage sources={sources} sinks={sinks} onToast={showToast} onRefresh={loadData} />
             } />

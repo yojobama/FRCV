@@ -91,6 +91,16 @@ export function buildGraph(
   for (const source of snapshot.Sources) {
     const id = `source-${source.Id}`;
     const stats = snapshot.NodeStats[String(source.Id)];
+
+    // badges: same dual-role lookup the sink loop below does, just keyed on this SOURCE's own
+    // id instead of a sink's output id - a WebRTCSink/NetworkTablesSink/MjpegSink can bind
+    // directly to a raw source (e.g. previewing a camera before any detector is attached to it),
+    // not only to a sink's own output. Previously only computed in the sink loop, which is why a
+    // source node's own "Live Preview" never had a webrtcSink to render against.
+    const webrtcSink = snapshot.Sinks.find(s => sinkTypeName(s.Sink.Type) === 'WebRTCSink' && s.Sink.Source?.Id === source.Id);
+    const nt4Sink = snapshot.Sinks.find(s => sinkTypeName(s.Sink.Type) === 'NetworkTablesSink' && s.Sink.Source?.Id === source.Id);
+    const mjpegSink = snapshot.Sinks.find(s => sinkTypeName(s.Sink.Type) === 'MjpegSink' && s.Sink.Source?.Id === source.Id);
+
     nodes.push({
       id,
       type: 'pipelineNode',
@@ -103,6 +113,9 @@ export function buildGraph(
         fps: stats?.Fps ?? 0,
         latencyUs: stats?.LatencyUs ?? 0,
         raw: source,
+        webrtcSink,
+        nt4Sink,
+        mjpegSink,
         activeProfileIndex: source.ActiveProfileIndex,
         profileCount: source.Profiles.length,
       },
