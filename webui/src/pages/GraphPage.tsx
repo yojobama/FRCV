@@ -11,6 +11,8 @@ import { buildGraph, edgesEqual, type PipelineNode, type PositionStore } from '.
 import { nodeTypes } from '../graph/PipelineNode';
 import { Inspector } from '../graph/Inspector';
 import { GraphProfileBar } from '../graph/GraphProfileBar';
+import { LeftRail } from '../graph/LeftRail';
+import { BottomStrip } from '../graph/BottomStrip';
 import { AddSourceModal } from '../components/AddSourceModal';
 import { AddSinkModal } from '../components/AddSinkModal';
 import type { AddSinkOptions, NodeTypesResponse, NT4Defaults, CameraHardwareInfo } from '../types';
@@ -171,6 +173,7 @@ const GraphPageInner: React.FC<{ onToast: (m: string, t: 'success'|'error'|'info
 
   return (
     <div className="flex h-[calc(100vh-140px)] -m-6">
+      <LeftRail snapshot={snapshot} onToast={onToast} />
       <div className="flex-1 relative">
         <div className="absolute top-4 left-4 z-10 flex gap-2">
           <button onClick={() => setShowAddSource(true)} className="px-3 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700 flex items-center gap-2 text-sm">
@@ -199,6 +202,7 @@ const GraphPageInner: React.FC<{ onToast: (m: string, t: 'success'|'error'|'info
           <Controls />
           <MiniMap />
         </ReactFlow>
+        <BottomStrip snapshot={snapshot} />
       </div>
 
       {selectedNode && (

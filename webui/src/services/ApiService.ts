@@ -1,5 +1,6 @@
 import type { CameraHardwareInfo, CameraMode, Model, StereoCalibrationResult, StereoDepthStats, PipelineProfile, NodeTypesResponse, CameraCalibrationResult, CalibrationCoverage, CalibrationStatus, NetworkTablesStatus } from '../types';
 import { apiClient } from '../api/client';
+import type { components } from '../api/generated';
 
 export class ApiService {
   // Relative to wherever this page is served from - the C# server always serves its own built
@@ -132,6 +133,22 @@ export class ApiService {
     // System.Text.Json actually serializes a null int? as (a literal JSON null, confirmed against
     // a live response), not something to paper over silently at every migrated call site.
     return data as CalibrationStatus;
+  }
+
+  // GET: every calibration result ever saved to disk, across all cameras (CalibrationManager.cs)
+  // - had no webui client method at all until the LeftRail's Calibrations section needed one.
+  async getSavedCalibrations(): Promise<components['schemas']['StoredCalibrationDto'][]> {
+    const { data, error } = await apiClient.GET('/cameraCalibrationSink/savedResults');
+    if (error) throw new Error('Failed to fetch saved calibrations');
+    return data ?? [];
+  }
+
+  // GET: the server's own recent diagnostic log lines (LogController.cs) - for the LeftRail's
+  // Logs section.
+  async getLogTail(lines: number = 200): Promise<string[]> {
+    const { data, error } = await apiClient.GET('/log/tail', { params: { query: { lines } } });
+    if (error) throw new Error('Failed to fetch server log');
+    return data ?? [];
   }
 
   // Graph Profile Controller routes (/api/graphProfile/*) - ROADMAP.md Phase 8/E6: save/restore

@@ -11,11 +11,12 @@ import {
 import { WebRTCStreamProps } from '../types';
 import { ApiService } from '../services/ApiService';
 
-export const WebRTCStream: React.FC<WebRTCStreamProps> = ({ 
-  sinkId, 
-  onStop, 
-  onError, 
-  className = '' 
+export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
+  sinkId,
+  onStop,
+  onError,
+  className = '',
+  compact = false,
 }) => {
   const [connectionState, setConnectionState] = useState<string>('connecting');
   const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | null>(null);
@@ -156,7 +157,8 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
   };
 
   return (
-    <div ref={containerRef} className={`bg-black rounded-lg overflow-hidden ${className}`}>
+    <div ref={containerRef} className={`bg-black rounded-lg overflow-hidden ${compact ? 'h-full' : ''} ${className}`}>
+      {!compact && (
       <div className="p-4 bg-gray-800 flex justify-between items-center">
         <div className="flex items-center space-x-3">
           <Video className="w-5 h-5 text-white" />
@@ -166,7 +168,7 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
             {getStatusText(connectionState)}
           </span>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <button
             onClick={toggleFullscreen}
@@ -185,15 +187,16 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
           </button>
         </div>
       </div>
-      
-      <div className="relative">
+      )}
+
+      <div className={compact ? 'relative h-full' : 'relative'}>
         <video
           ref={videoRef}
           autoPlay
           muted
           playsInline
-          className="w-full h-64 object-cover bg-black"
-          style={{ aspectRatio: '16/9' }}
+          className={compact ? 'w-full h-full object-cover bg-black' : 'w-full h-64 object-cover bg-black'}
+          style={compact ? undefined : { aspectRatio: '16/9' }}
         />
         
         {connectionState === 'connecting' && (

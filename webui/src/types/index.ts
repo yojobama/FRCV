@@ -127,6 +127,10 @@ export interface WebRTCStreamProps {
   onStop: () => void;
   onError: (error: string) => void;
   className?: string;
+  // ROADMAP.md Phase 8/E6: hides the header bar (name/status/fullscreen/stop controls) and
+  // fills its container instead of a fixed h-64 - for a small preview tile (GraphPage's
+  // BottomStrip) rather than the full player DashboardPage's "Live Streams" section uses.
+  compact?: boolean;
 }
 
 export interface ModalProps {
