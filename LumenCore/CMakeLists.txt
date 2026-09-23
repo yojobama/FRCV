@@ -37,6 +37,7 @@ set(LUMEN_CORE_SOURCES
     ObjectDetectionSink.cpp
     OnnxDetectionBackend.cpp
     OpenCvCameraBackend.cpp
+    RecordSink.cpp
     RoiSource.cpp
     SourceResult.cpp
     SystemMonitor.cpp
@@ -302,13 +303,20 @@ if(LUMEN_WITH_NT4)
     target_link_libraries(LumenCore PRIVATE Ntcore::ntcore)
 endif()
 
+# ffmpeg (Lumen::ffmpeg) is shared by WebRTC (RTP-only, no muxing) and RECORD (real MP4 muxing via
+# libavformat - see RecordSink.cpp) - included once here, ahead of both, rather than duplicated
+# inside each block. LumenFFmpeg.cmake's own add_library call is already `if(NOT TARGET
+# Lumen::ffmpeg)`-guarded, so this is also safe if something else ever includes it first.
+if(LUMEN_WITH_WEBRTC OR LUMEN_WITH_RECORD)
+    include(LumenFFmpeg)
+    if(NOT LUMEN_FFMPEG_FOUND)
+        message(FATAL_ERROR "LUMEN_WITH_WEBRTC or LUMEN_WITH_RECORD is ON but ffmpeg (libavcodec/avformat/avutil/swscale) was not found via pkg-config")
+    endif()
+endif()
+
 # --- Optional: WebRTC live view -----------------------------------------------------------------
 if(LUMEN_WITH_WEBRTC)
     find_package(LibDataChannel REQUIRED)
-    include(LumenFFmpeg)
-    if(NOT LUMEN_FFMPEG_FOUND)
-        message(FATAL_ERROR "LUMEN_WITH_WEBRTC=ON but ffmpeg (libavcodec/avformat/avutil/swscale) was not found via pkg-config")
-    endif()
     target_link_libraries(LumenCore PRIVATE LibDataChannel::LibDataChannel Lumen::ffmpeg)
 endif()
 

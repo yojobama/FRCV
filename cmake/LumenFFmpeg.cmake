@@ -1,7 +1,8 @@
 #[[
-  ffmpeg (libavcodec/libavformat/libavutil/libswscale) for WebRTCSink and CodecStereoBackend's
-  CS_ENABLE_LAVC path, via pkg-config uniformly on every platform rather than two separate
-  find-path codepaths:
+  ffmpeg (libavcodec/libavformat/libavutil/libswscale) for WebRTCSink, RecordSink (the only one of
+  the three that actually touches libavformat's muxing API - WebRTCSink RTP-packetizes raw NAL
+  units, no container), and CodecStereoBackend's CS_ENABLE_LAVC path, via pkg-config uniformly on
+  every platform rather than two separate find-path codepaths:
 
   - Linux: the system pkg-config finds install-deps.sh's apt-installed dev packages directly.
   - Windows: vcpkg's own toolchain integration registers its pkgconf.exe and sets
@@ -11,15 +12,18 @@
     Find module needed.
 
   Note the plain vcpkg ffmpeg:x64-windows port is LGPL with no x264 feature - it has no encoder
-  WebRTCSink's own default (encoderName = "libx264", WebRTCSink.h) can use. WebRTC is the
-  standard preview transport for this project (LUMEN_WITH_WEBRTC now defaults ON everywhere -
-  see cmake/LumenFeatures.cmake - with MJPEG as StreamView.tsx's same-preview fallback for when
-  it breaks, not a parallel always-on alternative), so the Windows dev box's vcpkg ffmpeg install
-  was rebuilt with the "gpl" and "x264" features enabled to provide it. That is a real, deliberate
-  licensing choice - libx264 is GPL, and any resulting Windows binary that links it is GPL-
-  encumbered - carried here explicitly rather than left implicit: a from-source ffmpeg build
-  without those features (or a future switch to a non-GPL encoder, e.g. openh264) would need
-  WebRTCSink's encoderName reconfigured accordingly.
+  WebRTCSink's or RecordSink's own default (encoderName = "libx264", WebRTCSink.h/RecordSink.h)
+  can use. WebRTC is the standard preview transport for this project (LUMEN_WITH_WEBRTC now
+  defaults ON everywhere - see cmake/LumenFeatures.cmake - with MJPEG as StreamView.tsx's
+  same-preview fallback for when it breaks, not a parallel always-on alternative), so the Windows
+  dev box's vcpkg ffmpeg install was rebuilt with the "gpl" and "x264" features enabled to provide
+  it. That is a real, deliberate licensing choice - libx264 is GPL, and any resulting Windows
+  binary that links it is GPL-encumbered - carried here explicitly rather than left implicit: a
+  from-source ffmpeg build without those features (or a future switch to a non-GPL encoder, e.g.
+  openh264) would need WebRTCSink's/RecordSink's encoderName reconfigured accordingly. This
+  applies MORE directly to RecordSink than to WebRTCSink: a recording is a file a team downloads
+  and redistributes (the whole point, per RecordSink.h's own comment), not an ephemeral RTP
+  stream - flagged explicitly to whoever configures a production build, not decided silently here.
 
   Provides:
     Lumen::ffmpeg - INTERFACE target aggregating avcodec/avformat/avutil/swscale
@@ -84,8 +88,8 @@ if(LUMEN_AVCODEC_FOUND AND LUMEN_AVFORMAT_FOUND AND LUMEN_AVUTIL_FOUND AND LUMEN
             target_link_options(Lumen::ffmpeg INTERFACE "-Wl,-rpath,${LUMEN_FFMPEG_DEDICATED_PREFIX}/lib")
         endif()
     endif()
-elseif(LUMEN_WITH_WEBRTC OR LUMEN_WITH_CODEC_STEREO)
+elseif(LUMEN_WITH_WEBRTC OR LUMEN_WITH_RECORD OR LUMEN_WITH_CODEC_STEREO)
     message(WARNING
         "ffmpeg (libavcodec/libavformat/libavutil/libswscale) not found via pkg-config, but "
-        "LUMEN_WITH_WEBRTC or LUMEN_WITH_CODEC_STEREO's CS_ENABLE_LAVC path needs it.")
+        "LUMEN_WITH_WEBRTC, LUMEN_WITH_RECORD, or LUMEN_WITH_CODEC_STEREO's CS_ENABLE_LAVC path needs it.")
 endif()

@@ -25,6 +25,9 @@
 #ifdef LUMEN_WITH_WEBRTC
 #include "WebRTCSink.h"
 #endif
+#ifdef LUMEN_WITH_RECORD
+#include "RecordSink.h"
+#endif
 
 #include <cstring>
 #include <cctype>
@@ -1424,6 +1427,63 @@ string Manager::GetMjpegFrameBase64(int sinkId)
     auto mjpegSink = std::dynamic_pointer_cast<MjpegSink>(sink->second);
     return mjpegSink ? mjpegSink->GetLatestJpegBase64() : "";
 }
+
+// Same "declared unconditionally, #ifdef'd body per logical group" pattern as the NT4/WebRTC
+// blocks above - see their comment.
+#ifdef LUMEN_WITH_RECORD
+int Manager::CreateRecordSink(string dstFolder, string encoderName, int bitrateKbps, int fps, int segmentSeconds, int64_t maxFolderSizeBytes, int maxFileCount)
+{
+    int id = GenerateUUID();
+    return CreateRecordSink(id, dstFolder, encoderName, bitrateKbps, fps, segmentSeconds, maxFolderSizeBytes, maxFileCount);
+}
+
+int Manager::CreateRecordSink(int id, string dstFolder, string encoderName, int bitrateKbps, int fps, int segmentSeconds, int64_t maxFolderSizeBytes, int maxFileCount)
+{
+    RecordSinkConfig config;
+    config.dstFolder = dstFolder;
+    config.encoderName = encoderName;
+    config.bitrateKbps = bitrateKbps;
+    config.fps = fps;
+    config.segmentSeconds = segmentSeconds;
+    config.maxFolderSizeBytes = maxFolderSizeBytes;
+    config.maxFileCount = maxFileCount;
+
+    m_Logger->EnterLog("CreateRecordSink called with id=" + std::to_string(id) + ", dstFolder=" + dstFolder + ", encoder=" + encoderName);
+
+    auto p_Sink = std::make_shared<RecordSink>(m_Logger, std::to_string(id), config);
+    m_Sinks.emplace(id, p_Sink);
+    return id;
+}
+
+vector<string> Manager::GetRecordSinkSegments(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return {};
+
+    auto recordSink = std::dynamic_pointer_cast<RecordSink>(sink->second);
+    return recordSink ? recordSink->ListSegments() : vector<string>();
+}
+
+bool Manager::DeleteRecordSinkSegment(int sinkId, string filename)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return false;
+
+    auto recordSink = std::dynamic_pointer_cast<RecordSink>(sink->second);
+    return recordSink && recordSink->DeleteSegment(filename);
+}
+#else
+int Manager::CreateRecordSink(string, string, int, int, int, int64_t, int)
+{
+    throw std::runtime_error("Recording support is not compiled into this build of LumenCore");
+}
+int Manager::CreateRecordSink(int, string, string, int, int, int, int64_t, int)
+{
+    throw std::runtime_error("Recording support is not compiled into this build of LumenCore");
+}
+vector<string> Manager::GetRecordSinkSegments(int) { return {}; }
+bool Manager::DeleteRecordSinkSegment(int, string) { return false; }
+#endif
 
 void Manager::StartAllSources()
 {

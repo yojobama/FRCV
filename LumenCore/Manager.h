@@ -313,6 +313,19 @@ public:
 	// frame has arrived yet.
 	string GetMjpegFrameBase64(int sinkId);
 
+	// terminal sink: bind any single frame-producing node (raw camera, or a detector's annotated
+	// output) and record it to segmented MP4 files plus a JSON-Lines telemetry sidecar - see
+	// RecordSink.h's own comment. Deliberately takes only primitive parameters - RecordSink.h
+	// pulls in libavformat's C API, which must never reach swig.i, same reasoning as
+	// WebRTCSink/NetworkTablesSink above. Declared unconditionally for the same reason too.
+	int CreateRecordSink(string dstFolder, string encoderName, int bitrateKbps, int fps, int segmentSeconds, int64_t maxFolderSizeBytes, int maxFileCount);
+	int CreateRecordSink(int id, string dstFolder, string encoderName, int bitrateKbps, int fps, int segmentSeconds, int64_t maxFolderSizeBytes, int maxFileCount);
+	// filenames only, newest first - see RecordSink::ListSegments' own comment on why not full
+	// paths. Empty if sinkId isn't a RecordSink.
+	vector<string> GetRecordSinkSegments(int sinkId);
+	// true if filename existed under this sink's own dstFolder and was removed.
+	bool DeleteRecordSinkSegment(int sinkId, string filename);
+
 	// which LUMEN_WITH_* backends this build actually has compiled in (e.g. {"ONNX", "NT4",
 	// "VULKAN_APRILTAG"}) - lets the WebUI grey out unavailable options instead of discovering
 	// them by a failed request, and is the runtime counterpart to the SWIG-surface-stays-constant

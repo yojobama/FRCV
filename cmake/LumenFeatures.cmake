@@ -29,6 +29,7 @@ set(_LUMEN_FEATURE_NAMES
     ONNX
     NT4
     WEBRTC
+    RECORD
     VULKAN_APRILTAG
     CODEC_STEREO
     RKNN
@@ -38,6 +39,7 @@ set(_LUMEN_FEATURE_NAMES
 set(_LUMEN_FEATURE_ONNX_DESC            "ONNX Runtime object detection backend")
 set(_LUMEN_FEATURE_NT4_DESC             "NetworkTables 4 publishing sink")
 set(_LUMEN_FEATURE_WEBRTC_DESC          "WebRTC live-view sink")
+set(_LUMEN_FEATURE_RECORD_DESC          "RecordSink - segmented MP4 recording with a JSON-Lines telemetry sidecar")
 set(_LUMEN_FEATURE_VULKAN_APRILTAG_DESC "Vulkan compute AprilTag backend")
 set(_LUMEN_FEATURE_CODEC_STEREO_DESC    "codec-stereo hardware-motion-vector depth backend")
 set(_LUMEN_FEATURE_RKNN_DESC            "Rockchip NPU object detection backend (aarch64 only)")
@@ -49,6 +51,7 @@ set(_LUMEN_FEATURE_RGA_DESC              "Rockchip RGA hardware BGR->NV12 conver
 set(_LUMEN_FEATURE_ONNX_DEFAULT            ON)
 set(_LUMEN_FEATURE_NT4_DEFAULT             ON)
 set(_LUMEN_FEATURE_WEBRTC_DEFAULT          ON)
+set(_LUMEN_FEATURE_RECORD_DEFAULT          ON)
 set(_LUMEN_FEATURE_VULKAN_APRILTAG_DEFAULT ON)
 set(_LUMEN_FEATURE_CODEC_STEREO_DEFAULT    ON)
 set(_LUMEN_FEATURE_RKNN_DEFAULT            OFF)
