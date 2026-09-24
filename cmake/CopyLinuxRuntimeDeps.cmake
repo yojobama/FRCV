@@ -28,8 +28,20 @@ if(NOT DEFINED DEST_DIR)
     message(FATAL_ERROR "CopyLinuxRuntimeDeps.cmake requires -D DEST_DIR=<directory to copy resolved deps into>")
 endif()
 
+# DIRECTORIES matters beyond just "where EXECUTABLE itself lives": the walk is transitive (it
+# also resolves EXECUTABLE's dependencies' OWN dependencies, e.g. libavcodec.so's own need for
+# libswresample.so), and a from-source lib with no embedded RPATH of its own (plain ffmpeg
+# `make install` doesn't set one) only gets resolved one level deep via libLumenCore.so's own
+# RPATH - its own further transitive deps then fall back to default system search paths, which
+# deliberately exclude /opt/lumenvision-ffmpeg (see this file's own header comment on why it's
+# outside ldconfig's search path) and so came back UNRESOLVED here even though the file
+# genuinely exists - confirmed the hard way (libswresample.so.5, pulled in transitively by
+# ffmpeg's built-in opus decoder, silently skipped from the stage/Release/ copy, which then
+# broke the separate LumenCoreTests link since Lumen::ffmpeg's rpath is PRIVATE to LumenCore and
+# doesn't propagate to a test executable that only links the .so).
 file(GET_RUNTIME_DEPENDENCIES
     LIBRARIES "${EXECUTABLE}"
+    DIRECTORIES "/usr/local/lib" "/opt/lumenvision-ffmpeg/lib"
     RESOLVED_DEPENDENCIES_VAR _resolvedDeps
     UNRESOLVED_DEPENDENCIES_VAR _unresolvedDeps
 )
