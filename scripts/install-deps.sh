@@ -864,6 +864,15 @@ MPP_REF="${MPP_REF:-develop}"
 fetch_mpp() {
     [[ "$ARCH" == "aarch64" ]] || return 0
 
+    # Both the rockchip_mpp .pc copy below and librga's own hand-written .pc write into
+    # $PREFIX/lib/pkgconfig - this function must not assume that directory already exists.
+    # Confirmed the hard way: it always silently relied on something ELSE (build_opencv's own
+    # `cmake --install`, which happened to run first in the old call order in main) having
+    # created it already - moving fetch_mpp earlier (so ffmpeg-rockchip, and in turn OpenCV's
+    # own -DWITH_FFMPEG=ON detection, can see it before build_opencv runs) exposed that this
+    # function was never actually self-sufficient.
+    [[ "$CHECK_ONLY" -eq 0 ]] && sudo mkdir -p "$PREFIX/lib/pkgconfig"
+
     if pkg-config --exists rockchip_mpp 2>/dev/null; then
         log "rockchip_mpp already installed ($(pkg-config --modversion rockchip_mpp))"
     elif [[ "$WITH_MPP" -eq 1 ]]; then
