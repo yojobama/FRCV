@@ -22,6 +22,8 @@ jobs:
     # GitHub-hosted arm64 runners (GA for public repos since August 2025) - no self-hosted
     # runner needed, see ci.yml's own comment on this.
     runs-on: ubuntu-24.04-arm
+    outputs:
+      version: ${{ steps.version.outputs.value }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -87,6 +89,38 @@ jobs:
           path: lumenvision-backend_*_arm64.deb
           if-no-files-found: error
 
+  build-images:
+    # One customized, flashable OS image per Orange Pi 5-family board - installs the .deb this
+    # same run's build-deb job just produced into Armbian's own published Debian 13 vendor-kernel
+    # image (see scripts/build-image.sh's own header for the full rationale). No
+    # continue-on-error/fail-fast:false anywhere here - every board's image is a real gate on the
+    # release, the same as build-deb itself, not a best-effort extra.
+    needs: build-deb
+    runs-on: ubuntu-24.04-arm
+    strategy:
+      matrix:
+        board: [orangepi5, orangepi5-plus, orangepi5b, orangepi5pro, orangepi5-max, orangepi5-ultra]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: lumenvision-backend-deb
+          path: .
+
+      - name: Build image
+        env:
+          VERSION: ${{ needs.build-deb.outputs.version }}
+        # --preserve-env, not `sudo VERSION=... cmd` - Ubuntu's default sudoers has env_reset on,
+        # which silently drops a leading VAR=value assignment unless it's in env_keep.
+        run: sudo --preserve-env=VERSION scripts/build-image.sh ${{ matrix.board }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lumenvision-image-${{ matrix.board }}
+          path: lumenvision-${{ matrix.board }}_*.img.xz
+          if-no-files-found: error
+
   build-vendordep:
     # pure Java - no ARM64 (or any C++ toolchain) needed.
     runs-on: ubuntu-24.04
@@ -129,10 +163,11 @@ jobs:
           path: photoncompat.json
 
   publish-release:
-    needs: [build-deb, build-vendordep]
+    needs: [build-deb, build-images, build-vendordep]
     runs-on: ubuntu-24.04
     # only a real pushed tag creates a public release - a workflow_dispatch run stops after
-    # build-deb/build-vendordep so their artifacts can be inspected without publishing anything.
+    # build-deb/build-images/build-vendordep so their artifacts can be inspected without
+    # publishing anything.
     if: github.ref_type == 'tag'
     steps:
       - uses: actions/checkout@v4
@@ -141,6 +176,12 @@ jobs:
         with:
           name: lumenvision-backend-deb
           path: dist
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: lumenvision-image-*
+          path: dist
+          merge-multiple: true
 
       - uses: actions/download-artifact@v4
         with:
@@ -169,6 +210,7 @@ jobs:
         run: |
           gh release create "${GITHUB_REF_NAME}" \
             dist/lumenvision-backend_*_arm64.deb \
+            dist/lumenvision-*.img.xz \
             dist/photoncompat.json \
             --title "${GITHUB_REF_NAME}" \
             --generate-notes
