@@ -990,11 +990,25 @@ fetch_ffmpeg_rockchip() {
 
     (
         cd "$src"
+        # --extra-ldflags='-Wl,-rpath,$ORIGIN' (literal $ORIGIN, single-quoted so THIS shell
+        # doesn't expand it) bakes a self-referential rpath into every ffmpeg-rockchip .so it
+        # builds - confirmed the hard way: libavcodec.so's own need for libswresample.so (pulled
+        # in transitively by ffmpeg's built-in opus decoder) otherwise can't be resolved at
+        # runtime by ANYTHING that links avcodec, because modern ld emits non-transitive
+        # DT_RUNPATH by default - a consumer's own rpath only covers ITS direct deps, not
+        # avcodec's further deps, and avcodec itself ships with no rpath from a plain `make
+        # install`. Registering $LUMEN_FFMPEG_PREFIX/lib in ldconfig globally would fix that too,
+        # but was deliberately rejected above (see this function's own header comment) - it would
+        # reopen the exact SONAME-collision-with-the-apt-ffmpeg risk the dedicated prefix exists
+        # to avoid. $ORIGIN is resolved per-.so at load time to wherever THAT FILE actually sits,
+        # so this keeps working correctly even after CopyLinuxRuntimeDeps.cmake relocates the
+        # whole sibling set together into the packaged /opt/lumenvision on a shipped board.
         PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig" ./configure \
             --prefix="$LUMEN_FFMPEG_PREFIX" \
             --enable-shared --disable-static \
             --enable-gpl --enable-version3 \
-            --enable-libx264 --enable-rkmpp --enable-rkrga --enable-libdrm
+            --enable-libx264 --enable-rkmpp --enable-rkrga --enable-libdrm \
+            --extra-ldflags='-Wl,-rpath,$ORIGIN'
         make -j "$JOBS"
     )
 
