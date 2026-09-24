@@ -271,9 +271,30 @@ build_opencv() {
     # servers (WSL has no display server either), and Python bindings are already off below
     # (-DBUILD_opencv_python3=OFF) - GTK/Python dev headers here would be pure dead weight, not
     # something the build ever uses.
-    apt_install \
-        libavcodec-dev libavformat-dev libswscale-dev libv4l-dev \
-        libtbb-dev libjpeg-dev libpng-dev libtiff-dev
+    #
+    # FFmpeg: when the dedicated ffmpeg-rockchip prefix exists (fetch_ffmpeg_rockchip runs before
+    # this function in main, specifically so this check can see it), point OpenCV's own
+    # -DWITH_FFMPEG=ON pkg-config auto-detection at THAT instead of apt's system ffmpeg-dev
+    # packages - confirmed the hard way on real hardware: OpenCV linking against the CI runner's
+    # apt-installed libavcodec-dev (SONAME 60 on ubuntu-24.04-arm) produced a shipped .deb that
+    # crash-looped on a real Orange Pi with "libavcodec.so.60: cannot open shared object file" -
+    # Debian 13 trixie ships a DIFFERENT ffmpeg (SONAME 61, matching ffmpeg-rockchip's own, but
+    # simply never bundled since apt-resolved system libs are deliberately excluded from
+    # CopyLinuxRuntimeDeps.cmake's copy - see that file's own comment on why). Using the same
+    # ffmpeg-rockchip build project-wide means there's only ever one ffmpeg to bundle, already
+    # handled correctly, with no cross-distro SONAME mismatch possible. Falls back to apt's system
+    # ffmpeg-dev packages when the dedicated prefix doesn't exist (non-aarch64 dev/CI machines,
+    # or --with-ffmpeg-rockchip wasn't requested) - OpenCV still needs SOME ffmpeg there.
+    local opencv_pkg_config_path=""
+    if [[ -d "$LUMEN_FFMPEG_PREFIX/lib/pkgconfig" ]]; then
+        log "OpenCV: using ffmpeg-rockchip at $LUMEN_FFMPEG_PREFIX for -DWITH_FFMPEG=ON (not apt's system ffmpeg)"
+        opencv_pkg_config_path="$LUMEN_FFMPEG_PREFIX/lib/pkgconfig"
+        apt_install libv4l-dev libtbb-dev libjpeg-dev libpng-dev libtiff-dev
+    else
+        apt_install \
+            libavcodec-dev libavformat-dev libswscale-dev libv4l-dev \
+            libtbb-dev libjpeg-dev libpng-dev libtiff-dev
+    fi
 
     local src="$BUILD_ROOT/opencv-${OPENCV_VERSION}"
     if [[ ! -d "$src" ]]; then
@@ -284,6 +305,7 @@ build_opencv() {
     mkdir -p "$src/build"
     (
         cd "$src/build"
+        PKG_CONFIG_PATH="${opencv_pkg_config_path:+$opencv_pkg_config_path:}${PKG_CONFIG_PATH:-}" \
         cmake -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_INSTALL_PREFIX="$PREFIX" \
@@ -1057,21 +1079,28 @@ fetch_ffmpeg_rockchip() {
 log "LumenVision dependency check/install — arch=$ARCH, check-only=$CHECK_ONLY, jobs=$JOBS"
 
 install_base
+# fetch_mpp/fetch_ffmpeg_rockchip run BEFORE build_opencv now - build_opencv's own -DWITH_FFMPEG=ON
+# auto-detection needs the dedicated ffmpeg-rockchip prefix to already exist so it links against
+# THAT (SONAME 61) instead of falling back to apt's system ffmpeg-dev packages (SONAME 60 on the
+# ubuntu-24.04-arm CI runner this .deb is built on). Confirmed the hard way on real hardware: the
+# old order shipped a .deb whose bundled libopencv_videoio.so needed libavcodec.so.60, which
+# doesn't exist anywhere on the Debian 13 target image (trixie ships SONAME 61 too, just not
+# bundled - a real cross-distro mismatch, not just a missing apt Depends: away from working).
+fetch_mpp || warn "MPP setup failed - see the log above; continuing"
+fetch_ffmpeg_rockchip || warn "ffmpeg-rockchip setup failed - see the log above; continuing"
 build_opencv
 build_apriltag
 install_ffmpeg
 install_vulkan
 build_vkapriltag || warn "vkapriltag build failed - see the log above; the CPU AprilTag backend remains the fallback"
 build_codec_stereo || warn "codec-stereo build failed - see the log above; stereo depth (STEREO_BACKEND_CODEC_*) will be unavailable, STEREO_BACKEND_SGBM is unaffected"
-# these three are optional/best-effort integrations (WebRTC, NT4, RKNN) - a failure partway
-# through one of them (a bad ref, a flaky download) should not, under `set -e`, take down a
-# run that otherwise succeeded; ONNX Runtime stays unconditional since --with-* doesn't gate it
+# these are optional/best-effort integrations (WebRTC, NT4, RKNN) - a failure partway through one
+# of them (a bad ref, a flaky download) should not, under `set -e`, take down a run that otherwise
+# succeeded; ONNX Runtime stays unconditional since --with-* doesn't gate it
 build_webrtc || warn "WebRTC setup (libdatachannel) failed - see the log above; continuing"
 fetch_ntcore || warn "NT4 setup (ntcore/wpiutil/wpinet) failed - see the log above; continuing"
 fetch_onnxruntime
 fetch_rknn || warn "RKNN setup failed - see the log above; continuing"
-fetch_mpp || warn "MPP setup failed - see the log above; continuing"
-fetch_ffmpeg_rockchip || warn "ffmpeg-rockchip setup failed - see the log above; continuing"
 
 if [[ "$CHECK_ONLY" -eq 1 ]]; then
     echo
