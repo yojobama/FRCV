@@ -102,7 +102,7 @@ Section: misc
 Priority: optional
 Architecture: arm64
 Installed-Size: $INSTALLED_SIZE_KB
-Depends: avahi-daemon, libdrm2, libvulkan1
+Depends: avahi-daemon, libdrm2, libvulkan1, libssl3
 Maintainer: $MAINTAINER
 Description: LumenVision vision coprocessor backend
  Self-contained FRC vision coprocessor server (camera capture, AprilTag/object detection,

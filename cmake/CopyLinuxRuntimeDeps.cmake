@@ -19,15 +19,19 @@
 
   The explicit allowlist exists for a real, confirmed exception to that second case: OpenCV's
   imgcodecs module and ffmpeg-rockchip's own build both dynamically link a handful of apt-
-  installed system codec libraries (libjpeg/libpng/libtiff/libwebp, libx264) at BUILD time on the
-  ubuntu-24.04-arm CI runner - these are genuinely self-contained image/media codec libraries, not
-  toolchain-ABI-sensitive like libc/libstdc++, so bundling them is safe. But unlike glibc/libssl/
-  libavahi, they're NOT a safe Depends: away from working on the Debian 13 trixie target image
-  either - confirmed the hard way on real hardware: Ubuntu's libjpeg-turbo8 ships SONAME 8 where
-  Debian ships SONAME 62 for the same library, and libx264's SONAME bumps with nearly every build,
-  so a Depends: on either would either not resolve at all or resolve to a genuinely different,
-  incompatible file. Bundling sidesteps the cross-distro mismatch entirely, the same way
-  ffmpeg-rockchip's own libs already are.
+  installed system codec libraries (libjpeg/libpng/libtiff/libwebp, libx264, and libtiff's/
+  libwebp's own further backends - libdeflate/libjbig/libLerc for TIFF, libsharpyuv for WebP) at
+  BUILD time on the ubuntu-24.04-arm CI runner - these are genuinely self-contained image/media
+  codec libraries, not toolchain-ABI-sensitive like libc/libstdc++, so bundling them is safe. But
+  unlike glibc/libssl/libavahi, they're NOT a safe Depends: away from working on the Debian 13
+  trixie target image either - confirmed the hard way on real hardware: Ubuntu's libjpeg-turbo8
+  ships SONAME 8 where Debian ships SONAME 62 for the same library, and libx264's SONAME bumps
+  with nearly every build, so a Depends: on either would either not resolve at all or resolve to a
+  genuinely different, incompatible file. Bundling sidesteps the cross-distro mismatch entirely,
+  the same way ffmpeg-rockchip's own libs already are. This full list was confirmed complete by
+  computing the actual transitive NEEDED closure across every .so in a real built .deb (readelf
+  -d, cross-referenced against what the bundle itself provides) - not discovered one crash at a
+  time, though it took two rounds of real hardware boot-testing to get there.
 
   Uses file(GET_RUNTIME_DEPENDENCIES) (CMake 3.21+), the modern, cross-platform-correct command
   for exactly this - it resolves the full transitive closure via the platform's own dependency
@@ -73,6 +77,10 @@ set(_allowlistedSystemLibs
     "^libwebpdemux\\.so"
     "^libwebpmux\\.so"
     "^libx264\\.so"
+    "^libLerc\\.so"
+    "^libdeflate\\.so"
+    "^libjbig\\.so"
+    "^libsharpyuv\\.so"
 )
 
 foreach(_dep ${_resolvedDeps})
