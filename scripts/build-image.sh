@@ -122,7 +122,7 @@ apt-get update
 apt-get install -y --no-install-recommends \
     build-essential dpkg-dev debhelper meson ninja-build pkg-config git \
     libgbm-dev libdrm-dev libx11-xcb1 libxcb-dri2-0 libxdamage1 libxext6 libwayland-client0 \
-    systemd-container xz-utils
+    systemd-container xz-utils cloud-guest-utils e2fsprogs
 
 git clone --depth 1 --branch libmali https://github.com/JeffyCN/mirrors.git "$LIBMALI_SRC"
 
@@ -153,8 +153,26 @@ echo "==> Built $LIBMALI_DEB"
 
 echo "==> [3/6] Extracting base image and mapping partitions"
 unxz -k "$BASE_IMG_XZ"
+
+# Armbian's published image ships with its root partition sized tight (just enough for the base
+# OS) - it only grows to fill the real SD card/eMMC via a first-boot resize service, which never
+# runs here since this script only ever mounts the raw .img through a loop device, it never
+# actually boots the image on real hardware. Confirmed the hard way: installing libmali +
+# lumenvision-backend (which bundles OpenCV/ONNX Runtime/ffmpeg-rockchip/etc. - "every
+# from-source runtime dependency", per its own .deb Description) into the un-grown image failed
+# outright with "No space left on device" partway through unpacking. Growing by a fixed, generous
+# 3GB up front is simpler and safer than precisely sizing to the .deb's own Installed-Size - the
+# extra headroom costs almost nothing in the final .img.xz (xz compresses empty ext4 blocks to
+# near nothing) and the image gets shrunk to fit the real card/eMMC again on first real boot
+# anyway (Armbian's own resize service works in the other direction too).
+echo "==> Growing image +3GB to fit the customization (Armbian ships its base image sized tight)"
+truncate -s +3G "$BASE_IMG"
 LOOP_DEV="$(losetup --find --show -P "$BASE_IMG")"
 sleep 1
+growpart "$LOOP_DEV" 1
+e2fsck -f -y "${LOOP_DEV}p1" || true
+resize2fs "${LOOP_DEV}p1"
+
 # Armbian images: partition 1 is the single ext4 root (u-boot lives in raw sectors before
 # partition 1, not a separate partition, so there's nothing else here to mount).
 mount "${LOOP_DEV}p1" "$MOUNT_DIR"
