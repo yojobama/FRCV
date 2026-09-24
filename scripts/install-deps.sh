@@ -1024,6 +1024,21 @@ fetch_ffmpeg_rockchip() {
     sudo cp -a "$stage$LUMEN_FFMPEG_PREFIX/." "$LUMEN_FFMPEG_PREFIX/"
     rm -rf "$stage"
 
+    # Belt-and-suspenders on top of --extra-ldflags above: ffmpeg's own Makefiles echo only a
+    # terse "LD <target>" per link step with no way to confirm $ORIGIN actually made it into
+    # every .so's own link command (their build system routes LDFLAGS through several
+    # Makefile-generation layers for shared libs specifically, not just the ffmpeg/ffprobe
+    # programs, and that path isn't something this script controls or can easily verify).
+    # patchelf sets the rpath directly and deterministically on the files that actually exist on
+    # disk, which is both simpler to verify (the log line below proves it) and doesn't depend on
+    # ffmpeg's internal LDFLAGS plumbing being trusted at all.
+    apt_install patchelf
+    local _so
+    while IFS= read -r -d '' _so; do
+        sudo patchelf --set-rpath '$ORIGIN' "$_so"
+    done < <(find "$LUMEN_FFMPEG_PREFIX/lib" -maxdepth 1 -name '*.so*' -print0)
+    log "rpath=\$ORIGIN set on every $LUMEN_FFMPEG_PREFIX/lib/*.so* (verifying one): $(patchelf --print-rpath "$LUMEN_FFMPEG_PREFIX/lib/libavcodec.so" 2>&1 || true)"
+
     log "ffmpeg-rockchip installed to $LUMEN_FFMPEG_PREFIX"
     # captured first, not piped into `grep -q` directly - see install_ffmpeg's own comment on why
     # (pipefail + ffmpeg's own exit code/SIGPIPE would silently misreport this as missing).
