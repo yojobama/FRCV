@@ -1,5 +1,3 @@
-﻿using EmbedIO.Routing;
-using EmbedIO.WebApi;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,20 +5,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Mvc;
+using Server.Web;
+
 namespace Server.Controllers.sources
 {
-    internal class SourceController : WebApiController
+    internal class SourceController : ControllerBase
     {
         // GET: Source activation status
-        [Route(EmbedIO.HttpVerbs.Get, "/source/isActive")]
-        public Task<bool> IsActive([QueryField] int SourceID)
+        [HttpGet("source/isActive")]
+        public Task<bool> IsActive([FromQuery] int SourceID)
         {
             bool status = SourceManager.Instance.IsSourceActive(SourceID);
             return Task.FromResult(status);
         }
 
         // GET: All registered sources;
-        [Route(EmbedIO.HttpVerbs.Get, "/source/getAll")]
+        [HttpGet("source/getAll")]
         public Task<Source[]> GetAllSources()
         {
             List<Source> sources = new List<Source>();
@@ -32,16 +33,16 @@ namespace Server.Controllers.sources
         }
 
         // PATCH: Rename am ImageFile source;
-        [Route(EmbedIO.HttpVerbs.Patch, "/source/rename")]
-        public Task Rename([QueryField] int SourceID, [QueryField] string newName)
+        [HttpPatch("source/rename")]
+        public Task Rename([FromQuery] int SourceID, [FromQuery] string newName)
         {
             SourceManager.Instance.ChangeSourceName(SourceID, newName);
             return Task.CompletedTask;
         }
 
         // DELETE: delete a source;
-        [Route(EmbedIO.HttpVerbs.Delete, "/source/delete")]
-        public Task Delete([QueryField] int SourceID)
+        [HttpDelete("source/delete")]
+        public Task Delete([FromQuery] int SourceID)
         {
             SourceManager.Instance.DeleteSource(SourceID);
             return Task.CompletedTask;
@@ -52,8 +53,8 @@ namespace Server.Controllers.sources
         // on first use) rather than a caller-supplied path, so this can't be used to write
         // somewhere unintended on the coprocessor's filesystem. Returns false if the source has
         // never published a frame yet.
-        [Route(EmbedIO.HttpVerbs.Post, "/source/snapshot")]
-        public Task<bool> SaveSnapshot([QueryField] int SourceID, [QueryField] string fileName)
+        [HttpPost("source/snapshot")]
+        public Task<bool> SaveSnapshot([FromQuery] int SourceID, [FromQuery] string fileName)
         {
             string snapshotDir = Path.Combine(AppContext.BaseDirectory, "snapshots");
             Directory.CreateDirectory(snapshotDir);

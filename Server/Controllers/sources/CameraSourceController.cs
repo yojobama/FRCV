@@ -1,18 +1,18 @@
-﻿using EmbedIO;
-using EmbedIO.Routing;
-using EmbedIO.WebApi;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Mvc;
+using Server.Web;
+
 namespace Server.Controllers.sources
 {
-    internal class CameraSourceController : WebApiController
+    internal class CameraSourceController : ControllerBase
     {
         // POST: create camera sources from all connected cameras;
-        [Route(EmbedIO.HttpVerbs.Post, "/cameraSource/createAll")]
+        [HttpPost("cameraSource/createAll")]
         public Task CreateAll()
         {
             CameraHardwareInfo[] cameraHardwareInfoArray = ManagerWrapper.Instance.EnumerateAvailableCameras().ToArray();
@@ -41,8 +41,8 @@ namespace Server.Controllers.sources
         // [JsonData]-bound record struct across this controller and StereoDepthSinkController
         // threw ArgumentNullException from inside the native setter, regardless of the JSON
         // body's field casing - not a casing bug, Swan just never calls the constructor at all).
-        [Route(EmbedIO.HttpVerbs.Post, "/cameraSource/create")]
-        public async Task<int> Create([QueryField] string name = "default")
+        [HttpPost("cameraSource/create")]
+        public async Task<int> Create([FromQuery] string name = "default")
         {
             string body = await HttpContext.GetRequestBodyAsStringAsync();
             CameraHardwareInfoDto hardwareInfo = System.Text.Json.JsonSerializer.Deserialize<CameraHardwareInfoDto>(body);
@@ -51,7 +51,7 @@ namespace Server.Controllers.sources
         }
 
         // GET: All connected cameras;
-        [Route(HttpVerbs.Get, "/cameraSource/getRegistered")]
+        [HttpGet("cameraSource/getRegistered")]
         public Task<Source[]> GetRegistered()
         {
             List<Source> sources = new List<Source>();
@@ -66,7 +66,7 @@ namespace Server.Controllers.sources
         }
 
         // GET: All available camers that have not yet been turns into a source;
-        [Route(HttpVerbs.Get, "/cameraSource/getNotRegistered")]
+        [HttpGet("cameraSource/getNotRegistered")]
         public Task<CameraHardwareInfoDto[]> GetNotRegistered()
         {
             CameraHardwareInfo[] cameraHardwareInfoArray = ManagerWrapper.Instance.EnumerateAvailableCameras().ToArray();
@@ -84,7 +84,7 @@ namespace Server.Controllers.sources
         }
 
         // GET: every capture mode this camera actually advertises (ROADMAP.md Phase 3b).
-        [Route(HttpVerbs.Get, "/cameraSource/{id}/modes")]
+        [HttpGet("cameraSource/{id}/modes")]
         public Task<CameraModeDto[]> GetModes(int id)
         {
             return Task.FromResult(ManagerWrapper.Instance.GetCameraModes(id).Select(CameraModeDto.From).ToArray());
@@ -93,7 +93,7 @@ namespace Server.Controllers.sources
         // GET: what the device is actually running right now - check isNative after a /mode PATCH
         // to see whether the request was honoured exactly or silently substituted (both V4L2 and
         // Media Foundation do this - see CameraMode's own comment).
-        [Route(HttpVerbs.Get, "/cameraSource/{id}/currentMode")]
+        [HttpGet("cameraSource/{id}/currentMode")]
         public Task<CameraModeDto> GetCurrentMode(int id)
         {
             return Task.FromResult(CameraModeDto.From(ManagerWrapper.Instance.GetCameraCurrentMode(id)));
@@ -103,7 +103,7 @@ namespace Server.Controllers.sources
         // matches the camera's CURRENT capture mode (ROADMAP.md Phase 8/E5) - a SetMode call
         // above can silently leave a bound ApriltagDetector's pose estimation running on
         // intrinsics computed for a different resolution, with nothing else surfacing that.
-        [Route(HttpVerbs.Get, "/cameraSource/{id}/calibrationStatus")]
+        [HttpGet("cameraSource/{id}/calibrationStatus")]
         public Task<CalibrationStatusDto> GetCalibrationStatus(int id)
         {
             return Task.FromResult(CalibrationStatusDto.From(CalibrationManager.Instance.GetCalibrationStatus(id)));
@@ -112,7 +112,7 @@ namespace Server.Controllers.sources
         // PATCH: request an explicit capture mode. Returns whether the underlying ioctl/API call
         // itself succeeded - NOT whether the device honoured it exactly; re-GET /currentMode
         // afterwards for that.
-        [Route(HttpVerbs.Patch, "/cameraSource/{id}/mode")]
+        [HttpPatch("cameraSource/{id}/mode")]
         public async Task<bool> SetMode(int id)
         {
             string body = await HttpContext.GetRequestBodyAsStringAsync();
@@ -123,20 +123,20 @@ namespace Server.Controllers.sources
         // PATCH: exposure/gain control - a fixed short exposure is what actually makes AprilTags
         // detect reliably on a moving robot. Call autoExposure=false before exposureAbsolute for
         // the exposure value to actually take effect on most UVC hardware.
-        [Route(HttpVerbs.Patch, "/cameraSource/{id}/exposure")]
-        public Task<bool> SetExposure(int id, [QueryField] int exposureAbsolute)
+        [HttpPatch("cameraSource/{id}/exposure")]
+        public Task<bool> SetExposure(int id, [FromQuery] int exposureAbsolute)
         {
             return Task.FromResult(ManagerWrapper.Instance.SetCameraExposure(id, exposureAbsolute));
         }
 
-        [Route(HttpVerbs.Patch, "/cameraSource/{id}/autoExposure")]
-        public Task<bool> SetAutoExposure(int id, [QueryField] bool enabled)
+        [HttpPatch("cameraSource/{id}/autoExposure")]
+        public Task<bool> SetAutoExposure(int id, [FromQuery] bool enabled)
         {
             return Task.FromResult(ManagerWrapper.Instance.SetCameraAutoExposure(id, enabled));
         }
 
-        [Route(HttpVerbs.Patch, "/cameraSource/{id}/gain")]
-        public Task<bool> SetGain(int id, [QueryField] int gain)
+        [HttpPatch("cameraSource/{id}/gain")]
+        public Task<bool> SetGain(int id, [FromQuery] int gain)
         {
             return Task.FromResult(ManagerWrapper.Instance.SetCameraGain(id, gain));
         }
@@ -145,8 +145,8 @@ namespace Server.Controllers.sources
         // source (ROADMAP.md Phase 3d) - the side-by-side/top-bottom stereo building block. Call
         // this twice against one side-by-side camera (left half, right half) to get two ordinary
         // sources bindable into a stereo sink exactly like two real cameras.
-        [Route(HttpVerbs.Post, "/cameraSource/{id}/roi")]
-        public Task<int> CreateRoi(int id, [QueryField] int x, [QueryField] int y, [QueryField] int width, [QueryField] int height)
+        [HttpPost("cameraSource/{id}/roi")]
+        public Task<int> CreateRoi(int id, [FromQuery] int x, [FromQuery] int y, [FromQuery] int width, [FromQuery] int height)
         {
             return Task.FromResult(ManagerWrapper.Instance.CreateRoiSource(id, x, y, width, height));
         }

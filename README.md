@@ -14,8 +14,8 @@ hardware utilisation). This file is the quick-start.
 
 - **`LumenCore/`** — the C++ core: sources (camera/video/image), sinks (AprilTag, object
   detection, calibration, NetworkTables, WebRTC), built as `libLumenCore.so`.
-- **`Server/`** — a .NET 10 EmbedIO web server, gluing the C++ library (via SWIG bindings) to
-  the WebUI.
+- **`Server/`** — a .NET 10 ASP.NET Core (Kestrel) web server, gluing the C++ library (via SWIG
+  bindings) to the WebUI.
 - **`webui/`** — the React/Vite WebUI.
 - **`third_party/vkapriltag/`** — git submodule; Vulkan-compute AprilTag detection
   (`git submodule update --init` after cloning).

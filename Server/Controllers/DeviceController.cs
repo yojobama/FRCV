@@ -1,29 +1,29 @@
-﻿using EmbedIO;
-using EmbedIO.Routing;
-using EmbedIO.WebApi;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Mvc;
+using Server.Web;
+
 namespace Server.Controllers
 {
-    internal class DeviceController : WebApiController
+    internal class DeviceController : ControllerBase
     {
-        [Route(HttpVerbs.Get, "/device/cpuUsage")]
+        [HttpGet("device/cpuUsage")]
         public Task<int> GetDeviceCPUUsage() 
         { 
             return Task.FromResult((int)LinuxResourceMonitor.Instance.GetLatestResourceInfo().CpuUsagePercent); 
         }
 
-        [Route(HttpVerbs.Get, "/device/ramUsage")]
+        [HttpGet("device/ramUsage")]
         public Task<int> GetDeviceRamUsage()
         {
             return Task.FromResult((int)LinuxResourceMonitor.Instance.GetLatestResourceInfo().UsedMemoryMB);
         }
 
-        [Route(HttpVerbs.Get, "/device/diskUsage")]
+        [HttpGet("device/diskUsage")]
         public Task<int> GetDeviceDiskUsage()
         {
             return Task.FromResult((int)LinuxResourceMonitor.Instance.GetLatestResourceInfo().RootDiskUsage.UsedPercent);
@@ -33,7 +33,7 @@ namespace Server.Controllers
         // since the SystemMonitor work but was never exposed over REST - a straight passthrough,
         // not a cached value like the other three (LinuxResourceMonitor's own background sampler
         // doesn't track temperature), so this makes one native call per request.
-        [Route(HttpVerbs.Get, "/device/temperature")]
+        [HttpGet("device/temperature")]
         public Task<int> GetDeviceTemperature()
         {
             return Task.FromResult(ManagerWrapper.Instance.GetCpuTemperature());

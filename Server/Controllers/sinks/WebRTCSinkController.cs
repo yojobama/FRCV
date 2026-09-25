@@ -1,8 +1,8 @@
-using EmbedIO;
-using EmbedIO.Routing;
-using EmbedIO.WebApi;
 using System.Text;
 using System.Threading.Tasks;
+
+using Microsoft.AspNetCore.Mvc;
+using Server.Web;
 
 namespace Server.Controllers.sinks
 {
@@ -11,7 +11,7 @@ namespace Server.Controllers.sinks
     // persistent connection is needed here beyond each request's own lifetime; the browser's own
     // candidates (which most browsers still trickle one at a time) are added as they arrive via
     // repeated calls to /webrtcSink/candidate.
-    internal class WebRTCSinkController : WebApiController
+    internal class WebRTCSinkController : ControllerBase
     {
         // POST: create a WebRTCSink. Bind it afterwards (PATCH /sink/bind) to the node whose
         // frames should be streamed. encoderName defaults to null (not the literal "libx264") so
@@ -28,9 +28,9 @@ namespace Server.Controllers.sinks
         // own /recordSink/create, and this endpoint had the exact same latent bug (a caller
         // omitting bitrateKbps/fps here would have silently gotten a 0 kbps/0 fps encoder
         // configuration, not the documented 4000/30 defaults).
-        [Route(HttpVerbs.Post, "/webrtcSink/create")]
-        public Task<int> Create([QueryField] string name, [QueryField] int? bitrateKbps = null,
-            [QueryField] int? fps = null, [QueryField] string? encoderName = null)
+        [HttpPost("webrtcSink/create")]
+        public Task<int> Create([FromQuery] string name, [FromQuery] int? bitrateKbps = null,
+            [FromQuery] int? fps = null, [FromQuery] string? encoderName = null)
         {
             string resolvedEncoderName = encoderName ?? ManagerWrapper.Instance.GetPreferredWebRTCEncoder();
             int sinkId = SinkManager.Instance.AddWebRTCSink(name, bitrateKbps ?? 4000, fps ?? 30, resolvedEncoderName);
@@ -43,16 +43,16 @@ namespace Server.Controllers.sinks
         // characters, and SDP is full of literal \r\n line endings, so JSON-wrapping it that
         // way produces a syntactically invalid JSON string (confirmed the hard way: the browser
         // got "Bad control character in string literal in JSON" trying to parse it).
-        [Route(HttpVerbs.Post, "/webrtcSink/offer")]
-        public async Task CreateOffer([QueryField] int sinkId)
+        [HttpPost("webrtcSink/offer")]
+        public async Task CreateOffer([FromQuery] int sinkId)
         {
             string sdp = SinkManager.Instance.WebRTCCreateOffer(sinkId);
             await HttpContext.SendStringAsync(sdp, "text/plain", Encoding.UTF8);
         }
 
         // POST: submit the browser's SDP answer
-        [Route(HttpVerbs.Post, "/webrtcSink/answer")]
-        public async Task SetAnswer([QueryField] int sinkId)
+        [HttpPost("webrtcSink/answer")]
+        public async Task SetAnswer([FromQuery] int sinkId)
         {
             using var reader = new StreamReader(HttpContext.OpenRequestStream());
             string sdp = await reader.ReadToEndAsync();
@@ -60,16 +60,16 @@ namespace Server.Controllers.sinks
         }
 
         // POST: submit one of the browser's trickled ICE candidates
-        [Route(HttpVerbs.Post, "/webrtcSink/candidate")]
-        public Task AddIceCandidate([QueryField] int sinkId, [QueryField] string candidate, [QueryField] string mid)
+        [HttpPost("webrtcSink/candidate")]
+        public Task AddIceCandidate([FromQuery] int sinkId, [FromQuery] string candidate, [FromQuery] string mid)
         {
             SinkManager.Instance.WebRTCAddIceCandidate(sinkId, candidate, mid);
             return Task.CompletedTask;
         }
 
         // GET: connection status
-        [Route(HttpVerbs.Get, "/webrtcSink/status")]
-        public Task<WebRtcStatusDto> GetStatus([QueryField] int sinkId)
+        [HttpGet("webrtcSink/status")]
+        public Task<WebRtcStatusDto> GetStatus([FromQuery] int sinkId)
         {
             return Task.FromResult(WebRtcStatusDto.Parse(SinkManager.Instance.GetWebRTCSinkStatus(sinkId)));
         }
@@ -78,7 +78,7 @@ namespace Server.Controllers.sinks
         // "h264_rkmpp" on a board with the real hardware ffmpeg build, "libx264" everywhere
         // else. Lets a settings UI show what will actually run instead of discovering it only
         // after creating a sink.
-        [Route(HttpVerbs.Get, "/webrtcSink/preferredEncoder")]
+        [HttpGet("webrtcSink/preferredEncoder")]
         public Task<string> GetPreferredEncoder()
         {
             return Task.FromResult(ManagerWrapper.Instance.GetPreferredWebRTCEncoder());

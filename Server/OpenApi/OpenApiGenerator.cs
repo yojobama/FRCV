@@ -4,25 +4,30 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using EmbedIO.Routing;
-using EmbedIO.WebApi;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace Server.OpenApi
 {
     // ROADMAP.md Phase 8a: a small, self-updating OpenAPI 3.0 generator built specifically for
-    // this server's own EmbedIO [Route]/[QueryField]/[JsonData] attributes - not a hand-written
-    // document (the whole point is to stop ApiService.ts/types/index.ts from drifting out of
-    // sync with the real routes, which a second hand-maintained document would just repeat one
-    // layer up) and not a migration to ASP.NET Core purely to get Swashbuckle for free (that's
-    // Phase-2-scale infrastructure risk for a server that already works fine on EmbedIO). The
-    // doc is derived by reflecting over the exact same attributes that make the routes work, so
-    // it can't silently fall out of sync with them the way a separate mirror can.
+    // this server's own controller attributes - not a hand-written document (the whole point is
+    // to stop ApiService.ts/types/index.ts from drifting out of sync with the real routes, which a
+    // second hand-maintained document would just repeat one layer up). The doc is derived by
+    // reflecting over the exact same attributes that make the routes work, so it can't silently
+    // fall out of sync with them the way a separate mirror can.
     //
-    // Deliberately scoped to what this server's ~70 routes actually use: EmbedIO's [Route] path-
-    // template params, [QueryField] primitives, one [JsonData] body parameter per method, and
+    // Kept (rather than switching to Microsoft.AspNetCore.OpenApi) across the EmbedIO -> ASP.NET
+    // Core migration on purpose: its output - operationIds ({Controller}_{Method}), PascalCase
+    // schema property names, numeric enums, paths without the /api prefix - is exactly what
+    // webui/src/api/generated.ts was generated from, so keeping it means the migration changes
+    // nothing on the client side. Only the attribute types it reads changed ([Route(HttpVerbs.X)]
+    // -> [HttpX], [QueryField] -> [FromQuery], [JsonData] -> [FromBody]).
+    //
+    // Deliberately scoped to what this server's routes actually use: attribute route-template
+    // params, [FromQuery] primitives, at most one [FromBody] parameter per method, and
     // Task/Task<T> return types (including the two SendStringAsync-based text/plain endpoints on
     // WebRTCSinkController, special-cased explicitly rather than guessed from reflection). This
-    // is not a general-purpose ASP.NET-style generator - it doesn't need to be one.
+    // is not a general-purpose generator - it doesn't need to be one.
     public static class OpenApiGenerator
     {
         // Endpoints that bypass EmbedIO's default JSON serialization and write a raw text body
@@ -54,11 +59,13 @@ namespace Server.OpenApi
 
                 foreach (var method in controllerType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
                 {
-                    var routeAttr = method.GetCustomAttribute<RouteAttribute>();
-                    if (routeAttr == null) continue;
+                    var routeAttr = method.GetCustomAttribute<HttpMethodAttribute>();
+                    if (routeAttr == null || routeAttr.Template == null) continue;
 
-                    string path = routeAttr.Route;
-                    string verb = routeAttr.Verb.ToString().ToLowerInvariant();
+                    // templates are relative to the global "api/" prefix (ApiPrefixConvention);
+                    // documented paths have always been the un-prefixed form
+                    string path = "/" + routeAttr.Template.TrimStart('/');
+                    string verb = routeAttr.HttpMethods.First().ToLowerInvariant();
                     string methodKey = $"{controllerType.Name}.{method.Name}";
 
                     var routeParamNames = ExtractRouteParamNames(path);
@@ -67,7 +74,7 @@ namespace Server.OpenApi
 
                     foreach (var p in method.GetParameters())
                     {
-                        if (p.GetCustomAttribute<JsonDataAttribute>() != null)
+                        if (p.GetCustomAttribute<FromBodyAttribute>() != null)
                         {
                             requestBody = new JsonObject
                             {
@@ -151,7 +158,10 @@ namespace Server.OpenApi
         {
             if (t == typeof(System.Threading.Tasks.Task)) return typeof(void);
             if (t.IsGenericType && t.GetGenericTypeDefinition() == typeof(System.Threading.Tasks.Task<>))
-                return t.GetGenericArguments()[0];
+                t = t.GetGenericArguments()[0];
+            // an IActionResult action (e.g. RecordSinkController.Download's PhysicalFile) writes
+            // its own non-JSON body - document it the same as the old raw-stream Task endpoint
+            if (typeof(IActionResult).IsAssignableFrom(t)) return typeof(void);
             return t;
         }
 

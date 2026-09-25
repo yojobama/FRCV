@@ -58,3 +58,14 @@ jobs:
       # change needed then.
       - name: Test
         run: ctest --preset ci-linux-x64 --output-on-failure
+
+      # The C# Server was never compiled by CI before - a broken controller or a SWIG binding
+      # mismatch only surfaced at release time (or on the board). Built against the native
+      # library the steps above just produced (-p:LumenCorePreset matches the cmake preset, and
+      # -c Release matches its stage/Release output directory).
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Build Server
+        run: dotnet build Server/Server.csproj -c Release -p:LumenCorePreset=ci-linux-x64

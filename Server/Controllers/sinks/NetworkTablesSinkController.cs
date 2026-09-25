@@ -1,33 +1,33 @@
-using EmbedIO;
-using EmbedIO.Routing;
-using EmbedIO.WebApi;
 using System.Threading.Tasks;
+
+using Microsoft.AspNetCore.Mvc;
+using Server.Web;
 
 namespace Server.Controllers.sinks
 {
-    internal class NetworkTablesSinkController : WebApiController
+    internal class NetworkTablesSinkController : ControllerBase
     {
         // POST: Create a NetworkTables sink that connects via team number
-        [Route(HttpVerbs.Post, "/networkTablesSink/createForTeam")]
-        public Task<int> CreateForTeam([QueryField] string name, [QueryField] int teamNumber,
-            [QueryField] string rootTable = "lumenvision", [QueryField] string clientIdentity = "lumenvision")
+        [HttpPost("networkTablesSink/createForTeam")]
+        public Task<int> CreateForTeam([FromQuery] string name, [FromQuery] int teamNumber,
+            [FromQuery] string rootTable = "lumenvision", [FromQuery] string clientIdentity = "lumenvision")
         {
             int sinkId = SinkManager.Instance.AddNetworkTablesSinkForTeam(name, teamNumber, rootTable, clientIdentity);
             return Task.FromResult(sinkId);
         }
 
         // POST: Create a NetworkTables sink that connects to an explicit server address (bench testing)
-        [Route(HttpVerbs.Post, "/networkTablesSink/createForServer")]
-        public Task<int> CreateForServer([QueryField] string name, [QueryField] string serverAddress,
-            [QueryField] int port = 0, [QueryField] string rootTable = "lumenvision", [QueryField] string clientIdentity = "lumenvision")
+        [HttpPost("networkTablesSink/createForServer")]
+        public Task<int> CreateForServer([FromQuery] string name, [FromQuery] string serverAddress,
+            [FromQuery] int port = 0, [FromQuery] string rootTable = "lumenvision", [FromQuery] string clientIdentity = "lumenvision")
         {
             int sinkId = SinkManager.Instance.AddNetworkTablesSinkForServer(name, serverAddress, port, rootTable, clientIdentity);
             return Task.FromResult(sinkId);
         }
 
         // GET: NT4 connection status for a given sink
-        [Route(HttpVerbs.Get, "/networkTablesSink/status")]
-        public Task<NetworkTablesStatusDto> GetStatus([QueryField] int sinkId)
+        [HttpGet("networkTablesSink/status")]
+        public Task<NetworkTablesStatusDto> GetStatus([FromQuery] int sinkId)
         {
             return Task.FromResult(NetworkTablesStatusDto.Parse(SinkManager.Instance.GetNetworkTablesSinkStatus(sinkId)));
         }

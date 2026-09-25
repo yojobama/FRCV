@@ -1,8 +1,11 @@
-using EmbedIO;
-using EmbedIO.WebSockets;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.WebSockets;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,34 +23,85 @@ namespace Server.WebSockets
     // requests) + 1 (sinks) + N (one IsSinkActive native call per sink, every poll, every client)
     // + 3 (device stats) HTTP round trips). Computed once per tick here regardless of how many
     // clients are connected, then fanned out via BroadcastAsync - not once per client poll.
-    public class StateChannel : WebSocketModule
+    //
+    // Transport: ASP.NET Core WebSockets. HandleAsync (mapped at /ws/state in Program.cs) accepts
+    // a socket into _clients and parks on its receive loop until the client disconnects; the
+    // hosted StateChannelBroadcaster drives RunAsync, the single sender - so no two sends ever
+    // overlap on one socket (WebSocket.SendAsync isn't safe to call concurrently).
+    public class StateChannel
     {
+        public static StateChannel Instance { get; } = new();
+
         private static readonly TimeSpan TickInterval = TimeSpan.FromSeconds(1);
         // per-node id: the frame count and wall-clock time it was sampled at, so the next tick
         // can turn "count now" into "frames per second" - see Manager::GetFrameCount's own
         // comment on why this division of labour (native: raw counter, C#: the delta) rather
         // than computing FPS natively.
         private readonly Dictionary<int, (ulong count, DateTime at)> _lastSample = new();
+        private readonly ConcurrentDictionary<Guid, WebSocket> _clients = new();
 
-        public StateChannel(string urlPath) : base(urlPath, true)
+        public async Task HandleAsync(HttpContext context)
         {
+            if (!context.WebSockets.IsWebSocketRequest)
+            {
+                context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                return;
+            }
+
+            using WebSocket socket = await context.WebSockets.AcceptWebSocketAsync();
+            var id = Guid.NewGuid();
+            _clients[id] = socket;
+            try
+            {
+                // one-way channel - clients don't send anything meaningful today; this loop only
+                // exists to notice the close handshake (or a dropped connection)
+                var buffer = new byte[256];
+                while (socket.State == WebSocketState.Open)
+                {
+                    var result = await socket.ReceiveAsync(buffer, context.RequestAborted);
+                    if (result.MessageType == WebSocketMessageType.Close)
+                    {
+                        await socket.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, null, CancellationToken.None);
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is WebSocketException or OperationCanceledException)
+            {
+                // client vanished without a close handshake - just drop it
+            }
+            finally
+            {
+                _clients.TryRemove(id, out _);
+            }
         }
 
-        protected override Task OnMessageReceivedAsync(IWebSocketContext context, byte[] buffer, IWebSocketReceiveResult result)
-            => Task.CompletedTask; // one-way channel - clients don't send anything meaningful today
-
-        protected override void OnStart(CancellationToken cancellationToken)
+        private async Task BroadcastAsync(string json)
         {
-            base.OnStart(cancellationToken);
-            _ = BroadcastLoopAsync(cancellationToken);
+            var payload = new ArraySegment<byte>(Encoding.UTF8.GetBytes(json));
+            foreach (var (id, socket) in _clients)
+            {
+                if (socket.State != WebSocketState.Open) continue;
+                try
+                {
+                    await socket.SendAsync(payload, WebSocketMessageType.Text, true, CancellationToken.None);
+                }
+                catch (Exception ex) when (ex is WebSocketException or ObjectDisposedException)
+                {
+                    _clients.TryRemove(id, out _); // one bad client must not stop the others' tick
+                }
+            }
         }
 
-        private async Task BroadcastLoopAsync(CancellationToken cancellationToken)
+        public async Task RunAsync(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
+                    // built every tick even with no clients connected: FPS is a tick-to-tick
+                    // frame-count delta, so skipping ticks would make the first value a new
+                    // client sees an average over however long nobody was watching
                     string json = JsonSerializer.Serialize(BuildSnapshot());
                     await BroadcastAsync(json);
                 }
@@ -115,5 +169,12 @@ namespace Server.WebSockets
 
             return new StateSnapshotDto(sources, sinks, device, nodeStats);
         }
+    }
+
+    // Runs StateChannel's broadcast tick for the lifetime of the host (starts with the server,
+    // stops on SIGTERM) - the equivalent of EmbedIO's WebSocketModule.OnStart hook.
+    public sealed class StateChannelBroadcaster : BackgroundService
+    {
+        protected override Task ExecuteAsync(CancellationToken stoppingToken) => StateChannel.Instance.RunAsync(stoppingToken);
     }
 }

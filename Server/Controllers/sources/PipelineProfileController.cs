@@ -1,10 +1,10 @@
-using EmbedIO;
-using EmbedIO.Routing;
-using EmbedIO.WebApi;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+
+using Microsoft.AspNetCore.Mvc;
+using Server.Web;
 
 namespace Server.Controllers.sources
 {
@@ -13,18 +13,18 @@ namespace Server.Controllers.sources
     // sink (ApriltagSink or ObjectDetectionSink) for a fresh instance built from the profile's
     // settings, leaving every other sink bound to the same source (WebRTC preview, driver mode)
     // untouched. This is what a robot program's pipelineIndex actually switches.
-    internal class PipelineProfileController : WebApiController
+    internal class PipelineProfileController : ControllerBase
     {
         // POST: define a new AprilTag-detection profile on a source. calibratorSinkId is
         // optional - a profile with none gets pose estimation without real-world scale/undistort
         // until one is attached (matches CreateApriltagDetector's own "empty calibration result"
         // default). Returns the new profile's index.
-        [Route(HttpVerbs.Post, "/source/profiles/apriltag")]
-        public Task<int> CreateApriltagProfile([QueryField] int sourceId, [QueryField] string name,
-            [QueryField] double tagSize, [QueryField] int? calibratorSinkId = null,
-            [QueryField] ApriltagBackendKind backend = ApriltagBackendKind.APRILTAG_BACKEND_CPU,
-            [QueryField] int frameWidth = 0, [QueryField] int frameHeight = 0,
-            [QueryField] bool driverMode = false)
+        [HttpPost("source/profiles/apriltag")]
+        public Task<int> CreateApriltagProfile([FromQuery] int sourceId, [FromQuery] string name,
+            [FromQuery] double tagSize, [FromQuery] int? calibratorSinkId = null,
+            [FromQuery] ApriltagBackendKind backend = ApriltagBackendKind.APRILTAG_BACKEND_CPU,
+            [FromQuery] int frameWidth = 0, [FromQuery] int frameHeight = 0,
+            [FromQuery] bool driverMode = false)
         {
             int index = SourceManager.Instance.AddApriltagProfile(sourceId, name, tagSize, calibratorSinkId,
                 backend, frameWidth, frameHeight, driverMode);
@@ -34,9 +34,9 @@ namespace Server.Controllers.sources
         // POST: define a new object-detection profile on a source, reusing a model already
         // registered via the model-upload endpoint (see ModelManager). Returns the new profile's
         // index.
-        [Route(HttpVerbs.Post, "/source/profiles/objectDetection")]
-        public Task<int> CreateObjectDetectionProfile([QueryField] int sourceId, [QueryField] string name,
-            [QueryField] int modelId)
+        [HttpPost("source/profiles/objectDetection")]
+        public Task<int> CreateObjectDetectionProfile([FromQuery] int sourceId, [FromQuery] string name,
+            [FromQuery] int modelId)
         {
             int index = SourceManager.Instance.AddObjectDetectionProfile(sourceId, name, modelId);
             return Task.FromResult(index);
@@ -46,8 +46,8 @@ namespace Server.Controllers.sources
         // PipelineProfile.FieldLayoutPath's own comment on why this is keyed by profile, not by
         // whatever sink id happens to be running it. Returns the number of tags loaded, or -1 if
         // the body wasn't a valid field layout.
-        [Route(HttpVerbs.Post, "/source/profiles/fieldLayout")]
-        public async Task<int> SetProfileFieldLayout([QueryField] int sourceId, [QueryField] int index)
+        [HttpPost("source/profiles/fieldLayout")]
+        public async Task<int> SetProfileFieldLayout([FromQuery] int sourceId, [FromQuery] int index)
         {
             using var reader = new StreamReader(HttpContext.OpenRequestStream());
             string json = await reader.ReadToEndAsync();
@@ -55,7 +55,7 @@ namespace Server.Controllers.sources
             string layoutDir = Path.Combine(AppContext.BaseDirectory, "fieldLayouts");
             Directory.CreateDirectory(layoutDir);
             string path = Path.Combine(layoutDir, $"source-{sourceId}-profile-{index}.json");
-            await File.WriteAllTextAsync(path, json);
+            await System.IO.File.WriteAllTextAsync(path, json);
 
             SourceManager.Instance.SetProfileFieldLayout(sourceId, index, path);
 
@@ -67,24 +67,24 @@ namespace Server.Controllers.sources
         }
 
         // GET: every profile defined on a source.
-        [Route(HttpVerbs.Get, "/source/profiles")]
-        public Task<List<PipelineProfile>> GetProfiles([QueryField] int sourceId)
+        [HttpGet("source/profiles")]
+        public Task<List<PipelineProfile>> GetProfiles([FromQuery] int sourceId)
         {
             return Task.FromResult(SourceManager.Instance.GetProfiles(sourceId));
         }
 
         // GET: the currently active profile's index, or -1 if none has ever been activated -
         // this is the coprocessor-side equivalent of PhotonVision's own readable pipelineIndex.
-        [Route(HttpVerbs.Get, "/source/profiles/active")]
-        public Task<int> GetActiveProfile([QueryField] int sourceId)
+        [HttpGet("source/profiles/active")]
+        public Task<int> GetActiveProfile([FromQuery] int sourceId)
         {
             return Task.FromResult(SourceManager.Instance.GetActiveProfileIndex(sourceId));
         }
 
         // PATCH: switch which profile is running for a source - PhotonVision's setPipelineIndex
         // equivalent.
-        [Route(HttpVerbs.Patch, "/source/profiles/activate")]
-        public Task Activate([QueryField] int sourceId, [QueryField] int index)
+        [HttpPatch("source/profiles/activate")]
+        public Task Activate([FromQuery] int sourceId, [FromQuery] int index)
         {
             SourceManager.Instance.ActivateProfile(sourceId, index);
             return Task.CompletedTask;
@@ -92,8 +92,8 @@ namespace Server.Controllers.sources
 
         // DELETE: remove a profile definition. Refuses to delete the currently active one -
         // activate a different profile first.
-        [Route(HttpVerbs.Delete, "/source/profiles")]
-        public Task DeleteProfile([QueryField] int sourceId, [QueryField] int index)
+        [HttpDelete("source/profiles")]
+        public Task DeleteProfile([FromQuery] int sourceId, [FromQuery] int index)
         {
             SourceManager.Instance.DeleteProfile(sourceId, index);
             return Task.CompletedTask;

@@ -1,19 +1,18 @@
-﻿using EmbedIO;
-using EmbedIO.Routing;
-using EmbedIO.WebApi;
-using HttpMultipartParser;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Mvc;
+using Server.Web;
+
 namespace Server.Controllers.sources
 {
-    internal class VideoFileSourceController : WebApiController
+    internal class VideoFileSourceController : ControllerBase
     {
         // GET: All VideoFile sources;
-        [Route(HttpVerbs.Get, "/videoFileSource/getAll")]
+        [HttpGet("videoFileSource/getAll")]
         public Task<Source[]> GetAll()
         {
             List<Source> sources = new List<Source>();
@@ -28,26 +27,25 @@ namespace Server.Controllers.sources
         }
 
         // POST: Create VideoFile Sources from all provided files with a default FPS of 30;
-        [Route(HttpVerbs.Post, "/videoFileSource/create")]
-        public Task<int[]> Create()
+        [HttpPost("videoFileSource/create")]
+        public async Task<int[]> Create()
         {
-            // Logic to handle video file upload
-            var parser = MultipartFormDataParser.Parse(HttpContext.OpenRequestStream());
+            var form = await Request.ReadFormAsync(HttpContext.RequestAborted);
             List<int> created = new List<int>();
 
-            foreach(var file in parser.Files)
+            foreach(var file in form.Files)
             {
                 if (file != null)
                 {
-                    string fileName = file.FileName;
-                    Stream fileStream = file.Data;
+                    // GetFileName: the client-supplied name is untrusted - never let it escape videos/
+                    string fileName = Path.GetFileName(file.FileName);
 
                     Directory.CreateDirectory("videos");
 
                     string savedPath = Path.Combine("videos", fileName);
-                    using (var output = File.Create(savedPath))
+                    using (var output = System.IO.File.Create(savedPath))
                     {
-                        fileStream.CopyTo(output);
+                        await file.CopyToAsync(output, HttpContext.RequestAborted);
                     }
                     // same "native code must not open this file until the upload's own
                     // FileStream has actually closed" fix as ImageFileSourceController.Create -
@@ -55,12 +53,12 @@ namespace Server.Controllers.sources
                     created.Add(SourceManager.Instance.InitializeVideoFileSource(savedPath, 30, Path.GetFileNameWithoutExtension(fileName)));
                 }
             }
-            return Task.FromResult(created.ToArray());
+            return created.ToArray();
         }
 
         // PATCH: Change VideoFile FPS;
-        [Route(HttpVerbs.Patch, "/videoFileSource/changeFPS")]
-        public Task ChangeFPS([QueryField] int fps)
+        [HttpPatch("videoFileSource/changeFPS")]
+        public Task ChangeFPS([FromQuery] int fps)
         {
             // TODO: Implement;
             return Task.CompletedTask;

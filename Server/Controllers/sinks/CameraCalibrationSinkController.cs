@@ -1,17 +1,17 @@
-using EmbedIO;
-using EmbedIO.Routing;
-using EmbedIO.WebApi;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+using Microsoft.AspNetCore.Mvc;
+using Server.Web;
+
 namespace Server.Controllers.sinks
 {
-    internal class CameraCalibrationSinkController : WebApiController
+    internal class CameraCalibrationSinkController : ControllerBase
     {
         // POST: Create a camera calibration sink (default 6x9 checkerboard, 25mm squares)
-        [Route(HttpVerbs.Post, "/cameraCalibrationSink/create")]
-        public Task<int> Create([QueryField] string name)
+        [HttpPost("cameraCalibrationSink/create")]
+        public Task<int> Create([FromQuery] string name)
         {
             int sinkId = SinkManager.Instance.AddSink(name, "cameracalibrationsink");
             DB.Instance.Save();
@@ -19,10 +19,10 @@ namespace Server.Controllers.sinks
         }
 
         // POST: Create a camera calibration sink with an explicit board configuration
-        [Route(HttpVerbs.Post, "/cameraCalibrationSink/createWithBoard")]
-        public Task<int> CreateWithBoard([QueryField] string name, [QueryField] CalibrationBoardType boardType,
-            [QueryField] int rows, [QueryField] int cols, [QueryField] double squareSizeMeters,
-            [QueryField] double markerSizeMeters = 0.018, [QueryField] int arucoDictionaryId = 10)
+        [HttpPost("cameraCalibrationSink/createWithBoard")]
+        public Task<int> CreateWithBoard([FromQuery] string name, [FromQuery] CalibrationBoardType boardType,
+            [FromQuery] int rows, [FromQuery] int cols, [FromQuery] double squareSizeMeters,
+            [FromQuery] double markerSizeMeters = 0.018, [FromQuery] int arucoDictionaryId = 10)
         {
             int sinkId = SinkManager.Instance.AddCameraCalibrationSinkWithBoard(
                 name, boardType, rows, cols, (float)squareSizeMeters, (float)markerSizeMeters, arucoDictionaryId);
@@ -31,28 +31,28 @@ namespace Server.Controllers.sinks
 
         // POST: Save the checkerboard/ChArUco corners detected in the sink's latest frame, to be
         // used in the calibration phase once enough snapshots have been collected
-        [Route(HttpVerbs.Post, "/cameraCalibrationSink/{id}/saveDetection")]
+        [HttpPost("cameraCalibrationSink/{id}/saveDetection")]
         public Task<bool> SaveDetection(int id)
         {
             return Task.FromResult(SinkManager.Instance.SaveCameraCalibrationBoardDetection(id));
         }
 
         // GET: how many snapshots have been saved so far
-        [Route(HttpVerbs.Get, "/cameraCalibrationSink/{id}/snapshotCount")]
+        [HttpGet("cameraCalibrationSink/{id}/snapshotCount")]
         public Task<int> GetSnapshotCount(int id)
         {
             return Task.FromResult(SinkManager.Instance.GetCameraCalibrationSnapshotCount(id));
         }
 
         // DELETE: remove one saved snapshot by index
-        [Route(HttpVerbs.Delete, "/cameraCalibrationSink/{id}/snapshot")]
-        public Task<bool> RemoveSnapshot(int id, [QueryField] int index)
+        [HttpDelete("cameraCalibrationSink/{id}/snapshot")]
+        public Task<bool> RemoveSnapshot(int id, [FromQuery] int index)
         {
             return Task.FromResult(SinkManager.Instance.RemoveCameraCalibrationSnapshot(id, index));
         }
 
         // DELETE: discard every saved snapshot
-        [Route(HttpVerbs.Delete, "/cameraCalibrationSink/{id}/snapshots")]
+        [HttpDelete("cameraCalibrationSink/{id}/snapshots")]
         public Task ClearSnapshots(int id)
         {
             SinkManager.Instance.ClearCameraCalibrationSnapshots(id);
@@ -63,7 +63,7 @@ namespace Server.Controllers.sinks
         // when this happens rather than it running implicitly on every result fetch. Also
         // persists the result (keyed by the bound camera's device path + resolution) if the
         // sink is bound to a camera source.
-        [Route(HttpVerbs.Post, "/cameraCalibrationSink/{id}/run")]
+        [HttpPost("cameraCalibrationSink/{id}/run")]
         public Task<CameraCalibrationResultDto> RunCalibration(int id)
         {
             return Task.FromResult(CameraCalibrationResultDto.From(SinkManager.Instance.RunCameraCalibration(id)));
@@ -71,14 +71,14 @@ namespace Server.Controllers.sinks
 
         // GET: Retrieve the last calibration result computed by a camera calibration sink
         // (does NOT run calibration - call POST .../run first)
-        [Route(HttpVerbs.Get, "/cameraCalibrationSink/{id}/result")]
+        [HttpGet("cameraCalibrationSink/{id}/result")]
         public Task<CameraCalibrationResultDto> GetResult(int id)
         {
             return Task.FromResult(CameraCalibrationResultDto.From(SinkManager.Instance.GetCameraCalibrationResult(id)));
         }
 
         // GET: every calibration result ever saved to disk, across all cameras
-        [Route(HttpVerbs.Get, "/cameraCalibrationSink/savedResults")]
+        [HttpGet("cameraCalibrationSink/savedResults")]
         public Task<List<StoredCalibrationDto>> GetSavedResults()
         {
             return Task.FromResult(CalibrationManager.Instance.GetAll().Select(StoredCalibrationDto.From).ToList());
@@ -86,7 +86,7 @@ namespace Server.Controllers.sinks
 
         // GET: every saved snapshot's detected corner points, for the calibration wizard's live
         // coverage heatmap (ROADMAP.md Phase 8d).
-        [Route(HttpVerbs.Get, "/cameraCalibrationSink/{id}/coverage")]
+        [HttpGet("cameraCalibrationSink/{id}/coverage")]
         public Task<CalibrationCoverageDto> GetCoverage(int id)
         {
             int count = SinkManager.Instance.GetCameraCalibrationSnapshotCount(id);

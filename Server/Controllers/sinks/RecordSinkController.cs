@@ -1,11 +1,11 @@
-using EmbedIO;
-using EmbedIO.Routing;
-using EmbedIO.WebApi;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+
+using Microsoft.AspNetCore.Mvc;
+using Server.Web;
 
 namespace Server.Controllers.sinks
 {
@@ -20,7 +20,7 @@ namespace Server.Controllers.sinks
     // see RecordSink.h's own comment for the design (segmented MP4 + a JSON-Lines sidecar per
     // segment). This is also the first controller in this project to serve a file back over HTTP
     // at all - no generic download/static-file endpoint existed anywhere before this.
-    internal class RecordSinkController : WebApiController
+    internal class RecordSinkController : ControllerBase
     {
         // POST: create a RecordSink. Bind it afterwards (PATCH /sink/bind) to the node whose
         // frames should be recorded, same as WebRTCSink/MjpegSink. dstFolder defaults to null
@@ -36,11 +36,11 @@ namespace Server.Controllers.sinks
         // every parameter spelled out. A nullable value type's "absent" state is unambiguous, so
         // the binder leaves it null instead of guessing - the same reason dstFolder/encoderName
         // above were already nullable strings rather than defaulted non-nullable ones.
-        [Route(HttpVerbs.Post, "/recordSink/create")]
-        public Task<int> Create([QueryField] string name, [QueryField] string? dstFolder = null,
-            [QueryField] string? encoderName = null, [QueryField] int? bitrateKbps = null,
-            [QueryField] int? fps = null, [QueryField] int? segmentSeconds = null,
-            [QueryField] long? maxFolderSizeBytes = null, [QueryField] int? maxFileCount = null)
+        [HttpPost("recordSink/create")]
+        public Task<int> Create([FromQuery] string name, [FromQuery] string? dstFolder = null,
+            [FromQuery] string? encoderName = null, [FromQuery] int? bitrateKbps = null,
+            [FromQuery] int? fps = null, [FromQuery] int? segmentSeconds = null,
+            [FromQuery] long? maxFolderSizeBytes = null, [FromQuery] int? maxFileCount = null)
         {
             int sinkId = SinkManager.Instance.AddRecordSink(name, dstFolder, encoderName,
                 bitrateKbps ?? 8000, fps ?? 30, segmentSeconds ?? 300, maxFolderSizeBytes ?? 0, maxFileCount ?? 0);
@@ -51,7 +51,7 @@ namespace Server.Controllers.sinks
         // real video duration isn't probed here (would need an actual container parse, not just
         // a filesystem stat); a segment's own JSON-Lines sidecar carries real per-frame
         // timestamps for anything that needs precise timing.
-        [Route(HttpVerbs.Get, "/recordSink/{id}/segments")]
+        [HttpGet("recordSink/{id}/segments")]
         public Task<List<RecordSegmentDto>> GetSegments(int id)
         {
             var sink = RequireRecordSink(id);
@@ -71,31 +71,35 @@ namespace Server.Controllers.sinks
         // `file` is resolved strictly against this sink's OWN RecordDstFolder (TryResolveSegmentPath),
         // never trusted as a caller-supplied path directly - the obvious trap for a brand-new
         // "serve a file by name" endpoint.
-        [Route(HttpVerbs.Get, "/recordSink/{id}/download")]
-        public async Task Download(int id, [QueryField] string file)
+        //
+        // PhysicalFile with range processing: a browser <video> element (or a download manager)
+        // can seek/resume via HTTP Range requests instead of re-fetching a multi-hundred-MB match
+        // recording from the start. fileDownloadName sets the same attachment Content-Disposition
+        // the old hand-written header did.
+        [HttpGet("recordSink/{id}/download")]
+        public Task<IActionResult> Download(int id, [FromQuery] string file)
         {
             var sink = RequireRecordSink(id);
-            if (!TryResolveSegmentPath(sink.RecordDstFolder!, file, out string fullPath) || !File.Exists(fullPath))
+            if (!TryResolveSegmentPath(sink.RecordDstFolder!, file, out string fullPath) || !System.IO.File.Exists(fullPath))
             {
-                throw HttpException.NotFound();
+                throw ApiException.NotFound();
             }
-            HttpContext.Response.ContentType = Path.GetExtension(fullPath) == ".jsonl" ? "application/x-ndjson" : "video/mp4";
-            HttpContext.Response.Headers.Add("Content-Disposition", $"attachment; filename=\"{Path.GetFileName(fullPath)}\"");
-            using var fileStream = File.OpenRead(fullPath);
-            await fileStream.CopyToAsync(HttpContext.Response.OutputStream, HttpContext.CancellationToken);
+            string contentType = Path.GetExtension(fullPath) == ".jsonl" ? "application/x-ndjson" : "video/mp4";
+            IActionResult result = PhysicalFile(Path.GetFullPath(fullPath), contentType, Path.GetFileName(fullPath), enableRangeProcessing: true);
+            return Task.FromResult(result);
         }
 
         // POST: use an already-recorded segment as a VideoFileSource directly, no re-upload - the
         // old (deleted) RecordSink stub's own second aspirational comment, now real. Reuses
         // VideoFileSourceController's exact underlying call (InitializeVideoFileSource) against
         // the file already on disk.
-        [Route(HttpVerbs.Post, "/recordSink/{id}/promote")]
-        public Task<int> Promote(int id, [QueryField] string file, [QueryField] string? name = null)
+        [HttpPost("recordSink/{id}/promote")]
+        public Task<int> Promote(int id, [FromQuery] string file, [FromQuery] string? name = null)
         {
             var sink = RequireRecordSink(id);
-            if (!TryResolveSegmentPath(sink.RecordDstFolder!, file, out string fullPath) || !File.Exists(fullPath))
+            if (!TryResolveSegmentPath(sink.RecordDstFolder!, file, out string fullPath) || !System.IO.File.Exists(fullPath))
             {
-                throw HttpException.NotFound();
+                throw ApiException.NotFound();
             }
             int sourceId = SourceManager.Instance.InitializeVideoFileSource(fullPath, 30, name ?? Path.GetFileNameWithoutExtension(file));
             return Task.FromResult(sourceId);
@@ -103,8 +107,8 @@ namespace Server.Controllers.sinks
 
         // DELETE: remove one segment (and its .jsonl sidecar) manually, alongside the automatic
         // retention EnforceRetention() already applies.
-        [Route(HttpVerbs.Delete, "/recordSink/{id}/segments")]
-        public Task<bool> DeleteSegment(int id, [QueryField] string file)
+        [HttpDelete("recordSink/{id}/segments")]
+        public Task<bool> DeleteSegment(int id, [FromQuery] string file)
         {
             RequireRecordSink(id);
             return Task.FromResult(SinkManager.Instance.DeleteRecordSinkSegment(id, file));
@@ -115,7 +119,7 @@ namespace Server.Controllers.sinks
             var sink = SinkManager.Instance.GetSinkById(id);
             if (sink == null || sink.Type != SinkType.RecordSink || string.IsNullOrEmpty(sink.RecordDstFolder))
             {
-                throw HttpException.NotFound();
+                throw ApiException.NotFound();
             }
             return sink;
         }

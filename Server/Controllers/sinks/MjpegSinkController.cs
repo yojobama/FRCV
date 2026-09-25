@@ -1,7 +1,7 @@
-using EmbedIO;
-using EmbedIO.Routing;
-using EmbedIO.WebApi;
 using System.Threading.Tasks;
+
+using Microsoft.AspNetCore.Mvc;
+using Server.Web;
 
 namespace Server.Controllers.sinks
 {
@@ -9,7 +9,7 @@ namespace Server.Controllers.sinks
     // MjpegStreamModule.cs (a raw multipart/x-mixed-replace HTTP response, not a normal REST
     // action, the same "custom EmbedIO module, not a controller" reasoning StateChannel.cs
     // already follows for /ws/state).
-    internal class MjpegSinkController : WebApiController
+    internal class MjpegSinkController : ControllerBase
     {
         // POST: create an MjpegSink. Bind it afterwards (PATCH /sink/bind) to the node whose
         // frames should be streamed, same as WebRTCSink.
@@ -20,8 +20,8 @@ namespace Server.Controllers.sinks
         // parameter's C# default when the query string omits that key, it silently binds
         // default(int) (0) instead - a caller omitting jpegQuality here would have silently gotten
         // cv::IMWRITE_JPEG_QUALITY=0 (the worst possible quality setting, not merely "low").
-        [Route(HttpVerbs.Post, "/mjpegSink/create")]
-        public Task<int> Create([QueryField] string name, [QueryField] int? jpegQuality = null)
+        [HttpPost("mjpegSink/create")]
+        public Task<int> Create([FromQuery] string name, [FromQuery] int? jpegQuality = null)
         {
             int sinkId = SinkManager.Instance.AddMjpegSink(name, jpegQuality ?? 80);
             return Task.FromResult(sinkId);
