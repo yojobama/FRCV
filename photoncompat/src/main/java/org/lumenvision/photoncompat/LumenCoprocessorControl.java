@@ -16,8 +16,9 @@ import java.time.Duration;
  * loop would be a real mistake, the same reason photonlib itself only expects setDriverMode-style
  * calls from occasional, event-driven code (a button press), not every loop iteration.
  *
- * @param baseUrl the coprocessor's own REST base, e.g. {@code http://photonvision.local:5800}
- *     (or the board's IP) - no trailing slash.
+ * @param baseUrl the coprocessor's own web address, e.g. {@code http://lumenvision.local:5800}
+ *     (or the board's IP) - no trailing slash and no {@code /api} suffix; this class adds the
+ *     {@code /api} prefix itself.
  */
 public class LumenCoprocessorControl {
     private final HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build();
@@ -25,6 +26,12 @@ public class LumenCoprocessorControl {
 
     public LumenCoprocessorControl(String baseUrl) {
         this.baseUrl = baseUrl;
+    }
+
+    // every REST route lives under /api on the coprocessor; building URLs off the bare baseUrl
+    // silently 404'd every call before this.
+    private URI api(String path) {
+        return URI.create(baseUrl + "/api" + path);
     }
 
     /**
@@ -48,7 +55,7 @@ public class LumenCoprocessorControl {
     public boolean getDriverMode(int sinkId) {
         try {
             HttpRequest request =
-                    HttpRequest.newBuilder(URI.create(baseUrl + "/sink/driverMode?SinkID=" + sinkId))
+                    HttpRequest.newBuilder(api("/sink/driverMode?SinkID=" + sinkId))
                             .GET()
                             .timeout(Duration.ofSeconds(2))
                             .build();
@@ -87,7 +94,7 @@ public class LumenCoprocessorControl {
     public int getPipelineIndex(int sourceId) {
         try {
             HttpRequest request =
-                    HttpRequest.newBuilder(URI.create(baseUrl + "/source/profiles/active?sourceId=" + sourceId))
+                    HttpRequest.newBuilder(api("/source/profiles/active?sourceId=" + sourceId))
                             .GET()
                             .timeout(Duration.ofSeconds(2))
                             .build();
@@ -125,7 +132,7 @@ public class LumenCoprocessorControl {
     private boolean sendNoBody(String path, String method) {
         try {
             HttpRequest request =
-                    HttpRequest.newBuilder(URI.create(baseUrl + path))
+                    HttpRequest.newBuilder(api(path))
                             .method(method, HttpRequest.BodyPublishers.noBody())
                             .timeout(Duration.ofSeconds(2))
                             .build();

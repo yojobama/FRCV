@@ -5,9 +5,9 @@
   "uuid": "44156e77-af12-4bf6-9d3a-78049043aa6b",
   "frcYear": "2026",
   "mavenUrls": [
-    "https://yojobama.github.io/FRCV/maven"
+    "https://yojobama.github.io/LumenVision/maven"
   ],
-  "jsonUrl": "https://github.com/yojobama/FRCV/releases/latest/download/photoncompat.json",
+  "jsonUrl": "https://github.com/yojobama/LumenVision/releases/latest/download/photoncompat.json",
   "javaDependencies": [
     {
       "groupId": "org.lumenvision",
