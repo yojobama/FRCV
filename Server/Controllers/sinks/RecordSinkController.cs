@@ -93,6 +93,22 @@ namespace Server.Controllers.sinks
         // old (deleted) RecordSink stub's own second aspirational comment, now real. Reuses
         // VideoFileSourceController's exact underlying call (InitializeVideoFileSource) against
         // the file already on disk.
+        // POST: start (enabled=true) or stop (enabled=false) recording on EVERY source at once -
+        // the Match View button. The robot does the same over NT (<root>/config/recording); both
+        // go through SinkManager.SetAllRecording. Returns how many RecordSinks are now running.
+        [HttpPost("recordSink/all")]
+        public Task<int> SetAllRecording([FromQuery] bool enabled)
+        {
+            return Task.FromResult(SinkManager.Instance.SetAllRecording(enabled));
+        }
+
+        // GET: whether any RecordSink is currently running
+        [HttpGet("recordSink/all")]
+        public Task<bool> IsAnyRecording()
+        {
+            return Task.FromResult(SinkManager.Instance.IsAnyRecording());
+        }
+
         [HttpPost("recordSink/{id}/promote")]
         public Task<int> Promote(int id, [FromQuery] string file, [FromQuery] string? name = null)
         {

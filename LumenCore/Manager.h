@@ -280,8 +280,13 @@ public:
 	// sink has seen since the last call, as a JSON array (see NetworkTablesSink::PollConfigRequests
 	// for the exact shape). The caller (the C# Server side, on its own existing periodic loop) is
 	// responsible for actually applying each request - e.g. a driverMode entry via this same
-	// Manager's own SetDriverMode(int.Parse(sourceId), ...) - nothing does that yet.
+	// Manager's own SetDriverMode(int.Parse(sourceId), ...) - the C# NetworkTablesControlService.
 	string PollNetworkTablesSinkConfigRequests(int sinkId);
+	// the coprocessor-wide robot-writable "<root>/config/recording" request: -1 = no new write
+	// since the last call, 0 = stop, 1 = start (see NetworkTablesSink::PollRecordingRequest)
+	int PollNetworkTablesSinkRecordingRequest(int sinkId);
+	// publishes "<root>/status/recording" on that sink's NT connection
+	void SetNetworkTablesSinkRecordingStatus(int sinkId, bool recording);
 
 	// terminal sink: bind any single frame-producing node (raw camera, or a detector's
 	// annotated output) and it encodes+streams it over WebRTC. Deliberately takes only

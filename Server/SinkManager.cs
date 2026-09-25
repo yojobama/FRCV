@@ -389,6 +389,59 @@ namespace Server
         // restore call rather than going through AddSink's generic (name, type, id) switch: that
         // signature has no room for RecordSink's own config (dstFolder/encoder/segment/retention),
         // which must survive a restart for a recording actually to resume.
+        private readonly object _recordAllLock = new();
+
+        // "Record every camera" / "stop all recordings" - the one implementation behind both the
+        // webui's Match View button (POST /api/recordSink/all) and the robot's NT request
+        // (<root>/config/recording, applied by NetworkTablesControlService). Moved here from
+        // MatchPage.tsx, where it used to live in the browser only - robot code had no way to
+        // reach it. Starting: every source gets a RecordSink bound DIRECTLY to it (raw footage for
+        // match review, not a detector's annotated output), reusing an existing one if it already
+        // has one, else creating "<source name>-match". Stopping: every running RecordSink stops
+        // (finalizing its current segment - see RecordSink::OnStopped). Idempotent desired-state,
+        // and serialized: the NT poller and a REST call racing must not both create a sink for the
+        // same source. Returns how many RecordSinks are now running.
+        public int SetAllRecording(bool enabled)
+        {
+            lock (_recordAllLock)
+            {
+                if (!enabled)
+                {
+                    foreach (var sink in sinks.Where(s => s.Type == SinkType.RecordSink).ToList())
+                    {
+                        if (IsSinkRunning(sink.Id)) DisableSinkById(sink.Id);
+                    }
+                    DB.Instance.Save();
+                    return 0;
+                }
+
+                int running = 0;
+                foreach (int sourceId in SourceManager.Instance.GetAllSourceIds())
+                {
+                    Source source = SourceManager.Instance.GetSourceById(sourceId);
+                    if (source == null) continue;
+                    Sink? recordSink = sinks.FirstOrDefault(s => s.Type == SinkType.RecordSink && s.Source?.Id == sourceId);
+                    int recordSinkId;
+                    if (recordSink != null)
+                    {
+                        recordSinkId = recordSink.Id;
+                    }
+                    else
+                    {
+                        recordSinkId = AddRecordSink($"{source.Name}-match");
+                        BindSourceToSink(recordSinkId, sourceId);
+                    }
+                    if (!IsSinkRunning(recordSinkId)) EnableSinkById(recordSinkId);
+                    running++;
+                }
+                DB.Instance.Save();
+                return running;
+            }
+        }
+
+        public bool IsAnyRecording() =>
+            sinks.Any(s => s.Type == SinkType.RecordSink && IsSinkRunning(s.Id));
+
         public int RestoreRecordSink(Sink persisted)
         {
             string dstFolder = persisted.RecordDstFolder ?? System.IO.Path.Combine("recordings", persisted.Id.ToString());

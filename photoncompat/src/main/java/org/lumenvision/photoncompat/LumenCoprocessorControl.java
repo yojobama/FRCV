@@ -9,7 +9,7 @@ import java.time.Duration;
 
 /**
  * REST-based control of a LumenVision coprocessor - driver mode and snapshots (ROADMAP.md Phase
- * 7). Deliberately a separate class from {@link LumenCamera}, not more methods bolted onto it:
+ * 7). For match recording use {@link LumenCoprocessor} instead (NetworkTables, non-blocking). Deliberately a separate class from {@link LumenCamera}, not more methods bolted onto it:
  * LumenCamera is pure NT4 telemetry (low-latency, already-connected, read every loop safely);
  * this is HTTP request/response with real network latency and failure modes (a dropped
  * coprocessor connection, a slow response) - calling these from inside a tight periodic control

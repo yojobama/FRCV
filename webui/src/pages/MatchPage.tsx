@@ -70,23 +70,15 @@ export const MatchPage: React.FC = () => {
   // one button for every camera at once - Match view is otherwise deliberately read-only/
   // non-destructive (ROADMAP.md F3's own "no editing, nothing destructive" principle is about
   // pipeline topology, not a record button), the one place this page acts rather than just
-  // displays. Starts a RecordSink for any camera that doesn't already have one; stops every
-  // currently-running one.
+  // displays. The logic (reuse or create a RecordSink per camera, or stop them all) lives
+  // server-side in SinkManager.SetAllRecording - the same code robot code triggers over NT
+  // (<root>/config/recording), so the button and the robot can never disagree about what
+  // "record" means.
   const anyRecording = rows.some(r => r.recordSink?.IsRunning);
   const toggleAllRecording = async () => {
     setTogglingRecording(true);
     try {
-      await Promise.all(rows.map(async ({ source, recordSink }) => {
-        if (anyRecording) {
-          if (recordSink?.IsRunning) await api.toggleSink(recordSink.Sink.Id, false);
-        } else if (recordSink) {
-          if (!recordSink.IsRunning) await api.toggleSink(recordSink.Sink.Id, true);
-        } else {
-          const id = await api.createRecordSink(`${source.Name}-match`);
-          await api.bindSinkToSource(id, source.Id);
-          await api.toggleSink(id, true);
-        }
-      }));
+      await api.setAllRecording(!anyRecording);
     } finally {
       setTogglingRecording(false);
     }

@@ -497,6 +497,14 @@ export class ApiService {
   // Record Sink Controller routes - segmented MP4 recording with a JSON-Lines telemetry sidecar
   // per segment (see RecordSink.h's own comment). dstFolder/encoderName left undefined default
   // to a name-derived folder/libx264 server-side, same as createWebRTCSink's encoderName pattern.
+  // Start/stop recording on every source at once (SinkManager.SetAllRecording - the same code
+  // robot code triggers over NT). Returns how many RecordSinks are now running.
+  async setAllRecording(enabled: boolean): Promise<number> {
+    const response = await fetch(`${this.baseUrl}/recordSink/all?enabled=${enabled}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
   async createRecordSink(name: string, options?: { dstFolder?: string; encoderName?: string; bitrateKbps?: number; fps?: number; segmentSeconds?: number; maxFolderSizeBytes?: number; maxFileCount?: number }): Promise<number> {
     const params = new URLSearchParams({ name });
     if (options?.dstFolder) params.set('dstFolder', options.dstFolder);

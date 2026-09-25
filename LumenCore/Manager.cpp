@@ -1293,6 +1293,22 @@ string Manager::PollNetworkTablesSinkConfigRequests(int sinkId)
 
     return p_NtSink->PollConfigRequests();
 }
+
+int Manager::PollNetworkTablesSinkRecordingRequest(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return -1;
+    NetworkTablesSink* p_NtSink = dynamic_cast<NetworkTablesSink*>(sink->second.get());
+    return p_NtSink ? p_NtSink->PollRecordingRequest() : -1;
+}
+
+void Manager::SetNetworkTablesSinkRecordingStatus(int sinkId, bool recording)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return;
+    if (NetworkTablesSink* p_NtSink = dynamic_cast<NetworkTablesSink*>(sink->second.get()))
+        p_NtSink->SetRecordingStatus(recording);
+}
 #else
 int Manager::CreateNetworkTablesSinkForTeam(int, string, string)
 {
@@ -1313,6 +1329,8 @@ int Manager::CreateNetworkTablesSinkForServer(int, string, int, string, string)
 bool Manager::IsNetworkTablesSinkConnected(int) { return false; }
 string Manager::GetNetworkTablesSinkStatus(int) { return "{}"; }
 string Manager::PollNetworkTablesSinkConfigRequests(int) { return "[]"; }
+int Manager::PollNetworkTablesSinkRecordingRequest(int) { return -1; }
+void Manager::SetNetworkTablesSinkRecordingStatus(int, bool) {}
 #endif
 
 // Same "declared unconditionally, #ifdef'd body per logical group" pattern as the NT4 block

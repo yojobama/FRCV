@@ -3,6 +3,7 @@
 
 #include "ISink.h"
 #include <networktables/NetworkTableInstance.h>
+#include <networktables/BooleanTopic.h>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -66,8 +67,19 @@ public:
 	// own existing periodic loop and apply each request exactly once via its own SetDriverMode/
 	// pipeline-profile-activation logic - this sink has no way to call into that logic directly
 	// (ISink/ISource classes never reach back into Manager), so it can only surface the request,
-	// not apply it. This is a real gap for now: nothing on the C# side polls this yet.
+	// not apply it. The C# Server's NetworkTablesControlService polls this.
 	std::string PollConfigRequests();
+
+	// The coprocessor-wide (not per-source) robot-writable "<rootTable>/config/recording"
+	// boolean: -1 if it hasn't been written since the last call, else 0/1 for the most recent
+	// value. It's DESIRED STATE, not a toggle - a coprocessor that reboots mid-match picks the
+	// robot's retained value back up on reconnect and resumes recording. Consuming, same as
+	// PollConfigRequests; kept separate so that method's per-source array stays unchanged.
+	int PollRecordingRequest();
+
+	// Publishes "<rootTable>/status/recording" - whether the coprocessor is actually recording,
+	// so robot code can confirm its request took effect (the Server calls this every poll tick).
+	void SetRecordingStatus(bool recording);
 
 private:
 	// nt::Event callback registered on m_Instance covering every topic under this sink's own
@@ -107,6 +119,9 @@ private:
 	// guarded by m_ConfigMutex - OnConfigValueChanged runs on ntcore's own listener thread, not
 	// this sink's own Process() thread.
 	std::unordered_map<std::string, PendingConfigRequest> m_PendingConfig;
+	std::optional<bool> m_PendingRecording; // guarded by m_ConfigMutex too
+
+	nt::BooleanPublisher m_RecordingStatusPublisher;
 };
 
 #endif // LUMEN_WITH_NT4

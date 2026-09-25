@@ -100,6 +100,7 @@ namespace Server
                 });
 
             builder.Services.AddHostedService<StateChannelBroadcaster>();
+            builder.Services.AddHostedService<NetworkTablesControlService>();
 
             var app = builder.Build();
 

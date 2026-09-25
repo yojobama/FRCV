@@ -221,6 +221,9 @@ NetworkTablesSink::NetworkTablesSink(std::shared_ptr<Logger> logger, std::string
 	std::array<std::string_view, 1> prefixes{ std::string_view(configPrefix) };
 	m_ConfigListener = m_Instance.AddListener(prefixes, NT_EVENT_VALUE_REMOTE,
 		[this](const nt::Event& event) { OnConfigValueChanged(event); });
+
+	m_RecordingStatusPublisher = m_Instance.GetBooleanTopic("/" + m_Config.rootTable + "/status/recording").Publish();
+	m_RecordingStatusPublisher.Set(false);
 }
 
 NetworkTablesSink::~NetworkTablesSink()
@@ -241,6 +244,16 @@ void NetworkTablesSink::OnConfigValueChanged(const nt::Event& event)
 	std::string prefix = "/" + m_Config.rootTable + "/";
 	if (name.rfind(prefix, 0) != 0) return;
 	std::string rest = name.substr(prefix.size());
+
+	// coprocessor-wide, not per-source: "/<rootTable>/config/recording" - the per-source parse
+	// below requires exactly "<id>/config/<leaf>" and would drop it
+	if (rest == "config/recording") {
+		if (valueData->value.IsBoolean()) {
+			std::lock_guard<std::mutex> lock(m_ConfigMutex);
+			m_PendingRecording = valueData->value.GetBoolean();
+		}
+		return;
+	}
 
 	size_t firstSlash = rest.find('/');
 	size_t secondSlash = rest.find('/', firstSlash == std::string::npos ? std::string::npos : firstSlash + 1);
@@ -276,6 +289,20 @@ std::string NetworkTablesSink::PollConfigRequests()
 		out.push_back(entry);
 	}
 	return out.dump();
+}
+
+int NetworkTablesSink::PollRecordingRequest()
+{
+	std::lock_guard<std::mutex> lock(m_ConfigMutex);
+	if (!m_PendingRecording.has_value()) return -1;
+	int value = m_PendingRecording.value() ? 1 : 0;
+	m_PendingRecording.reset();
+	return value;
+}
+
+void NetworkTablesSink::SetRecordingStatus(bool recording)
+{
+	m_RecordingStatusPublisher.Set(recording);
 }
 
 bool NetworkTablesSink::IsConnected() const

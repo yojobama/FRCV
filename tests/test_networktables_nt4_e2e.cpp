@@ -181,3 +181,49 @@ TEST_CASE("NetworkTablesSink surfaces robot-writable config/pipelineIndex and co
 	robot.StopClient();
 	server.StopServer();
 }
+
+TEST_CASE("NetworkTablesSink surfaces the robot's config/recording request and publishes status/recording", "[nt4]") {
+	constexpr unsigned int TEST_NT3_PORT = 17821;
+	constexpr unsigned int TEST_NT4_PORT = 17822;
+
+	nt::NetworkTableInstance server = nt::NetworkTableInstance::Create();
+	server.StartServer("", "127.0.0.1", TEST_NT3_PORT, TEST_NT4_PORT);
+
+	auto logger = std::make_shared<Logger>("LumenCoreTests-nt4-recording.log");
+	NetworkTablesConfig config;
+	config.serverAddress = "127.0.0.1";
+	config.port = TEST_NT4_PORT;
+	config.rootTable = "lumenvision";
+	config.clientIdentity = "LumenCoreTests-nt4-recording-sink";
+	auto ntSink = std::make_shared<NetworkTablesSink>(logger, "nt4-recording-sink", config);
+
+	REQUIRE(ntSink->PollRecordingRequest() == -1); // nothing written yet
+
+	nt::NetworkTableInstance robot = nt::NetworkTableInstance::Create();
+	robot.SetServer("127.0.0.1", TEST_NT4_PORT);
+	robot.StartClient4("LumenCoreTests-nt4-recording-robot");
+	// exactly what photoncompat's LumenCoprocessor.setRecording() publishes
+	auto recordingPub = robot.GetBooleanTopic("/lumenvision/config/recording").Publish();
+	recordingPub.Set(true);
+
+	int request = -1;
+	REQUIRE(WaitUntil([&] { request = ntSink->PollRecordingRequest(); return request != -1; }));
+	REQUIRE(request == 1);
+	REQUIRE(ntSink->PollRecordingRequest() == -1); // consumed
+	// a coprocessor-wide topic must not leak into the per-source config array
+	REQUIRE(ntSink->PollConfigRequests() == "[]");
+
+	recordingPub.Set(false);
+	REQUIRE(WaitUntil([&] { request = ntSink->PollRecordingRequest(); return request != -1; }));
+	REQUIRE(request == 0);
+
+	// status flows the other way: what LumenCoprocessor.isRecording() reads
+	auto statusSub = robot.GetBooleanTopic("/lumenvision/status/recording").Subscribe(false);
+	ntSink->SetRecordingStatus(true);
+	REQUIRE(WaitUntil([&] { return statusSub.Get() == true; }));
+	ntSink->SetRecordingStatus(false);
+	REQUIRE(WaitUntil([&] { return statusSub.Get() == false; }));
+
+	robot.StopClient();
+	server.StopServer();
+}
