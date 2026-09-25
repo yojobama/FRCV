@@ -36,10 +36,23 @@ export const StreamView: React.FC<StreamViewProps> = ({ sourceId, onError, sinkI
   // is checked and set synchronously, before any await, so the second call sees it immediately
   // regardless of React's render timing.
   const fallbackStarted = useRef(false);
+  // the MjpegSink id created below, if any - tracked outside React state so the cleanup effect
+  // always sees the latest value without depending on it (which would re-run the effect on
+  // every fallback state change). AddMjpegSink's own "not restorable across a restart... fine
+  // for an ephemeral live-view sink" comment is only true if something actually deletes it when
+  // the preview goes away - nothing did (confirmed the hard way: every WebRTC failure across
+  // every node ever previewed left one more MjpegSink running server-side forever, silently
+  // eating memory over a match day). Deleted whenever this preview target changes or unmounts.
+  const fallbackSinkIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     fallbackStarted.current = false;
     setFallback(null);
+    return () => {
+      const staleId = fallbackSinkIdRef.current;
+      fallbackSinkIdRef.current = null;
+      if (staleId != null) api.deleteSink(staleId).catch(() => {});
+    };
   }, [sinkId]);
 
   const handleWebRtcError = useCallback(async (error: string) => {
@@ -53,17 +66,26 @@ export const StreamView: React.FC<StreamViewProps> = ({ sourceId, onError, sinkI
     fallbackStarted.current = true;
     console.warn('StreamView: WebRTC preview failed, falling back to MJPEG', { sinkId, sourceId, error });
     setFallback({ kind: 'creating' });
+    let mjpegId: number | null = null;
     try {
-      const mjpegId = await api.createMjpegSink(`preview-mjpeg-${sourceId}`);
+      mjpegId = await api.createMjpegSink(`preview-mjpeg-${sourceId}`);
+      fallbackSinkIdRef.current = mjpegId;
       await api.bindSinkToSource(mjpegId, sourceId);
       await api.toggleSink(mjpegId, true);
       setFallback({ kind: 'ready', sinkId: mjpegId });
     } catch (fallbackError) {
       console.error('StreamView: MJPEG fallback failed to start', fallbackError);
+      if (mjpegId != null) {
+        // partially set up (created, maybe bound) before a later step failed - don't leave it
+        // behind for the cleanup effect above to maybe never run (e.g. sinkId never changes again)
+        fallbackSinkIdRef.current = null;
+        api.deleteSink(mjpegId).catch(() => {});
+      }
       setFallback({ kind: 'failed' });
       onError(error);
     }
   }, [sourceId, onError, sinkId]);
+
 
   if (fallback?.kind === 'ready') {
     return <MjpegStream sinkId={fallback.sinkId} onError={onError} {...rest} />;

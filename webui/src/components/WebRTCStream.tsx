@@ -19,18 +19,25 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
   compact = false,
 }) => {
   const [connectionState, setConnectionState] = useState<string>('connecting');
-  const [peerConnection, setPeerConnection] = useState<RTCPeerConnection | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // a ref, not useState: the effect below closes over this value only once, at mount, so a
+  // peerConnection stored via setState would forever read back as the initial `null` inside the
+  // cleanup closure - confirmed the hard way, this meant unmounting (e.g. closing Inspector's
+  // side panel) never actually closed the RTCPeerConnection at all. The zombie connection kept
+  // negotiating/timing out in the background and its onconnectionstatechange handler - still a
+  // live closure referencing this component's onError - fired minutes later, well after the
+  // component was gone, tripping StreamView's WebRTC-failed fallback and spawning a brand new
+  // MjpegSink that nothing then ever cleaned up either.
+  const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const api = new ApiService();
 
   useEffect(() => {
     startWebRTCConnection();
     return () => {
-      if (peerConnection) {
-        peerConnection.close();
-      }
+      peerConnectionRef.current?.close();
+      peerConnectionRef.current = null;
     };
   }, [sinkId]);
 
@@ -47,7 +54,7 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
       const config: RTCConfiguration = { iceServers: [] };
 
       const pc = new RTCPeerConnection(config);
-      setPeerConnection(pc);
+      peerConnectionRef.current = pc;
 
       pc.onconnectionstatechange = () => {
         setConnectionState(pc.connectionState);
@@ -114,9 +121,8 @@ export const WebRTCStream: React.FC<WebRTCStreamProps> = ({
     // No server-side "stop" endpoint exists for a WebRTCSink (see WebRTCSinkController) -
     // closing the local RTCPeerConnection is all a viewer needs to do; the sink itself keeps
     // running until its own toggle/delete is used.
-    if (peerConnection) {
-      peerConnection.close();
-    }
+    peerConnectionRef.current?.close();
+    peerConnectionRef.current = null;
     onStop();
   };
 
