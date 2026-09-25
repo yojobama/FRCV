@@ -8,6 +8,16 @@ using namespace rtc;
 namespace {
 	constexpr uint32_t kSsrcValue = 42;
 	constexpr uint8_t H264_PAYLOAD_TYPE = 96;
+
+	// FRC field networks only pass ports 5800-5810 for team use; libdatachannel's default is any
+	// OS-assigned ephemeral UDP port (1024-65535), which a real field would simply drop - live
+	// preview would work on the bench and silently fail at competition. 5800 is the web server
+	// (HTTP/WebSocket/MJPEG) and 5810 is the roboRIO's NT4 server, so media gets the slice in
+	// between. With the ICE UDP mux (libjuice), the first peer connection binds ONE socket to the
+	// first free port in this range and every later connection reuses it, so any number of
+	// concurrent previews still fit - the rest of the range is headroom if 5801 is taken.
+	constexpr uint16_t kIcePortRangeBegin = 5801;
+	constexpr uint16_t kIcePortRangeEnd = 5809;
 }
 
 WebRTCSink::WebRTCSink(std::shared_ptr<Logger> logger, std::string id, WebRTCSinkConfig config)
@@ -47,7 +57,11 @@ void WebRTCSink::InitializePeerConnection()
 		m_GatheringComplete = false;
 	}
 
-	m_PeerConnection = std::make_shared<PeerConnection>();
+	Configuration rtcConfig;
+	rtcConfig.portRangeBegin = kIcePortRangeBegin;
+	rtcConfig.portRangeEnd = kIcePortRangeEnd;
+	rtcConfig.enableIceUdpMux = true;
+	m_PeerConnection = std::make_shared<PeerConnection>(rtcConfig);
 	m_PeerConnection->onGatheringStateChange([this](PeerConnection::GatheringState state) {
 		if (state == PeerConnection::GatheringState::Complete) {
 			std::lock_guard<std::mutex> lock(m_GatheringMutex);

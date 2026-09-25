@@ -16,7 +16,7 @@ import openapiTS, { astToString } from 'openapi-typescript';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '..', '..');
-const SERVER_URL = 'http://localhost:8175/api/openapi.json';
+const SERVER_URL = 'http://localhost:5800/api/openapi.json';
 const OUTPUT_PATH = resolve(__dirname, '..', 'src', 'api', 'generated.ts');
 
 async function isServerUp() {

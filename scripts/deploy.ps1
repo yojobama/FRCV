@@ -86,7 +86,7 @@ if ($PurgeOldInstall) {
 }
 
 # Renaming the systemd unit (frcv.service -> lumenvision.service) without also disabling and
-# removing the OLD one would leave it enabled with Restart=always, still holding port 8175, on
+# removing the OLD one would leave it enabled with Restart=always, still holding the web port (8175 then, 5800 now), on
 # any Pi that was ever deployed to under the old name - the new unit would then start alongside
 # it (or fail to bind the port) with no obvious cause. Idempotent: safe to run against a Pi that
 # never had the old unit installed at all (each command's failure is swallowed by `|| true`).

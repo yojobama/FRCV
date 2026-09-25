@@ -8,7 +8,7 @@ export default defineConfig({
         port: 57721,
         proxy: {
             '/api': {
-                target: 'http://localhost:8175',
+                target: 'http://localhost:5800',
                 changeOrigin: true,
                 secure: false,
             },
@@ -17,7 +17,7 @@ export default defineConfig({
             // is the Vite dev port, which only the /api proxy above forwards; ws:true is required
             // for Vite to actually upgrade the connection instead of proxying it as plain HTTP).
             '/ws': {
-                target: 'ws://localhost:8175',
+                target: 'ws://localhost:5800',
                 ws: true,
                 changeOrigin: true,
             }

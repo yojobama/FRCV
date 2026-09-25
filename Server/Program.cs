@@ -17,7 +17,12 @@ namespace Server
         // network - this is what actually makes "running the WebUI on the Pi" useful, since nobody
         // browses to the Orange Pi's own localhost. ASPNETCORE_URLS overrides it (standard Kestrel
         // behaviour) for anyone who needs a different bind.
-        private const string DefaultUrl = "http://*:8175";
+        //
+        // 5800: FRC field networks only pass ports 5800-5810 for team use (the old 8175 would be
+        // dropped on a real field). Same port PhotonVision uses; the two can't run at once anyway
+        // (lumenvision.service Conflicts=photonvision.service). WebRTC media takes 5801-5809 (see
+        // LumenCore/WebRTCSink.cpp) and 5810 is the roboRIO's NT4 server.
+        private const string DefaultUrl = "http://*:5800";
 
         private static WebApplication CreateWebServer(string[] args)
         {
