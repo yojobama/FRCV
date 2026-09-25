@@ -24,3 +24,19 @@ struct CameraMode
 	// read back after SetMode(), exactly match what was requested.
 	bool isNative = false;
 };
+
+// A camera control's real range as the device itself reports it (V4L2 VIDIOC_QUERYCTRL), so the
+// UI can bound its inputs to what this camera accepts instead of assuming UVC-webcam conventions -
+// an Arducam's exposure is in sensor lines with a range nothing like a webcam's 100us units.
+// supported == false (every other field then meaningless) when the device/backend has no such
+// control at all.
+struct CameraControlRange
+{
+	bool supported = false;
+	int minimum = 0;
+	int maximum = 0;
+	int step = 1;
+	int defaultValue = 0;
+	// the control's value right now (VIDIOC_G_CTRL), so the UI starts from what's applied
+	int value = 0;
+};

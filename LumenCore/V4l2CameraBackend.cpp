@@ -10,6 +10,22 @@
 #include <linux/videodev2.h>
 #include <cstring>
 #include <errno.h>
+#include <optional>
+#include <utility>
+
+#include "PixelUnpack.h"
+
+// newer than some distro kernel headers this project builds against - the values are fixed by
+// the V4L2 ABI, so defining them here is safe
+#ifndef V4L2_PIX_FMT_Y10P
+#define V4L2_PIX_FMT_Y10P v4l2_fourcc('Y', '1', '0', 'P')
+#endif
+#ifndef V4L2_PIX_FMT_Y10BPACK
+#define V4L2_PIX_FMT_Y10BPACK v4l2_fourcc('Y', '1', '0', 'B')
+#endif
+#ifndef V4L2_CID_ANALOGUE_GAIN
+#define V4L2_CID_ANALOGUE_GAIN (V4L2_CID_IMAGE_SOURCE_CLASS_BASE + 3)
+#endif
 
 namespace {
 	constexpr int BUFFER_COUNT = 4;
@@ -29,7 +45,11 @@ namespace {
 		return ret;
 	}
 
-	FrameFormat FourCcToFrameFormat(uint32_t fourcc)
+	// only formats Grab() can actually turn into pixels - anything else is left out of
+	// EnumerateModes entirely rather than mislabelled (every unknown fourcc used to be reported as
+	// MJPEG, so a raw-mono camera's native modes showed up as MJPEG and SetMode then asked the
+	// driver for a format it doesn't have)
+	std::optional<FrameFormat> FourCcToFrameFormat(uint32_t fourcc)
 	{
 		switch (fourcc) {
 		case V4L2_PIX_FMT_MJPEG:
@@ -45,10 +65,16 @@ namespace {
 			return FrameFormat::RGB24;
 		case V4L2_PIX_FMT_GREY:
 			return FrameFormat::GRAY8;
+		case V4L2_PIX_FMT_Y10:
+			return FrameFormat::Y10;
+		case V4L2_PIX_FMT_Y16:
+			return FrameFormat::Y16;
+		case V4L2_PIX_FMT_Y10P:
+			return FrameFormat::Y10P;
+		case V4L2_PIX_FMT_Y10BPACK:
+			return FrameFormat::Y10BPACK;
 		default:
-			// no first-party consumer asks for anything else today - MJPEG is the closest honest
-			// default for "some compressed/unrecognised format", not a claim this fourcc IS MJPEG.
-			return FrameFormat::MJPEG;
+			return std::nullopt;
 		}
 	}
 
@@ -61,8 +87,30 @@ namespace {
 		case FrameFormat::BGR24: return V4L2_PIX_FMT_BGR24;
 		case FrameFormat::RGB24: return V4L2_PIX_FMT_RGB24;
 		case FrameFormat::GRAY8: return V4L2_PIX_FMT_GREY;
+		case FrameFormat::Y10: return V4L2_PIX_FMT_Y10;
+		case FrameFormat::Y16: return V4L2_PIX_FMT_Y16;
+		case FrameFormat::Y10P: return V4L2_PIX_FMT_Y10P;
+		case FrameFormat::Y10BPACK: return V4L2_PIX_FMT_Y10BPACK;
 		default: return V4L2_PIX_FMT_MJPEG;
 		}
+	}
+
+	// Sizes offered for a STEPWISE/CONTINUOUS frame-size range (V4L2 raw-sensor drivers report
+	// one range, not a discrete list - an Arducam MIPI OV9281 is the typical case). Common
+	// capture resolutions, plus the range's own maximum (the sensor's full native size).
+	constexpr std::pair<uint32_t, uint32_t> kCommonFrameSizes[] = {
+		{320, 240}, {640, 400}, {640, 480}, {800, 600}, {1280, 720},
+		{1280, 800}, {1600, 1200}, {1920, 1080}, {1920, 1200},
+	};
+
+	bool FitsStepwise(const v4l2_frmsize_stepwise& range, uint32_t width, uint32_t height)
+	{
+		if (width < range.min_width || width > range.max_width) return false;
+		if (height < range.min_height || height > range.max_height) return false;
+		// a zero step is invalid per spec but seen in the wild - treat it as continuous
+		if (range.step_width > 0 && (width - range.min_width) % range.step_width != 0) return false;
+		if (range.step_height > 0 && (height - range.min_height) % range.step_height != 0) return false;
+		return true;
 	}
 }
 
@@ -94,10 +142,19 @@ bool V4l2CameraBackend::Open(const std::string& devicePath)
 
 	// A sane default so a caller that never calls SetMode() still gets frames - MJPEG at a modest
 	// resolution is close to universally supported by real UVC hardware (confirmed on the bench
-	// Lenovo camera: MJPG, discrete sizes, 5-30fps). ApplyFormat leaves width/height at whatever
-	// the driver's own default was if this particular request fails, rather than failing Open()
-	// outright over it.
-	ApplyFormat(640, 480, V4L2_PIX_FMT_MJPEG);
+	// Lenovo camera: MJPG, discrete sizes, 5-30fps). A camera that doesn't offer MJPEG at all (a
+	// raw mono sensor like an Arducam MIPI OV9281: Y10/Y10P/GREY only) gets its own first
+	// advertised mode instead - drivers list their preferred format first. ApplyFormat leaves
+	// width/height at whatever the driver's own default was if this particular request fails,
+	// rather than failing Open() outright over it.
+	std::vector<CameraMode> modes = EnumerateModes();
+	bool hasMjpeg = false;
+	for (const CameraMode& mode : modes) hasMjpeg |= mode.pixelFormat == FrameFormat::MJPEG;
+	if (hasMjpeg || modes.empty()) {
+		ApplyFormat(640, 480, V4L2_PIX_FMT_MJPEG);
+	} else {
+		ApplyFormat(modes[0].width, modes[0].height, FrameFormatToFourCc(modes[0].pixelFormat));
+	}
 
 	return StartStreaming();
 }
@@ -230,10 +287,12 @@ CameraGrabResult V4l2CameraBackend::Grab()
 	uint32_t fourcc = currentFmt.fmt.pix.pixelformat;
 
 	const uint8_t* data = static_cast<const uint8_t*>(m_Buffers[buf.index].start);
-	size_t bytesUsed = buf.bytesused;
+	// bytesused is mandatory for capture per spec, but a 0 from a sloppy driver shouldn't drop
+	// every frame - fall back to the whole mapped buffer
+	size_t bytesUsed = buf.bytesused > 0 ? buf.bytesused : m_Buffers[buf.index].length;
 
 	// Every branch below targets a FramePool buffer sized to the negotiated mode's own
-	// width/height, CV_8UC3 (BGR - every branch produces BGR regardless of the wire format), and
+	// width/height - CV_8UC3 BGR for colour formats, CV_8UC1 GRAY8 for mono ones - and
 	// requests it BEFORE the decode/convert/copy call so that call's own Mat::create() fast path
 	// (already-right-shape => write in place, no allocation) actually fires. Acquire()ing after
 	// the fact - into an already-decoded temporary - would just move the allocation, not remove
@@ -241,6 +300,21 @@ CameraGrabResult V4l2CameraBackend::Grab()
 	// JPEG, in practice), Mat::create() falls back to a normal one-off allocation for that frame
 	// only - safe, just not pooled that cycle.
 	int width = currentFmt.fmt.pix.width, height = currentFmt.fmt.pix.height;
+	// bytesperline can exceed width * bytes-per-pixel (row padding, common on MIPI/ISP drivers);
+	// 0 means "not reported", i.e. tightly packed
+	size_t stride = currentFmt.fmt.pix.bytesperline;
+	auto rawFits = [&](size_t minStride) {
+		if (stride == 0) stride = minStride;
+		return stride >= minStride && height > 0 && bytesUsed >= stride * (height - 1) + minStride;
+	};
+	auto unpackMono = [&](size_t minStride, void (*unpack)(const uint8_t*, int, int, size_t, cv::Mat&)) {
+		// a short buffer (truncated frame) fails this frame rather than reading past the mapping
+		if (!rawFits(minStride)) return;
+		result.frame = FramePool::Instance().Acquire(height, width, CV_8UC1, result.poolOwner);
+		unpack(data, width, height, stride, result.frame);
+		result.format = FrameFormat::GRAY8;
+		result.success = true;
+	};
 	if (fourcc == V4L2_PIX_FMT_MJPEG || fourcc == V4L2_PIX_FMT_JPEG) {
 		cv::Mat jpegView(1, static_cast<int>(bytesUsed), CV_8UC1, const_cast<uint8_t*>(data));
 		// imdecode's 3-arg overload reuses *dst in place when it's already the right size/type
@@ -254,25 +328,44 @@ CameraGrabResult V4l2CameraBackend::Grab()
 		result.frame = cv::imdecode(jpegView, cv::IMREAD_COLOR, &result.frame);
 		result.success = !result.frame.empty();
 	} else if (fourcc == V4L2_PIX_FMT_YUYV) {
-		cv::Mat yuyv(height, width, CV_8UC2, const_cast<uint8_t*>(data));
-		result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
-		cv::cvtColor(yuyv, result.frame, cv::COLOR_YUV2BGR_YUYV);
-		result.success = true;
-	} else if (fourcc == V4L2_PIX_FMT_BGR24) {
-		cv::Mat bgr(height, width, CV_8UC3, const_cast<uint8_t*>(data));
-		result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
-		bgr.copyTo(result.frame);
-		result.success = true;
+		if (rawFits(static_cast<size_t>(width) * 2)) {
+			cv::Mat yuyv(height, width, CV_8UC2, const_cast<uint8_t*>(data), stride);
+			result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
+			cv::cvtColor(yuyv, result.frame, cv::COLOR_YUV2BGR_YUYV);
+			result.success = true;
+		}
+	} else if (fourcc == V4L2_PIX_FMT_BGR24 || fourcc == V4L2_PIX_FMT_RGB24) {
+		if (rawFits(static_cast<size_t>(width) * 3)) {
+			cv::Mat packed(height, width, CV_8UC3, const_cast<uint8_t*>(data), stride);
+			result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
+			if (fourcc == V4L2_PIX_FMT_BGR24) packed.copyTo(result.frame);
+			else cv::cvtColor(packed, result.frame, cv::COLOR_RGB2BGR);
+			result.success = true;
+		}
+	} else if (fourcc == V4L2_PIX_FMT_NV12) {
+		// single-planar NV12: the Y plane (height rows) directly followed by interleaved UV
+		// (height/2 rows), both at the same stride - so one (height*3/2)-row Mat spans it all
+		size_t rowStride = stride == 0 ? static_cast<size_t>(width) : stride;
+		if (height % 2 == 0 && rowStride >= static_cast<size_t>(width) && bytesUsed >= rowStride * (height * 3 / 2 - 1) + width) {
+			cv::Mat nv12(height * 3 / 2, width, CV_8UC1, const_cast<uint8_t*>(data), rowStride);
+			result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
+			cv::cvtColor(nv12, result.frame, cv::COLOR_YUV2BGR_NV12);
+			result.success = true;
+		}
 	} else if (fourcc == V4L2_PIX_FMT_GREY) {
-		cv::Mat gray(height, width, CV_8UC1, const_cast<uint8_t*>(data));
-		result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
-		cv::cvtColor(gray, result.frame, cv::COLOR_GRAY2BGR);
-		result.success = true;
-	} else {
-		// no decode path for this format (e.g. NV12 straight off the wire) - fail this frame
-		// rather than handing back garbage reinterpreted as BGR.
-		result.success = false;
+		// passed through as GRAY8, not expanded to BGR - see CameraGrabResult::format
+		unpackMono(static_cast<size_t>(width), PixelUnpack::Gray8Copy);
+	} else if (fourcc == V4L2_PIX_FMT_Y10) {
+		unpackMono(PixelUnpack::MinStrideY10(width), PixelUnpack::Y10ToGray8);
+	} else if (fourcc == V4L2_PIX_FMT_Y16) {
+		unpackMono(PixelUnpack::MinStrideY10(width), PixelUnpack::Y16ToGray8);
+	} else if (fourcc == V4L2_PIX_FMT_Y10P) {
+		unpackMono(PixelUnpack::MinStrideY10Packed(width), PixelUnpack::Y10PToGray8);
+	} else if (fourcc == V4L2_PIX_FMT_Y10BPACK) {
+		unpackMono(PixelUnpack::MinStrideY10Packed(width), PixelUnpack::Y10BPackToGray8);
 	}
+	// anything else: no decode path - result.success stays false for this frame rather than
+	// handing back garbage reinterpreted as pixels (EnumerateModes never offers such a format).
 
 	// requeue the same buffer regardless of decode outcome - a bad frame still has to go back to
 	// the kernel or the buffer pool starves after BUFFER_COUNT failures.
@@ -292,34 +385,72 @@ std::vector<CameraMode> V4l2CameraBackend::EnumerateModes()
 		fmtDesc.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 		if (XIoctl(m_Fd, VIDIOC_ENUM_FMT, &fmtDesc) < 0) break;
 
+		std::optional<FrameFormat> format = FourCcToFrameFormat(fmtDesc.pixelformat);
+		if (!format.has_value()) continue; // nothing Grab() could decode - see FourCcToFrameFormat
+
+		auto addModesForSize = [&](uint32_t width, uint32_t height) {
+			for (unsigned int ivalIndex = 0; ; ivalIndex++) {
+				v4l2_frmivalenum frmIval{};
+				frmIval.index = ivalIndex;
+				frmIval.pixel_format = fmtDesc.pixelformat;
+				frmIval.width = width;
+				frmIval.height = height;
+				if (XIoctl(m_Fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmIval) < 0) {
+					// a driver with no interval enumeration at all still has the size itself
+					if (ivalIndex == 0) modes.push_back(CameraMode{ static_cast<int>(width), static_cast<int>(height), 0.0, format.value() });
+					break;
+				}
+
+				if (frmIval.type == V4L2_FRMIVAL_TYPE_DISCRETE) {
+					CameraMode mode;
+					mode.width = width;
+					mode.height = height;
+					mode.fps = frmIval.discrete.numerator > 0
+						? static_cast<double>(frmIval.discrete.denominator) / frmIval.discrete.numerator
+						: 0.0;
+					mode.pixelFormat = format.value();
+					modes.push_back(mode);
+					continue;
+				}
+
+				// STEPWISE/CONTINUOUS interval range (reported once, at index 0): offer its
+				// fastest rate - the one a vision pipeline wants - plus 30fps when the range
+				// covers it, rather than every representable interval
+				const v4l2_fract& fastest = frmIval.stepwise.min;
+				const v4l2_fract& slowest = frmIval.stepwise.max;
+				double maxFps = fastest.numerator > 0 ? static_cast<double>(fastest.denominator) / fastest.numerator : 0.0;
+				double minFps = slowest.numerator > 0 ? static_cast<double>(slowest.denominator) / slowest.numerator : 0.0;
+				modes.push_back(CameraMode{ static_cast<int>(width), static_cast<int>(height), maxFps, format.value() });
+				if (maxFps > 30.0 && minFps <= 30.0) {
+					modes.push_back(CameraMode{ static_cast<int>(width), static_cast<int>(height), 30.0, format.value() });
+				}
+				break;
+			}
+		};
+
 		for (unsigned int sizeIndex = 0; ; sizeIndex++) {
 			v4l2_frmsizeenum frmSize{};
 			frmSize.index = sizeIndex;
 			frmSize.pixel_format = fmtDesc.pixelformat;
 			if (XIoctl(m_Fd, VIDIOC_ENUM_FRAMESIZES, &frmSize) < 0) break;
-			// STEPWISE/CONTINUOUS ranges exist on some drivers but no real UVC webcam this
-			// project targets reports them (confirmed on the bench Lenovo camera: discrete only) -
-			// skip rather than guess at a representative size from a range.
-			if (frmSize.type != V4L2_FRMSIZE_TYPE_DISCRETE) continue;
 
-			for (unsigned int ivalIndex = 0; ; ivalIndex++) {
-				v4l2_frmivalenum frmIval{};
-				frmIval.index = ivalIndex;
-				frmIval.pixel_format = fmtDesc.pixelformat;
-				frmIval.width = frmSize.discrete.width;
-				frmIval.height = frmSize.discrete.height;
-				if (XIoctl(m_Fd, VIDIOC_ENUM_FRAMEINTERVALS, &frmIval) < 0) break;
-				if (frmIval.type != V4L2_FRMIVAL_TYPE_DISCRETE) continue;
-
-				CameraMode mode;
-				mode.width = frmSize.discrete.width;
-				mode.height = frmSize.discrete.height;
-				mode.fps = frmIval.discrete.numerator > 0
-					? static_cast<double>(frmIval.discrete.denominator) / frmIval.discrete.numerator
-					: 0.0;
-				mode.pixelFormat = FourCcToFrameFormat(fmtDesc.pixelformat);
-				modes.push_back(mode);
+			if (frmSize.type == V4L2_FRMSIZE_TYPE_DISCRETE) {
+				addModesForSize(frmSize.discrete.width, frmSize.discrete.height);
+				continue;
 			}
+
+			// STEPWISE/CONTINUOUS (reported once, at index 0) - raw-sensor drivers such as an
+			// Arducam MIPI module describe their sizes as one range, never a discrete list.
+			// Offer the common resolutions the range admits, plus its maximum (the sensor's full
+			// native size, e.g. 1280x800 on an OV9281).
+			const v4l2_frmsize_stepwise& range = frmSize.stepwise;
+			for (const auto& [width, height] : kCommonFrameSizes) {
+				if (FitsStepwise(range, width, height) && !(width == range.max_width && height == range.max_height)) {
+					addModesForSize(width, height);
+				}
+			}
+			addModesForSize(range.max_width, range.max_height);
+			break;
 		}
 	}
 
@@ -362,7 +493,9 @@ CameraMode V4l2CameraBackend::GetCurrentMode() const
 
 	mode.width = fmt.fmt.pix.width;
 	mode.height = fmt.fmt.pix.height;
-	mode.pixelFormat = FourCcToFrameFormat(fmt.fmt.pix.pixelformat);
+	// a current format Grab() can't decode is only possible if something outside this process
+	// set it - report it as MJPEG, the historical placeholder, rather than failing the query
+	mode.pixelFormat = FourCcToFrameFormat(fmt.fmt.pix.pixelformat).value_or(FrameFormat::MJPEG);
 
 	v4l2_streamparm parm{};
 	parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -382,11 +515,46 @@ CameraMode V4l2CameraBackend::GetCurrentMode() const
 	return mode;
 }
 
+uint32_t V4l2CameraBackend::FindControl(std::initializer_list<uint32_t> candidates) const
+{
+	if (m_Fd < 0) return 0;
+	for (uint32_t cid : candidates) {
+		v4l2_queryctrl query{};
+		query.id = cid;
+		if (XIoctl(m_Fd, VIDIOC_QUERYCTRL, &query) >= 0 && !(query.flags & V4L2_CTRL_FLAG_DISABLED)) return cid;
+	}
+	return 0;
+}
+
+CameraControlRange V4l2CameraBackend::QueryControlRange(uint32_t cid) const
+{
+	CameraControlRange range;
+	if (m_Fd < 0 || cid == 0) return range;
+
+	v4l2_queryctrl query{};
+	query.id = cid;
+	if (XIoctl(m_Fd, VIDIOC_QUERYCTRL, &query) < 0) return range;
+	range.supported = true;
+	range.minimum = query.minimum;
+	range.maximum = query.maximum;
+	range.step = query.step > 0 ? query.step : 1;
+	range.defaultValue = query.default_value;
+
+	v4l2_control ctrl{};
+	ctrl.id = cid;
+	range.value = XIoctl(m_Fd, VIDIOC_G_CTRL, &ctrl) >= 0 ? ctrl.value : query.default_value;
+	return range;
+}
+
+// UVC webcams implement EXPOSURE_ABSOLUTE (100us units); raw-sensor drivers - Arducam's MIPI
+// OV9281/OV9782 modules among them - implement only EXPOSURE (sensor-specific units, typically
+// lines). Whichever exists is "the" exposure control; GetExposureRange reports the same one.
 bool V4l2CameraBackend::SetExposure(int exposureAbsolute)
 {
-	if (m_Fd < 0) return false;
+	uint32_t cid = FindControl({ V4L2_CID_EXPOSURE_ABSOLUTE, V4L2_CID_EXPOSURE });
+	if (cid == 0) return false;
 	v4l2_control ctrl{};
-	ctrl.id = V4L2_CID_EXPOSURE_ABSOLUTE;
+	ctrl.id = cid;
 	ctrl.value = exposureAbsolute;
 	return XIoctl(m_Fd, VIDIOC_S_CTRL, &ctrl) >= 0;
 }
@@ -396,17 +564,35 @@ bool V4l2CameraBackend::SetAutoExposure(bool enabled)
 	if (m_Fd < 0) return false;
 	v4l2_control ctrl{};
 	ctrl.id = V4L2_CID_EXPOSURE_AUTO;
-	// UVC convention (V4L2_EXPOSURE_APERTURE_PRIORITY / V4L2_EXPOSURE_MANUAL) - most webcams only
-	// implement these two of the four standard values.
-	ctrl.value = enabled ? V4L2_EXPOSURE_APERTURE_PRIORITY : V4L2_EXPOSURE_MANUAL;
+	if (!enabled) {
+		ctrl.value = V4L2_EXPOSURE_MANUAL;
+		return XIoctl(m_Fd, VIDIOC_S_CTRL, &ctrl) >= 0;
+	}
+	// UVC convention is APERTURE_PRIORITY (most webcams implement only it and MANUAL of the four
+	// standard values); some non-UVC drivers accept only plain AUTO instead - try both
+	ctrl.value = V4L2_EXPOSURE_APERTURE_PRIORITY;
+	if (XIoctl(m_Fd, VIDIOC_S_CTRL, &ctrl) >= 0) return true;
+	ctrl.value = V4L2_EXPOSURE_AUTO;
 	return XIoctl(m_Fd, VIDIOC_S_CTRL, &ctrl) >= 0;
 }
 
+// same UVC-vs-raw-sensor split as SetExposure: GAIN on webcams, ANALOGUE_GAIN on sensor drivers
 bool V4l2CameraBackend::SetGain(int gain)
 {
-	if (m_Fd < 0) return false;
+	uint32_t cid = FindControl({ V4L2_CID_GAIN, V4L2_CID_ANALOGUE_GAIN });
+	if (cid == 0) return false;
 	v4l2_control ctrl{};
-	ctrl.id = V4L2_CID_GAIN;
+	ctrl.id = cid;
 	ctrl.value = gain;
 	return XIoctl(m_Fd, VIDIOC_S_CTRL, &ctrl) >= 0;
+}
+
+CameraControlRange V4l2CameraBackend::GetExposureRange()
+{
+	return QueryControlRange(FindControl({ V4L2_CID_EXPOSURE_ABSOLUTE, V4L2_CID_EXPOSURE }));
+}
+
+CameraControlRange V4l2CameraBackend::GetGainRange()
+{
+	return QueryControlRange(FindControl({ V4L2_CID_GAIN, V4L2_CID_ANALOGUE_GAIN }));
 }

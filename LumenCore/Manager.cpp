@@ -38,6 +38,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <climits>
+#include <cstdlib>
+#include <map>
 #endif
 #ifdef _WIN32
 // Not #include <windows.h>/<mfapi.h> directly here: this file (via Manager.h) has `using
@@ -120,6 +123,32 @@ vector<CameraHardwareInfo> Manager::EnumerateAvailableCameras()
 {
     m_Logger->EnterLog("EnumerateAvailableCameras called");
     vector<CameraHardwareInfo> cameras;
+
+    // Stable identity: /dev/videoN numbering is first-come-first-served at boot and reorders
+    // whenever cameras enumerate in a different order, and two identical cameras (the usual FRC
+    // setup: a pair of Arducam OV9281s) share name AND serial number, so neither the node nor
+    // /dev/v4l/by-id can tell them apart. udev's /dev/v4l/by-path links encode the physical
+    // port (USB port path / CSI bus) instead - stable across reboots, unique per socket. Reported
+    // as the camera's path whenever one exists, so everything keyed by path (saved sources,
+    // calibrations) follows the physical camera; open() resolves the symlink transparently.
+    // Moving a camera to a different USB port therefore makes it a different camera - the price
+    // of being able to tell identical cameras apart at all.
+    std::map<std::string, std::string> stablePathByNode;
+    if (DIR* p_ByPath = opendir("/dev/v4l/by-path")) {
+        while (struct dirent* p_Link = readdir(p_ByPath)) {
+            if (p_Link->d_name[0] == '.') continue;
+            std::string linkPath = std::string("/dev/v4l/by-path/") + p_Link->d_name;
+            char resolved[PATH_MAX];
+            if (realpath(linkPath.c_str(), resolved) != nullptr) {
+                // lexicographically smallest link wins if a node has several (deterministic
+                // rather than readdir-order dependent)
+                auto [it, inserted] = stablePathByNode.emplace(resolved, linkPath);
+                if (!inserted && linkPath < it->second) it->second = linkPath;
+            }
+        }
+        closedir(p_ByPath);
+    }
+
     const char* p_VideoDir = "/dev/";
     DIR* p_Dir = opendir(p_VideoDir);
     if (!p_Dir) {
@@ -183,8 +212,11 @@ vector<CameraHardwareInfo> Manager::EnumerateAvailableCameras()
             : devicePath;
         close(fd);
 
-        cameras.push_back(CameraHardwareInfo{ .name = deviceName, .path = devicePath });
-        m_Logger->EnterLog("Camera found: " + deviceName + " at " + devicePath);
+        auto stable = stablePathByNode.find(devicePath);
+        std::string reportedPath = stable != stablePathByNode.end() ? stable->second : devicePath;
+        cameras.push_back(CameraHardwareInfo{ .name = deviceName, .path = reportedPath });
+        m_Logger->EnterLog("Camera found: " + deviceName + " at " + reportedPath +
+            (reportedPath != devicePath ? " (" + devicePath + ")" : ""));
     }
     closedir(p_Dir);
     return cameras;
@@ -456,6 +488,32 @@ bool Manager::SetCameraGain(int sourceId, int gain)
         throw std::runtime_error("SetCameraGain: source id=" + std::to_string(sourceId) + " is not a camera source");
     }
     return p_CameraSource->SetGain(gain);
+}
+
+CameraControlRange Manager::GetCameraExposureRange(int sourceId)
+{
+    auto sourceIt = m_Sources.find(sourceId);
+    if (sourceIt == m_Sources.end()) {
+        throw std::runtime_error("GetCameraExposureRange: no source with id=" + std::to_string(sourceId));
+    }
+    auto p_CameraSource = std::dynamic_pointer_cast<CameraFrameSource>(sourceIt->second);
+    if (!p_CameraSource) {
+        throw std::runtime_error("GetCameraExposureRange: source id=" + std::to_string(sourceId) + " is not a camera source");
+    }
+    return p_CameraSource->GetExposureRange();
+}
+
+CameraControlRange Manager::GetCameraGainRange(int sourceId)
+{
+    auto sourceIt = m_Sources.find(sourceId);
+    if (sourceIt == m_Sources.end()) {
+        throw std::runtime_error("GetCameraGainRange: no source with id=" + std::to_string(sourceId));
+    }
+    auto p_CameraSource = std::dynamic_pointer_cast<CameraFrameSource>(sourceIt->second);
+    if (!p_CameraSource) {
+        throw std::runtime_error("GetCameraGainRange: source id=" + std::to_string(sourceId) + " is not a camera source");
+    }
+    return p_CameraSource->GetGainRange();
 }
 
 int Manager::CreateRoiSource(int upstreamSourceId, int x, int y, int width, int height)

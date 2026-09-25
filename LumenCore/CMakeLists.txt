@@ -37,6 +37,7 @@ set(LUMEN_CORE_SOURCES
     ObjectDetectionSink.cpp
     OnnxDetectionBackend.cpp
     OpenCvCameraBackend.cpp
+    PixelUnpack.cpp
     RecordSink.cpp
     RoiSource.cpp
     SourceResult.cpp

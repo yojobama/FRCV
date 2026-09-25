@@ -23,6 +23,11 @@ struct CameraGrabResult
 	// still using it the moment this shared_ptr's last reference (this struct, once Grab()
 	// returns) goes away.
 	std::shared_ptr<void> poolOwner;
+	// what `frame` actually holds - BGR24 (CV_8UC3) or GRAY8 (CV_8UC1). A mono camera's frames
+	// stay single-channel all the way to the AprilTag detector (whose AsGray() is then free)
+	// instead of being expanded to BGR here and converted straight back there; sinks that need
+	// colour convert lazily via Frame::AsBgr().
+	FrameFormat format = FrameFormat::BGR24;
 };
 
 // Implemented per-platform: OpenCvCameraBackend is the always-available fallback (the only one
@@ -69,10 +74,17 @@ public:
 	// Exposure/gain control - a fixed short exposure is what actually makes AprilTags detect
 	// reliably on a moving robot (motion blur otherwise smears the tag edges the detector needs).
 	// exposureAbsolute is in the backend's own native units (V4L2: 100us steps, matching
-	// V4L2_CID_EXPOSURE_ABSOLUTE's documented convention). Returns false if the control isn't
+	// V4L2_CID_EXPOSURE_ABSOLUTE's documented convention - or, on a sensor that only has
+	// V4L2_CID_EXPOSURE, e.g. many Arducam modules, that control's own units, typically lines; see
+	// GetExposureRange for what the device accepts). Returns false if the control isn't
 	// supported by this device/backend rather than throwing - an unsupported control is routine,
 	// not exceptional.
 	virtual bool SetExposure(int exposureAbsolute) = 0;
 	virtual bool SetAutoExposure(bool enabled) = 0;
 	virtual bool SetGain(int gain) = 0;
+
+	// The device's real range for the control SetExposure/SetGain drive - see CameraControlRange.
+	// Default: unsupported, for a backend with no way to query it (OpenCvCameraBackend).
+	virtual CameraControlRange GetExposureRange() { return {}; }
+	virtual CameraControlRange GetGainRange() { return {}; }
 };

@@ -72,6 +72,10 @@ public:
 	bool SetCameraExposure(int sourceId, int exposureAbsolute);
 	bool SetCameraAutoExposure(int sourceId, bool enabled);
 	bool SetCameraGain(int sourceId, int gain);
+	// the device's own range/current value for the controls the two setters above drive - see
+	// CameraControlRange (supported=false when the camera has no such control)
+	CameraControlRange GetCameraExposureRange(int sourceId);
+	CameraControlRange GetCameraGainRange(int sourceId);
 
 	// splits one upstream source's frames into a fixed rectangular crop, zero-copy (ROADMAP.md
 	// Phase 3d) - the building block for side-by-side/top-bottom stereo: create two of these

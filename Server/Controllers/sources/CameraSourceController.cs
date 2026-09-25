@@ -15,18 +15,9 @@ namespace Server.Controllers.sources
         [HttpPost("cameraSource/createAll")]
         public Task CreateAll()
         {
-            CameraHardwareInfo[] cameraHardwareInfoArray = ManagerWrapper.Instance.EnumerateAvailableCameras().ToArray();
+            CameraHardwareInfo[] cameraHardwareInfoArray = GetUnregisteredCameras();
 
-            foreach (var item in SourceManager.Instance.GetAllSourceIds())
-            {
-                Source source = SourceManager.Instance.GetSourceById(item);
-                if (source.Type == SourceType.Camera)
-                {
-                    cameraHardwareInfoArray = cameraHardwareInfoArray.Where(hardwareInfo => hardwareInfo.path != source.CameraHardwareInfo.path).ToArray();
-                }
-            }
-
-            cameraHardwareInfoArray.ToList().ForEach(hardwareInfo => 
+            cameraHardwareInfoArray.ToList().ForEach(hardwareInfo =>
             {
                 int sourceId = SourceManager.Instance.InitializeCameraSource(hardwareInfo);
             });
@@ -69,18 +60,36 @@ namespace Server.Controllers.sources
         [HttpGet("cameraSource/getNotRegistered")]
         public Task<CameraHardwareInfoDto[]> GetNotRegistered()
         {
-            CameraHardwareInfo[] cameraHardwareInfoArray = ManagerWrapper.Instance.EnumerateAvailableCameras().ToArray();
+            return Task.FromResult(GetUnregisteredCameras().Select(CameraHardwareInfoDto.From).ToArray());
+        }
 
-            foreach (var item in SourceManager.Instance.GetAllSourceIds())
+        // Enumerated cameras no camera source already uses. Compared by the device node each path
+        // resolves to, not by string: the enumerator now reports stable /dev/v4l/by-path links,
+        // while a source saved before that change still holds a raw /dev/videoN for the same
+        // physical camera - a string compare would offer it again as a second, "new" camera.
+        private static CameraHardwareInfo[] GetUnregisteredCameras()
+        {
+            HashSet<string> registered = SourceManager.Instance.GetAllSourceIds()
+                .Select(id => SourceManager.Instance.GetSourceById(id))
+                .Where(source => source?.Type == SourceType.Camera && source.CameraHardwareInfo != null)
+                .Select(source => ResolveDevicePath(source!.CameraHardwareInfo!.path))
+                .ToHashSet();
+            return ManagerWrapper.Instance.EnumerateAvailableCameras()
+                .Where(hardwareInfo => !registered.Contains(ResolveDevicePath(hardwareInfo.path)))
+                .ToArray();
+        }
+
+        private static string ResolveDevicePath(string path)
+        {
+            try
             {
-                Source source = SourceManager.Instance.GetSourceById(item);
-                if (source.Type == SourceType.Camera)
-                {
-                    cameraHardwareInfoArray = cameraHardwareInfoArray.Where(hardwareInfo => hardwareInfo.path != source.CameraHardwareInfo.path).ToArray();
-                }
+                return System.IO.File.ResolveLinkTarget(path, returnFinalTarget: true)?.FullName ?? path;
             }
-
-            return Task.FromResult(cameraHardwareInfoArray.Select(CameraHardwareInfoDto.From).ToArray());
+            catch (Exception)
+            {
+                // not a filesystem path at all (Windows camera indices), or gone - compare as-is
+                return path;
+            }
         }
 
         // GET: every capture mode this camera actually advertises (ROADMAP.md Phase 3b).
@@ -139,6 +148,17 @@ namespace Server.Controllers.sources
         public Task<bool> SetGain(int id, [FromQuery] int gain)
         {
             return Task.FromResult(ManagerWrapper.Instance.SetCameraGain(id, gain));
+        }
+
+        // GET: the device's own range and current value for the exposure/gain controls above -
+        // units differ per camera (a UVC webcam's exposure is 100us steps, an Arducam MIPI
+        // module's is sensor lines), so the UI bounds its inputs by this rather than assuming.
+        [HttpGet("cameraSource/{id}/controls")]
+        public Task<CameraControlsDto> GetControls(int id)
+        {
+            return Task.FromResult(new CameraControlsDto(
+                CameraControlRangeDto.From(ManagerWrapper.Instance.GetCameraExposureRange(id)),
+                CameraControlRangeDto.From(ManagerWrapper.Instance.GetCameraGainRange(id))));
         }
 
         // POST: split this camera's frame into a fixed crop, published as its own independent

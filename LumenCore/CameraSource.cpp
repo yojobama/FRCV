@@ -95,6 +95,16 @@ bool CameraFrameSource::SetGain(int gain)
     return m_Backend->SetGain(gain);
 }
 
+CameraControlRange CameraFrameSource::GetExposureRange()
+{
+    return m_Backend->GetExposureRange();
+}
+
+CameraControlRange CameraFrameSource::GetGainRange()
+{
+    return m_Backend->GetGainRange();
+}
+
 void CameraFrameSource::CaptureFrame()
 {
     if (m_Backend->IsOpened()) {
@@ -106,7 +116,7 @@ void CameraFrameSource::CaptureFrame()
             // recycled the moment this function returns, out from under every sink still
             // processing this exact frame on its own thread. See ICameraBackend.h's own comment
             // on CameraGrabResult::poolOwner.
-            SetLatestResult(SourceResult(std::nullopt, Frame(grab.frame, FrameFormat::BGR24, grab.poolOwner), grab.captureTimeUs));
+            SetLatestResult(SourceResult(std::nullopt, Frame(grab.frame, grab.format, grab.poolOwner), grab.captureTimeUs));
         } else {
             // previously: this branch didn't exist at all - a failed grab (device still open,
             // read() returning false) was silently dropped with no diagnostic.

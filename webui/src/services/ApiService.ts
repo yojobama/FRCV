@@ -1,4 +1,4 @@
-import type { CameraHardwareInfo, CameraMode, Model, StereoCalibrationResult, StereoDepthStats, PipelineProfile, NodeTypesResponse, CameraCalibrationResult, CalibrationCoverage, CalibrationStatus, NetworkTablesStatus, RecordSegment } from '../types';
+import type { CameraHardwareInfo, CameraMode, CameraControls, Model, StereoCalibrationResult, StereoDepthStats, PipelineProfile, NodeTypesResponse, CameraCalibrationResult, CalibrationCoverage, CalibrationStatus, NetworkTablesStatus, RecordSegment } from '../types';
 import { apiClient } from '../api/client';
 import type { components } from '../api/generated';
 
@@ -98,6 +98,13 @@ export class ApiService {
 
   async setCameraGain(id: number, gain: number): Promise<boolean> {
     const response = await fetch(`${this.baseUrl}/cameraSource/${id}/gain?gain=${gain}`, { method: 'PATCH' });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }
+
+  // the device's own exposure/gain ranges and current values - see CameraControlRange
+  async getCameraControls(id: number): Promise<CameraControls> {
+    const response = await fetch(`${this.baseUrl}/cameraSource/${id}/controls`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return response.json();
   }

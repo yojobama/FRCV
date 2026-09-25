@@ -467,6 +467,22 @@ export interface paths {
         patch: operations["CameraSourceController_SetGain"];
         trace?: never;
     };
+    "/cameraSource/{id}/controls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["CameraSourceController_GetControls"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/cameraSource/{id}/roi": {
         parameters: {
             query?: never;
@@ -1005,6 +1021,22 @@ export interface paths {
         get: operations["RecordSinkController_Download"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordSink/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RecordSinkController_IsAnyRecording"];
+        put?: never;
+        post: operations["RecordSinkController_SetAllRecording"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1712,6 +1744,18 @@ export interface components {
             MatchesCurrentResolution: boolean;
             CalibratedWidth?: number;
             CalibratedHeight?: number;
+        };
+        CameraControlRangeDto: {
+            Supported: boolean;
+            Minimum: number;
+            Maximum: number;
+            Step: number;
+            Default: number;
+            Value: number;
+        };
+        CameraControlsDto: {
+            Exposure: components["schemas"]["CameraControlRangeDto"];
+            Gain: components["schemas"]["CameraControlRangeDto"];
         };
         NodeTypeCapability: {
             TypeName?: string;
@@ -2525,6 +2569,28 @@ export interface operations {
             };
         };
     };
+    CameraSourceController_GetControls: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CameraControlsDto"];
+                };
+            };
+        };
+    };
     CameraSourceController_CreateRoi: {
         parameters: {
             query: {
@@ -3316,6 +3382,48 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    RecordSinkController_IsAnyRecording: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+        };
+    };
+    RecordSinkController_SetAllRecording: {
+        parameters: {
+            query: {
+                enabled: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number;
+                };
             };
         };
     };

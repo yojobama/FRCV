@@ -21,6 +21,7 @@ add_executable(LumenCoreTests
     test_source_sink_lifecycle.cpp
     test_yolo_postprocess.cpp
     test_camera_v4l2_hitl.cpp
+    test_pixel_unpack.cpp
     test_roi_source.cpp
     test_driver_mode.cpp
     test_snapshot.cpp

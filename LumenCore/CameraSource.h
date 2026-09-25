@@ -28,6 +28,8 @@ public:
 	bool SetExposure(int exposureAbsolute);
 	bool SetAutoExposure(bool enabled);
 	bool SetGain(int gain);
+	CameraControlRange GetExposureRange();
+	CameraControlRange GetGainRange();
 
 private:
 	void CaptureFrame() override;

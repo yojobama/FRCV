@@ -38,6 +38,16 @@ namespace Server
         public CameraHardwareInfo ToNative() => new() { name = Name, path = Path };
     }
 
+    // a camera control's real device range (LumenCore's CameraControlRange) - Supported=false
+    // means the camera has no such control and every other field is meaningless
+    public record struct CameraControlRangeDto(bool Supported, int Minimum, int Maximum, int Step, int Default, int Value)
+    {
+        public static CameraControlRangeDto From(CameraControlRange range) =>
+            new(range.supported, range.minimum, range.maximum, range.step, range.defaultValue, range.value);
+    }
+
+    public record struct CameraControlsDto(CameraControlRangeDto Exposure, CameraControlRangeDto Gain);
+
     public record struct CameraCalibrationResultDto(
         double Fx, double Fy, double Cx, double Cy, double Rms,
         double[] DistCoeffs, int ImageWidth, int ImageHeight)

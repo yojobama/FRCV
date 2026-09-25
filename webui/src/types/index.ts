@@ -37,13 +37,30 @@ export interface CameraHardwareInfo {
 
 // mirrors Server/Dtos.cs's CameraModeDto - PascalCase, see CameraCalibrationResult's note below.
 // PixelFormat is FrameFormat's ordinal (LumenCore/FrameFormat.h): 0 BGR24, 1 RGB24, 2 GRAY8,
-// 3 NV12, 4 YUYV, 5 MJPEG.
+// 3 NV12, 4 YUYV, 5 MJPEG, 6 Y10, 7 Y16, 8 Y10P, 9 Y10BPACK (raw mono sensor formats).
 export interface CameraMode {
   Width: number;
   Height: number;
   Fps: number;
   PixelFormat: number;
   IsNative: boolean;
+}
+
+// mirrors Server/Dtos.cs's CameraControlRangeDto/CameraControlsDto - a control's real range on
+// this particular camera (units differ: 100us steps on a UVC webcam, sensor lines on an Arducam
+// MIPI module). Supported=false means the camera has no such control.
+export interface CameraControlRange {
+  Supported: boolean;
+  Minimum: number;
+  Maximum: number;
+  Step: number;
+  Default: number;
+  Value: number;
+}
+
+export interface CameraControls {
+  Exposure: CameraControlRange;
+  Gain: CameraControlRange;
 }
 
 // mirrors Server/Dtos.cs's CalibrationStatusDto (ROADMAP.md Phase 8/E5) - whether a camera

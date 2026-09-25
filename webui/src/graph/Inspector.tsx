@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Trash2, Wifi, WifiOff, Radio, Play, Square, Code, RefreshCw, Wand2, AlertTriangle, Circle, Download, FolderInput } from 'lucide-react';
 import type { PipelineNode } from './model';
-import type { WsSource, WsSink, NT4Defaults, CameraMode, CalibrationStatus, RecordSegment } from '../types';
+import type { WsSource, WsSink, NT4Defaults, CameraMode, CameraControls, CalibrationStatus, RecordSegment } from '../types';
 import { ApiService } from '../services/ApiService';
 import { ToggleSwitch } from '../components/ToggleSwitch';
 import { StreamView } from '../components/StreamView';
@@ -10,7 +10,7 @@ import { StreamView } from '../components/StreamView';
 const api = new ApiService();
 
 // LumenCore/FrameFormat.h's declaration order - see CameraMode's own comment in types/index.ts.
-const PIXEL_FORMAT_NAMES = ['BGR24', 'RGB24', 'GRAY8', 'NV12', 'YUYV', 'MJPEG'];
+const PIXEL_FORMAT_NAMES = ['BGR24', 'RGB24', 'GRAY8', 'NV12', 'YUYV', 'MJPEG', 'Y10', 'Y16', 'Y10P', 'Y10BPACK'];
 const modeLabel = (m: CameraMode) => `${m.Width}x${m.Height} @ ${m.Fps}fps (${PIXEL_FORMAT_NAMES[m.PixelFormat] ?? m.PixelFormat})`;
 const modeKey = (m: CameraMode) => `${m.Width}x${m.Height}x${m.Fps}x${m.PixelFormat}`;
 
@@ -44,6 +44,7 @@ export const Inspector: React.FC<{
   const [autoExposure, setAutoExposure] = useState(true);
   const [exposureValue, setExposureValue] = useState(300);
   const [gainValue, setGainValue] = useState(0);
+  const [cameraControls, setCameraControls] = useState<CameraControls | null>(null);
   const [sinkBackend, setSinkBackend] = useState<number | null>(null);
   const [switchingBackend, setSwitchingBackend] = useState(false);
   // threads/quadDecimate/refineEdges are genuinely user-adjustable (see ApriltagTuning in
@@ -63,6 +64,7 @@ export const Inspector: React.FC<{
     setCameraModes([]);
     setCurrentMode(null);
     setCalibrationStatus(null);
+    setCameraControls(null);
   }, [node.id]);
 
   const source = kind === 'source' ? (raw as WsSource) : null;
@@ -91,6 +93,16 @@ export const Inspector: React.FC<{
         setCalibrationStatus(calibration);
       })
       .catch(() => { if (!cancelled) onToast('Failed to load camera modes', 'error'); });
+    // separate from the batch above: an older server without /controls must not take the mode
+    // picker down with it - the inputs just stay unbounded then
+    api.getCameraControls(source.Id)
+      .then(controls => {
+        if (cancelled) return;
+        setCameraControls(controls);
+        if (controls.Exposure.Supported) setExposureValue(controls.Exposure.Value);
+        if (controls.Gain.Supported) setGainValue(controls.Gain.Value);
+      })
+      .catch(() => {});
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.id, isCamera]);
@@ -123,8 +135,9 @@ export const Inspector: React.FC<{
   const applyExposure = async () => {
     if (!source) return;
     try {
-      await api.setCameraExposure(source.Id, exposureValue);
-      onToast('Exposure applied', 'success');
+      // false = the ioctl was rejected (e.g. out of range for this camera), not a network error
+      const ok = await api.setCameraExposure(source.Id, exposureValue);
+      onToast(ok ? 'Exposure applied' : 'Camera rejected that exposure value', ok ? 'success' : 'error');
     } catch {
       onToast('Exposure not supported by this device', 'error');
     }
@@ -133,8 +146,8 @@ export const Inspector: React.FC<{
   const applyGain = async () => {
     if (!source) return;
     try {
-      await api.setCameraGain(source.Id, gainValue);
-      onToast('Gain applied', 'success');
+      const ok = await api.setCameraGain(source.Id, gainValue);
+      onToast(ok ? 'Gain applied' : 'Camera rejected that gain value', ok ? 'success' : 'error');
     } catch {
       onToast('Gain not supported by this device', 'error');
     }
@@ -444,18 +457,34 @@ export const Inspector: React.FC<{
                 moving robot (motion blur otherwise smears the tag edges) - this is the whole
                 point of exposing manual exposure control here, not just a nice-to-have. */}
             <div className={autoExposure ? 'opacity-50 pointer-events-none' : ''}>
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Exposure (100&micro;s units)</label>
+              {/* units are the camera's own (100us steps on UVC webcams, sensor lines on e.g. an
+                  Arducam MIPI module) - so show the device's real range rather than a fixed unit */}
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Exposure{cameraControls?.Exposure.Supported
+                  ? ` (${cameraControls.Exposure.Minimum}-${cameraControls.Exposure.Maximum}, default ${cameraControls.Exposure.Default})`
+                  : cameraControls ? ' (not supported by this camera)' : ''}
+              </label>
               <div className="flex gap-2">
                 <input type="number" value={exposureValue} onChange={e => setExposureValue(parseInt(e.target.value) || 0)}
+                  min={cameraControls?.Exposure.Supported ? cameraControls.Exposure.Minimum : undefined}
+                  max={cameraControls?.Exposure.Supported ? cameraControls.Exposure.Maximum : undefined}
+                  step={cameraControls?.Exposure.Supported ? cameraControls.Exposure.Step : undefined}
                   className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white" />
                 <button onClick={applyExposure} className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">Apply</button>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Gain</label>
+              <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                Gain{cameraControls?.Gain.Supported
+                  ? ` (${cameraControls.Gain.Minimum}-${cameraControls.Gain.Maximum}, default ${cameraControls.Gain.Default})`
+                  : cameraControls ? ' (not supported by this camera)' : ''}
+              </label>
               <div className="flex gap-2">
                 <input type="number" value={gainValue} onChange={e => setGainValue(parseInt(e.target.value) || 0)}
+                  min={cameraControls?.Gain.Supported ? cameraControls.Gain.Minimum : undefined}
+                  max={cameraControls?.Gain.Supported ? cameraControls.Gain.Maximum : undefined}
+                  step={cameraControls?.Gain.Supported ? cameraControls.Gain.Step : undefined}
                   className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white" />
                 <button onClick={applyGain} className="px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">Apply</button>
               </div>
