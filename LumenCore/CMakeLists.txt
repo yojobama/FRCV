@@ -234,6 +234,37 @@ if(LUMEN_WITH_VULKAN_APRILTAG)
     find_package(Vulkan REQUIRED)
     set(VKAPRILTAG_BUILD_APPS OFF CACHE BOOL "" FORCE)
     set(VKAPRILTAG_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+
+    # vkapriltag (pinned to an exact upstream commit - no local patches in the submodule) runs
+    #   target_compile_options(apriltag PRIVATE -std=gnu17)
+    # unconditionally right after FetchContent_MakeAvailable(apriltag). With
+    # FETCHCONTENT_TRY_FIND_PACKAGE_MODE=ALWAYS (CMakePresets.json - it's what enforces "exactly
+    # one apriltag"), `apriltag` resolves to the installed package, whose apriltagConfig.cmake
+    # makes `apriltag` an ALIAS of apriltag::apriltag - and CMake rejects target_compile_options
+    # on an ALIAS outright ("can not be used on an ALIAS target"), on every platform, failing the
+    # whole configure. The flag only means anything when apriltag is compiled from source anyway.
+    # So: a thin override of the builtin that skips ALIAS targets (turning what would be a hard
+    # error into a no-op, with a STATUS line) and forwards every other call EXACTLY - each
+    # argument bracket-quoted, so generator expressions containing ';' survive. CMake keeps the
+    # original reachable as _target_compile_options; the NOT COMMAND guard overrides only once.
+    if(NOT COMMAND _target_compile_options)
+        function(target_compile_options tgt)
+            if(TARGET "${tgt}")
+                get_target_property(_lumen_aliased "${tgt}" ALIASED_TARGET)
+                if(_lumen_aliased)
+                    message(STATUS "Skipping target_compile_options on ALIAS target '${tgt}' (-> ${_lumen_aliased}) - options are meaningless on an installed package")
+                    return()
+                endif()
+            endif()
+            set(_lumen_args "")
+            math(EXPR _lumen_last "${ARGC} - 1")
+            foreach(_lumen_i RANGE 0 ${_lumen_last})
+                string(APPEND _lumen_args " [==[${ARGV${_lumen_i}}]==]")
+            endforeach()
+            cmake_language(EVAL CODE "_target_compile_options(${_lumen_args})")
+        endfunction()
+    endif()
+
     add_subdirectory("${CMAKE_SOURCE_DIR}/third_party/vkapriltag/apriltags_vulkan" vkapriltag)
     # vkapriltag's own library/CMakeLists.txt creates a plain `apriltag` target via
     # FetchContent_MakeAvailable(apriltag), not a namespaced `apriltag::apriltag` alias - link

@@ -655,19 +655,23 @@ int Manager::CreateApriltagDetector(int id)
 }
 
 int Manager::CreateApriltagDetector(CameraCalibrationResult calibrationResult, double tagSize,
-    ApriltagBackendKind backendKind, int frameWidth, int frameHeight, int nthreads, float quadDecimate)
+    ApriltagBackendKind backendKind, int frameWidth, int frameHeight, int nthreads, float quadDecimate, bool refineEdges)
 {
     int id = GenerateUUID();
-    return CreateApriltagDetector(id, calibrationResult, tagSize, backendKind, frameWidth, frameHeight, nthreads, quadDecimate);
+    return CreateApriltagDetector(id, calibrationResult, tagSize, backendKind, frameWidth, frameHeight, nthreads, quadDecimate, refineEdges);
 }
 
 int Manager::CreateApriltagDetector(int id, CameraCalibrationResult calibrationResult, double tagSize,
-    ApriltagBackendKind backendKind, int frameWidth, int frameHeight, int nthreads, float quadDecimate)
+    ApriltagBackendKind backendKind, int frameWidth, int frameHeight, int nthreads, float quadDecimate, bool refineEdges)
 {
     m_Logger->EnterLog("CreateApriltagDetector called with id=" + std::to_string(id) + ", backend=" + std::to_string(backendKind));
 
+    ApriltagTuning tuning;
+    tuning.nthreads = nthreads;
+    tuning.quadDecimate = quadDecimate;
+    tuning.refineEdges = refineEdges;
     auto p_Detector = std::make_shared<ApriltagDetector>(m_Logger, std::to_string(id), calibrationResult, tagSize,
-        backendKind, frameWidth, frameHeight, nthreads, quadDecimate);
+        backendKind, frameWidth, frameHeight, tuning);
 
     m_Sinks.emplace(id, p_Detector);
     m_Sources.emplace(id, p_Detector);
@@ -749,6 +753,17 @@ bool Manager::GetApriltagDetectorQuadDecimateSupported(int sinkId)
     if (p_Detector == nullptr) return false;
 
     return p_Detector->GetQuadDecimateSupported();
+}
+
+bool Manager::GetApriltagDetectorRefineEdges(int sinkId)
+{
+    auto sink = m_Sinks.find(sinkId);
+    if (sink == m_Sinks.end()) return false;
+
+    ApriltagDetector* p_Detector = dynamic_cast<ApriltagDetector*>(sink->second.get());
+    if (p_Detector == nullptr) return false;
+
+    return p_Detector->GetRefineEdges();
 }
 
 namespace {

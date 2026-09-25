@@ -116,7 +116,13 @@ namespace Server
                     }
                     foreach (var sink in sinks)
                     {
-                        SinkManager.Instance.AddSink(sink.Name, sink.Type.ToString(), sink.Id);
+                        // an ApriltagSink saved with its configuration comes back exactly as
+                        // configured (tag size, requested backend, tuning); older records without
+                        // it still take the generic path's defaults - see RestoreApriltagSink
+                        if (sink.Type == SinkType.ApriltagSink && sink.ApriltagTagSize.HasValue)
+                            SinkManager.Instance.RestoreApriltagSink(sink);
+                        else
+                            SinkManager.Instance.AddSink(sink.Name, sink.Type.ToString(), sink.Id);
                     }
 
                     // AddSink's generic (name, type, id) switch has no case for RecordSink - its

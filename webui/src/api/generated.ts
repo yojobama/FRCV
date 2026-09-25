@@ -707,6 +707,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/mjpegSink/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["MjpegSinkController_Create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/model/upload": {
         parameters: {
             query?: never;
@@ -945,6 +961,70 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["PipelineProfileController_Activate"];
+        trace?: never;
+    };
+    "/recordSink/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RecordSinkController_Create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordSink/{id}/segments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RecordSinkController_GetSegments"];
+        put?: never;
+        post?: never;
+        delete: operations["RecordSinkController_DeleteSegment"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordSink/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["RecordSinkController_Download"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recordSink/{id}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["RecordSinkController_Promote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/sink/getStatus": {
@@ -1563,6 +1643,7 @@ export interface components {
             Threads: number;
             QuadDecimate: number;
             QuadDecimateSupported: boolean;
+            RefineEdges: boolean;
         };
         CameraCalibrationResultDto: {
             Fx: number;
@@ -1597,6 +1678,9 @@ export interface components {
             Backend?: number;
             FrameWidth: number;
             FrameHeight: number;
+            Threads?: number;
+            QuadDecimate?: number;
+            RefineEdges?: boolean;
             FieldLayoutPath?: string;
             DriverMode: boolean;
             ModelId?: number;
@@ -1662,6 +1746,45 @@ export interface components {
             TeamNumber?: number;
             ServerAddress?: string;
         };
+        TimeSpan: {
+            Ticks: number;
+            Days: number;
+            Hours: number;
+            Milliseconds: number;
+            Microseconds: number;
+            Nanoseconds: number;
+            Minutes: number;
+            Seconds: number;
+            TotalDays: number;
+            TotalHours: number;
+            TotalMilliseconds: number;
+            TotalMicroseconds: number;
+            TotalNanoseconds: number;
+            TotalMinutes: number;
+            TotalSeconds: number;
+        };
+        DateTime: {
+            Date: components["schemas"]["DateTime"];
+            Day: number;
+            DayOfWeek: number;
+            DayOfYear: number;
+            Hour: number;
+            Kind: number;
+            Millisecond: number;
+            Microsecond: number;
+            Nanosecond: number;
+            Minute: number;
+            Month: number;
+            Second: number;
+            Ticks: number;
+            TimeOfDay: components["schemas"]["TimeSpan"];
+            Year: number;
+        };
+        RecordSegmentDto: {
+            FileName?: string;
+            SizeBytes: number;
+            LastWriteTimeUtc: components["schemas"]["DateTime"];
+        };
         Sink: {
             Type: number;
             Id: number;
@@ -1669,6 +1792,17 @@ export interface components {
             Source?: components["schemas"]["Source"];
             Source2?: components["schemas"]["Source"];
             DepthSourceId?: number;
+            RecordDstFolder?: string;
+            RecordEncoderName?: string;
+            RecordBitrateKbps?: number;
+            RecordSegmentSeconds?: number;
+            RecordMaxFolderSizeBytes?: number;
+            RecordMaxFileCount?: number;
+            ApriltagTagSize?: number;
+            ApriltagBackend?: number;
+            ApriltagThreads?: number;
+            ApriltagQuadDecimate?: number;
+            ApriltagRefineEdges?: boolean;
         };
         StereoCalibrationResultDto: {
             Left: components["schemas"]["CameraCalibrationResultDto"];
@@ -1772,6 +1906,9 @@ export interface operations {
                 backend: number;
                 frameWidth?: number;
                 frameHeight?: number;
+                nthreads?: number;
+                quadDecimate?: number;
+                refineEdges?: boolean;
             };
             header?: never;
             path?: never;
@@ -1819,6 +1956,7 @@ export interface operations {
                 backend: number;
                 nthreads?: number;
                 quadDecimate?: number;
+                refineEdges?: boolean;
             };
             header?: never;
             path?: never;
@@ -2700,6 +2838,29 @@ export interface operations {
             };
         };
     };
+    MjpegSinkController_Create: {
+        parameters: {
+            query?: {
+                name?: string;
+                jpegQuality?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number;
+                };
+            };
+        };
+    };
     ModelController_Upload: {
         parameters: {
             query?: never;
@@ -2907,6 +3068,9 @@ export interface operations {
                 frameWidth?: number;
                 frameHeight?: number;
                 driverMode?: boolean;
+                nthreads?: number;
+                quadDecimate?: number;
+                refineEdges?: boolean;
             };
             header?: never;
             path?: never;
@@ -3055,6 +3219,128 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    RecordSinkController_Create: {
+        parameters: {
+            query?: {
+                name?: string;
+                dstFolder?: string;
+                encoderName?: string;
+                bitrateKbps?: number;
+                fps?: number;
+                segmentSeconds?: number;
+                maxFolderSizeBytes?: number;
+                maxFileCount?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number;
+                };
+            };
+        };
+    };
+    RecordSinkController_GetSegments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecordSegmentDto"][];
+                };
+            };
+        };
+    };
+    RecordSinkController_DeleteSegment: {
+        parameters: {
+            query?: {
+                file?: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+        };
+    };
+    RecordSinkController_Download: {
+        parameters: {
+            query?: {
+                file?: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RecordSinkController_Promote: {
+        parameters: {
+            query?: {
+                file?: string;
+                name?: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": number;
+                };
             };
         };
     };

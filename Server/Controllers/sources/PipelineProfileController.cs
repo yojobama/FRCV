@@ -24,10 +24,11 @@ namespace Server.Controllers.sources
             [FromQuery] double tagSize, [FromQuery] int? calibratorSinkId = null,
             [FromQuery] ApriltagBackendKind backend = ApriltagBackendKind.APRILTAG_BACKEND_CPU,
             [FromQuery] int frameWidth = 0, [FromQuery] int frameHeight = 0,
-            [FromQuery] bool driverMode = false)
+            [FromQuery] bool driverMode = false,
+            [FromQuery] int? nthreads = null, [FromQuery] float? quadDecimate = null, [FromQuery] bool? refineEdges = null)
         {
             int index = SourceManager.Instance.AddApriltagProfile(sourceId, name, tagSize, calibratorSinkId,
-                backend, frameWidth, frameHeight, driverMode);
+                backend, frameWidth, frameHeight, driverMode, nthreads, quadDecimate, refineEdges);
             return Task.FromResult(index);
         }
 

@@ -116,14 +116,15 @@ public:
 	// are sized once at construction, unlike the CPU backend which is frame-size-agnostic); if
 	// Vulkan is requested but unavailable, the node falls back to CPU rather than failing to
 	// construct (check GetApriltagDetectorBackendName afterwards to see which one actually ran).
-	// nthreads/quadDecimate <=0 means "let the backend pick its own default" - see
-	// ApriltagDetector's own constructor comment.
+	// nthreads/quadDecimate <=0 means "let the backend pick its own default"; refineEdges is
+	// libapriltag's refine_edges - see ApriltagTuning (IApriltagBackend.h). frameWidth/
+	// frameHeight may be 0: a Vulkan detector sizes itself from its first real frame.
 	int CreateApriltagDetector(CameraCalibrationResult calibrationResult, double tagSize,
 		ApriltagBackendKind backendKind, int frameWidth, int frameHeight,
-		int nthreads = 0, float quadDecimate = 0.0f);
+		int nthreads = 0, float quadDecimate = 0.0f, bool refineEdges = true);
 	int CreateApriltagDetector(int id, CameraCalibrationResult calibrationResult, double tagSize,
 		ApriltagBackendKind backendKind, int frameWidth, int frameHeight,
-		int nthreads = 0, float quadDecimate = 0.0f);
+		int nthreads = 0, float quadDecimate = 0.0f, bool refineEdges = true);
 	string GetApriltagDetectorBackendName(int sinkId);
 	// which backend was actually requested/resolved to (as a real enum, not just the display
 	// name GetApriltagDetectorBackendName returns) plus everything else needed to rebuild an
@@ -136,6 +137,7 @@ public:
 	int GetApriltagDetectorThreads(int sinkId);
 	float GetApriltagDetectorQuadDecimate(int sinkId);
 	bool GetApriltagDetectorQuadDecimateSupported(int sinkId);
+	bool GetApriltagDetectorRefineEdges(int sinkId);
 	// legacy no-model overloads: there is no way to run inference without a model, so these
 	// exist only to keep already-generated SWIG call sites compiling and throw a clear error
 	// explaining that a model must be supplied via the overload below

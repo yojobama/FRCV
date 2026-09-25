@@ -179,7 +179,8 @@ namespace Server
         // PhotonVision's own pipelineIndex semantics (a robot program's stored index must keep
         // meaning the same profile even after an unrelated one is removed).
         public int AddApriltagProfile(int sourceId, string name, double tagSize, int? calibratorSinkId,
-            ApriltagBackendKind backend, int frameWidth, int frameHeight, bool driverMode)
+            ApriltagBackendKind backend, int frameWidth, int frameHeight, bool driverMode,
+            int? threads = null, float? quadDecimate = null, bool? refineEdges = null)
         {
             Source source = GetSourceById(sourceId) ?? throw new ArgumentException($"no source with id {sourceId}");
             int index = source.Profiles.Count == 0 ? 0 : source.Profiles.Max(p => p.Index) + 1;
@@ -193,7 +194,10 @@ namespace Server
                 Backend = backend,
                 FrameWidth = frameWidth,
                 FrameHeight = frameHeight,
-                DriverMode = driverMode
+                DriverMode = driverMode,
+                Threads = threads,
+                QuadDecimate = quadDecimate,
+                RefineEdges = refineEdges
             });
             DB.Instance.Save();
             return index;

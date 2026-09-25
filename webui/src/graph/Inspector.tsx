@@ -46,13 +46,14 @@ export const Inspector: React.FC<{
   const [gainValue, setGainValue] = useState(0);
   const [sinkBackend, setSinkBackend] = useState<number | null>(null);
   const [switchingBackend, setSwitchingBackend] = useState(false);
-  // threads/quadDecimate are genuinely user-adjustable (not hardcoded - see ApriltagDetector's
-  // own constructor comment). quadDecimateSupported is false for Vulkan (fixed 2x decimation
-  // baked into its compute pipeline), so that control is hidden rather than accepting a value
-  // that would be silently ignored.
+  // threads/quadDecimate/refineEdges are genuinely user-adjustable (see ApriltagTuning in
+  // LumenCore/IApriltagBackend.h). Both backends support all three now - Vulkan's decimation is
+  // an integer that has to divide the frame size, so the server reports back the value it
+  // actually runs.
   const [threadsValue, setThreadsValue] = useState(0);
   const [quadDecimateValue, setQuadDecimateValue] = useState(0);
   const [quadDecimateSupported, setQuadDecimateSupported] = useState(true);
+  const [refineEdgesValue, setRefineEdgesValue] = useState(true);
   const [applyingTuning, setApplyingTuning] = useState(false);
 
   useEffect(() => {
@@ -169,6 +170,7 @@ export const Inspector: React.FC<{
         setThreadsValue(tuning.threads);
         setQuadDecimateValue(tuning.quadDecimate);
         setQuadDecimateSupported(tuning.quadDecimateSupported);
+        setRefineEdgesValue(tuning.refineEdges);
       })
       .catch(() => { if (!cancelled) onToast('Failed to load detector tuning', 'error'); });
     return () => { cancelled = true; };
@@ -179,16 +181,15 @@ export const Inspector: React.FC<{
   // calibration/bindings, but the underlying native object is genuinely destroyed and recreated
   // (ApriltagDetector::m_Backend has no setter), so an open Live Preview may show a brief black
   // frame while its binding to the new detector re-establishes on the next /ws/state tick.
-  // Carries the current threads/quadDecimate values forward explicitly so switching backend
-  // doesn't reset tuning the user already dialled in (Vulkan simply ignores quadDecimate - fixed
-  // 2x decimation - so passing it through on a switch to Vulkan is harmless).
+  // Carries the current threads/quadDecimate/refineEdges values forward explicitly so switching
+  // backend doesn't reset tuning the user already dialled in (a fractional decimation carried
+  // into Vulkan is rounded server-side to an integer the frame size divides by).
   const switchBackend = async (backend: number) => {
     if (!sink) return;
     setSwitchingBackend(true);
     try {
-      await api.setApriltagBackend(sink.Id, backend, threadsValue, quadDecimateValue);
+      await api.setApriltagBackend(sink.Id, backend, threadsValue, quadDecimateValue, refineEdgesValue);
       setSinkBackend(backend);
-      setQuadDecimateSupported(backend !== 1);
       onToast('Backend switched', 'success');
     } catch {
       onToast('Failed to switch backend', 'error');
@@ -197,12 +198,18 @@ export const Inspector: React.FC<{
     }
   };
 
-  // Applies threads/quadDecimate without changing backend - same rebuild-in-place mechanism.
+  // Applies threads/quadDecimate/refineEdges without changing backend - same rebuild-in-place
+  // mechanism. Re-reads the tuning afterwards: on Vulkan the decimation actually used can differ
+  // from the one requested (it must divide the frame size), and the user should see which.
   const applyTuning = async () => {
     if (!sink || sinkBackend === null) return;
     setApplyingTuning(true);
     try {
-      await api.setApriltagBackend(sink.Id, sinkBackend, threadsValue, quadDecimateSupported ? quadDecimateValue : undefined);
+      await api.setApriltagBackend(sink.Id, sinkBackend, threadsValue, quadDecimateSupported ? quadDecimateValue : undefined, refineEdgesValue);
+      const actual = await api.getApriltagTuning(sink.Id);
+      setThreadsValue(actual.threads);
+      setQuadDecimateValue(actual.quadDecimate);
+      setRefineEdgesValue(actual.refineEdges);
       onToast('Tuning applied', 'success');
     } catch {
       onToast('Failed to apply tuning', 'error');
@@ -485,11 +492,11 @@ export const Inspector: React.FC<{
               </div>
             )}
 
-            {/* genuinely adjustable, not hardcoded - see ApriltagDetector's own constructor
-                comment. Threads applies to both backends (libapriltag's nthreads / vkapriltag's
-                cpu_threads); QuadDecimate is CPU-only (Vulkan's decimation is architecturally
-                fixed at 2x) and is hidden rather than accepting a value that'd be silently
-                ignored. */}
+            {/* genuinely adjustable, not hardcoded - see ApriltagTuning. All three apply to both
+                backends: Threads is libapriltag's nthreads / vkapriltag's cpu_threads; Vulkan's
+                decimation is integer-only (and must divide the frame size - the server rounds and
+                reports back what it actually runs); Refine Edges is libapriltag's refine_edges,
+                which vkapriltag reimplements bit-identically. */}
             {isApriltagSink && (
               <div className="space-y-2">
                 <div>
@@ -497,16 +504,21 @@ export const Inspector: React.FC<{
                   <input type="number" min={0} value={threadsValue} onChange={e => setThreadsValue(parseInt(e.target.value) || 0)}
                     className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white" />
                 </div>
-                {quadDecimateSupported ? (
+                {quadDecimateSupported && (
                   <div>
-                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Quad Decimate (0 = default)</label>
-                    <input type="number" min={0} step={0.5} value={quadDecimateValue}
+                    <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                      Decimation (0 = default{sinkBackend === 1 ? ', whole numbers only on Vulkan' : ''})
+                    </label>
+                    <input type="number" min={0} step={sinkBackend === 1 ? 1 : 0.5} value={quadDecimateValue}
                       onChange={e => setQuadDecimateValue(parseFloat(e.target.value) || 0)}
                       className="w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded dark:bg-gray-700 dark:text-white" />
                   </div>
-                ) : (
-                  <p className="text-xs text-gray-400">Vulkan's decimation is fixed at 2x - not adjustable.</p>
                 )}
+                <label className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300"
+                  title="Gradient-based corner refinement - more accurate corners/pose, costs some CPU. Recommended when decimating.">
+                  <input type="checkbox" checked={refineEdgesValue} onChange={e => setRefineEdgesValue(e.target.checked)} />
+                  Refine edges
+                </label>
                 <button onClick={applyTuning} disabled={applyingTuning}
                   className="w-full px-2 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 disabled:opacity-50">Apply Tuning</button>
               </div>

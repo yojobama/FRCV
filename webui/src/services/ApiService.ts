@@ -274,25 +274,25 @@ export class ApiService {
   // Switches an EXISTING sink between CPU/Vulkan in place, preserving its id/tag size/
   // calibration/bindings - the sink's own "Backend" control, not the Pipeline Profiles one
   // (createApriltagProfile's options.backend only helps if you set up a profile in advance).
-  // nthreads/quadDecimate are optional - omit them to carry forward the sink's current tuning
-  // (see SinkManager.SetApriltagBackend's own comment) rather than resetting it.
-  async setApriltagBackend(sinkId: number, backend: number, nthreads?: number, quadDecimate?: number): Promise<void> {
+  // nthreads/quadDecimate/refineEdges are optional - omit them to carry forward the sink's
+  // current tuning (see SinkManager.SetApriltagBackend's own comment) rather than resetting it.
+  async setApriltagBackend(sinkId: number, backend: number, nthreads?: number, quadDecimate?: number, refineEdges?: boolean): Promise<void> {
     let url = `${this.baseUrl}/apriltagSink/backend?sinkId=${sinkId}&backend=${backend}`;
     if (nthreads !== undefined) url += `&nthreads=${nthreads}`;
     if (quadDecimate !== undefined) url += `&quadDecimate=${quadDecimate}`;
+    if (refineEdges !== undefined) url += `&refineEdges=${refineEdges}`;
     const response = await fetch(url, { method: 'PATCH' });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
   }
 
-  // Current threads/quad_decimate tuning for a sink, plus whether quad_decimate is even
-  // meaningful for its active backend (false for Vulkan - fixed 2x decimation baked into its
-  // compute pipeline) - genuinely adjustable, not hardcoded, per ApriltagDetector's own
-  // constructor comment.
-  async getApriltagTuning(sinkId: number): Promise<{ threads: number; quadDecimate: number; quadDecimateSupported: boolean }> {
+  // Current threads/quad_decimate/refine_edges tuning actually in effect for a sink. On Vulkan,
+  // quadDecimate is the integer the GPU pipeline really runs (it must divide the frame size, so
+  // it can differ from what was requested).
+  async getApriltagTuning(sinkId: number): Promise<{ threads: number; quadDecimate: number; quadDecimateSupported: boolean; refineEdges: boolean }> {
     const response = await fetch(`${this.baseUrl}/apriltagSink/tuning?sinkId=${sinkId}`);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const dto = await response.json();
-    return { threads: dto.Threads, quadDecimate: dto.QuadDecimate, quadDecimateSupported: dto.QuadDecimateSupported };
+    return { threads: dto.Threads, quadDecimate: dto.QuadDecimate, quadDecimateSupported: dto.QuadDecimateSupported, refineEdges: dto.RefineEdges };
   }
 
   // Camera Calibration Sink Controller routes (default 6x9 checkerboard, 25mm squares - see

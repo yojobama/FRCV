@@ -11,6 +11,20 @@ enum ApriltagBackendKind {
 	APRILTAG_BACKEND_VULKAN
 };
 
+// The runtime-tunable detector knobs, shared by both backends so a sink can be rebuilt (backend
+// switch, frame-size change) with exactly the same settings.
+//   nthreads     <= 0: the backend's own default (CPU: apriltag's 1; Vulkan: hardware_concurrency)
+//   quadDecimate <= 0: the backend's own default (2 for both). Vulkan only supports integers and
+//                      needs the frame to be divisible by it - see VkApriltagBackend.
+//   refineEdges:       libapriltag's refine_edges (gradient-based corner refinement). Default true,
+//                      libapriltag's own default - recommended specifically to compensate for
+//                      decimation's coarser quads, and cheap relative to detection.
+struct ApriltagTuning {
+	int nthreads = 0;
+	float quadDecimate = 0.0f;
+	bool refineEdges = true;
+};
+
 // Detection-only backend abstraction: both implementations hand back a zarray_t* of
 // apriltag_detection_t* using the exact same apriltag library (see VkApriltagBackend.h for why
 // that must be true), so ApriltagDetector's pose estimation, JSON emission and frame annotation
@@ -32,13 +46,14 @@ public:
 
 	// Runtime tuning knobs - reported back (not just "what was requested") so a caller can see
 	// what's actually in effect, same "requested vs actual" honesty IApriltagBackend already
-	// has via Name()/GetBackendName() for the CPU<->Vulkan fallback. Not every backend supports
-	// every knob: CpuApriltagBackend backs both directly; VkApriltagBackend's GetThreads() maps
-	// to its own cpu_threads (the CPU-tail worker pool, the genuinely analogous knob), but its
-	// decimation is fixed at 2x in the GPU pipeline itself (see VkApriltagBackend.cpp's own
-	// comment) - GetQuadDecimateSupported() is how a caller (the webui's Inspector) knows not to
-	// offer a control that would silently do nothing.
+	// has via Name()/GetBackendName() for the CPU<->Vulkan fallback. CpuApriltagBackend backs all
+	// three directly; VkApriltagBackend's GetThreads() maps to its own cpu_threads (the CPU-tail
+	// worker pool, the genuinely analogous knob), and its decimation is an integer baked into the
+	// GPU pipeline at construction, so GetQuadDecimate() reports the value actually in use (which
+	// can differ from the request - see VkApriltagBackend.cpp). GetQuadDecimateSupported() stays
+	// so a caller (the webui's Inspector) can tell whether a control would do anything.
 	virtual int GetThreads() const = 0;
 	virtual float GetQuadDecimate() const = 0;
 	virtual bool GetQuadDecimateSupported() const = 0;
+	virtual bool GetRefineEdges() const = 0;
 };

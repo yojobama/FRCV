@@ -44,6 +44,11 @@ namespace Server
         public ApriltagBackendKind? Backend { get; set; }
         public int FrameWidth { get; set; }
         public int FrameHeight { get; set; }
+        // detector tuning (see ApriltagTuning in LumenCore/IApriltagBackend.h) - null = backend
+        // default, so profiles saved before these existed keep behaving as they did
+        public int? Threads { get; set; }
+        public float? QuadDecimate { get; set; }
+        public bool? RefineEdges { get; set; }
         // path to this profile's OWN copy of a WPILib field-layout JSON (see
         // SourceController's /source/profiles/fieldLayout) - deliberately profile-scoped, not
         // sink-id-scoped like the older single-sink /apriltagSink/fieldLayout endpoint: two

@@ -136,7 +136,7 @@ namespace Server
     // Vulkan backend (fixed 2x decimation baked into its compute pipeline), telling the
     // Inspector to hide/disable that control rather than let a user set a value that's
     // silently ignored.
-    public record struct ApriltagTuningDto(int Threads, float QuadDecimate, bool QuadDecimateSupported);
+    public record struct ApriltagTuningDto(int Threads, float QuadDecimate, bool QuadDecimateSupported, bool RefineEdges);
 
     // ROADMAP.md Phase 8d: every saved snapshot/pair's detected corner points, for the
     // calibration wizard's live coverage heatmap - which region of the frame still needs more

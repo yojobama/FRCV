@@ -8,33 +8,22 @@
 #endif
 
 ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string id, CameraCalibrationResult cameraCalibrationResult,
-	double tagSize, ApriltagBackendKind backendKind, int frameWidth, int frameHeight, int nthreads, float quadDecimate)
+	double tagSize, ApriltagBackendKind backendKind, int frameWidth, int frameHeight, ApriltagTuning tuning)
 	: ISource(logger, id), ISink(logger, 1, false, true, id)
 {
 	if (logger) logger->EnterLog("ApriltagDetector constructed");
 
-	if (backendKind == APRILTAG_BACKEND_VULKAN) {
-#ifdef LUMEN_WITH_VULKAN_APRILTAG
-		try {
-			m_Backend = std::make_unique<VkApriltagBackend>(frameWidth, frameHeight, nthreads);
-			m_ActiveBackendKind = APRILTAG_BACKEND_VULKAN;
-		} catch (const std::exception& e) {
-			// no usable Vulkan compute device, or GpuDetector/pipeline setup failed - fall back
-			// to CPU rather than fail to construct at all (plan phase 5, item 5)
-			if (logger) logger->EnterLog(LogLevel::Warning,
-				std::string("Vulkan AprilTag backend unavailable (") + e.what() + "), falling back to CPU");
-			m_Backend = std::make_unique<CpuApriltagBackend>(nthreads, quadDecimate);
-			m_ActiveBackendKind = APRILTAG_BACKEND_CPU;
-		}
-#else
-		if (logger) logger->EnterLog(LogLevel::Warning,
-			"Vulkan AprilTag backend requested but LUMEN_WITH_VULKAN_APRILTAG was not compiled in, falling back to CPU");
-		m_Backend = std::make_unique<CpuApriltagBackend>(nthreads, quadDecimate);
-		m_ActiveBackendKind = APRILTAG_BACKEND_CPU;
-#endif
-	} else {
-		m_Backend = std::make_unique<CpuApriltagBackend>(nthreads, quadDecimate);
-		m_ActiveBackendKind = APRILTAG_BACKEND_CPU;
+	m_Logger = logger;
+	m_RequestedBackendKind = backendKind;
+	m_Tuning = tuning;
+	{
+		std::lock_guard<std::mutex> lock(m_BackendMutex);
+		// Vulkan with no real frame size yet: leave m_Backend null and let the first frame build
+		// it (see Process). Everything else can be built right now.
+		if (backendKind != APRILTAG_BACKEND_VULKAN || (frameWidth > 0 && frameHeight > 0))
+			BuildBackendLocked(frameWidth, frameHeight);
+		else
+			m_ActiveBackendKind = APRILTAG_BACKEND_VULKAN; // pending - reported as the request
 	}
 
 	m_OriginalCalibration = cameraCalibrationResult;
@@ -76,9 +65,75 @@ CameraCalibrationResult ApriltagDetector::GetCalibration() const
 	return m_OriginalCalibration;
 }
 
+void ApriltagDetector::BuildBackendLocked(int frameWidth, int frameHeight)
+{
+	if (m_RequestedBackendKind == APRILTAG_BACKEND_VULKAN && !m_VulkanUnavailable) {
+#ifdef LUMEN_WITH_VULKAN_APRILTAG
+		try {
+			auto vk = std::make_unique<VkApriltagBackend>(frameWidth, frameHeight, m_Tuning);
+			if (m_Logger) {
+				std::string msg = "Vulkan AprilTag backend built for " + std::to_string(frameWidth) + "x" +
+					std::to_string(frameHeight) + ", decimation " + std::to_string(static_cast<int>(vk->GetQuadDecimate())) +
+					", refineEdges " + (vk->GetRefineEdges() ? "on" : "off");
+				if (m_Tuning.quadDecimate > 0.0f && vk->GetQuadDecimate() != m_Tuning.quadDecimate)
+					msg += " (requested decimation " + std::to_string(m_Tuning.quadDecimate) +
+						" isn't an integer that divides the frame size)";
+				m_Logger->EnterLog(msg);
+			}
+			m_Backend = std::move(vk);
+			m_ActiveBackendKind = APRILTAG_BACKEND_VULKAN;
+			return;
+		} catch (const std::exception& e) {
+			// no usable Vulkan compute device, or GpuDetector/pipeline setup failed - fall back
+			// to CPU rather than fail outright (plan phase 5, item 5), and don't retry per frame
+			if (m_Logger) m_Logger->EnterLog(LogLevel::Warning,
+				std::string("Vulkan AprilTag backend unavailable (") + e.what() + "), falling back to CPU");
+			m_VulkanUnavailable = true;
+		}
+#else
+		if (m_Logger) m_Logger->EnterLog(LogLevel::Warning,
+			"Vulkan AprilTag backend requested but LUMEN_WITH_VULKAN_APRILTAG was not compiled in, falling back to CPU");
+		m_VulkanUnavailable = true;
+#endif
+	}
+	m_Backend = std::make_unique<CpuApriltagBackend>(m_Tuning);
+	m_ActiveBackendKind = APRILTAG_BACKEND_CPU;
+}
+
 std::string ApriltagDetector::GetBackendName() const
 {
-	return m_Backend->Name();
+	std::lock_guard<std::mutex> lock(m_BackendMutex);
+	return m_Backend ? m_Backend->Name() : "Vulkan (vkapriltag) - starting on first frame";
+}
+
+ApriltagBackendKind ApriltagDetector::GetBackendKind() const
+{
+	std::lock_guard<std::mutex> lock(m_BackendMutex);
+	return m_ActiveBackendKind;
+}
+
+int ApriltagDetector::GetThreads() const
+{
+	std::lock_guard<std::mutex> lock(m_BackendMutex);
+	return m_Backend ? m_Backend->GetThreads() : m_Tuning.nthreads;
+}
+
+float ApriltagDetector::GetQuadDecimate() const
+{
+	std::lock_guard<std::mutex> lock(m_BackendMutex);
+	return m_Backend ? m_Backend->GetQuadDecimate() : m_Tuning.quadDecimate;
+}
+
+bool ApriltagDetector::GetQuadDecimateSupported() const
+{
+	std::lock_guard<std::mutex> lock(m_BackendMutex);
+	return m_Backend ? m_Backend->GetQuadDecimateSupported() : true;
+}
+
+bool ApriltagDetector::GetRefineEdges() const
+{
+	std::lock_guard<std::mutex> lock(m_BackendMutex);
+	return m_Backend ? m_Backend->GetRefineEdges() : m_Tuning.refineEdges;
 }
 
 nlohmann::json ApriltagDetector::SolveMultiTagPnP(
@@ -167,6 +222,23 @@ void ApriltagDetector::Process(const std::vector<SourceResult>& results)
 			// always paying for a cvtColor here - the whole point of Frame carrying a format
 			// tag (ROADMAP.md Phase 3).
 			const cv::Mat& gray = result.frame->AsGray();
+
+			// Vulkan is sized to the actual frame: build it on the first frame (when it was
+			// requested without a known size) and rebuild it if the size changes, e.g. a camera
+			// mode switch - the GPU pipeline's buffers and decimation are fixed per instance.
+			if (m_RequestedBackendKind == APRILTAG_BACKEND_VULKAN && !m_VulkanUnavailable) {
+#ifdef LUMEN_WITH_VULKAN_APRILTAG
+				auto* vk = dynamic_cast<VkApriltagBackend*>(m_Backend.get());
+				bool needsBuild = !m_Backend ||
+					(vk && (vk->GetFrameWidth() != gray.cols || vk->GetFrameHeight() != gray.rows));
+#else
+				bool needsBuild = !m_Backend;
+#endif
+				if (needsBuild) {
+					std::lock_guard<std::mutex> lock(m_BackendMutex);
+					BuildBackendLocked(gray.cols, gray.rows);
+				}
+			}
 
 			m_Logger->EnterLog("detecting apriltags using backend=" + m_Backend->Name());
 			zarray_t* detections = m_Backend->Detect(gray);

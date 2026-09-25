@@ -210,19 +210,53 @@ namespace Server
         public int AddApriltagSinkFromCalibrator(string name, int calibratorSinkId, double tagSize)
         {
             int id = ManagerWrapper.Instance.CreateApriltagDetectorFromCalibrator(calibratorSinkId, tagSize);
-            sinks.Add(new Sink(id, name, SinkType.ApriltagSink));
+            sinks.Add(NewApriltagSinkRecord(id, name, tagSize, ApriltagBackendKind.APRILTAG_BACKEND_CPU, 0, 0.0f, true));
             DB.Instance.Save();
             return id;
         }
 
         // creates an ApriltagSink with an explicit backend selection (CPU or Vulkan) and no
         // calibration data - use AddApriltagSinkFromCalibrator, or bind+calibrate afterwards,
-        // to get real-world pose. frameWidth/frameHeight only matter for the Vulkan backend.
-        public int AddApriltagSinkWithBackend(string name, double tagSize, ApriltagBackendKind backend, int frameWidth, int frameHeight)
+        // to get real-world pose. frameWidth/frameHeight are only a hint (0 is fine): a Vulkan
+        // detector sizes itself from its first real frame. nthreads/quadDecimate <= 0 mean "the
+        // backend's default"; see ApriltagTuning (LumenCore/IApriltagBackend.h).
+        public int AddApriltagSinkWithBackend(string name, double tagSize, ApriltagBackendKind backend, int frameWidth, int frameHeight,
+            int nthreads = 0, float quadDecimate = 0.0f, bool refineEdges = true)
         {
-            int id = ManagerWrapper.Instance.CreateApriltagDetector(new CameraCalibrationResult(), tagSize, backend, frameWidth, frameHeight);
-            sinks.Add(new Sink(id, name, SinkType.ApriltagSink));
+            int id = ManagerWrapper.Instance.CreateApriltagDetector(new CameraCalibrationResult(), tagSize, backend, frameWidth, frameHeight,
+                nthreads, quadDecimate, refineEdges);
+            sinks.Add(NewApriltagSinkRecord(id, name, tagSize, backend, nthreads, quadDecimate, refineEdges));
             DB.Instance.Save();
+            return id;
+        }
+
+        // the persisted record for an ApriltagSink, carrying the REQUESTED configuration so
+        // RestoreApriltagSink can recreate it identically after a restart (see Sink.ApriltagTagSize)
+        private static Sink NewApriltagSinkRecord(int id, string name, double tagSize, ApriltagBackendKind backend,
+            int nthreads, float quadDecimate, bool refineEdges) =>
+            new Sink(id, name, SinkType.ApriltagSink)
+            {
+                ApriltagTagSize = tagSize,
+                ApriltagBackend = backend,
+                ApriltagThreads = nthreads,
+                ApriltagQuadDecimate = quadDecimate,
+                ApriltagRefineEdges = refineEdges,
+            };
+
+        // DB.Load()'s restore path for an ApriltagSink saved with its configuration (see
+        // Sink.ApriltagTagSize) - recreates the detector at the same id with the same tag size,
+        // requested backend and tuning, instead of the generic AddSink path's default CPU
+        // detector. Sinks saved before these fields existed still go through AddSink.
+        public int RestoreApriltagSink(Sink persisted)
+        {
+            double tagSize = persisted.ApriltagTagSize ?? 0.1651;
+            ApriltagBackendKind backend = persisted.ApriltagBackend ?? ApriltagBackendKind.APRILTAG_BACKEND_CPU;
+            int nthreads = persisted.ApriltagThreads ?? 0;
+            float quadDecimate = persisted.ApriltagQuadDecimate ?? 0.0f;
+            bool refineEdges = persisted.ApriltagRefineEdges ?? true;
+            int id = ManagerWrapper.Instance.CreateApriltagDetector(persisted.Id, new CameraCalibrationResult(), tagSize,
+                backend, 0, 0, nthreads, quadDecimate, refineEdges);
+            sinks.Add(NewApriltagSinkRecord(id, persisted.Name, tagSize, backend, nthreads, quadDecimate, refineEdges));
             return id;
         }
 
@@ -246,15 +280,15 @@ namespace Server
         // hand - this is what the Inspector's own "Backend" control (on the sink itself, not
         // just Pipeline Profiles) calls.
         //
-        // nthreads/quadDecimate are genuinely user-adjustable (not hardcoded - see
-        // ApriltagDetector's own constructor comment): when omitted, this carries forward the
-        // sink's CURRENT values (read back via GetApriltagDetectorThreads/QuadDecimate before
-        // tearing it down) so a plain backend switch from the Inspector's "Backend" dropdown
-        // doesn't silently reset tuning the user already dialled in. quadDecimate is simply
-        // ignored by ApriltagDetector when the target backend is Vulkan (fixed 2x decimation -
-        // see VkApriltagBackend::GetQuadDecimateSupported), so carrying forward a CPU-only value
-        // into a Vulkan switch is harmless.
-        public void SetApriltagBackend(int sinkId, ApriltagBackendKind backend, int? nthreads = null, float? quadDecimate = null)
+        // nthreads/quadDecimate/refineEdges are genuinely user-adjustable (not hardcoded - see
+        // ApriltagTuning): when omitted, this carries forward the sink's CURRENT values (the
+        // requested ones persisted on the Sink record, else read back from the live detector
+        // before tearing it down) so a plain backend switch from the Inspector's "Backend"
+        // dropdown doesn't silently reset tuning the user already dialled in. Frame size is
+        // passed as 0x0 deliberately: a Vulkan detector sizes itself from its first real frame
+        // (previously this 0x0 silently turned every CPU->Vulkan switch into CPU).
+        public void SetApriltagBackend(int sinkId, ApriltagBackendKind backend, int? nthreads = null, float? quadDecimate = null,
+            bool? refineEdges = null)
         {
             Sink sink = GetSinkById(sinkId) ?? throw new ArgumentException($"no sink with id {sinkId}");
             if (sink.Type != SinkType.ApriltagSink)
@@ -267,13 +301,17 @@ namespace Server
             int? upstreamSourceId = sink.Source?.Id;
             List<int> downstreamSinkIds = GetSinksBoundToSource(sinkId);
             string name = sink.Name;
-            int effectiveThreads = nthreads ?? ManagerWrapper.Instance.GetApriltagDetectorThreads(sinkId);
-            float effectiveQuadDecimate = quadDecimate ?? ManagerWrapper.Instance.GetApriltagDetectorQuadDecimate(sinkId);
+            // prefer the persisted REQUEST over the live read-back: a Vulkan detector reports its
+            // resolved integer decimation, and a sink that fell back to CPU reports CPU's values
+            int effectiveThreads = nthreads ?? sink.ApriltagThreads ?? ManagerWrapper.Instance.GetApriltagDetectorThreads(sinkId);
+            float effectiveQuadDecimate = quadDecimate ?? sink.ApriltagQuadDecimate ?? ManagerWrapper.Instance.GetApriltagDetectorQuadDecimate(sinkId);
+            bool effectiveRefineEdges = refineEdges ?? sink.ApriltagRefineEdges ?? ManagerWrapper.Instance.GetApriltagDetectorRefineEdges(sinkId);
 
             DeleteSink(sinkId);
 
-            ManagerWrapper.Instance.CreateApriltagDetector(sinkId, calibration, tagSize, backend, 0, 0, effectiveThreads, effectiveQuadDecimate);
-            sinks.Add(new Sink(sinkId, name, SinkType.ApriltagSink));
+            ManagerWrapper.Instance.CreateApriltagDetector(sinkId, calibration, tagSize, backend, 0, 0,
+                effectiveThreads, effectiveQuadDecimate, effectiveRefineEdges);
+            sinks.Add(NewApriltagSinkRecord(sinkId, name, tagSize, backend, effectiveThreads, effectiveQuadDecimate, effectiveRefineEdges));
             if (driverMode) ManagerWrapper.Instance.SetDriverMode(sinkId, true);
 
             if (upstreamSourceId.HasValue) BindSourceToSink(sinkId, upstreamSourceId.Value);
@@ -426,12 +464,15 @@ namespace Server
                         : new CameraCalibrationResult();
                     double tagSize = profile.TagSize ?? 0.1651;
                     ApriltagBackendKind backend = profile.Backend ?? ApriltagBackendKind.APRILTAG_BACKEND_CPU;
+                    int nthreads = profile.Threads ?? 0;
+                    float quadDecimate = profile.QuadDecimate ?? 0.0f;
+                    bool refineEdges = profile.RefineEdges ?? true;
                     id = explicitId.HasValue
                         ? ManagerWrapper.Instance.CreateApriltagDetector(explicitId.Value, calibration, tagSize,
-                            backend, profile.FrameWidth, profile.FrameHeight)
+                            backend, profile.FrameWidth, profile.FrameHeight, nthreads, quadDecimate, refineEdges)
                         : ManagerWrapper.Instance.CreateApriltagDetector(calibration, tagSize,
-                            backend, profile.FrameWidth, profile.FrameHeight);
-                    sinks.Add(new Sink(id, name, SinkType.ApriltagSink));
+                            backend, profile.FrameWidth, profile.FrameHeight, nthreads, quadDecimate, refineEdges);
+                    sinks.Add(NewApriltagSinkRecord(id, name, tagSize, backend, nthreads, quadDecimate, refineEdges));
 
                     if (!string.IsNullOrEmpty(profile.FieldLayoutPath))
                         ManagerWrapper.Instance.LoadFieldLayout(id, profile.FieldLayoutPath);

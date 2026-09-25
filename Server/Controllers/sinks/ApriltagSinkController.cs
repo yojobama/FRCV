@@ -31,12 +31,16 @@ namespace Server.Controllers.sinks
         }
 
         // POST: Create an Apriltag sink with an explicit backend (cpu/vulkan) and no calibration
-        // data yet; frameWidth/frameHeight only matter for the Vulkan backend
+        // data yet. frameWidth/frameHeight are optional hints (a Vulkan detector sizes itself from
+        // its first real frame); nthreads/quadDecimate/refineEdges are the same optional tuning
+        // PATCH /backend takes - omitted means the backend's default.
         [HttpPost("apriltagSink/createWithBackend")]
         public Task<int> CreateWithBackend([FromQuery] string name, [FromQuery] double tagSize,
-            [FromQuery] ApriltagBackendKind backend, [FromQuery] int frameWidth = 0, [FromQuery] int frameHeight = 0)
+            [FromQuery] ApriltagBackendKind backend, [FromQuery] int frameWidth = 0, [FromQuery] int frameHeight = 0,
+            [FromQuery] int? nthreads = null, [FromQuery] float? quadDecimate = null, [FromQuery] bool? refineEdges = null)
         {
-            int sinkId = SinkManager.Instance.AddApriltagSinkWithBackend(name, tagSize, backend, frameWidth, frameHeight);
+            int sinkId = SinkManager.Instance.AddApriltagSinkWithBackend(name, tagSize, backend, frameWidth, frameHeight,
+                nthreads ?? 0, quadDecimate ?? 0.0f, refineEdges ?? true);
             return Task.FromResult(sinkId);
         }
 
@@ -56,14 +60,12 @@ namespace Server.Controllers.sinks
             return Task.FromResult(ManagerWrapper.Instance.GetApriltagDetectorBackendKind(sinkId));
         }
 
-        // GET: the sink's current tuning - threads and quad_decimate are genuinely
-        // user-adjustable (not hardcoded, see ApriltagDetector's own constructor comment), so the
-        // Inspector needs this to pre-populate its Threads/QuadDecimate controls the same way
-        // /backendKind pre-populates the Backend dropdown. QuadDecimateSupported is false for
-        // Vulkan (fixed 2x decimation baked into its compute pipeline - see
-        // VkApriltagBackend::GetQuadDecimate's own comment) - the webui hides/disables the
-        // QuadDecimate control when this is false rather than letting a user set a value that's
-        // silently ignored.
+        // GET: the sink's current tuning - threads, quad_decimate and refine_edges are genuinely
+        // user-adjustable (see ApriltagTuning in LumenCore/IApriltagBackend.h), so the Inspector
+        // needs this to pre-populate its controls the same way /backendKind pre-populates the
+        // Backend dropdown. These are the values actually in effect: on Vulkan, QuadDecimate is
+        // the integer the GPU pipeline really runs (it may differ from the request - it has to
+        // divide the frame size), which is exactly what the Inspector should show.
         [HttpGet("apriltagSink/tuning")]
         public Task<ApriltagTuningDto> GetTuning([FromQuery] int sinkId)
         {
@@ -72,6 +74,7 @@ namespace Server.Controllers.sinks
                 Threads = ManagerWrapper.Instance.GetApriltagDetectorThreads(sinkId),
                 QuadDecimate = ManagerWrapper.Instance.GetApriltagDetectorQuadDecimate(sinkId),
                 QuadDecimateSupported = ManagerWrapper.Instance.GetApriltagDetectorQuadDecimateSupported(sinkId),
+                RefineEdges = ManagerWrapper.Instance.GetApriltagDetectorRefineEdges(sinkId),
             });
         }
 
@@ -81,14 +84,14 @@ namespace Server.Controllers.sinks
         // to tear down and recreate the detector rather than mutating it. This is the sink's own
         // "Backend" control, not the Pipeline Profiles one (PipelineProfileController) - that one
         // only helps if a profile was set up in advance; this works on any plain ApriltagSink.
-        // nthreads/quadDecimate are optional - when omitted, SetApriltagBackend carries forward
-        // the sink's current tuning rather than resetting it, so a plain backend switch doesn't
-        // silently clobber tuning the user already dialled in.
+        // nthreads/quadDecimate/refineEdges are optional - when omitted, SetApriltagBackend
+        // carries forward the sink's current tuning rather than resetting it, so a plain backend
+        // switch doesn't silently clobber tuning the user already dialled in.
         [HttpPatch("apriltagSink/backend")]
         public Task SetBackend([FromQuery] int sinkId, [FromQuery] ApriltagBackendKind backend,
-            [FromQuery] int? nthreads = null, [FromQuery] float? quadDecimate = null)
+            [FromQuery] int? nthreads = null, [FromQuery] float? quadDecimate = null, [FromQuery] bool? refineEdges = null)
         {
-            SinkManager.Instance.SetApriltagBackend(sinkId, backend, nthreads, quadDecimate);
+            SinkManager.Instance.SetApriltagBackend(sinkId, backend, nthreads, quadDecimate, refineEdges);
             return Task.CompletedTask;
         }
 

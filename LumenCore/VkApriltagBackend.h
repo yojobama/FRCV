@@ -28,12 +28,14 @@
 class VkApriltagBackend : public IApriltagBackend {
 public:
 	// throws (via vk::Context's constructor / CheckVk) if no usable Vulkan compute device is
-	// found - callers should catch this and fall back to CpuApriltagBackend, matching the
-	// runtime capability probe called for in the implementation plan (phase 5, item 5); this
-	// class makes no attempt to be silently CPU-safe itself.
-	// cpuThreads <= 0 means "leave DetectorConfig's own default (0 = hardware_concurrency())
-	// alone" - see .cpp's own comment on why this project's caller picks a different default.
-	explicit VkApriltagBackend(int frameWidth, int frameHeight, int cpuThreads = 0);
+	// found, or the frame size is unusable - callers should catch this and fall back to
+	// CpuApriltagBackend, matching the runtime capability probe called for in the implementation
+	// plan (phase 5, item 5); this class makes no attempt to be silently CPU-safe itself.
+	// frameWidth/frameHeight must be the real frame size: the GPU pipeline's buffers and its
+	// decimation are baked in at construction (ApriltagDetector rebuilds this on a size change).
+	// See ApriltagTuning for the defaults; decimation is rounded to an integer the frame size is
+	// divisible by (see .cpp).
+	VkApriltagBackend(int frameWidth, int frameHeight, ApriltagTuning tuning = ApriltagTuning());
 	~VkApriltagBackend() override;
 
 	zarray_t* Detect(const cv::Mat& grayFrame) override;
@@ -44,15 +46,25 @@ public:
 	// pipeline actually running on ordinary CPU threads, decimation/quad-selection is all GPU
 	// compute) - the genuinely analogous knob to CpuApriltagBackend's nthreads.
 	int GetThreads() const override { return static_cast<int>(m_QuadDecode->threads()); }
-	// Fixed at 2x in GpuDetector's own pipeline (see this class's .cpp comment) - not a
-	// DetectorConfig field, so there is nothing to read back per-instance; reported as a
-	// constant purely so a caller can display what's actually happening.
-	float GetQuadDecimate() const override { return 2.0f; }
-	bool GetQuadDecimateSupported() const override { return false; }
+	// the integer decimation actually baked into this GPU pipeline (may differ from the request)
+	float GetQuadDecimate() const override { return static_cast<float>(m_Decimation); }
+	bool GetQuadDecimateSupported() const override { return true; }
+	bool GetRefineEdges() const override { return m_Detector->refine_edges; }
+
+	int GetFrameWidth() const { return m_FrameWidth; }
+	int GetFrameHeight() const { return m_FrameHeight; }
+
+	// The integer decimation the GPU pipeline can actually use for a requested value on a given
+	// frame size: rounded, at least 1, and stepped down until both dimensions divide evenly
+	// (DetectorConfig requires it). Public + static so it's unit-testable without a GPU.
+	static uint32_t ResolveDecimation(float requested, int frameWidth, int frameHeight);
 
 private:
 	apriltag_detector_t* m_Detector;
 	apriltag_family_t* m_Family;
+	int m_FrameWidth = 0;
+	int m_FrameHeight = 0;
+	uint32_t m_Decimation = 2;
 
 	std::unique_ptr<apriltag_vulkan::vk::Context> m_Context;
 	std::unique_ptr<apriltag_vulkan::GpuDetector> m_GpuDetector;

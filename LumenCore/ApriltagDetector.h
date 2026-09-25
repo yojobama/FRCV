@@ -8,29 +8,36 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/calib3d.hpp> // cv::undistortPoints - not pulled in by <opencv2/opencv.hpp> alone
 #include <memory>
+#include <mutex>
 
 class Logger;
 
 class ApriltagDetector : public ISink, public ISource
 {
 public:
-	// nthreads/quadDecimate <= 0 means "let the backend pick its own default" - see
-	// CpuApriltagBackend/VkApriltagBackend's own constructors for what that means for each.
-	// Genuinely runtime-adjustable afterward, not fixed at construction: see GetThreads/
-	// GetQuadDecimate and SinkManager.SetApriltagBackend, which rebuilds a live sink with new
-	// values the same way it already rebuilds one to switch CPU<->Vulkan.
+	// See ApriltagTuning for what each knob's "use the default" value means. Genuinely
+	// runtime-adjustable afterward, not fixed at construction: see SinkManager.SetApriltagBackend,
+	// which rebuilds a live sink with new values the same way it rebuilds one to switch
+	// CPU<->Vulkan.
+	//
+	// frameWidth/frameHeight are only a hint for APRILTAG_BACKEND_VULKAN, and may be 0: the GPU
+	// pipeline is sized to a fixed frame size at construction, so the Vulkan backend is built
+	// from the FIRST REAL FRAME's size (and rebuilt if the size ever changes, e.g. a camera mode
+	// switch) rather than trusted to whatever a caller happened to pass here - every caller that
+	// passed 0x0 used to silently get CPU instead.
 	ApriltagDetector(std::shared_ptr<Logger> logger, std::string id, CameraCalibrationResult calibrationResult,
 		double tagSize /* in METERS you bloody Americans */,
 		ApriltagBackendKind backendKind = APRILTAG_BACKEND_CPU,
-		int frameWidth = 0, int frameHeight = 0, /* only consulted for APRILTAG_BACKEND_VULKAN */
-		int nthreads = 0, float quadDecimate = 0.0f);
+		int frameWidth = 0, int frameHeight = 0,
+		ApriltagTuning tuning = ApriltagTuning());
 	~ApriltagDetector();
 
 	// which backend actually ended up running - may differ from what was requested if Vulkan
 	// was asked for and no usable device was found (falls back to CPU rather than failing to
-	// construct at all; see phase 5 item 5 in the implementation plan)
+	// construct at all; see phase 5 item 5 in the implementation plan). Before the first frame of
+	// a Vulkan-requested detector, reports the request (the GPU pipeline doesn't exist yet).
 	std::string GetBackendName() const;
-	ApriltagBackendKind GetBackendKind() const { return m_ActiveBackendKind; }
+	ApriltagBackendKind GetBackendKind() const;
 
 	// lets a caller rebuild an equivalent detector (e.g. to switch backend on an existing sink
 	// without losing its tag size/calibration) without needing its own separate tracking of
@@ -40,11 +47,14 @@ public:
 	double GetTagSize() const { return m_DetectionInfo.tagsize; }
 	CameraCalibrationResult GetCalibration() const;
 
-	// Pass-throughs to whichever backend is actually active - see IApriltagBackend's own comment
-	// on why not every knob applies to every backend.
-	int GetThreads() const { return m_Backend->GetThreads(); }
-	float GetQuadDecimate() const { return m_Backend->GetQuadDecimate(); }
-	bool GetQuadDecimateSupported() const { return m_Backend->GetQuadDecimateSupported(); }
+	// Pass-throughs to whichever backend is actually active (or, before a pending Vulkan backend
+	// exists, the requested tuning) - see IApriltagBackend's own comment.
+	int GetThreads() const;
+	float GetQuadDecimate() const;
+	bool GetQuadDecimateSupported() const;
+	bool GetRefineEdges() const;
+	// what was asked for at construction - what a caller needs to rebuild an equivalent sink
+	ApriltagTuning GetRequestedTuning() const { return m_Tuning; }
 
 	// ROADMAP.md Phase 7 (driver mode): when true, Process() skips the actual detection call and
 	// NT4 publish entirely and just republishes the raw camera frame - matching PhotonVision's
@@ -83,8 +93,21 @@ private:
 	// rather than guessing from fx==0.
 	nlohmann::json BuildCalibrationJson() const;
 
-	std::unique_ptr<IApriltagBackend> m_Backend;
+	// Builds the backend for the requested kind at the given frame size; Vulkan falls back to CPU
+	// on any failure. Caller must hold m_BackendMutex.
+	void BuildBackendLocked(int frameWidth, int frameHeight);
+
+	// m_Backend is swapped by Process() (first frame / frame-size change) while API threads read
+	// it through the getters above - guarded so a getter never touches a destroyed backend.
+	// Process() itself is the only writer, so its own Detect()/ReleaseResult() calls between
+	// swaps don't need the lock.
+	mutable std::mutex m_BackendMutex;
+	std::unique_ptr<IApriltagBackend> m_Backend; // null only while a Vulkan build is pending
+	ApriltagBackendKind m_RequestedBackendKind = APRILTAG_BACKEND_CPU;
 	ApriltagBackendKind m_ActiveBackendKind = APRILTAG_BACKEND_CPU;
+	ApriltagTuning m_Tuning;
+	// set once Vulkan failed to build - so a missing GPU is logged once, not retried every frame
+	bool m_VulkanUnavailable = false;
 
 	std::shared_ptr<Logger> m_Logger;
 	apriltag_detection_info_t m_DetectionInfo;

@@ -6,10 +6,8 @@
 // ApriltagDetector so it sits behind IApriltagBackend next to VkApriltagBackend.
 class CpuApriltagBackend : public IApriltagBackend {
 public:
-	// nthreads/quadDecimate <= 0 means "leave apriltag_detector_create()'s own default alone"
-	// (1 thread, no decimation) - see the .cpp's own comment for why this project's caller
-	// chooses different defaults instead of hardcoding them here.
-	explicit CpuApriltagBackend(int nthreads = 0, float quadDecimate = 0.0f);
+	// see ApriltagTuning for what each field's "use the default" value means here
+	explicit CpuApriltagBackend(ApriltagTuning tuning = ApriltagTuning());
 	~CpuApriltagBackend() override;
 
 	zarray_t* Detect(const cv::Mat& grayFrame) override;
@@ -19,6 +17,7 @@ public:
 	int GetThreads() const override { return m_Detector->nthreads; }
 	float GetQuadDecimate() const override { return m_Detector->quad_decimate; }
 	bool GetQuadDecimateSupported() const override { return true; }
+	bool GetRefineEdges() const override { return m_Detector->refine_edges; }
 
 private:
 	apriltag_detector_t* m_Detector;

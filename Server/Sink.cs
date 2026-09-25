@@ -121,6 +121,19 @@ namespace Server
         public long? RecordMaxFolderSizeBytes { get; set; }
         public int? RecordMaxFileCount { get; set; }
 
+        // ApriltagSink only: persisted so DB.Load()'s restore recreates the detector exactly as
+        // configured - previously every restart brought an ApriltagSink back as a default CPU
+        // detector, silently discarding its tag size, backend and tuning. These are the REQUESTED
+        // values (a Vulkan request is kept even if this particular board fell back to CPU).
+        // Calibration is not persisted here (the SWIG CameraCalibrationResult isn't plain data);
+        // pipeline profiles re-resolve theirs from their calibrator on activation. Null for every
+        // other sink type, and for sinks saved before these fields existed.
+        public double? ApriltagTagSize { get; set; }
+        public ApriltagBackendKind? ApriltagBackend { get; set; }
+        public int? ApriltagThreads { get; set; }
+        public float? ApriltagQuadDecimate { get; set; }
+        public bool? ApriltagRefineEdges { get; set; }
+
         // ROADMAP.md Phase 8c: this constructor used to accept an unused `source` parameter -
         // no call site anywhere in this codebase ever passed one (confirmed by grepping every
         // `new Sink(...)` call site), but its mere presence broke deserialization: with exactly

@@ -352,12 +352,31 @@ APRILTAG_TAG="${APRILTAG_TAG:-v3.4.5}"
 build_apriltag() {
     log "AprilTag ${APRILTAG_TAG} (patched for vkapriltag)"
 
-    if require_header /usr/local/include/apriltag/apriltag_pose.h 2>/dev/null; then
-        # a header check alone can't tell the patched build apart from a vanilla one; the
-        # patch only adds new *symbols*, not new headers. If this is stale from a previous
-        # run of the OLD (apt-based or vanilla-source) version of this script, the symbol
-        # check in the vkapriltag build/link step later is what will actually catch it.
-        log "apriltag already installed under /usr/local"
+    local patch_file="$BUILD_ROOT/../third_party/vkapriltag/apriltags_vulkan/cmake/patches/apriltag-expose-decode-steps.patch"
+    # resolve relative to this script's location too, in case BUILD_ROOT isn't under the repo
+    if [[ ! -f "$patch_file" ]]; then
+        patch_file="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/third_party/vkapriltag/apriltags_vulkan/cmake/patches/apriltag-expose-decode-steps.patch"
+    fi
+    if [[ ! -f "$patch_file" ]]; then
+        fail "can't find vkapriltag's apriltag patch file - is the third_party/vkapriltag submodule checked out? (git submodule update --init)"
+        return 1
+    fi
+
+    # The installed build is stamped with the SHA-256 of the vkapriltag patch it was built with,
+    # and rebuilt whenever that patch changes. A header check alone can't tell a current build
+    # from a stale one: the patch only adds exported *symbols*, never headers - confirmed the
+    # hard way when bumping the vkapriltag submodule, whose newer patch also exports
+    # refine_edges(): every machine that had built apriltag with the older patch (and every
+    # restored CI dependency cache) kept it, and LumenCore failed to link with "undefined
+    # reference to refine_edges".
+    # next to apriltag's own installed CMake package files - under /usr/local/lib, which the CI
+    # dependency caches (ci.yml/release.yml) persist, so a cache hit keeps the stamp too
+    local stamp="$PREFIX/lib/apriltag/lumenvision-patch.sha256"
+    local want_sha
+    want_sha="$(sha256sum "$patch_file" | cut -d' ' -f1)"
+    if require_header /usr/local/include/apriltag/apriltag_pose.h 2>/dev/null \
+        && [[ -f "$stamp" && "$(cat "$stamp")" == "$want_sha" ]]; then
+        log "apriltag already installed under /usr/local (built with the current vkapriltag patch)"
         return 0
     fi
 
@@ -377,28 +396,25 @@ build_apriltag() {
     fi
 
     if [[ "$CHECK_ONLY" -eq 1 ]]; then
-        note_missing "AprilTag ${APRILTAG_TAG} (patched) not found under /usr/local/include"
+        note_missing "AprilTag ${APRILTAG_TAG} (patched) not installed, or built with an older vkapriltag patch"
         return 0
     fi
 
     local src="$BUILD_ROOT/apriltag-patched"
-    local patch_file="$BUILD_ROOT/../third_party/vkapriltag/apriltags_vulkan/cmake/patches/apriltag-expose-decode-steps.patch"
-    # resolve relative to this script's location too, in case BUILD_ROOT isn't under the repo
-    if [[ ! -f "$patch_file" ]]; then
-        patch_file="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/third_party/vkapriltag/apriltags_vulkan/cmake/patches/apriltag-expose-decode-steps.patch"
-    fi
-    if [[ ! -f "$patch_file" ]]; then
-        fail "can't find vkapriltag's apriltag patch file - is the third_party/vkapriltag submodule checked out? (git submodule update --init)"
-        return 1
-    fi
-
     if [[ ! -d "$src" ]]; then
         git clone --branch "$APRILTAG_TAG" --depth 1 https://github.com/AprilRobotics/apriltag.git "$src"
     fi
     (
         cd "$src"
-        # idempotent, matching vkapriltag's own PATCH_COMMAND: skip re-applying if already applied
-        git apply --reverse --check "$patch_file" 2>/dev/null || git apply "$patch_file"
+        # back to the pristine tag before patching - this is the script's own scratch clone, and
+        # an OLDER version of the patch may already be applied in it, which the new one won't
+        # apply on top of
+        git reset --hard -q
+        git clean -fdq -e build
+        # CRLF-stripped: a Windows checkout (core.autocrlf, e.g. running this under WSL on a
+        # /mnt/c working tree) gives the .patch CRLF endings, which git apply rejects against the
+        # LF-only fresh clone ("patch does not apply") - confirmed the hard way
+        git apply <(sed 's/\r$//' "$patch_file")
     )
     mkdir -p "$src/build"
     (
@@ -408,6 +424,8 @@ build_apriltag() {
         sudo cmake --install .
         sudo ldconfig
     )
+    sudo mkdir -p "$(dirname "$stamp")"
+    echo "$want_sha" | sudo tee "$stamp" >/dev/null
 }
 
 # ---------------------------------------------------------------------------
