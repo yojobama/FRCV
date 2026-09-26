@@ -1,36 +1,56 @@
 #!/usr/bin/env bash
-# Builds a single, self-contained arm64 .deb (lumenvision-backend) from the current source tree.
-#
-# Must run on a genuine aarch64 Linux machine (Orange Pi 5, or an `ubuntu-24.04-arm` CI runner)
-# that has already run scripts/install-deps.sh: LumenCore's own Linux POST_BUILD step
-# (cmake/CopyLinuxRuntimeDeps.cmake) bundles every from-source runtime dependency - OpenCV,
-# ffmpeg-rockchip, librga, etc. - into the package, so they must genuinely exist under
-# /usr/local and /opt/lumenvision-ffmpeg on THIS machine at build time, not just be declared.
+# Builds a single, self-contained .deb (lumenvision-backend) from the current source tree, for
+# whichever architecture this script runs on - arm64 (a real Orange Pi, or an `ubuntu-24.04-arm`
+# CI runner) or amd64 (a plain x64 Linux box - dev machine, CI sanity build, a non-Pi
+# coprocessor). Must run on a machine that has already run scripts/install-deps.sh:
+# LumenCore's own Linux POST_BUILD step (cmake/CopyLinuxRuntimeDeps.cmake) bundles every
+# from-source runtime dependency - OpenCV, ffmpeg-rockchip, librga, etc. - into the package, so
+# they must genuinely exist under /usr/local and /opt/lumenvision-ffmpeg on THIS machine at build
+# time, not just be declared. (On amd64, install-deps.sh is run without any of the Rockchip-only
+# flags - --with-rknn/--with-mpp/--with-ffmpeg-rockchip - since none of that exists off aarch64;
+# the resulting package simply has fewer features, exactly like the ci-linux-x64 CI job already
+# builds and tests.)
 #
 # Usage: VERSION=1.2.3 scripts/build-deb.sh
 #   VERSION           - package version (Debian policy: digits/dots, no leading "v") - required.
 #   LUMEN_CORE_PRESET  - CMake preset to configure/build LumenCore with - optional, defaults to
-#                        pi-arm64-release (the right choice on a real Orange Pi). CI overrides
-#                        this to ci-linux-arm64 (see .github/workflows/release.yml) so the
-#                        native build stays under the SAME explicit-every-flag preset its own
+#                        pi-arm64-release on aarch64 (the right choice on a real Orange Pi) or
+#                        ci-linux-x64 on x86_64 (the only preset that makes sense there without
+#                        real Rockchip hardware). CI overrides this explicitly either way
+#                        (ci-linux-arm64 / ci-linux-x64 - see .github/workflows/release.yml) so
+#                        the native build stays under the SAME explicit-every-flag preset its own
 #                        earlier configure/build/test steps already used, rather than this
 #                        script silently re-resolving a different, unconfigured one.
-# Produces: lumenvision-backend_<VERSION>_arm64.deb in the repo root.
+# Produces: lumenvision-backend_<VERSION>_<arm64|amd64>.deb in the repo root.
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 VERSION="${VERSION:?set VERSION=x.y.z (no leading v) before running this script}"
-LUMEN_CORE_PRESET="${LUMEN_CORE_PRESET:-pi-arm64-release}"
 PKG_NAME="lumenvision-backend"
 STAGE_DIR="$REPO_ROOT/out/deb-stage"
-DEB_FILE="$REPO_ROOT/${PKG_NAME}_${VERSION}_arm64.deb"
 
-if [[ "$(uname -m)" != "aarch64" ]]; then
-    echo "build-deb.sh must run on aarch64 (Orange Pi 5, or an arm64 CI runner) - got $(uname -m)" >&2
-    exit 1
-fi
+# Debian arch name + dotnet RID, derived once from the host - every other arch-specific spot in
+# this script uses these two, not a literal "arm64"/"linux-arm64".
+HOST_ARCH="$(uname -m)"
+case "$HOST_ARCH" in
+    aarch64)
+        DEB_ARCH="arm64"
+        DOTNET_RID="linux-arm64"
+        LUMEN_CORE_PRESET="${LUMEN_CORE_PRESET:-pi-arm64-release}"
+        ;;
+    x86_64)
+        DEB_ARCH="amd64"
+        DOTNET_RID="linux-x64"
+        LUMEN_CORE_PRESET="${LUMEN_CORE_PRESET:-ci-linux-x64}"
+        ;;
+    *)
+        echo "build-deb.sh only knows how to package aarch64 or x86_64 - got $HOST_ARCH" >&2
+        exit 1
+        ;;
+esac
+DEB_FILE="$REPO_ROOT/${PKG_NAME}_${VERSION}_${DEB_ARCH}.deb"
 
 echo "==> Cleaning previous stage"
 rm -rf "$STAGE_DIR" "$DEB_FILE"
@@ -50,11 +70,11 @@ echo "==> Configuring/building LumenCore ($LUMEN_CORE_PRESET)"
 cmake --preset "$LUMEN_CORE_PRESET"
 cmake --build --preset "$LUMEN_CORE_PRESET"
 
-echo "==> Publishing Server (self-contained, linux-arm64, Release)"
-dotnet publish "$REPO_ROOT/Server/Server.csproj" -c Release -r linux-arm64 --self-contained true \
+echo "==> Publishing Server (self-contained, $DOTNET_RID, Release)"
+dotnet publish "$REPO_ROOT/Server/Server.csproj" -c Release -r "$DOTNET_RID" --self-contained true \
     -p:LumenCorePreset="$LUMEN_CORE_PRESET"
 
-PUBLISH_DIR="$REPO_ROOT/Server/bin/Release/net10.0/linux-arm64/publish"
+PUBLISH_DIR="$REPO_ROOT/Server/bin/Release/net10.0/$DOTNET_RID/publish"
 if [[ ! -f "$PUBLISH_DIR/Server" ]]; then
     echo "publish output not found at $PUBLISH_DIR - dotnet publish must have failed" >&2
     exit 1
@@ -100,7 +120,7 @@ Package: $PKG_NAME
 Version: $VERSION
 Section: misc
 Priority: optional
-Architecture: arm64
+Architecture: $DEB_ARCH
 Installed-Size: $INSTALLED_SIZE_KB
 Depends: avahi-daemon, libdrm2, libvulkan1, libssl3
 Maintainer: $MAINTAINER

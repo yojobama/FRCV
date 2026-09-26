@@ -5,10 +5,10 @@ name: Release
 # step here runs `git tag` or `gh release create` outside the publish-release job's own final
 # step, and that job is entirely skipped on a manual run - see its own `if:`).
 #
-# workflow_dispatch is for shaking out build issues WITHOUT creating a public release: build-deb
-# and build-vendordep both run and upload their output as ordinary workflow artifacts either way,
-# but publish-release (the job that touches gh-pages and creates the GitHub Release) only runs
-# when this was triggered by an actual pushed tag.
+# workflow_dispatch is for shaking out build issues WITHOUT creating a public release:
+# build-deb-arm64/build-deb-x64/build-vendordep all run and upload their output as ordinary
+# workflow artifacts either way, but publish-release (the job that touches gh-pages and creates
+# the GitHub Release) only runs when this was triggered by an actual pushed tag.
 on:
   push:
     tags: ['v*']
@@ -18,7 +18,7 @@ permissions:
   contents: write
 
 jobs:
-  build-deb:
+  build-deb-arm64:
     # GitHub-hosted arm64 runners (GA for public repos since August 2025) - no self-hosted
     # runner needed, see ci.yml's own comment on this.
     runs-on: ubuntu-24.04-arm
@@ -89,13 +89,84 @@ jobs:
           path: lumenvision-backend_*_arm64.deb
           if-no-files-found: error
 
+  build-deb-x64:
+    # A plain x64 package alongside the arm64 one - installable on a dev machine or any non-Pi
+    # x86_64 Linux box, with no Pi/Rockchip hardware assumed (no --with-rknn/--with-mpp/
+    # --with-ffmpeg-rockchip - none of that exists off aarch64). Mirrors ci.yml's own x64 job
+    # exactly (same install-deps.sh flags, same ci-linux-x64 preset), just adds the packaging
+    # step ci.yml itself never does.
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=0.0.0-dev${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # matches ci.yml's own x64 job cache key exactly - the same dependency set.
+      - name: Cache dependency build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.lumen-build
+            /usr/local/include
+            /usr/local/lib
+            /usr/local/bin
+          key: lumen-deps-linux-x64-${{ hashFiles('scripts/install-deps.sh') }}
+          restore-keys: |
+            lumen-deps-linux-x64-
+
+      - name: Install/build dependencies
+        run: ./scripts/install-deps.sh --with-nt4 --with-webrtc
+
+      - name: Configure
+        run: cmake --preset ci-linux-x64
+
+      - name: Build
+        run: cmake --build --preset ci-linux-x64
+
+      - name: Test
+        run: ctest --preset ci-linux-x64 --output-on-failure
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build .deb
+        env:
+          VERSION: ${{ steps.version.outputs.value }}
+          # matches this job's own earlier Configure/Build/Test steps - see build-deb.sh's own
+          # comment for why it must be told this explicitly.
+          LUMEN_CORE_PRESET: ci-linux-x64
+        run: ./scripts/build-deb.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lumenvision-backend-deb-amd64
+          path: lumenvision-backend_*_amd64.deb
+          if-no-files-found: error
+
   build-images:
-    # One customized, flashable OS image per Orange Pi 5-family board - installs the .deb this
-    # same run's build-deb job just produced into Armbian's own published Debian 13 vendor-kernel
-    # image (see scripts/build-image.sh's own header for the full rationale). No
-    # continue-on-error/fail-fast:false anywhere here - every board's image is a real gate on the
-    # release, the same as build-deb itself, not a best-effort extra.
-    needs: build-deb
+    # One customized, flashable OS image per Orange Pi 5-family board - installs the .deb
+    # build-deb-arm64 just produced into Armbian's own published Debian 13 vendor-kernel image
+    # (see scripts/build-image.sh's own header for the full rationale). Pi-only - the plain x64
+    # package has no board image. No continue-on-error/fail-fast:false anywhere here - every
+    # board's image is a real gate on the release, the same as build-deb-arm64 itself, not a
+    # best-effort extra.
+    needs: build-deb-arm64
     runs-on: ubuntu-24.04-arm
     strategy:
       matrix:
@@ -110,7 +181,7 @@ jobs:
 
       - name: Build image
         env:
-          VERSION: ${{ needs.build-deb.outputs.version }}
+          VERSION: ${{ needs.build-deb-arm64.outputs.version }}
         # --preserve-env, not `sudo VERSION=... cmd` - Ubuntu's default sudoers has env_reset on,
         # which silently drops a leading VAR=value assignment unless it's in env_keep.
         run: sudo --preserve-env=VERSION scripts/build-image.sh ${{ matrix.board }}
@@ -163,11 +234,11 @@ jobs:
           path: photoncompat.json
 
   publish-release:
-    needs: [build-deb, build-images, build-vendordep]
+    needs: [build-deb-arm64, build-deb-x64, build-images, build-vendordep]
     runs-on: ubuntu-24.04
     # only a real pushed tag creates a public release - a workflow_dispatch run stops after
-    # build-deb/build-images/build-vendordep so their artifacts can be inspected without
-    # publishing anything.
+    # build-deb-arm64/build-deb-x64/build-images/build-vendordep so their artifacts can be
+    # inspected without publishing anything.
     if: github.ref_type == 'tag'
     steps:
       - uses: actions/checkout@v4
@@ -175,6 +246,11 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: lumenvision-backend-deb
+          path: dist
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: lumenvision-backend-deb-amd64
           path: dist
 
       - uses: actions/download-artifact@v4
@@ -210,6 +286,7 @@ jobs:
         run: |
           gh release create "${GITHUB_REF_NAME}" \
             dist/lumenvision-backend_*_arm64.deb \
+            dist/lumenvision-backend_*_amd64.deb \
             dist/lumenvision-*.img.xz \
             dist/photoncompat.json \
             --title "${GITHUB_REF_NAME}" \
