@@ -1,11 +1,12 @@
 #include "ISink.h"
 #include "CpuAffinity.h"
 
-ISink::ISink(std::shared_ptr<Logger> p_Logger, int maxSources, bool requireJson, bool requireFrame, std::string id) : m_Logger(p_Logger) {
+ISink::ISink(std::shared_ptr<Logger> p_Logger, int maxSources, bool requireJson, bool requireFrame, std::string id, bool requireColor) : m_Logger(p_Logger) {
     if (m_Logger) m_Logger->EnterLog("ISink constructed");
     m_MaxSources = maxSources;
     m_RequireJson = requireJson;
     m_RequireFrame = requireFrame;
+    m_RequireColor = requireColor;
     m_ID = id;
 }
 
@@ -124,7 +125,7 @@ bool ISink::BindSource(std::shared_ptr<ISource> p_Source) {
         // see ISource::HasActiveFrameConsumer's own comment - this is what lets a bound
         // detector know whether it's worth annotating a frame for this sink specifically.
         // GetToggleStatus() is only called once the alive flag confirms `this` still exists.
-        p_Source->RegisterFrameConsumer(m_ID, m_RequireFrame, [this, aliveFlag] {
+        p_Source->RegisterFrameConsumer(m_ID, m_RequireFrame, m_RequireColor, [this, aliveFlag] {
             auto alive = aliveFlag.lock();
             return alive && *alive && this->GetToggleStatus();
         });

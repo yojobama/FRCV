@@ -15,7 +15,13 @@
 class ISink
 {
 public:
-    ISink(std::shared_ptr<Logger> p_Logger, int maxSources, bool requireJson, bool requireFrame, std::string id);
+    // requireColor: whether this sink's own Process() ever calls Frame::AsBgr() on what it's
+    // bound to - default true (matches every existing subclass's actual behaviour) so no
+    // existing constructor call site needs to change. Only meaningful when requireFrame is also
+    // true; a sink that needs no frame at all obviously doesn't need it in colour either. See
+    // ISource::HasActiveColorFrameConsumer's own comment for what this enables - ApriltagDetector
+    // is the one subclass that opts out (it only ever calls AsGray() on a camera's raw frame).
+    ISink(std::shared_ptr<Logger> p_Logger, int maxSources, bool requireJson, bool requireFrame, std::string id, bool requireColor = true);
     virtual ~ISink();
 
     std::string GetID();
@@ -61,6 +67,7 @@ private:
 
     bool m_RequireJson;
     bool m_RequireFrame;
+    bool m_RequireColor;
     int m_MaxSources;
 
     // uint64_t, matching ISource::GetCurrentFrameCount()'s return type exactly - this used to be

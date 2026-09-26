@@ -108,10 +108,16 @@ CameraControlRange CameraFrameSource::GetGainRange()
 void CameraFrameSource::CaptureFrame()
 {
     if (m_Backend->IsOpened()) {
-        // no bound sink needs colour this cycle -> ask the backend to decode straight to
+        // no bound sink needs COLOUR this cycle -> ask the backend to decode straight to
         // grayscale if it can (V4l2CameraBackend's MJPEG/YUYV paths - see ICameraBackend::Grab's
-        // own comment); a live preview/record sink still gets full colour, unchanged.
-        CameraGrabResult grab = m_Backend->Grab(!HasActiveFrameConsumer());
+        // own comment). Deliberately HasActiveColorFrameConsumer(), not HasActiveFrameConsumer():
+        // an AprilTag detector bound directly to this camera correctly registers as requiring A
+        // frame (it needs one to call AsGray() on) but not colour specifically - checking the
+        // plain frame-consumer flag here would make this always true whenever any detector is
+        // bound, which defeated this optimization entirely for the single most common real
+        // pipeline shape (camera -> AprilTag -> NT4, no preview/recording). A live WebRTC/Mjpeg
+        // preview or an active recording still gets full colour, unchanged.
+        CameraGrabResult grab = m_Backend->Grab(!HasActiveColorFrameConsumer());
         if (grab.success) {
             // Carries grab.poolOwner through explicitly (not the implicit bare-cv::Mat
             // conversion SourceResult also accepts) - THAT overload has no pool-owner parameter

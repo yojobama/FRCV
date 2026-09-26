@@ -9,7 +9,15 @@
 
 ApriltagDetector::ApriltagDetector(std::shared_ptr<Logger> logger, std::string id, CameraCalibrationResult cameraCalibrationResult,
 	double tagSize, ApriltagBackendKind backendKind, int frameWidth, int frameHeight, ApriltagTuning tuning)
-	: ISource(logger, id), ISink(logger, 1, false, true, id)
+	// requireColor=false: Process() below only ever calls result.frame->AsGray() on what it's
+	// bound to (a camera's raw frame, or another detector's output) - AsBgr() is only called
+	// further down, conditionally, on THIS detector's own annotated output, gated by this
+	// detector's own HasActiveFrameConsumer() (a separate, already-correct check - see this
+	// class's own Process()). Registering true here (matching every other requireFrame=true sink
+	// today) would defeat V4l2CameraBackend's decode-straight-to-gray optimization for exactly
+	// the case it exists for: a camera -> AprilTag -> NT4 pipeline with no preview/recording
+	// bound - see ISource::HasActiveColorFrameConsumer's own comment.
+	: ISource(logger, id), ISink(logger, 1, false, true, id, false)
 {
 	if (logger) logger->EnterLog("ApriltagDetector constructed");
 

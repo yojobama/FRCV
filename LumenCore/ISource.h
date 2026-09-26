@@ -37,7 +37,7 @@ public:
 	// reflects the consumer's CURRENT toggled-on state, not a snapshot from bind time; it must
 	// return false once the registering sink is destroyed (guard it with the same alive-flag
 	// idiom AddResultListener's own callers already use), not dangle a raw `this`.
-	void RegisterFrameConsumer(const std::string& sinkId, bool requiresFrame, std::function<bool()> isActive);
+	void RegisterFrameConsumer(const std::string& sinkId, bool requiresFrame, bool requiresColor, std::function<bool()> isActive);
 	// removed on an explicit UnbindSource - not on destruction (destruction is instead covered
 	// by isActive naturally returning false forever after, same tradeoff AddResultListener
 	// already makes: a handful of dead entries across a session's lifetime, never actively
@@ -51,6 +51,17 @@ public:
 	// image) - real CPU/latency cost on a robot with no live preview open, the common case
 	// during an actual match.
 	bool HasActiveFrameConsumer() const;
+	// true if at least one bound, active consumer needs its frame in COLOUR specifically (a
+	// WebRTC/Mjpeg/Record sink - always true unless a subclass explicitly opts out via ISink's
+	// own requireColor constructor argument). ApriltagDetector is the one existing opt-out - it
+	// only ever calls Frame::AsGray() on a camera's raw frame, never AsBgr(), so registering it
+	// as requiring colour here would defeat V4l2CameraBackend's own decode-straight-to-gray
+	// optimization (see CameraSource.cpp's own comment) for the single most common real pipeline
+	// shape (camera -> AprilTag detector -> NT4, no preview/recording bound) - confirmed the hard
+	// way: before this distinction existed, a bound-but-gray-only detector's own (correct)
+	// requiresFrame=true made HasActiveFrameConsumer() true unconditionally, so preferGray never
+	// actually engaged for exactly the case it was built for.
+	bool HasActiveColorFrameConsumer() const;
 protected:
 	void SetLatestResult(SourceResult result);
 	// Written under m_ResultLock (in SetLatestResult) but read WITHOUT it by
@@ -82,6 +93,7 @@ private:
 
 	struct FrameConsumer {
 		bool requiresFrame;
+		bool requiresColor;
 		std::function<bool()> isActive;
 	};
 	mutable std::mutex m_FrameConsumersMutex;
