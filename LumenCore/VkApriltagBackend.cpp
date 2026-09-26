@@ -46,13 +46,17 @@ VkApriltagBackend::VkApriltagBackend(int frameWidth, int frameHeight, ApriltagTu
 	config.tag_width = static_cast<uint32_t>(m_Family->width_at_border);
 	config.reversed_border = m_Family->reversed_border;
 	config.normal_border = !m_Family->reversed_border;
-	// left at DetectorConfig's own default (0 = std::thread::hardware_concurrency(), i.e. every
-	// core on this 4xA76+4xA55 chip) unless this project's caller picks something smaller - a
-	// single detector's CPU tail claiming all 8 cores starves whatever else the pipeline is
-	// doing (another camera's own detector, capture threads, the WebRTC encoder). QuadDecode's
-	// pool is sized once at construction (see its own header comment - no live resize), so
-	// changing this requires rebuilding the backend, same as switching CPU<->Vulkan already does.
-	if (tuning.nthreads > 0) config.cpu_threads = static_cast<uint32_t>(tuning.nthreads);
+	// DetectorConfig's own default (0) resolves to std::thread::hardware_concurrency() inside the
+	// library - every core on this 4xA76+4xA55 chip, including the 4 slow A55s, for a workload
+	// that's GPU-bound with a genuinely small CPU tail (the library's own measurements: ~1.3ms at
+	// 1280x800 - docs/PERFORMANCE_ANALYSIS.md's own §4). Defaulting to a fixed 4 instead avoids
+	// spawning threads onto the A55 cluster at all (this project doesn't pin vkapriltag's own
+	// worker pool to specific cores - a separate, deferred concern - just avoids asking for more
+	// threads than the workload can use). QuadDecode's pool is sized once at construction (see
+	// its own header comment - no live resize), so changing this requires rebuilding the backend,
+	// same as switching CPU<->Vulkan already does. Still fully overridable per sink via
+	// ApriltagTuning.nthreads (REST/webui), same as before.
+	config.cpu_threads = tuning.nthreads > 0 ? static_cast<uint32_t>(tuning.nthreads) : 4;
 
 	m_GpuDetector = std::make_unique<GpuDetector>(*m_Context, config);
 	m_QuadDecode = std::make_unique<QuadDecode>(config);
