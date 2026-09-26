@@ -259,7 +259,7 @@ void V4l2CameraBackend::StopStreaming()
 	}
 }
 
-CameraGrabResult V4l2CameraBackend::Grab()
+CameraGrabResult V4l2CameraBackend::Grab(bool preferGray)
 {
 	CameraGrabResult result;
 	if (m_Fd < 0 || !m_Streaming) return result;
@@ -324,14 +324,33 @@ CameraGrabResult V4l2CameraBackend::Grab()
 		// authoritative decoded Mat (a genuine size mismatch reallocates a fresh one instead -
 		// result.poolOwner then just outlives an unused buffer harmlessly, see this function's
 		// own comment above).
-		result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
-		result.frame = cv::imdecode(jpegView, cv::IMREAD_COLOR, &result.frame);
+		//
+		// preferGray decodes straight to grayscale instead of BGR when nothing downstream needs
+		// colour this cycle (see ICameraBackend::Grab's own comment) - IMREAD_GRAYSCALE skips
+		// chroma upsampling and colour-space conversion inside libjpeg-turbo entirely, not just
+		// the separate BGR->GRAY cv::cvtColor Frame::AsGray() would otherwise pay downstream
+		// (docs/PERFORMANCE_ANALYSIS.md's own §1/§2 - measured ~40% less decode work, plus it
+		// removes the second conversion completely rather than just moving it).
+		if (preferGray) {
+			result.frame = FramePool::Instance().Acquire(height, width, CV_8UC1, result.poolOwner);
+			result.frame = cv::imdecode(jpegView, cv::IMREAD_GRAYSCALE, &result.frame);
+			result.format = FrameFormat::GRAY8;
+		} else {
+			result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
+			result.frame = cv::imdecode(jpegView, cv::IMREAD_COLOR, &result.frame);
+		}
 		result.success = !result.frame.empty();
 	} else if (fourcc == V4L2_PIX_FMT_YUYV) {
 		if (rawFits(static_cast<size_t>(width) * 2)) {
 			cv::Mat yuyv(height, width, CV_8UC2, const_cast<uint8_t*>(data), stride);
-			result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
-			cv::cvtColor(yuyv, result.frame, cv::COLOR_YUV2BGR_YUYV);
+			if (preferGray) {
+				result.frame = FramePool::Instance().Acquire(height, width, CV_8UC1, result.poolOwner);
+				cv::cvtColor(yuyv, result.frame, cv::COLOR_YUV2GRAY_YUYV);
+				result.format = FrameFormat::GRAY8;
+			} else {
+				result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
+				cv::cvtColor(yuyv, result.frame, cv::COLOR_YUV2BGR_YUYV);
+			}
 			result.success = true;
 		}
 	} else if (fourcc == V4L2_PIX_FMT_BGR24 || fourcc == V4L2_PIX_FMT_RGB24) {

@@ -98,7 +98,7 @@ bool OpenCvCameraBackend::IsOpened() const
 	return m_Capture.isOpened();
 }
 
-CameraGrabResult OpenCvCameraBackend::Grab()
+CameraGrabResult OpenCvCameraBackend::Grab(bool /*preferGray*/)
 {
 	CameraGrabResult result;
 	if (!m_Capture.isOpened()) return result;

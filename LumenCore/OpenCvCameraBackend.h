@@ -12,7 +12,10 @@ public:
 	bool Open(const std::string& devicePath) override;
 	void Close() override;
 	bool IsOpened() const override;
-	CameraGrabResult Grab() override;
+	// preferGray is ignored - cv::VideoCapture gives no way to request a direct-to-gray decode,
+	// and this backend is the non-perf-critical fallback (Windows dev machines, or a V4L2 open
+	// failure), not the target of the optimization preferGray exists for.
+	CameraGrabResult Grab(bool preferGray = false) override;
 	std::string Name() const override { return "OpenCV"; }
 
 	// cv::VideoCapture itself has no generic "list what this device supports" API on any backend -

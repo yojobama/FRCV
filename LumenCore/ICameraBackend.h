@@ -51,7 +51,13 @@ public:
 	// indefinitely. A real V4L2 backend needs poll() with a timeout ahead of VIDIOC_DQBUF; a
 	// real Media Foundation backend needs Close() to call IMFSourceReader::Flush to unblock a
 	// pending ReadSample from another thread.
-	virtual CameraGrabResult Grab() = 0;
+	// preferGray: true when no bound sink needs a colour frame this cycle (see
+	// ISource::HasActiveFrameConsumer) - a backend that can decode straight to grayscale should do
+	// so instead of decoding to BGR and letting Frame::AsGray() convert it back down, skipping the
+	// colour conversion work entirely rather than just moving it (V4l2CameraBackend's MJPEG/YUYV
+	// paths; every other backend is free to ignore this and always produce BGR, exactly as
+	// before - it's an optimization hint, not a contract).
+	virtual CameraGrabResult Grab(bool preferGray = false) = 0;
 
 	virtual std::string Name() const = 0;
 

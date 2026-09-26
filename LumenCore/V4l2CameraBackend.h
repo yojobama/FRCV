@@ -24,7 +24,7 @@ public:
 	bool Open(const std::string& devicePath) override;
 	void Close() override;
 	bool IsOpened() const override;
-	CameraGrabResult Grab() override;
+	CameraGrabResult Grab(bool preferGray = false) override;
 	std::string Name() const override { return "V4L2"; }
 
 	std::vector<CameraMode> EnumerateModes() override;

@@ -108,7 +108,10 @@ CameraControlRange CameraFrameSource::GetGainRange()
 void CameraFrameSource::CaptureFrame()
 {
     if (m_Backend->IsOpened()) {
-        CameraGrabResult grab = m_Backend->Grab();
+        // no bound sink needs colour this cycle -> ask the backend to decode straight to
+        // grayscale if it can (V4l2CameraBackend's MJPEG/YUYV paths - see ICameraBackend::Grab's
+        // own comment); a live preview/record sink still gets full colour, unchanged.
+        CameraGrabResult grab = m_Backend->Grab(!HasActiveFrameConsumer());
         if (grab.success) {
             // Carries grab.poolOwner through explicitly (not the implicit bare-cv::Mat
             // conversion SourceResult also accepts) - THAT overload has no pool-owner parameter
