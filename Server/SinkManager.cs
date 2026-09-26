@@ -357,7 +357,14 @@ namespace Server
             long maxFolderSizeBytes = 0, int maxFileCount = 0)
         {
             string resolvedFolder = dstFolder ?? System.IO.Path.Combine("recordings", SanitizeFolderName(name));
-            string resolvedEncoder = encoderName ?? "libx264";
+            // GetPreferredWebRTCEncoder() probes real hardware encoder availability (h264_rkmpp
+            // vs libx264) - despite its name it's not WebRTC-specific, it's just "the best H264
+            // encoder this ffmpeg build actually has" (same call WebRTCSinkController.cs already
+            // makes). Recording used to hardcode "libx264" unconditionally, so a match recording
+            // ran full software x264 even on boards with a working hardware encoder - confirmed
+            // live on the board: recording competed with vkapriltag detection for the same 4 A76
+            // cores (docs/PERFORMANCE_ANALYSIS.md's own §6 contention theory).
+            string resolvedEncoder = encoderName ?? ManagerWrapper.Instance.GetPreferredWebRTCEncoder();
             int id = ManagerWrapper.Instance.CreateRecordSink(resolvedFolder, resolvedEncoder, bitrateKbps, fps, segmentSeconds, maxFolderSizeBytes, maxFileCount);
             sinks.Add(new Sink(id, name, SinkType.RecordSink)
             {
@@ -446,7 +453,7 @@ namespace Server
         {
             string dstFolder = persisted.RecordDstFolder ?? System.IO.Path.Combine("recordings", persisted.Id.ToString());
             int id = ManagerWrapper.Instance.CreateRecordSink(persisted.Id, dstFolder,
-                persisted.RecordEncoderName ?? "libx264", persisted.RecordBitrateKbps ?? 8000, 30,
+                persisted.RecordEncoderName ?? ManagerWrapper.Instance.GetPreferredWebRTCEncoder(), persisted.RecordBitrateKbps ?? 8000, 30,
                 persisted.RecordSegmentSeconds ?? 300, persisted.RecordMaxFolderSizeBytes ?? 0,
                 persisted.RecordMaxFileCount ?? 0);
             sinks.Add(new Sink(id, persisted.Name, SinkType.RecordSink)
