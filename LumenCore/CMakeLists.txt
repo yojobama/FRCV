@@ -56,6 +56,26 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND LUMEN_CORE_SOURCES V4l2CameraBackend.cpp)
 endif()
 
+# --- Optional: hardware MJPEG decode via the RK3588's JPEG-decode VPU (rockchip_mpp) ------------
+# Probed unconditionally here - not only when LUMEN_WITH_CODEC_STEREO happens to be on, which is
+# where this exact pkg-config module used to be probed (purely to toggle codec-stereo's own
+# CS_ENABLE_RKMPP_HWENC, see that block further down, which now reuses this result instead of
+# re-probing). V4l2CameraBackend's own MJPEG hardware-decode path (MppJpegDecoder) needs it
+# regardless of whether the stereo-depth submodule is enabled at all.
+set(LUMEN_WITH_MPP_JPEG OFF)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
+    find_package(PkgConfig QUIET)
+    if(PkgConfig_FOUND)
+        pkg_check_modules(LUMEN_ROCKCHIP_MPP QUIET rockchip_mpp)
+    endif()
+    if(LUMEN_ROCKCHIP_MPP_FOUND)
+        set(LUMEN_WITH_MPP_JPEG ON)
+        list(APPEND LUMEN_CORE_SOURCES MppJpegDecoder.cpp)
+    else()
+        message(WARNING "rockchip_mpp not found - V4l2CameraBackend will use software JPEG decode only")
+    endif()
+endif()
+
 if(WIN32)
     # Manager::EnumerateAvailableCameras' Windows implementation (Media Foundation's
     # MFEnumDeviceSources) - a separate translation unit from Manager.cpp on purpose, see
@@ -127,6 +147,12 @@ swig_add_library(LumenCore
 # directories. USE_TARGET_INCLUDE_DIRECTORIES ON (set on swig.i above) is what makes SWIG's own
 # preprocessing pass pick this up too, for the same reason.
 target_include_directories(LumenCore PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+
+if(LUMEN_WITH_MPP_JPEG)
+    target_compile_definitions(LumenCore PRIVATE LUMEN_WITH_MPP_JPEG)
+    target_include_directories(LumenCore PRIVATE ${LUMEN_ROCKCHIP_MPP_INCLUDE_DIRS})
+    target_link_libraries(LumenCore PRIVATE ${LUMEN_ROCKCHIP_MPP_LIBRARIES})
+endif()
 
 # No PREFIX override: the default "lib" prefix on Linux (libLumenCore.so) plus no prefix on
 # Windows (LumenCore.dll) is exactly what makes one DllImport("LumenCore") string in the
@@ -289,21 +315,12 @@ if(LUMEN_WITH_CODEC_STEREO)
         set(CS_ENABLE_LAVC OFF CACHE BOOL "" FORCE)
     endif()
     # CS_ENABLE_RKMPP (the buggy KEY_MOTION_INFO readback backend) is deliberately never
-    # enabled - see StereoDepthBackendKind.h. CS_ENABLE_RKMPP_HWENC is aarch64-only; gated the
-    # same way install-deps.sh gated it (arch check + pkg-config probe), reproduced here since
-    # add_subdirectory means codec-stereo's own configure now happens as part of this one.
+    # enabled - see StereoDepthBackendKind.h. CS_ENABLE_RKMPP_HWENC just reuses the
+    # LUMEN_ROCKCHIP_MPP probe from earlier in this file (the same pkg-config module, already
+    # probed unconditionally there for MppJpegDecoder's own benefit - no need to probe it twice).
     set(CS_ENABLE_RKMPP OFF CACHE BOOL "" FORCE)
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
-        find_package(PkgConfig QUIET)
-        if(PkgConfig_FOUND)
-            pkg_check_modules(LUMEN_ROCKCHIP_MPP QUIET rockchip_mpp)
-        endif()
-        if(LUMEN_ROCKCHIP_MPP_FOUND)
-            set(CS_ENABLE_RKMPP_HWENC ON CACHE BOOL "" FORCE)
-        else()
-            message(WARNING "rockchip_mpp not found - building codec-stereo without CS_ENABLE_RKMPP_HWENC")
-            set(CS_ENABLE_RKMPP_HWENC OFF CACHE BOOL "" FORCE)
-        endif()
+    if(LUMEN_ROCKCHIP_MPP_FOUND)
+        set(CS_ENABLE_RKMPP_HWENC ON CACHE BOOL "" FORCE)
     else()
         set(CS_ENABLE_RKMPP_HWENC OFF CACHE BOOL "" FORCE)
     endif()

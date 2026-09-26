@@ -1858,6 +1858,9 @@ vector<string> Manager::GetEnabledFeatures()
 #ifdef LUMEN_WITH_CODEC_STEREO
     features.push_back("CODEC_STEREO");
 #endif
+#ifdef LUMEN_WITH_MPP_JPEG
+    features.push_back("MPP_JPEG");
+#endif
 #ifdef LUMEN_WITH_RKNN
     features.push_back("RKNN");
 #endif

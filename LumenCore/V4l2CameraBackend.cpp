@@ -331,15 +331,31 @@ CameraGrabResult V4l2CameraBackend::Grab(bool preferGray)
 		// the separate BGR->GRAY cv::cvtColor Frame::AsGray() would otherwise pay downstream
 		// (docs/PERFORMANCE_ANALYSIS.md's own §1/§2 - measured ~40% less decode work, plus it
 		// removes the second conversion completely rather than just moving it).
+		//
+		// Acquire happens before either decode path, same as every other branch - MppJpegDecoder
+		// never touches FramePool itself (see its own header comment), it only ever writes into
+		// an already-sized dst, so the software cv::imdecode fallback below can reuse the exact
+		// same pool-owned buffer if the hardware attempt fails.
 		if (preferGray) {
 			result.frame = FramePool::Instance().Acquire(height, width, CV_8UC1, result.poolOwner);
-			result.frame = cv::imdecode(jpegView, cv::IMREAD_GRAYSCALE, &result.frame);
 			result.format = FrameFormat::GRAY8;
 		} else {
 			result.frame = FramePool::Instance().Acquire(height, width, CV_8UC3, result.poolOwner);
-			result.frame = cv::imdecode(jpegView, cv::IMREAD_COLOR, &result.frame);
 		}
-		result.success = !result.frame.empty();
+
+#ifdef LUMEN_WITH_MPP_JPEG
+		// hardware decode via the RK3588's own JPEG VPU tried first - real measurements put this
+		// at ~2-3ms/1080p-frame vs ~12ms software (docs/PERFORMANCE_ANALYSIS.md's own §1). Falls
+		// through to the software path below on ANY failure (no JPEG VPU on this board, an
+		// unsupported chroma layout, a decode error) - see MppJpegDecoder's own contract.
+		if (m_MppJpegDecoder.Decode(data, bytesUsed, width, height, preferGray, result.frame)) {
+			result.success = true;
+		} else
+#endif
+		{
+			result.frame = cv::imdecode(jpegView, preferGray ? cv::IMREAD_GRAYSCALE : cv::IMREAD_COLOR, &result.frame);
+			result.success = !result.frame.empty();
+		}
 	} else if (fourcc == V4L2_PIX_FMT_YUYV) {
 		if (rawFits(static_cast<size_t>(width) * 2)) {
 			cv::Mat yuyv(height, width, CV_8UC2, const_cast<uint8_t*>(data), stride);

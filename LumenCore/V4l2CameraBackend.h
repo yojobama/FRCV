@@ -1,5 +1,6 @@
 #pragma once
 #include "ICameraBackend.h"
+#include "MppJpegDecoder.h"
 #include <optional>
 #include <vector>
 #include <cstdint>
@@ -65,4 +66,9 @@ private:
 	// compares the device's real, read-back settings against this, not against whatever
 	// EnumerateModes() happened to list.
 	std::optional<CameraMode> m_RequestedMode;
+#ifdef LUMEN_WITH_MPP_JPEG
+	// tried first in the MJPEG branch of Grab(), falling back to the software cv::imdecode path
+	// on any failure - see MppJpegDecoder's own header comment.
+	MppJpegDecoder m_MppJpegDecoder;
+#endif
 };
