@@ -240,7 +240,11 @@ void ApriltagDetector::Process(const std::vector<SourceResult>& results)
 				}
 			}
 
-			m_Logger->EnterLog("detecting apriltags using backend=" + m_Backend->Name());
+			// Debug-level, not the implicit Info overload - this runs on every single processed
+			// frame, and Info unconditionally pays a recursive-mutex lock plus a file
+			// open/write/close cycle (Logger::FlushLogs). Debug is dropped before any of that
+			// unless LUMEN_LOG_DEBUG=1 is set - see Logger.cpp's own comment.
+			m_Logger->EnterLog(LogLevel::Debug, "detecting apriltags using backend=" + m_Backend->Name());
 			zarray_t* detections = m_Backend->Detect(gray);
 
 			// annotate-on-demand: drawing tag outlines/labels only matters to something that

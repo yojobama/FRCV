@@ -51,5 +51,8 @@ private:
     std::string m_FilePath;
     std::recursive_mutex m_ResultLock;
     std::vector<Log*> m_Logs;
+    // opened once (append mode) instead of every FlushLogs() call - see Logger.cpp's own comment
+    // on why that used to be a real per-log-call disk-I/O cost.
+    std::ofstream m_LogFile;
 };
 
