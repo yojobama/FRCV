@@ -88,6 +88,17 @@ if(LUMEN_WITH_NT4)
     target_link_libraries(LumenCoreTests PRIVATE Ntcore::ntcore)
 endif()
 
+if(LUMEN_WITH_MPP_JPEG)
+    # same "header-only real code, not just declarations" situation as the other optional-backend
+    # blocks above - MppJpegDecoder.h's #ifdef LUMEN_WITH_MPP_JPEG guard needs this define visible
+    # to this test's own translation unit too, and it needs the real rockchip_mpp headers/libs
+    # LumenCore/CMakeLists.txt resolves for its own (PRIVATE) use of them.
+    target_sources(LumenCoreTests PRIVATE test_mpp_jpeg_decoder_hitl.cpp)
+    target_compile_definitions(LumenCoreTests PRIVATE LUMEN_WITH_MPP_JPEG)
+    target_include_directories(LumenCoreTests PRIVATE ${LUMEN_ROCKCHIP_MPP_INCLUDE_DIRS})
+    target_link_libraries(LumenCoreTests PRIVATE ${LUMEN_ROCKCHIP_MPP_LIBRARIES})
+endif()
+
 if(LUMEN_WITH_CODEC_STEREO)
     # same PRIVATE-compile-definition situation as LUMEN_WITH_RKNN above - CodecStereoBackend.h's
     # own #ifdef LUMEN_WITH_CODEC_STEREO guard needs this define visible to the test's own
