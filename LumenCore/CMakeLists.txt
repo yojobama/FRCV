@@ -87,6 +87,17 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarc
         message(WARNING "rockchip_mpp not found - V4l2CameraBackend will use software JPEG decode only")
     endif()
 endif()
+# LUMEN_WITH_MPP_JPEG/LUMEN_ROCKCHIP_MPP_* are plain variables local to THIS subdirectory's own
+# scope by default - add_subdirectory(tests) in the root CMakeLists.txt is a SEPARATE sibling
+# scope (added after this one, per that file's own ordering), which would otherwise never see
+# these at all despite its own `if(LUMEN_WITH_MPP_JPEG)` block referencing them (confirmed the
+# hard way: the CI arm64 runner compiled MppJpegDecoder.cpp into LumenCore correctly but never
+# even compiled the test meant to exercise it - the guard silently evaluated false). PARENT_SCOPE
+# pushes each one up to the root, which tests/ then inherits normally.
+set(LUMEN_WITH_MPP_JPEG ${LUMEN_WITH_MPP_JPEG} PARENT_SCOPE)
+set(LUMEN_ROCKCHIP_MPP_FOUND ${LUMEN_ROCKCHIP_MPP_FOUND} PARENT_SCOPE)
+set(LUMEN_ROCKCHIP_MPP_INCLUDE_DIRS ${LUMEN_ROCKCHIP_MPP_INCLUDE_DIRS} PARENT_SCOPE)
+set(LUMEN_ROCKCHIP_MPP_LIBRARIES ${LUMEN_ROCKCHIP_MPP_LIBRARIES} PARENT_SCOPE)
 
 if(WIN32)
     # Manager::EnumerateAvailableCameras' Windows implementation (Media Foundation's
