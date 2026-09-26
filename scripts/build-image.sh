@@ -224,6 +224,15 @@ cat > /etc/systemd/system/lumenvision.service.d/10-vulkan-icd.conf <<EOF
 Environment=VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/libmali.json
 EOF
 
+echo "----> Creating the lumen login user (password: vision, sudo) for on-board debugging"
+# Image-only: the .deb itself only ever creates lumen as a no-login system user (see
+# scripts/deb/postinst). Creating it here first, as a real login user, means the postinst's
+# 'id lumen' check finds it and reuses it - so the service runs as this same user on images.
+apt-get install -y sudo
+useradd --create-home --user-group --shell /bin/bash lumen
+echo 'lumen:vision' | chpasswd
+usermod -aG sudo lumen
+
 echo "----> Installing the lumenvision-backend .deb"
 apt-get install -y /root/lumenvision-backend_*_arm64.deb
 
