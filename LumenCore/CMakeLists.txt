@@ -57,21 +57,29 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 # --- Optional: hardware MJPEG decode via the RK3588's JPEG-decode VPU (rockchip_mpp) ------------
-# Probed unconditionally here - not only when LUMEN_WITH_CODEC_STEREO happens to be on, which is
-# where this exact pkg-config module used to be probed (purely to toggle codec-stereo's own
-# CS_ENABLE_RKMPP_HWENC, see that block further down, which now reuses this result instead of
-# re-probing). V4l2CameraBackend's own MJPEG hardware-decode path (MppJpegDecoder) needs it
+# EXPERIMENTAL - confirmed the hard way to segfault on real hardware the moment a real MJPEG
+# camera frame is decoded (Orange Pi 5 Plus, MPP built from rockchip-linux/mpp's develop@14729dd):
+# MppJpegDecoder never calls MPP_DEC_SET_EXT_BUF_GROUP, and the real mpi_dec_test.c reference
+# always does, even for a single-frame codec with no reference chaining - this class's own
+# assumption that MPP's "internal" buffer allocation needs no group at all looks to be wrong.
+# Gated behind an explicit opt-in (default OFF even when rockchip_mpp is present) until that's
+# fixed and re-verified on real hardware - do not flip this default without a HITL run confirming
+# it no longer crashes. Probed unconditionally (not only when LUMEN_WITH_CODEC_STEREO happens to
+# be on, which is where this exact pkg-config module used to be probed, purely to toggle
+# codec-stereo's own CS_ENABLE_RKMPP_HWENC - that block further down now reuses this result
+# instead of re-probing) since V4l2CameraBackend's own MJPEG hardware-decode path needs it
 # regardless of whether the stereo-depth submodule is enabled at all.
+option(LUMEN_ENABLE_EXPERIMENTAL_MPP_JPEG "EXPERIMENTAL, known to crash on real hardware - see this file's own comment" OFF)
 set(LUMEN_WITH_MPP_JPEG OFF)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
     find_package(PkgConfig QUIET)
     if(PkgConfig_FOUND)
         pkg_check_modules(LUMEN_ROCKCHIP_MPP QUIET rockchip_mpp)
     endif()
-    if(LUMEN_ROCKCHIP_MPP_FOUND)
+    if(LUMEN_ROCKCHIP_MPP_FOUND AND LUMEN_ENABLE_EXPERIMENTAL_MPP_JPEG)
         set(LUMEN_WITH_MPP_JPEG ON)
         list(APPEND LUMEN_CORE_SOURCES MppJpegDecoder.cpp)
-    else()
+    elseif(NOT LUMEN_ROCKCHIP_MPP_FOUND)
         message(WARNING "rockchip_mpp not found - V4l2CameraBackend will use software JPEG decode only")
     endif()
 endif()
