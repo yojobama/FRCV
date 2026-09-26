@@ -55,7 +55,7 @@ Set as MSBuild preprocessor defines in `LumenCore.vcxproj` (`LumenCommonDefines`
 | `LUMEN_WITH_NT4` | on, all platforms | Needs `ntcore`/`wpiutil`/`wpinet` (install-deps.sh `--with-nt4`) |
 | `LUMEN_WITH_WEBRTC` | on, all platforms | Needs `libdatachannel` (install-deps.sh `--with-webrtc`) |
 | `LUMEN_WITH_VULKAN_APRILTAG` | on, all platforms | Needs the `vkapriltag` submodule + a Vulkan compute device; falls back to CPU automatically if none is found |
-| `LUMEN_WITH_RKNN` | ARM64 only | The Orange Pi's NPU; not yet implemented for object detection (throws) |
+| `LUMEN_WITH_RKNN` | ARM64 only | The Orange Pi's NPU; `RknnDetectionBackend` runs object detection on it (native NV12 input and per-NPU-core pinning are still open, see ROADMAP.md C1) |
 | `LUMEN_WITH_CODEC_STEREO` | on, all platforms | Needs the `codec-stereo` submodule (install-deps.sh builds it by default, unconditionally); `STEREO_BACKEND_SGBM` remains available without this flag |
 
 ## Deploying to the Orange Pi
@@ -87,11 +87,13 @@ calibration only happens when explicitly asked, never implicitly. Results persis
 
 ## Object detection
 
-Upload a YOLOv8 or YOLOv11 ONNX export (`ultralytics export format=onnx`) via
-`POST /api/model/upload` (multipart: `model`, optional `labels`, plus `variant`/`inputSize`/
-thresholds as form fields), then create a sink with `POST /api/objectDetectionSink/create`
-referencing the returned model id. RKNN (the actual production path on the Pi's NPU) is not
-implemented yet — only the ONNX Runtime CPU backend runs today.
+Upload a YOLOv8 or YOLOv11 export via `POST /api/model/upload` (multipart: `model`, optional
+`labels`, plus `variant`/`inputSize`/thresholds as form fields), then create a sink with
+`POST /api/objectDetectionSink/create` referencing the returned model id. The backend (ONNX
+Runtime vs RKNN/NPU) is picked automatically from the uploaded file's extension — `.onnx`
+(`ultralytics export format=onnx`) runs on ONNX Runtime's CPU execution provider; `.rknn` runs on
+the Pi's NPU via `RknnDetectionBackend`. A `.rknn` export is produced offline with
+`rknn-toolkit2` on an x86 host — there's no on-device or in-repo converter yet.
 
 ## Live view
 
@@ -158,7 +160,8 @@ anything.
 ## Known gaps
 
 See `docs/history/IMPLEMENTATION_PLAN.md`'s phase status lines for the authoritative historical
-record, and `ROADMAP.md` for what's planned next. Currently: RKNN object detection is
-unimplemented; a stored calibration doesn't yet auto-apply to a matching camera source on
-creation; and WebRTC has been verified by compiling/linking against the real libraries, not
+record, and `ROADMAP.md` for what's planned next. Currently: RKNN object detection runs but still
+takes ONNX-style BGR input rather than the NPU's native NV12 (ROADMAP.md C1); a stored calibration
+doesn't yet auto-apply to a matching camera source on creation; and WebRTC has been verified by
+compiling/linking against the real libraries, not
 against an actual browser ICE handshake in this environment.

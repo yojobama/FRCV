@@ -183,6 +183,12 @@ const GraphPageInner: React.FC<{ onToast: (m: string, t: 'success'|'error'|'info
         await api.createApriltagSinkWithBackend(name, options?.tagSize ?? 0.1651, options?.backend ?? 0);
       } else if (type === 'calibration') {
         await api.createCameraCalibrationSink(name);
+      } else if (type === 'object' && options?.newModel) {
+        // "Upload a new model instead" - AddSinkModal collected the file but never uploaded it;
+        // do that first, then create the sink from the model id the upload returns. A failed
+        // upload throws into the catch below rather than a false "added" toast.
+        const modelId = await api.uploadModel(options.newModel);
+        await api.createObjectDetectionSink(name, modelId);
       } else if (type === 'object' && options?.modelId) {
         await api.createObjectDetectionSink(name, options.modelId);
       }

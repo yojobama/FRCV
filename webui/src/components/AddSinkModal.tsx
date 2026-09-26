@@ -109,7 +109,10 @@ export const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAd
           >
             <option value="ApriltagSink">AprilTag Detection</option>
             <option value="calibration">Camera Calibration</option>
-            <option value="object">Object Detection (ONNX)</option>
+            {/* not "(ONNX)" - the actual backend (ONNX Runtime vs RKNN/NPU) is a property of
+                whichever model gets selected/uploaded below, not of the sink type itself; see the
+                per-model provider badge in that section. */}
+            <option value="object">Object Detection</option>
           </select>
         </div>
 
@@ -192,7 +195,7 @@ export const AddSinkModal: React.FC<{ isOpen: boolean; onClose: () => void; onAd
                   <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Model weights (.onnx or .rknn)</label>
                   <input type="file" accept=".onnx,.rknn" onChange={(e) => setNewModelFile(e.target.files?.[0] ?? null)}
                     className="w-full text-sm text-gray-700 dark:text-gray-300" />
-                  <p className="text-xs text-gray-400 mt-1">The backend (ONNX Runtime or RKNN/NPU) is picked automatically from the file extension.</p>
+                  <p className="text-xs text-gray-400 mt-1">The backend (ONNX Runtime or RKNN/NPU) is picked automatically from the file extension. A .rknn export is produced offline (rknn-toolkit2, on an x86 host) - there's no on-device converter.</p>
                 </div>
                 <div>
                   <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Class labels (optional, one per line)</label>

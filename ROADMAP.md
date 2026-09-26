@@ -34,11 +34,10 @@ Two more structural facts worth stating up front, because the plan is ordered ar
   `49a3a2a` (`Frame`, `FramePool`, `PreProcessor`). There is no automated test coverage of any
   kind. Item 3 ("test all sinks") is therefore not an afternoon of manual poking — it is building
   the harness that makes "do the sinks work?" a question a machine can answer, repeatedly.
-- **RKNN is not implemented.** `Manager.cpp:801` throws
-  `"RKNN object detection backend is not implemented yet - use ONNX"`. Item 3 lists rknn among
-  the sinks to test; there is nothing there to test yet. It is also the single largest
-  performance win available (6 TOPS of idle NPU vs. YOLO on the A76 cores), so it sits in the
-  hardware-offload phase, not the testing one.
+- **RKNN was not implemented when this section was written; `RknnDetectionBackend` now is** (see
+  C1 below for what's still open - native NV12 input, per-core pinning). It is also the single
+  largest performance win available (6 TOPS of idle NPU vs. YOLO on the A76 cores), so C1 sits in
+  the hardware-offload phase, not the testing one.
 
 ---
 
@@ -229,18 +228,22 @@ them yet).
 
 ### C1. RKNN object detection backend — the big one
 
-Not "testing rknn"; writing it. `RknnDetectionBackend : IDetectionBackend`, mirroring
-`OnnxDetectionBackend`, reusing `YoloPostProcess` (which was deliberately factored out for
-exactly this). Expected: YOLOv8n 640×640 goes from roughly 100 ms on the A76 cluster to
-10–20 ms on one NPU core, and stops competing with everything else for CPU.
+**Update: the backend itself is now written** (`RknnDetectionBackend : IDetectionBackend`,
+mirroring `OnnxDetectionBackend`, reusing `YoloPostProcess`) and `.rknn` uploads are already
+accepted in `ModelController` alongside `.onnx`, with `Model.Provider` recording which is which -
+derived automatically from the uploaded file's own extension. What's below is what's left, not a
+from-scratch item. Expected once the still-open items land: YOLOv8n 640×640 goes from roughly
+100 ms on the A76 cluster to 10–20 ms on one NPU core, and stops competing with everything else
+for CPU.
 
-- ONNX → RKNN conversion is an offline step (`rknn-toolkit2`, x86 host, Python). Ship a
-  documented converter script and accept `.rknn` uploads in `ModelController` alongside `.onnx`,
-  with the manifest recording which is which.
-- RKNN takes **NV12 input natively** — with B2 in place the camera frame reaches the NPU with no
-  CPU colour conversion at all.
-- Three NPU cores: `RKNN_NPU_CORE_AUTO` to start, per-core pinning if you end up running two
-  detectors.
+- **Still missing: a documented offline ONNX→RKNN converter script.** `rknn-toolkit2` (x86 host,
+  Python) is the only way to produce a `.rknn` file today, and there's no script or doc walking
+  through it anywhere in this repo.
+- RKNN takes **NV12 input natively**, but `RknnDetectionBackend` still takes the same BGR input
+  `OnnxDetectionBackend` does — with B2 in place the camera frame could reach the NPU with no CPU
+  colour conversion at all, but that wiring isn't done yet.
+- Three NPU cores: currently `RKNN_NPU_CORE_AUTO`; per-core pinning if you end up running two
+  detectors is still open.
 - Risk already logged (`IMPLEMENTATION_PLAN.md` risk 2): driver `v0.9.7` vs `librknnrt 2.3.2`.
   The first real `rknn_init()` proves or disproves it.
 
@@ -298,7 +301,7 @@ Status going in, so the work is honest about what "test" means for each:
 | `CpuApriltagBackend` (libapriltag) | verified on real hardware | golden-corpus regression test (A3) |
 | `VkApriltagBackend` (Vulkan) | verified on real hardware, tag 585 | agree-with-CPU test on the same corpus; plus the no-Vulkan-device fallback path, which is untested |
 | `OnnxDetectionBackend` | implemented, compiles and links; **no verified detection on real hardware** | golden test, then the first real end-to-end run |
-| RKNN | **not implemented** (`Manager.cpp:801` throws) | C1 first, then the same tests as ONNX |
+| `RknnDetectionBackend` (RKNN/NPU) | implemented; **no verified detection on real hardware** | golden test, then the first real end-to-end run - same as ONNX; C1's remaining items (NV12 input, core pinning) are separate follow-ups |
 | `SgbmStereoBackend` | implemented | synthetic-disparity golden test |
 | `CodecStereoBackend` LAVC | implemented | synthetic-disparity golden test |
 | `CodecStereoBackend` RKMPP_HWENC | built when `rockchip_mpp` is present | **never run on the board** — needs real hardware |
