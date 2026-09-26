@@ -3,11 +3,11 @@
   <groupId>org.lumenvision</groupId>
   <artifactId>photoncompat-java</artifactId>
   <versioning>
-    <latest>0.0.0-imagetest16</latest>
-    <release>0.0.0-imagetest16</release>
+    <latest>0.0.0-imagetest17</latest>
+    <release>0.0.0-imagetest17</release>
     <versions>
-      <version>0.0.0-imagetest16</version>
+      <version>0.0.0-imagetest17</version>
     </versions>
-    <lastUpdated>20260926173155</lastUpdated>
+    <lastUpdated>20260926182935</lastUpdated>
   </versioning>
 </metadata>
