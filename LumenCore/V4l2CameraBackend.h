@@ -66,6 +66,10 @@ private:
 	// compares the device's real, read-back settings against this, not against whatever
 	// EnumerateModes() happened to list.
 	std::optional<CameraMode> m_RequestedMode;
+	// converts a V4L2 buf.timestamp (CLOCK_MONOTONIC, per the driver) to the same wall-clock
+	// epoch SourceResult::NowUs() uses - computed once, lazily, on the first frame; see Grab()'s
+	// own comment.
+	std::optional<int64_t> m_MonotonicToWallOffsetUs;
 #ifdef LUMEN_WITH_MPP_JPEG
 	// tried first in the MJPEG branch of Grab(), falling back to the software cv::imdecode path
 	// on any failure - see MppJpegDecoder's own header comment.

@@ -12,6 +12,8 @@
 #include <errno.h>
 #include <optional>
 #include <utility>
+#include <chrono>
+#include <cstdint>
 
 #include "PixelUnpack.h"
 
@@ -275,11 +277,48 @@ CameraGrabResult V4l2CameraBackend::Grab(bool preferGray)
 	buf.memory = V4L2_MEMORY_MMAP;
 	if (XIoctl(m_Fd, VIDIOC_DQBUF, &buf) < 0) return result;
 
-	// stamped immediately after DQBUF returns - the closest this process gets to "the moment the
-	// driver made this frame available", matching OpenCvCameraBackend's own stamp-right-after-read
-	// discipline (see its comment; stereo pairing's skew gate depends on this being close to real
-	// capture time, not publish time).
-	result.captureTimeUs = SourceResult::NowUs();
+	// Drain to the newest frame: DQBUF always returns the OLDEST queued buffer, so if this cycle
+	// (or a prior stall - a slow downstream sink, a scheduling hiccup) fell behind, up to
+	// BUFFER_COUNT-1 stale frames can already be queued. Requeue the one just dequeued straight
+	// back (without processing it - it's already stale) and take the next one instead, repeating
+	// until the driver has nothing left ready - the classic low-latency V4L2 pattern
+	// (docs/PERFORMANCE_ANALYSIS.md's own §5). Only the final, newest buffer is
+	// decoded/timestamped/published.
+	for (;;) {
+		pollfd peek{};
+		peek.fd = m_Fd;
+		peek.events = POLLIN;
+		if (poll(&peek, 1, 0) <= 0 || !(peek.revents & POLLIN)) break; // caught up
+		if (XIoctl(m_Fd, VIDIOC_QBUF, &buf) < 0) break; // give the stale one back to the driver
+		v4l2_buffer next{};
+		next.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		next.memory = V4L2_MEMORY_MMAP;
+		if (XIoctl(m_Fd, VIDIOC_DQBUF, &next) < 0) break;
+		buf = next;
+	}
+
+	// Stamped from buf.timestamp (the driver's own CLOCK_MONOTONIC capture instant - the moment
+	// the sensor actually produced this frame) when the driver populates it, converted to the
+	// same wall-clock epoch SourceResult::NowUs() uses elsewhere via a one-time offset (glibc's
+	// std::chrono::steady_clock IS CLOCK_MONOTONIC on Linux, the only platform this file builds
+	// on, so this needs no extra syscall per frame beyond what steady_clock::now() already is).
+	// Previously stamped from NowUs() taken here, in userspace, right after DQBUF returns - close
+	// to "the moment the driver made this frame available" but NOT the same as when the sensor
+	// actually captured it, understating latencyMs whenever a frame had been sitting queued
+	// (matching stereo pairing's own skew-gate need for a genuine capture instant, not a publish
+	// one). A driver that never populates buf.timestamp (all zero) falls back to the old
+	// behaviour unchanged.
+	if (buf.timestamp.tv_sec != 0 || buf.timestamp.tv_usec != 0) {
+		if (!m_MonotonicToWallOffsetUs.has_value()) {
+			int64_t monotonicNowUs = std::chrono::duration_cast<std::chrono::microseconds>(
+				std::chrono::steady_clock::now().time_since_epoch()).count();
+			m_MonotonicToWallOffsetUs = static_cast<int64_t>(SourceResult::NowUs()) - monotonicNowUs;
+		}
+		int64_t bufTimestampUs = static_cast<int64_t>(buf.timestamp.tv_sec) * 1000000 + buf.timestamp.tv_usec;
+		result.captureTimeUs = static_cast<uint64_t>(bufTimestampUs + m_MonotonicToWallOffsetUs.value());
+	} else {
+		result.captureTimeUs = SourceResult::NowUs();
+	}
 
 	v4l2_format currentFmt{};
 	currentFmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
