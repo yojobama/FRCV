@@ -4,6 +4,16 @@
 **Target:** Orange Pi 5 Plus (RK3588: 4× Cortex-A76 + 4× Cortex-A55, Mali-G610), image `v0.0.0-imagetest13`
 **Measured symptoms:** ~12ms MJPEG decode per 1920×1080 frame; ~60ms end-to-end `latencyMs` for a vkapriltag pipeline (should be ≤ ~30ms, ideally ~20ms).
 
+**Status (2026-09-26, same day):** items 1-6 addressed, verified against the real board where the
+analysis itself needed correcting - #1's "no libjpeg-turbo" theory was wrong (2.1.5 is present;
+the fix is decode-to-gray instead, item 2), and a real, previously-unsuspected contention source
+was found live on the board (RecordSink hardcoded software libx264 even with a working hardware
+encoder). Core pinning (item 6's second half) is explicitly deferred, not done. Item 7 (MJPEG
+fallback base64) stays open - lowest priority, doesn't affect `latencyMs`. See the git log for the
+exact commits (per-frame log level-gating, RecordSink hardware encoder, MJPEG/YUYV decode-to-gray
+plus a new hardware JPEG-decode path via rockchip_mpp, vkapriltag thread-count default, honest
+V4L2 timestamps + drain-to-newest).
+
 `latencyMs` ([NetworkTablesSink.cpp](../LumenCore/NetworkTablesSink.cpp#L464-L471)) measures `captureTimeUs → producedTimeUs`, i.e. everything from V4L2 dequeue to the detector publishing. It does **not** include NT4 network time — the 60ms is entirely in-process. Below is every cost found in that window, in pipeline order.
 
 ---
