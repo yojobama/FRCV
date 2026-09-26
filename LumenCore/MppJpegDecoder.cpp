@@ -7,21 +7,76 @@
 #include <rockchip/mpp_buffer.h>
 
 namespace {
-	// A fresh MJPEG decode context can require an "info change" round trip on its first real
+	// A fresh MJPEG decode context requires an "info change" round trip on its first real
 	// picture (the decoder reports the buffer requirements it discovered from the bitstream
 	// before it will actually produce pixels - see rockchip-linux/mpp's own test/mpi_dec_test.c,
 	// the "simple decode" path this class otherwise mirrors) - MPP_DEC_SET_INFO_CHANGE_READY
-	// acknowledges it and lets decoding continue, using MPP's own internally-managed frame
-	// buffers (no MPP_DEC_SET_EXT_BUF_GROUP - JPEG decode has no reference-frame chaining to
-	// justify an app-managed buffer pool the way H.264/HEVC decode would). Bounded, not a real
-	// retry loop: one real info-change round trip is the documented case; anything beyond that
-	// is treated as a protocol surprise this class doesn't understand, not looped on forever.
+	// acknowledges it and lets decoding continue. CONFIRMED THE HARD WAY (a real board segfault,
+	// not a guess): an explicit buffer group registered via MPP_DEC_SET_EXT_BUF_GROUP is
+	// mandatory here, even for a single-frame codec with no reference chaining - a prior version
+	// of this class skipped it entirely (reasoning "JPEG needs no reference-frame pool, MPP's
+	// internal allocation should be enough"), which crashed the whole process the moment a real
+	// frame was decoded. mpi_dec_test.c's own default buffer mode (MPP_DEC_BUF_HALF_INT in its
+	// own utils/mpi_dec_utils.c) always sets one up; SetupBufferGroup below mirrors exactly that
+	// path (mpp_buffer_group_get_internal + mpp_buffer_group_limit_config), not the untested
+	// "mode=INTERNAL, register nothing" alternative that same file also defines but never uses
+	// by default. Bounded, not a real retry loop: one real info-change round trip is the
+	// documented case; anything beyond that is treated as a protocol surprise this class doesn't
+	// understand, not looped on forever.
 	constexpr int kMaxDecodeAttempts = 4;
+
+	// JPEG has no reference-frame chaining (one frame in, one frame out) - a handful of buffers
+	// is plenty; this only bounds how many the group is ALLOWED to grow to
+	// (mpp_buffer_group_limit_config), not a fixed pre-allocation.
+	constexpr RK_S32 kBufferCount = 4;
 }
 
 MppJpegDecoder::~MppJpegDecoder()
 {
+	// context first, then the buffer group it was using - putting the group first would free
+	// memory the decoder might still touch during its own teardown.
 	if (m_Ctx) mpp_destroy(static_cast<MppCtx>(m_Ctx));
+	if (m_BufGroup) mpp_buffer_group_put(static_cast<MppBufferGroup>(m_BufGroup));
+}
+
+bool MppJpegDecoder::SetupBufferGroup(size_t bufSize)
+{
+	if (m_BufGroup && m_BufGroupSize >= bufSize) return true; // already big enough
+
+	if (m_BufGroup) {
+		mpp_buffer_group_put(static_cast<MppBufferGroup>(m_BufGroup));
+		m_BufGroup = nullptr;
+		m_BufGroupSize = 0;
+	}
+
+	MppApi* api = static_cast<MppApi*>(m_Api);
+	MppCtx ctx = static_cast<MppCtx>(m_Ctx);
+
+	// priority order per mpp_buffer.h's own comment ("MPP_BUFFER_TYPE_DMA_HEAP >
+	// MPP_BUFFER_TYPE_DRM > MPP_BUFFER_TYPE_ION") - fall back down the list if the preferred
+	// allocator isn't available on this kernel rather than failing outright.
+	static const MppBufferType kTypesInPriorityOrder[] = {
+		MPP_BUFFER_TYPE_DMA_HEAP, MPP_BUFFER_TYPE_DRM, MPP_BUFFER_TYPE_ION
+	};
+	MppBufferGroup group = nullptr;
+	for (MppBufferType type : kTypesInPriorityOrder) {
+		if (mpp_buffer_group_get(&group, type, MPP_BUFFER_INTERNAL, "lumen_mpp_jpeg", __func__) == MPP_OK && group) break;
+		group = nullptr;
+	}
+	if (!group) return false;
+
+	if (mpp_buffer_group_limit_config(group, bufSize, kBufferCount) != MPP_OK) {
+		mpp_buffer_group_put(group);
+		return false;
+	}
+	if (api->control(ctx, MPP_DEC_SET_EXT_BUF_GROUP, group) != MPP_OK) {
+		mpp_buffer_group_put(group);
+		return false;
+	}
+
+	m_BufGroup = group;
+	m_BufGroupSize = bufSize;
+	return true;
 }
 
 bool MppJpegDecoder::EnsureInitialized()
@@ -62,9 +117,14 @@ bool MppJpegDecoder::Decode(const uint8_t* jpegData, size_t jpegSize, int width,
 		if (api->decode(ctx, packet, &frame) != MPP_OK || !frame) break;
 
 		if (mpp_frame_get_info_change(frame)) {
-			// acknowledge and let MPP allocate its own frame buffers internally - see this file's
-			// own comment above - then feed the same (already-consumed) packet again to actually
-			// get pixels.
+			// set up (or grow) the buffer group the decoder needs BEFORE acknowledging - see this
+			// file's own top comment on why this is mandatory, not optional. A failure here (no
+			// supported allocator, group setup rejected) falls straight back to software rather
+			// than acknowledging into a decoder that has nowhere to put its output.
+			if (!SetupBufferGroup(mpp_frame_get_buf_size(frame))) {
+				mpp_frame_deinit(&frame);
+				break;
+			}
 			api->control(ctx, MPP_DEC_SET_INFO_CHANGE_READY, nullptr);
 			mpp_frame_deinit(&frame);
 			continue;

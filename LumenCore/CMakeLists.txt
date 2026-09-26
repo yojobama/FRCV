@@ -57,19 +57,23 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 endif()
 
 # --- Optional: hardware MJPEG decode via the RK3588's JPEG-decode VPU (rockchip_mpp) ------------
-# EXPERIMENTAL - confirmed the hard way to segfault on real hardware the moment a real MJPEG
-# camera frame is decoded (Orange Pi 5 Plus, MPP built from rockchip-linux/mpp's develop@14729dd):
-# MppJpegDecoder never calls MPP_DEC_SET_EXT_BUF_GROUP, and the real mpi_dec_test.c reference
-# always does, even for a single-frame codec with no reference chaining - this class's own
-# assumption that MPP's "internal" buffer allocation needs no group at all looks to be wrong.
-# Gated behind an explicit opt-in (default OFF even when rockchip_mpp is present) until that's
-# fixed and re-verified on real hardware - do not flip this default without a HITL run confirming
-# it no longer crashes. Probed unconditionally (not only when LUMEN_WITH_CODEC_STEREO happens to
-# be on, which is where this exact pkg-config module used to be probed, purely to toggle
-# codec-stereo's own CS_ENABLE_RKMPP_HWENC - that block further down now reuses this result
-# instead of re-probing) since V4l2CameraBackend's own MJPEG hardware-decode path needs it
-# regardless of whether the stereo-depth submodule is enabled at all.
-option(LUMEN_ENABLE_EXPERIMENTAL_MPP_JPEG "EXPERIMENTAL, known to crash on real hardware - see this file's own comment" OFF)
+# A prior version of MppJpegDecoder segfaulted on real hardware the moment a real MJPEG camera
+# frame was decoded (Orange Pi 5 Plus, MPP built from rockchip-linux/mpp's develop@14729dd) -
+# root cause: it never registered a buffer group via MPP_DEC_SET_EXT_BUF_GROUP, which real MPP
+# decode requires (confirmed against rockchip-linux/mpp's own utils/mpi_dec_utils.c - its default
+# buffer mode always sets one up; the "internal, register nothing" mode that same file also
+# defines is real but isn't its own default and wasn't the fix). MppJpegDecoder now sets one up
+# (SetupBufferGroup, mirroring that exact default path) before ever acknowledging an info-change.
+# Still gated behind an explicit toggle (kept ON by default once verified working on real hardware
+# via a HITL run - see the commit history for that verification) rather than folded unconditionally
+# into LUMEN_WITH_MPP_JPEG, so a single flag can flip it back off if a future board/driver
+# combination turns up a case this class still doesn't handle, without another code change.
+# Probed unconditionally (not only when LUMEN_WITH_CODEC_STEREO happens to be on, which is where
+# this exact pkg-config module used to be probed, purely to toggle codec-stereo's own
+# CS_ENABLE_RKMPP_HWENC - that block further down now reuses this result instead of re-probing)
+# since V4l2CameraBackend's own MJPEG hardware-decode path needs it regardless of whether the
+# stereo-depth submodule is enabled at all.
+option(LUMEN_ENABLE_EXPERIMENTAL_MPP_JPEG "Hardware MJPEG decode via rockchip_mpp - see this file's own comment" ON)
 set(LUMEN_WITH_MPP_JPEG OFF)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64)$")
     find_package(PkgConfig QUIET)

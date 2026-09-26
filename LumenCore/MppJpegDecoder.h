@@ -33,11 +33,18 @@ public:
 
 private:
 	bool EnsureInitialized();
+	// (Re)creates m_BufGroup sized for bufSize and registers it with the decoder via
+	// MPP_DEC_SET_EXT_BUF_GROUP - see the .cpp's own comment on why this is mandatory, not
+	// optional, even for a single-frame codec with no reference chaining.
+	bool SetupBufferGroup(size_t bufSize);
 
 	void* m_Ctx = nullptr;   // MppCtx
 	void* m_Api = nullptr;   // MppApi*
 	bool m_InitAttempted = false;
 	bool m_InitOk = false;
+
+	void* m_BufGroup = nullptr; // MppBufferGroup, owns the frame buffers MPP decodes into
+	size_t m_BufGroupSize = 0;
 };
 
 #endif // LUMEN_WITH_MPP_JPEG
